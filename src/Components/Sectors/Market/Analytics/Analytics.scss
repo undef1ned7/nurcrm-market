@@ -1,0 +1,1952 @@
+.analytics-page {
+  padding: 24px;
+  // background: #f5f5f5;
+  min-height: 100vh;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    justify-content: space-between;
+  }
+
+  &__filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f7d617;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #e6c200;
+    }
+  }
+
+  &__back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #f0f0f0;
+    }
+  }
+
+  &__title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: #111827;
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 4px 0 0 0;
+  }
+
+  &__filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f7d617;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #e6c200;
+    }
+  }
+
+  &__filters {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  &__filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+  }
+
+  &__filters-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+    color: #6b7280;
+
+    &:hover {
+      background: #f0f0f0;
+    }
+  }
+
+  &__filters-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+  }
+
+  &__filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 150px;
+
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="number"],
+    select {
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+      background: white;
+      width: 100%;
+      box-sizing: border-box;
+      height: 40px;
+
+      &:focus {
+        outline: none;
+        border-color: #f7d617;
+      }
+    }
+  }
+
+  &__filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+
+    input[type="date"],
+    input[type="datetime-local"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    span {
+      color: #6b7280;
+      font-size: 14px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+  }
+
+  &__filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: normal;
+    margin-top: 4px;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+  }
+
+  &__filters-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    width: 100%;
+  }
+
+  &__filter-reset,
+  &__filter-apply {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+  }
+
+  &__filter-reset {
+    background: #f3f4f6;
+    color: #374151;
+
+    &:hover {
+      background: #e5e7eb;
+    }
+  }
+
+  &__filter-apply {
+    background: #f7d617;
+    color: #111827;
+
+    &:hover {
+      background: #e6c200;
+    }
+  }
+
+  &__tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 2px;
+    }
+  }
+
+  &__tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 16px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex: 0 0 auto;
+
+    &:hover {
+      color: #111827;
+    }
+
+    &--active {
+      color: #f7d617;
+      border-bottom-color: #f7d617;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  // KPI Cards
+  &__kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    // margin-bottom: 32px;
+  }
+
+  &__kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &--interactive {
+      cursor: pointer;
+      transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        border-color 0.18s ease;
+      border: 1px solid transparent;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        border-color: rgba(247, 214, 23, 0.28);
+      }
+
+      &:focus-visible {
+        outline: none;
+        border-color: rgba(247, 214, 23, 0.45);
+        box-shadow: 0 0 0 4px rgba(247, 214, 23, 0.14);
+      }
+    }
+  }
+
+  &__kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__kpi-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  &__kpi-currency {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  &__kpi-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  &__kpi-change {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &--positive {
+      color: #10b981;
+    }
+
+    &--negative {
+      color: #ef4444;
+    }
+  }
+
+  // Charts
+  &__chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    height: 400px;
+
+    &--large {
+      height: 500px;
+    }
+  }
+
+  &__chart-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 20px 0;
+  }
+
+  // Карточка графика, которая подстраивается по высоте под canvas
+  // (заголовок + холст фиксированной высоты, без лишнего пустого места).
+  &__chart-card.analytics-page__chart-card--fit {
+    height: auto;
+  }
+
+  &__chart-canvas {
+    position: relative;
+    width: 100%;
+    height: 340px;
+
+    @media (max-width: 768px) {
+      height: 260px;
+    }
+  }
+
+  // Горизонтальный бар внутри ячейки таблицы (как «Top Selling Products»).
+  &__bar-cell {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 120px;
+  }
+
+  &__bar-fill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    box-sizing: border-box;
+    min-width: fit-content;
+    max-width: 100%;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: #f7d617;
+    color: #1a1a1a;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: width 0.3s ease;
+  }
+
+  // Grid
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  // Tables
+  &__table-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  &__table-card--scrollable {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  &__table-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 16px 0;
+  }
+
+  &__accordion {
+    padding: 16px 20px;
+  }
+
+  &__accordion-header {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 12px;
+  }
+
+  &__accordion-title {
+    margin: 0;
+    text-align: left;
+  }
+
+  &__accordion-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #6b7280;
+    transition: transform 0.2s ease;
+    transform: rotate(-90deg);
+  }
+
+  &__accordion-icon--open {
+    transform: rotate(0deg);
+  }
+
+  // Селект сортировки (напр. блок «Остатки товаров»).
+  &__sort-select {
+    height: 36px;
+    padding: 0 32px 0 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      border-color: #c1c5cd;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #f7d617;
+      box-shadow: 0 0 0 3px rgba(247, 214, 23, 0.18);
+    }
+  }
+
+  &__date-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #f3f4f6;
+    }
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead {
+      background: #f9fafb;
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #111827;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    tbody tr {
+      transition: background 0.2s;
+
+      &:hover {
+        background: #f9fafb;
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+  }
+
+  &__table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow: auto;
+  }
+
+  &__table-scroll--suppliers {
+    max-height: min(68vh, 720px);
+  }
+
+  &__table--suppliers {
+    min-width: 1180px;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f9fafb;
+    }
+  }
+
+  &__users-sold-qty {
+    white-space: nowrap;
+  }
+
+  &__table-row--expandable {
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid #f7d617;
+      outline-offset: -2px;
+    }
+  }
+
+  &__users-products-col {
+    width: 88px;
+    text-align: center;
+  }
+
+  &__users-products-toggle {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  &__users-products-toggle-inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__users-chevron {
+    color: #6b7280;
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(-180deg);
+    }
+  }
+
+  &__users-products-dropdown {
+    td {
+      padding: 0 !important;
+      border-bottom: 1px solid #e5e7eb !important;
+      background: #fafafa;
+    }
+
+    &:hover td {
+      background: #fafafa;
+    }
+  }
+
+  &__users-products-dropdown-panel {
+    padding: 12px 16px 14px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  &__users-sold-products {
+    margin: 0;
+    padding-left: 1.15em;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    max-width: 100%;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #374151;
+
+    li {
+      margin: 0.2em 0;
+    }
+  }
+
+  &__users-product-names-line {
+    font-size: 13px;
+    line-height: 1.45;
+    color: #374151;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+
+  // Status badges
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid transparent;
+
+    &--critical {
+      background: rgba(220, 38, 38, 0.1);
+      border-color: rgba(220, 38, 38, 0.16);
+      color: #9f3f46;
+    }
+
+    &--low {
+      background: rgba(247, 214, 23, 0.18);
+      border-color: rgba(202, 138, 4, 0.18);
+      color: #8a6500;
+    }
+
+    &--active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+  }
+
+  // Place badges
+  &__place {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 700;
+
+    &--first {
+      background: #f7d617;
+      color: #000;
+    }
+
+    &--other {
+      background: #e5e7eb;
+      color: #374151;
+    }
+  }
+
+  // Loading and Error states
+  &__loading,
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-top: 24px;
+    min-height: 200px;
+  }
+
+  &__loading {
+    p {
+      font-size: 16px;
+      color: #6b7280;
+      margin: 0;
+    }
+  }
+
+  &__error {
+    p {
+      font-size: 16px;
+      color: #ef4444;
+      margin: 0 0 16px 0;
+    }
+
+    button {
+      padding: 8px 16px;
+      background: #f7d617;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #e6c515;
+      }
+    }
+  }
+
+  // Help button
+  &__help {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #374151;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: background 0.2s;
+    z-index: 100;
+
+    &:hover {
+      background: #4b5563;
+    }
+  }
+
+  // Responsive
+  // Большие экраны (1400px и выше)
+  @media (min-width: 1400px) {
+    max-width: 1400px;
+    margin: 0 auto;
+
+    &__kpis {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    &__grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    &__chart-card {
+      height: 420px;
+
+      &--large {
+        height: 520px;
+      }
+    }
+
+    &__table-card {
+      padding: 28px;
+    }
+
+    &__table {
+      th {
+        padding: 14px 18px;
+      }
+
+      td {
+        padding: 14px 18px;
+      }
+    }
+  }
+  @media (max-width: 1400px) {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Планшеты (1024px - 1200px)
+  @media (max-width: 1200px) {
+    &__kpis {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__chart-card {
+      height: 350px;
+
+      &--large {
+        height: 450px;
+      }
+    }
+  }
+
+  // Планшеты (768px - 1024px)
+  @media (max-width: 1024px) {
+    padding: 20px;
+
+    &__header {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    &__title {
+      font-size: 22px;
+    }
+
+    &__tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+
+      &::-webkit-scrollbar {
+        height: 4px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 2px;
+      }
+    }
+
+    &__tab {
+      padding: 10px 20px;
+      font-size: 15px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    &__kpi-value {
+      font-size: 24px;
+    }
+
+    &__kpi-currency {
+      font-size: 18px;
+    }
+
+    &__chart-card {
+      padding: 20px;
+      height: 320px;
+
+      &--large {
+        height: 420px;
+      }
+    }
+
+    &__table-card {
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    &__table {
+      min-width: 600px;
+    }
+
+    &__table--suppliers {
+      min-width: 1180px;
+    }
+  }
+
+  // Мобильные устройства (до 768px)
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    &__header {
+      margin-bottom: 20px;
+    }
+
+    &__back {
+      width: 36px;
+      height: 36px;
+    }
+
+    &__title {
+      font-size: 20px;
+    }
+
+    &__subtitle {
+      font-size: 13px;
+    }
+
+    &__tabs {
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+
+    &__tab {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    &__content {
+      gap: 20px;
+    }
+
+    &__kpis {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    &__kpi-card {
+      padding: 16px;
+    }
+
+    &__kpi-title {
+      font-size: 12px;
+    }
+
+    &__kpi-value {
+      font-size: 22px;
+    }
+
+    &__kpi-currency {
+      font-size: 16px;
+    }
+
+    &__kpi-subtitle {
+      font-size: 11px;
+    }
+
+    &__kpi-change {
+      font-size: 11px;
+    }
+
+    &__chart-card {
+      padding: 16px;
+      height: 280px;
+
+      &--large {
+        height: 350px;
+      }
+    }
+
+    &__chart-title {
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    &__grid {
+      gap: 16px;
+    }
+
+    &__table-card {
+      padding: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    &__table-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    &__table-title {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    &__table {
+      min-width: 500px;
+      font-size: 13px;
+    }
+
+    &__table--suppliers {
+      min-width: 960px;
+    }
+
+    &__table th {
+      padding: 10px 12px;
+      font-size: 11px;
+    }
+
+    &__table td {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    &__date-filter {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    &__status {
+      font-size: 11px;
+      padding: 3px 10px;
+    }
+
+    &__place {
+      width: 28px;
+      height: 28px;
+      font-size: 12px;
+    }
+
+    &__loading,
+    &__error {
+      padding: 32px 20px;
+      min-height: 150px;
+    }
+
+    &__loading p,
+    &__error p {
+      font-size: 14px;
+    }
+
+    &__error button {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    &__help {
+      width: 44px;
+      height: 44px;
+      bottom: 16px;
+      right: 16px;
+    }
+  }
+
+  // Очень маленькие экраны (до 480px)
+  @media (max-width: 480px) {
+    padding: 12px;
+
+    &__header {
+      margin-bottom: 16px;
+      gap: 8px;
+    }
+
+    &__back {
+      width: 32px;
+      height: 32px;
+    }
+
+    &__title {
+      font-size: 18px;
+    }
+
+    &__subtitle {
+      font-size: 12px;
+    }
+
+    &__tabs {
+      margin-bottom: 16px;
+      gap: 2px;
+    }
+
+    &__tab {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    &__content {
+      gap: 16px;
+    }
+
+    &__kpi-card {
+      padding: 14px;
+    }
+
+    &__kpi-value {
+      font-size: 20px;
+    }
+
+    &__kpi-currency {
+      font-size: 14px;
+    }
+
+    &__chart-card {
+      padding: 12px;
+      height: 250px;
+
+      &--large {
+        height: 300px;
+      }
+    }
+
+    &__chart-title {
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    &__table-card {
+      padding: 12px;
+    }
+
+    &__table {
+      min-width: 400px;
+      font-size: 12px;
+    }
+
+    &__table--suppliers {
+      min-width: 860px;
+    }
+
+    &__table th {
+      padding: 8px 10px;
+      font-size: 10px;
+    }
+
+    &__table td {
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    &__help {
+      width: 40px;
+      height: 40px;
+      bottom: 12px;
+      right: 12px;
+    }
+  }
+
+  // Ландшафтная ориентация на мобильных
+  @media (max-width: 768px) and (orientation: landscape) {
+    &__kpis {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    &__chart-card {
+      height: 300px;
+
+      &--large {
+        height: 380px;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// ТЁМНАЯ ТЕМА — применяется только когда у корня есть модификатор `--dark`
+// (включается в тёмном режиме приложения). Светлый режим выше остаётся как был.
+// Акцент — наш фирменный жёлтый #f7d617. Стили строго под `.analytics-page`,
+// другие сферы не затрагиваются.
+// ============================================================================
+$dk-bg: #1d1d1d;
+$dk-panel: #1e2130;
+$dk-panel-hover: #262a3b;
+$dk-head: #1a1d2a;
+$dk-border: rgba(255, 255, 255, 0.07);
+$dk-border-strong: rgba(255, 255, 255, 0.12);
+$dk-text: #f3f4f8;
+$dk-muted: #9aa1b2;
+$dk-accent: #f7d617;
+$dk-accent-soft: rgba(247, 214, 23, 0.14);
+$dk-accent-border: rgba(247, 214, 23, 0.32);
+$dk-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+$dk-radius: 16px;
+
+.analytics-page--dark {
+  background: $dk-bg;
+  color: $dk-text;
+
+  .analytics-page__back {
+    background: $dk-panel;
+    border: 1px solid $dk-border;
+    color: $dk-text;
+
+    &:hover {
+      background: $dk-panel-hover;
+    }
+  }
+
+  .analytics-page__title {
+    color: $dk-text;
+  }
+
+  .analytics-page__subtitle {
+    color: $dk-muted;
+  }
+
+  .analytics-page__filter-btn {
+    background: $dk-accent;
+    color: #1a1a1a;
+
+    &:hover {
+      background: #ffe23a;
+    }
+  }
+
+  // --- Filters ---
+  .analytics-page__filters {
+    background: $dk-panel;
+    border-color: $dk-border;
+    box-shadow: $dk-shadow;
+    border-radius: $dk-radius;
+  }
+
+  .analytics-page__filters-header {
+    border-bottom-color: $dk-border;
+
+    h3 {
+      color: $dk-text;
+    }
+  }
+
+  .analytics-page__filters-close {
+    color: $dk-muted;
+
+    &:hover {
+      background: $dk-panel-hover;
+      color: $dk-text;
+    }
+  }
+
+  .analytics-page__filter-group {
+    label {
+      color: $dk-muted;
+    }
+
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="number"],
+    select {
+      background: $dk-head;
+      border-color: $dk-border-strong;
+      color: $dk-text;
+      color-scheme: dark;
+
+      &::placeholder {
+        color: #6e7589;
+      }
+
+      &:focus {
+        border-color: $dk-accent;
+        box-shadow: 0 0 0 3px $dk-accent-soft;
+      }
+    }
+
+    select option {
+      background: $dk-head;
+      color: $dk-text;
+    }
+  }
+
+  .analytics-page__filter-row span {
+    color: $dk-muted;
+  }
+
+  .analytics-page__filter-checkbox {
+    color: $dk-muted;
+
+    input[type="checkbox"] {
+      accent-color: $dk-accent;
+    }
+  }
+
+  .analytics-page__filters-actions {
+    border-top-color: $dk-border;
+  }
+
+  .analytics-page__filter-reset {
+    background: transparent;
+    color: $dk-muted;
+    border: 1px solid $dk-border-strong;
+
+    &:hover {
+      background: $dk-panel-hover;
+      color: $dk-text;
+    }
+  }
+
+  .analytics-page__filter-apply {
+    background: $dk-accent;
+    color: #1a1a1a;
+
+    &:hover {
+      background: #ffe23a;
+    }
+  }
+
+  // --- Tabs ---
+  .analytics-page__tabs {
+    border-bottom-color: $dk-border;
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $dk-border-strong;
+    }
+  }
+
+  .analytics-page__tab {
+    color: $dk-muted;
+
+    &:hover {
+      color: $dk-text;
+    }
+
+    &--active {
+      color: $dk-accent;
+      border-bottom-color: $dk-accent;
+    }
+  }
+
+  // --- KPI cards ---
+  .analytics-page__kpi-card {
+    background: $dk-panel;
+    border: 1px solid $dk-border;
+    border-radius: $dk-radius;
+    box-shadow: $dk-shadow;
+
+    &--interactive:hover {
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+      border-color: $dk-accent-border;
+    }
+
+    &--interactive:focus-visible {
+      border-color: $dk-accent-border;
+      box-shadow: 0 0 0 4px $dk-accent-soft;
+    }
+  }
+
+  // Иконка KPI — «чип» как в дизайне Power BI.
+  .analytics-page__kpi-header svg {
+    box-sizing: content-box;
+    padding: 9px;
+    border-radius: 12px;
+    background: $dk-accent-soft;
+  }
+
+  .analytics-page__kpi-title {
+    color: $dk-muted;
+  }
+
+  .analytics-page__kpi-value {
+    color: $dk-text;
+  }
+
+  .analytics-page__kpi-currency {
+    color: $dk-muted;
+  }
+
+  .analytics-page__kpi-subtitle {
+    color: $dk-muted;
+  }
+
+  .analytics-page__kpi-change--positive {
+    color: #34d399;
+  }
+
+  .analytics-page__kpi-change--negative {
+    color: #f87171;
+  }
+
+  // --- Charts ---
+  .analytics-page__chart-card {
+    background: $dk-panel;
+    border: 1px solid $dk-border;
+    border-radius: $dk-radius;
+    box-shadow: $dk-shadow;
+  }
+
+  .analytics-page__chart-title {
+    color: $dk-text;
+  }
+
+  // --- Tables ---
+  .analytics-page__table-card {
+    background: $dk-panel;
+    border: 1px solid $dk-border;
+    border-radius: $dk-radius;
+    box-shadow: $dk-shadow;
+  }
+
+  .analytics-page__table-title {
+    color: $dk-text;
+  }
+
+  .analytics-page__accordion-icon {
+    color: $dk-muted;
+  }
+
+  .analytics-page__date-filter {
+    background: $dk-head;
+    border-color: $dk-border-strong;
+    color: $dk-muted;
+
+    &:hover {
+      background: $dk-panel-hover;
+      color: $dk-text;
+    }
+  }
+
+  .analytics-page__sort-select {
+    background-color: $dk-head;
+    border-color: $dk-border-strong;
+    color: $dk-text;
+    color-scheme: dark;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    &:focus {
+      border-color: $dk-accent;
+      box-shadow: 0 0 0 3px $dk-accent-soft;
+    }
+
+    option {
+      background: $dk-head;
+      color: $dk-text;
+    }
+  }
+
+  .analytics-page__table {
+    thead {
+      background: $dk-head;
+    }
+
+    th {
+      color: $dk-muted;
+      border-bottom-color: $dk-border;
+    }
+
+    td {
+      color: $dk-text;
+      border-bottom-color: $dk-border;
+    }
+
+    tbody tr:hover {
+      background: $dk-panel-hover;
+    }
+  }
+
+  .analytics-page__table--suppliers thead th {
+    background: $dk-head;
+  }
+
+  .analytics-page__users-chevron {
+    color: $dk-muted;
+  }
+
+  .analytics-page__users-products-dropdown {
+    td {
+      border-bottom-color: $dk-border !important;
+      background: $dk-head;
+    }
+
+    &:hover td {
+      background: $dk-head;
+    }
+  }
+
+  .analytics-page__users-products-dropdown-panel {
+    border-top-color: $dk-border;
+  }
+
+  .analytics-page__users-sold-products,
+  .analytics-page__users-product-names-line {
+    color: $dk-muted;
+  }
+
+  // --- Status badges ---
+  .analytics-page__status {
+    &--critical {
+      background: rgba(248, 113, 113, 0.16);
+      border-color: rgba(248, 113, 113, 0.28);
+      color: #fca5a5;
+    }
+
+    &--low {
+      background: $dk-accent-soft;
+      border-color: $dk-accent-border;
+      color: $dk-accent;
+    }
+
+    &--active {
+      background: rgba(52, 211, 153, 0.16);
+      border-color: rgba(52, 211, 153, 0.28);
+      color: #6ee7b7;
+    }
+  }
+
+  // --- Place badges ---
+  .analytics-page__place {
+    &--first {
+      background: $dk-accent;
+      color: #1a1a1a;
+    }
+
+    &--other {
+      background: $dk-panel-hover;
+      color: $dk-muted;
+    }
+  }
+
+  // --- Loading / Error ---
+  .analytics-page__loading,
+  .analytics-page__error {
+    background: $dk-panel;
+    border: 1px solid $dk-border;
+    border-radius: $dk-radius;
+    box-shadow: $dk-shadow;
+  }
+
+  .analytics-page__loading p {
+    color: $dk-muted;
+  }
+
+  .analytics-page__error {
+    p {
+      color: #f87171;
+    }
+
+    button {
+      background: $dk-accent;
+      color: #1a1a1a;
+
+      &:hover {
+        background: #ffe23a;
+      }
+    }
+  }
+
+  // --- Help button ---
+  .analytics-page__help {
+    background: $dk-accent;
+    color: #1a1a1a;
+
+    &:hover {
+      background: #ffe23a;
+    }
+  }
+}
+
+/* Кликабельная карточка «Выручка» */
+.analytics-page__kpi-card--clickable {
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+
+  &::after {
+    content: "Подробнее ›";
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #b8860b;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+
+    &::after {
+      opacity: 0.9;
+    }
+  }
+  &:focus-visible {
+    outline: 2px solid #f7d617;
+    outline-offset: 2px;
+  }
+}
+
+/* ===== Модалка детализации выручки ===== */
+.analytics-revenue-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  animation: analyticsRevenueFade 0.15s ease;
+}
+
+@keyframes analyticsRevenueFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes analyticsRevenuePop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+
+.analytics-revenue-modal {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.3);
+  animation: analyticsRevenuePop 0.2s ease;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  &__head-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__head-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    color: #1a1a1a;
+    background: linear-gradient(135deg, #f7d617, #f6c000);
+    box-shadow: 0 6px 14px rgba(247, 214, 23, 0.4);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+
+  &__subtitle {
+    margin: 3px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: #f1f5f9;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #334155;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  &__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid #eef2f7;
+    background: #f8fafc;
+
+    // «Валовая прибыль» — во всю ширину, акцентная
+    &--profit {
+      grid-column: 1 / -1;
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    &-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #fff;
+      color: #475569;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    }
+
+    &--cost &-icon {
+      color: #b45309;
+    }
+    &--profit &-icon {
+      color: #16a34a;
+    }
+    &--margin &-icon {
+      color: #2563eb;
+    }
+
+    &-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #64748b;
+    }
+
+    &-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+
+      em {
+        margin-left: 5px;
+        font-style: normal;
+        font-size: 13px;
+        font-weight: 700;
+        color: #94a3b8;
+      }
+    }
+
+    &--profit &-value {
+      color: #16a34a;
+    }
+  }
+
+  &__warn {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #b45309;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  @media (max-width: 420px) {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+    &__tile--profit {
+      grid-column: auto;
+    }
+  }
+}
+
+/* ===== Модалка «Транзакции» (список продаж по фильтру) ===== */
+.analytics-tx-modal {
+  max-width: 480px;
+
+  &__body {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 0 -4px;
+    padding: 0 4px;
+  }
+
+  &__state {
+    padding: 28px 12px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+
+    &--error {
+      color: #dc2626;
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 12px;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    background: #f8fafc;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: #f1f5f9;
+    }
+
+    &-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    &-no {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    &-date {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    &-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    &-pm {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #2563eb;
+    }
+
+    &-total {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+  }
+}
+
+/* Бейдж статуса продажи в модалке транзакций */
+.analytics-tx-modal__badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+
+  &--paid {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  &--canceled {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+  &--debt {
+    background: #fef3c7;
+    color: #b45309;
+  }
+}

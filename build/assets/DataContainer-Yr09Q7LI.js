@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-CF4O39kz.js";var t={datacontainer:`_datacontainer_pn8xm_3`},n=e();function r({children:e,className:r=``}){return(0,n.jsx)(`div`,{className:`${t.datacontainer} ${r}`,children:e})}export{r as t};

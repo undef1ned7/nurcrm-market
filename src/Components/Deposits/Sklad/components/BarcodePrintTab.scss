@@ -1,0 +1,739 @@
+.barcode-print-tab {
+  padding: 20px;
+  min-height: 100%;
+  overflow: auto; // обязательный скролл внутри таба
+
+  &__header {
+    margin-bottom: 24px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__search-wrapper {
+    position: relative;
+    flex: 1;
+    max-width: 500px;
+    min-width: 200px;
+  }
+
+  &__search-spinner {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    border: 2px solid #e5e7eb;
+    border-top-color: $color-primary;
+    border-radius: 50%;
+    animation: barcode-print-tab-spin 0.7s linear infinite;
+    pointer-events: none;
+  }
+
+  &__search {
+    width: 100%;
+    padding: 10px 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.12);
+    }
+
+    &::placeholder {
+      color: #999;
+    }
+  }
+
+  &__printer-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+
+  &__size-select-wrapper {
+    display: flex;
+    align-items: center;
+  }
+
+  &__size-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    white-space: nowrap;
+  }
+
+  &__size-select {
+    max-width: 160px;
+    padding: 8px 10px;
+    border: 1px solid #d6d6d6;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.12);
+    }
+  }
+
+  &__copies-input {
+    width: 90px;
+    padding: 8px 10px;
+    border: 1px solid #d6d6d6;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    transition: all 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.12);
+    }
+  }
+
+  &__custom-size-input {
+    width: 72px;
+    padding: 8px 10px;
+    border: 1px solid #d6d6d6;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    transition: all 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.12);
+    }
+  }
+
+  &__display-settings {
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  &__display-settings-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+  }
+
+  &__display-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    white-space: nowrap;
+    cursor: pointer;
+
+    input {
+      cursor: pointer;
+    }
+  }
+
+  &__printer-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  &__status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+
+    &--connected {
+      background-color: #22c55e;
+      box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+    }
+
+    &--disconnected {
+      background-color: #ef4444;
+      box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+    }
+  }
+
+  &__status-text {
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  &__connect-btn {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+
+    &:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+  }
+
+  &__content {
+    position: relative;
+    min-height: 200px;
+    background: transparent;
+
+  }
+
+  &__selection-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  &__selection-count {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  &__selection-hint {
+    font-size: 12px;
+    color: #666;
+    font-weight: 400;
+  }
+
+  &__selection-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__selection-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #495057;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__batch-print-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    background-color: $color-primary;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background-color: #ffdc33;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &:disabled {
+      background-color: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  &__card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+    }
+
+    &--selected {
+      border: 2px solid $color-primary;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 212, 0, 0.3);
+    }
+  }
+
+  &__card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  &__card-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #495057;
+    user-select: none;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: $color-primary;
+      cursor: pointer;
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+  }
+
+  &__card-checkbox-label {
+    flex: 1;
+  }
+
+  &__barcode-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__barcode-value {
+    font-family: "Courier New", monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: #007bff;
+    letter-spacing: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Выбор штрих-кода, когда у товара есть дополнительные (alternate_barcodes)
+  &__barcode-select {
+    width: 100%;
+    max-width: 100%;
+    padding: 4px 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    font-family: "Courier New", monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #007bff;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+
+  &__card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  &__print-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: $color-primary;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    &:hover:not(:disabled) {
+      background-color: #ffdc33;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      background-color: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  }
+
+  &__print-icon {
+    font-size: 16px;
+  }
+
+  &__spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #1a1a1a;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  &__product-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1.4;
+    word-wrap: break-word;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  /* Копии для конкретной позиции */
+  &__card-copies {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+  }
+
+  &__card-copies-input {
+    width: 72px;
+    padding: 6px 8px;
+    border: 1px solid #d6d6d6;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.12);
+    }
+
+    &:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  &__empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  &__empty-text {
+    font-size: 16px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    padding: 40px 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+    .loading {
+      padding: 0;
+    }
+  }
+
+@keyframes barcode-print-tab-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+  // Модалка предпросмотра
+  &__preview {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 20px;
+  }
+
+  &__preview-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+
+  &__preview-label-sheet {
+    --preview-scale: 2;
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  &__preview-border {
+    position: absolute;
+    border-style: dashed;
+    border-color: #1a1a1a;
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  &__preview-title-line {
+    position: absolute;
+    font-size: calc(6px * var(--preview-scale));
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  &__preview-price {
+    position: absolute;
+    font-size: calc(6px * var(--preview-scale));
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  &__preview-barcode-canvas {
+    position: absolute;
+    image-rendering: crisp-edges;
+    display: block;
+  }
+
+  &__preview-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  &__preview-cancel-btn {
+    padding: 10px 20px;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background: #e8e8e8;
+      border-color: #bbb;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__preview-print-btn {
+    padding: 10px 24px;
+    background-color: var(--color-primary);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    &:hover:not(:disabled) {
+      background-color: #ffdc33;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      background-color: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  &__pagination-info {
+    font-size: 14px;
+    color: #64748b;
+  }
+
+  &__pagination-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__pagination-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+
+    &:hover:not(:disabled) {
+      background: #f8fafc;
+      border-color: var(--color-primary, #f7d74f);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .barcode-print-tab {
+    padding: 12px;
+
+    &__grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    &__card {
+      padding: 16px;
+    }
+
+    &__preview-label {
+      padding: 14px;
+    }
+
+    &__preview-label-content {
+      max-width: 100%;
+    }
+  }
+}

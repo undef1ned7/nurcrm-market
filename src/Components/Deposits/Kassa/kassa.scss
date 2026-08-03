@@ -1,0 +1,1346 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+:root {
+  --primary: #f7d74f;
+  --primary-dark: #d4b800;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --surface: #fff;
+  --radius: 12px;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  --danger: #ef4444;
+}
+
+/* ================== WAREHOUSE-LIKE PAGE LAYOUT ================== */
+.kassa-page {
+  font-family: "Montserrat", sans-serif;
+  padding: 24px;
+  min-height: 100vh;
+  @media screen and (max-width: 768px) {
+    padding: 0;
+  }
+}
+
+.kassa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  &__left {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__icon-box {
+    width: 48px;
+    height: 48px;
+    background: var(--primary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  &__title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  &__create-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--primary);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--primary-dark);
+    }
+  }
+
+  &__nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__nav-tab {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s;
+    flex: 1 0 100px;
+
+    &:hover {
+      background: #f9fafb;
+      border-color: var(--primary);
+    }
+
+    &--active {
+      background: var(--primary);
+      border-color: var(--primary-dark);
+    }
+  }
+}
+
+.kassa-search-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kassa-search__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kassa-search__view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kassa-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f9fafb;
+    border-color: var(--primary);
+  }
+
+  &--active {
+    background: var(--primary);
+    border-color: var(--primary-dark);
+    color: #000;
+  }
+}
+
+.kassa-search {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+
+  &__icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 10px 12px 10px 40px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+  }
+
+  &__info {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  &__filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #f9fafb;
+      border-color: var(--primary);
+    }
+  }
+}
+
+.kassa-table-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kassa-table-container {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  // min-height: 280px;
+  @media screen and (max-width: 768px) {
+    border-radius: 0;
+    border: none;
+  }
+}
+
+.kassa-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 0 4px 8px;
+
+  &__info {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+}
+
+/* Карточки касс */
+.kassa-cards-wrapper {
+  padding: 20px;
+  min-height: 240px;
+  @media screen and (max-width: 768px) {
+    padding: 0;
+  }
+}
+
+.kassa-cards-loading,
+.kassa-cards-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.kassa-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.kassa-card {
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow);
+  }
+}
+
+.kassa-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.kassa-card__num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+
+  &--income {
+    width: auto;
+    min-width: 28px;
+    padding: 4px 10px;
+    background: #d1fae5;
+    color: #059669;
+    font-size: 12px;
+  }
+
+  &--expense {
+    width: auto;
+    min-width: 28px;
+    padding: 4px 10px;
+    background: #fee2e2;
+    color: var(--danger);
+    font-size: 12px;
+  }
+}
+
+.kassa-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.kassa-card__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.kassa-card__field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.kassa-card__label {
+  color: var(--muted);
+}
+
+.kassa-card__value {
+  font-weight: 600;
+  color: var(--text);
+
+  &--income {
+    color: #059669;
+  }
+
+  &--expense {
+    color: var(--danger);
+  }
+}
+
+.kassa-card__actions {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.kassa-card__btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.kassa-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+
+  thead {
+    background: #f9fafb;
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+
+    &:hover {
+      background: #f9fafb;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  td {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  &__loading,
+  &__empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+  }
+}
+
+.kassa-chip-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.kassa-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f9fafb;
+    border-color: var(--primary);
+  }
+
+  &--active {
+    background: var(--text);
+    color: #fff;
+    border-color: var(--text);
+  }
+}
+
+/* ================== WRAPPER ================== */
+.vitrina {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text);
+}
+
+.vitrina--error {
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+/* ================== HEADER + TABS ================== */
+.vitrina__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vitrina__tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vitrina__tab {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 700;
+  cursor: default;
+  color: var(--text);
+}
+
+.vitrina__tab--active {
+  background: var(--primary);
+  border-color: var(--primary-dark);
+}
+
+/* ================== TOOLBAR ================== */
+.vitrina__toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.vitrina__toolbar-div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vitrina__total {
+  font-weight: 800;
+}
+.kassa {
+  .edit-modal__content {
+    top: 50%;
+    width: auto;
+  }
+}
+.vitrina__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  // width: 100%;
+  // flex-wrap: wrap;
+}
+
+.vitrina__search-wrapper {
+  position: relative;
+}
+
+.vitrina__search {
+  padding: 10px 12px;
+  // border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  min-width: 220px;
+  background-color: transparent;
+  border: none;
+  // background: #fff;
+  transition: 0.15s;
+  &-wrapper {
+    width: auto !important;
+  }
+}
+
+.vitrina__filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--primary);
+  border: 1px solid var(--primary-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vitrina__filter-button:hover {
+  background: var(--primary-dark);
+}
+
+/* ================== TABLE (list & detail) ================== */
+.table-wrapper {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  background: #fff;
+}
+
+.vitrina__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 760px;
+}
+
+.vitrina__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f9fafb;
+  color: #111;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  text-align: left;
+  padding: 10px;
+}
+
+.vitrina__table tbody td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px;
+  font-size: 14px;
+}
+
+.vitrina__table tbody tr:hover {
+  background: #fafafa;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.kassa__rowClickable {
+  cursor: pointer;
+}
+
+.kassa__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: #fff;
+  transition: all 0.2s;
+}
+.kassa__btn:hover {
+  background: #f9fafb;
+}
+.kassa__btn--primary {
+  background: var(--primary);
+  border-color: var(--primary-dark);
+  color: #000;
+}
+.kassa__btn--primary:hover {
+  background: var(--primary-dark);
+}
+.kassa__btn--secondary {
+  background: #fff;
+  color: var(--text);
+}
+
+.kassa-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  padding: 20px;
+}
+
+.kassa-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.kassa-modal__card {
+  position: relative;
+  background: #fff;
+  border-radius: var(--radius);
+  width: min(480px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  z-index: 1;
+  // @media screen and (max-width: 576px) {
+  //   top: 0;
+  // }
+}
+.kassa-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.kassa-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.kassa-modal__close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px;
+  line-height: 1;
+}
+.kassa-modal__section {
+  padding: 16px 20px;
+}
+.kassa-modal__label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  // margin-bottom: 8px;
+}
+.kassa-modal__input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.kassa-modal__footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* Модалка фильтров потоков (KassaWorkerDet) */
+.kassa-filter-modal {
+  display: flex;
+  flex-direction: column;
+}
+
+.kassa-filter-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.kassa-filter-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.kassa-filter-modal__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kassa-filter-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kassa-filter-modal__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.kassa-filter-modal__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.kassa-filter-modal__search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.kassa-filter-modal__search-input {
+  width: 100%;
+  padding: 12px 14px 12px 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fff;
+  transition: border-color 0.2s;
+
+  &::placeholder {
+    color: var(--muted);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+}
+
+.kassa-filter-modal__select-native {
+  width: 100%;
+  padding: 12px 14px;
+  padding-right: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  &:hover {
+    border-color: var(--primary);
+  }
+}
+
+.kassa-filter-modal__footer {
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.kassa-filter-modal__reset {
+  width: 100%;
+  padding: 14px 20px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #e5e7eb;
+  }
+}
+
+.kassa__alert {
+  font-size: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  &--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: var(--danger);
+  }
+}
+
+.vitrina__reset {
+  padding: 5px 0;
+}
+/* ================== KASSA TABS (detail page) ================== */
+.kassa__tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.kassa__tab {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.kassa__tab--active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.kassa__grow {
+  flex: 1;
+}
+
+/* бейджи на будущее (если добавишь) */
+.kassa__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.kassa__tag--in {
+  color: #0a3;
+  background: rgba(22, 163, 74, 0.08);
+  border-color: #bbf7d0;
+}
+.kassa__tag--out {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fee2e2;
+}
+
+/* ================== MODAL: create cashbox ================== */
+.edit-modal {
+  /* wrapper for positioning children */
+}
+
+.edit-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+.edit-modal__content {
+  width: min(560px, 92vw);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 61;
+}
+
+.edit-modal__header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.edit-modal__close-icon {
+  background: transparent;
+  border: 0;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.edit-modal__section {
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.edit-modal__section label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.edit-modal__section input,
+.edit-modal__section textarea,
+.edit-modal__section select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.edit-modal__section input:focus,
+.edit-modal__section textarea:focus,
+.edit-modal__section select:focus {
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(247, 215, 79, 0.25);
+}
+
+.edit-modal__footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.edit-modal__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--primary);
+  border: 1px solid var(--primary-dark);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit-modal__save:hover {
+  background: var(--primary-dark);
+}
+
+/* ================== RESPONSIVE ================== */
+@media (max-width: 720px) {
+  .vitrina {
+    padding: 14px;
+  }
+  .vitrina__toolbar {
+    align-items: stretch;
+  }
+  .vitrina__search {
+    min-width: unset;
+    width: 100%;
+  }
+}
+/* ================== MODAL: улучшенная ================== */
+.edit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+
+/* затемнение + блюр + fade-in */
+.edit-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45); /* slate-900/45 */
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: em-overlay-in 0.18s ease-out both;
+}
+
+/* карточка модалки + pop-in анимация */
+.edit-modal__content {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.98);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0, 0, 0, 0.08);
+  width: min(640px, 92vw);
+  max-height: min(86vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: em-pop-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) 0.04s both;
+}
+
+/* шапка */
+.edit-modal__header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 800;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* кнопка закрытия */
+.edit-modal__close-icon {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  width: 32px;
+  height: 32px;
+  line-height: 1;
+  border-radius: 10px;
+  font-size: 18px;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s;
+}
+.edit-modal__close-icon:hover {
+  background: #f3f4f6;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* контент — скролл внутри */
+.edit-modal__section {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  overflow: auto;
+  flex: 1; /* тянем на высоту */
+}
+
+/* инпуты / селекты */
+.edit-modal__section label {
+  font-size: 13px;
+  color: #6b7280;
+}
+.edit-modal__section input,
+.edit-modal__section textarea,
+.edit-modal__section select {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: 0.15s;
+}
+.edit-modal__section input:focus,
+.edit-modal__section textarea:focus,
+.edit-modal__section select:focus {
+  border-color: #d4b800;
+  box-shadow: 0 0 0 3px rgba(247, 215, 79, 0.25);
+}
+
+/* «липкий» футер с легкой вуалью сверху */
+.edit-modal__footer {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), #fff 60%);
+  backdrop-filter: blur(1px);
+}
+
+/* кнопки */
+.edit-modal__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f7d74f;
+  border: 1px solid #d4b800;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.edit-modal__save:hover {
+  background: #d4b800;
+}
+
+.edit-modal__cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.edit-modal__cancel:hover {
+  background: #f3f4f6;
+}
+
+/* скроллбар внутри контента (незаметный) */
+.edit-modal__section::-webkit-scrollbar {
+  width: 8px;
+}
+.edit-modal__section::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 8px;
+}
+.edit-modal__section::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+.purchases {
+  .edit-modal__section {
+    overflow: visible !important;
+  }
+  .edit-modal__content {
+    overflow-y: auto;
+  }
+}
+
+/* ====== мобильный bottom-sheet режим ====== */
+@media (max-width: 560px) {
+  .edit-modal__content {
+    left: 50%;
+    top: auto;
+    bottom: 0;
+    transform: translateX(-50%) translateY(8px);
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    animation: em-sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) 0.02s both;
+  }
+  .brand {
+    .edit-modal__content {
+      height: 50%;
+      top: 20% !important;
+    }
+  }
+  .purchases {
+    .edit-modal__content {
+      height: 50%;
+      top: 20% !important;
+      overflow-y: scroll;
+    }
+  }
+}
+
+/* ====== анимации ====== */
+@keyframes em-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes em-pop-in {
+  from {
+    transform: translate(-50%, -48%) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes em-sheet-up {
+  from {
+    transform: translateX(-50%) translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+/* ====== ЛЕЙАУТ ДЕТАЛЕЙ КАССЫ: список + контент ====== */
+.kassa__layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.kassa__side {
+  width: 280px;
+  min-width: 240px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.kassa__sideHead {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #f9fafb;
+  font-weight: 800;
+}
+.kassa__sideSearch {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.kassa__sideList {
+  max-height: 70vh;
+  overflow: auto;
+}
+.kassa__sideItem {
+  display: flex;
+  width: 100%;
+  text-align: left;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid #f3f4f6;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.15s;
+  color: var(--text);
+}
+.kassa__sideItem:hover {
+  background: #fafafa;
+}
+.kassa__sideItem--active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.kassa__content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* фикс для подписей графика отчёта (динамические колонки) */
+.reports__chartLabels {
+  --cols: 8;
+}
+
+/* уменьшение внутренних отступов таблицы отчёта внутри детали */
+.kassa__content .reports__tableWrap {
+  margin-top: 8px;
+}
+
+/* Разделитель по дате в списке движений кассы */
+.kassa-day-sep td {
+  padding: 8px 14px;
+  background: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: capitalize;
+}
+
+.kassa-day-sep--cards {
+  grid-column: 1 / -1;
+  margin: 4px 0 -6px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: capitalize;
+}

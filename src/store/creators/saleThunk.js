@@ -1,0 +1,542 @@
+import { createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../../api";
+import {
+  buildPosStartPayload,
+  getMainCartSaleId,
+} from "../../../tools/posSaleCarts";
+import {
+  ruStatusToKind,
+  toDecimalString,
+} from "../../tools/clientDeals";
+import { handleThunkError } from "./utils/handleThunkError";
+import { serializeApiError } from "../../../tools/barcodeAmbiguity";
+
+// ===== POS продажи (товары) =====
+export const startSale = createAsyncThunk(
+  "sale/start",
+  async (args = {}, { rejectWithValue }) => {
+    try {
+      const payload = buildPosStartPayload(args);
+      const { data } = await api.post("/main/pos/sales/start/", payload);
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+  {
+    // Защита от многократных параллельных вызовов startSale (частая причина пачки запросов при монтировании страницы)
+    condition: (args, { getState }) => {
+      const state = getState?.();
+      // если уже идет startSale — пропускаем повторный dispatch
+      if (state?.sale?.startSaleLoading) return false;
+      return true;
+    },
+  },
+);
+
+export const updateSale = createAsyncThunk(
+  "sale/update",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const { data: response } = await api.patch(
+        `/main/pos/sales/${id}/`,
+        data,
+      );
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const getSale = createAsyncThunk(
+  "sale/getting",
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      const { data: response } = await api.get(`/main/pos/sales/${id}/`);
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const manualFilling = createAsyncThunk(
+  "sale/manualFilling",
+  async (
+    { id, productId, quantity, discount_total, salePackageId },
+    { rejectWithValue },
+  ) => {
+    try {
+      const { data: response } = await api.post(
+        `/main/pos/sales/${id}/add-item/`,
+        {
+          product_id: productId,
+          quantity,
+          discount_total,
+          ...(salePackageId ? { sale_package_id: salePackageId } : {}),
+        },
+      );
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const updateManualFilling = createAsyncThunk(
+  "sale/updateManualFilling",
+  async ({ id, productId, discount_total, quantity }, { rejectWithValue }) => {
+    try {
+      const { data: response } = await api.patch(
+        `/main/pos/carts/${id}/items/${productId}/`,
+        { discount_total, quantity },
+      );
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const deleteProductInCart = createAsyncThunk(
+  "sale/deleteProductInCart",
+  async ({ id, productId }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.delete(
+        `/main/pos/carts/${id}/items/${productId}/`,
+      );
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const deleteSale = createAsyncThunk(
+  "sale/deleteSale",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/main/pos/sales/${id}/`);
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const updateProductInCart = createAsyncThunk(
+  "sale/updateProductInCart",
+  async ({ id, productId, data }, { rejectWithValue }) => {
+    try {
+      const { data: response } = await api.patch(
+        `/main/pos/carts/${id}/items/${productId}/`,
+        data,
+      );
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const sendBarCode = createAsyncThunk(
+  "products/sendBarcode",
+  async ({ barcode, id, sale_id, saleId }, { rejectWithValue, getState }) => {
+    try {
+      const state = getState?.()?.sale;
+      const carts = state?.posCarts || [];
+      const mainId = getMainCartSaleId(carts);
+      const explicitSaleId = sale_id ?? saleId ?? null;
+      const targetId =
+        explicitSaleId ??
+        state?.activeSaleId ??
+        mainId ??
+        id ??
+        state?.start?.id;
+
+      if (!targetId) {
+        return rejectWithValue({ message: "Не выбрана корзина для сканирования" });
+      }
+
+      const body = { barcode };
+      if (explicitSaleId) {
+        body.sale_id = explicitSaleId;
+      }
+
+      const { data } = await api.post(
+        `/main/pos/sales/${targetId}/scan/`,
+        body,
+      );
+      return data;
+    } catch (error) {
+      return rejectWithValue(serializeApiError(error));
+    }
+  },
+);
+
+export const doSearch = createAsyncThunk(
+  "products/doSearch",
+  async (search, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/products/list/`, {
+        params: search,
+      });
+      return data.results;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const historySellProduct = createAsyncThunk(
+  "products/historySellProduct",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/pos/sales/`, {
+        params: {
+          ...params,
+          page: params.page || 1,
+          limit: params.limit ?? params.page_size ?? 100,
+          search: params.search || "",
+        },
+      });
+      return data; // Возвращаем полный объект с пагинацией
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+// Thunk для загрузки документов (чеков) с пагинацией
+export const fetchDocuments = createAsyncThunk(
+  "documents/fetchDocuments",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/pos/sales/`, {
+        params: {
+          page: params.page || 1,
+          search: params.search || "",
+        },
+      });
+      return data; // Возвращаем полный объект с пагинацией
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const updateSellProduct = createAsyncThunk(
+  "products/updateSellProduct",
+  async ({ updatedData, id }, { rejectWithValue }) => {
+    try {
+      const { data: response } = await api.patch(
+        `/main/pos/sales/${id}/`,
+        updatedData,
+      );
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const historySellObjects = createAsyncThunk(
+  "products/historySellObjects",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/object-sales/`, {
+        params: {
+          ...params,
+          page: params.page || 1,
+          limit: params.limit ?? params.page_size ?? 100,
+          search: params.search || "",
+        },
+      });
+      return data; // Возвращаем полный объект с пагинацией
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const historySellProductDetail = createAsyncThunk(
+  "products/historySellProductDetail",
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/pos/sales/${id}/`);
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const returnSale = createAsyncThunk(
+  "products/returnSale",
+  async ({ saleId, items, is_defect }, { rejectWithValue, getState }) => {
+    try {
+      const role = String(getState()?.user?.profile?.role || "")
+        .trim()
+        .toLowerCase();
+      const endpoint =
+        role === "agent"
+          ? `/main/agents/me/sales/${saleId}/return/`
+          : `/main/pos/sales/${saleId}/return/`;
+      const payload = {};
+      if (Array.isArray(items) && items.length > 0) {
+        payload.items = items;
+      }
+      if (is_defect === true) {
+        payload.is_defect = true;
+      }
+      const { data } = await api.post(endpoint, payload);
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const historySellObjectDetail = createAsyncThunk(
+  "products/historySellObjectDetail",
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/object-sales/${id}/`);
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const productCheckout = createAsyncThunk(
+  "products/productCheckout",
+  async (
+    { id, bool, clientId, payment_method, cash_received, payments },
+    { rejectWithValue },
+  ) => {
+    try {
+      const hasPayments = Array.isArray(payments) && payments.length > 0;
+      const payload = {
+        print_receipt: bool,
+        ...(clientId && { client_id: clientId }),
+        ...(hasPayments ? { payments } : payment_method ? { payment_method } : {}),
+        ...(cash_received != null && cash_received !== "" ? { cash_received } : {}),
+      };
+      const { data } = await api.post(
+        `main/pos/sales/${id}/checkout/`,
+        payload,
+      );
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const getProductCheckout = createAsyncThunk(
+  "products/getProductCheckout",
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/pos/sales/${id}/receipt/`, {
+        responseType: "blob",
+      });
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const getProductInvoice = createAsyncThunk(
+  "products/getProductInvoice",
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/sales/${id}/invoice/`, {
+        responseType: "blob",
+      });
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+// Получение JSON данных накладной
+export const getInvoiceJson = createAsyncThunk(
+  "products/getInvoiceJson",
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/sales/json/${id}/invoice/`);
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+// Получение JSON данных чека
+export const getReceiptJson = createAsyncThunk(
+  "products/getReceiptJson",
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/sales/json/${id}/receipt/`);
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+// ===== Object sales (строительные объекты) =====
+export const getObjects = createAsyncThunk(
+  "objects/get",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/main/object-items/`);
+      return data.results;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const createObject = createAsyncThunk(
+  "object/create",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const { data: response } = await api.post("/main/object-items/", payload);
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const startSellObjects = createAsyncThunk(
+  "object/start",
+  async (payload, { rejectWithValue }) => {
+    try {
+      // payload: { client, status, sold_at, note }
+      const { data } = await api.post("/main/object-sales/", payload);
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const objectCartAddItem = createAsyncThunk(
+  "object/addItem",
+  async ({ id, product, data }, { rejectWithValue }) => {
+    try {
+      const body = product ?? data; // поддержка обоих вариантов
+      const { data: response } = await api.post(
+        `/main/object-sales/${id}/items/`,
+        body,
+      );
+      return response;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const addCustomItem = createAsyncThunk(
+  "sale/addCustomItem",
+  async ({ id, name, price, quantity }, { rejectWithValue }) => {
+    try {
+      const { data } = await api.post(`/main/pos/carts/${id}/custom-item/`, {
+        name,
+        price: toDecimalString(price),
+        quantity: Number(quantity) || 1,
+      });
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);
+
+export const createDeal = createAsyncThunk(
+  "deals/create",
+  async (
+    {
+      clientId,
+      title,
+      statusRu,
+      amount,
+      debtDays,
+      debtMonths, // legacy: если debtDays не передан, конвертируем месяцы в дни (×30)
+      prepayment,
+      first_due_date, // <=== ДОБАВИЛИ
+    }, // prepayment и срок долга могут приходить вместе
+    { rejectWithValue },
+  ) => {
+    try {
+      const kind = ruStatusToKind(statusRu);
+
+      // Базовый payload
+      const payload = {
+        title: String(title || "").trim(),
+        kind, // enum: sale | debt | prepayment (или у тебя всё сведено к "debt")
+        amount: toDecimalString(amount), // общая сумма сделки
+        note: "",
+        client: clientId,
+      };
+
+      if (kind === "debt") {
+        let debtDaysNum = NaN;
+        if (
+          debtDays !== undefined &&
+          debtDays !== null &&
+          debtDays !== ""
+        ) {
+          debtDaysNum = Number(debtDays);
+        } else if (
+          debtMonths !== undefined &&
+          debtMonths !== null &&
+          debtMonths !== ""
+        ) {
+          const monthsNum = Number(debtMonths);
+          if (Number.isFinite(monthsNum)) {
+            debtDaysNum = Math.round(monthsNum * 30);
+          }
+        }
+        payload.debt_days = Number.isFinite(debtDaysNum)
+          ? Math.max(0, Math.round(debtDaysNum))
+          : 0;
+
+        if (
+          prepayment !== undefined &&
+          prepayment !== null &&
+          prepayment !== ""
+        ) {
+          const prepaymentNum = Number(prepayment);
+          if (!Number.isNaN(prepaymentNum) && prepaymentNum >= 0) {
+            payload.prepayment = toDecimalString(prepaymentNum);
+          }
+        }
+
+        if (first_due_date) {
+          payload.first_due_date = first_due_date;
+        }
+
+        payload.auto_schedule = true;
+      } else if (kind === "prepayment") {
+        const prepaymentNum = Number(prepayment ?? amount);
+        payload.prepayment = toDecimalString(
+          Number.isFinite(prepaymentNum) ? prepaymentNum : 0,
+        );
+      }
+
+      const { data } = await api.post(
+        `/main/clients/${clientId}/deals/`,
+        payload,
+      );
+      return data;
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  },
+);

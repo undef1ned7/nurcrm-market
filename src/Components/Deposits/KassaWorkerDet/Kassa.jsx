@@ -1,0 +1,1131 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import {
+  Search,
+  Plus,
+  SlidersHorizontal,
+  X,
+  Table2,
+  LayoutGrid,
+} from "lucide-react";
+import "../Kassa/kassa.scss";
+import "./Vitrina.scss";
+import { useUser } from "../../../store/slices/userSlice";
+import { isMarketSectorName } from "../../../utils/subscriptionPlan";
+import { addCashFlows } from "../../../store/slices/cashSlice";
+import PendingModal from "../Kassa/PendingModal/PendingModal";
+import Pending from "../../pages/Pending/Pending";
+import useResize from "../../../hooks/useResize";
+import { useAlert } from "../../../hooks/useDialog";
+import { validateResErrors } from "../../../../tools/validateResErrors";
+import api from "../../../api";
+import Loading from "../../common/Loading/Loading";
+import DataContainer from "../../common/DataContainer/DataContainer";
+
+const CASHFLOWS_PAGE_SIZE = 100;
+const REPORT_PAGE_SIZE = 200;
+const REPORT_MAX_PAGES = 100;
+
+const isApprovedFlow = (flow) =>
+  flow.status === "true" ||
+  flow.status === "approved" ||
+  flow.status === true;
+
+// Ключ дня (YYYY-MM-DD) для группировки операций по дате
+const dayKeyOf = (v) => {
+  if (!v) return "";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+// Подпись дня для разделителя: «Сегодня/Вчера · дата»
+const dayLabelOf = (v) => {
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return String(v || "").slice(0, 10);
+  const base = d.toLocaleDateString("ru-RU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dd = new Date(d);
+  dd.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - dd) / 86400000);
+  if (diff === 0) return `Сегодня · ${base}`;
+  if (diff === 1) return `Вчера · ${base}`;
+  return base;
+};
+
+const KassaDet = () => {
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const alert = useAlert();
+  const cashboxId = id;
+  const { company } = useUser();
+  const { profile } = useUser();
+  // На сфере Магазин операцию может добавить любой сотрудник (сразу approved, без запроса на одобрение)
+  const isMarket = isMarketSectorName(company?.sector?.name);
+  const canApproveDirectly = profile?.role === "owner" || isMarket;
+  const [cashboxDetails, setCashboxDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showPending, setShowPending] = useState(false);
+
+  // НОВОЕ СОСТОЯНИЕ ДЛЯ ФИЛЬТРАЦИИ ПОТОКОВ
+  const [activeFlowType, setActiveFlowType] = useState("all"); // 'all', 'income', 'expense', "pending", "reports"
+  const [reportType, setReportType] = useState("monthly"); // 'monthly', 'daily'
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7)
+  ); // YYYY-MM
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  ); // YYYY-MM-DD
+
+  const [showFilter, setShowFilter] = useState(false);
+  const [showAddCashboxModal, setShowAddCashboxModal] = useState(false);
+  const [selectedCashbox, setSelectedCashbox] = useState(null);
+  const [showEditCashboxModal, setShowEditCashboxModal] = useState(false);
+  const [newCashbox, setNewCashbox] = useState({
+    name: "",
+    amount: 0,
+    status: canApproveDirectly ? 'approved' : 'pending',
+    type: "expense", // Дефолтный тип для новой операции
+  });
+
+  const VIEW_STORAGE_KEY = "kassa-worker-det-view-mode";
+  const getInitialViewMode = () => {
+    if (typeof window === "undefined") return "table";
+    const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (saved === "table" || saved === "cards") return saved;
+    return "table";
+  };
+  const [viewMode, setViewMode] = useState(getInitialViewMode);
+  const { isMobile } = useResize(({ isMobile }) => {
+    setViewMode(prev => isMobile ? "cards" : prev);
+  });
+
+
+  useEffect(() => {
+    localStorage.setItem(VIEW_STORAGE_KEY, viewMode);
+  }, [viewMode]);
+
+  const [filterSearch, setFilterSearch] = useState("");
+  const [debouncedFilterSearch, setDebouncedFilterSearch] = useState("");
+  const [flowsList, setFlowsList] = useState([]);
+  const [flowsLoading, setFlowsLoading] = useState(false);
+  const [flowsPage, setFlowsPage] = useState(1);
+  const [flowsHasNext, setFlowsHasNext] = useState(false);
+  const [flowsTotalCount, setFlowsTotalCount] = useState(null);
+  const filtersSigRef = useRef("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedFilterSearch(filterSearch), 400);
+    return () => clearTimeout(t);
+  }, [filterSearch]);
+
+  const fetchCashboxDetails = useCallback(async (idToFetch) => {
+    if (!idToFetch) {
+      setError("ID кассы не указан в URL.");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const endpoint =
+        company?.subscription_plan?.name === "Старт"
+          ? `/construction/cashboxes/${idToFetch}/`
+          : `/construction/cashboxes/${idToFetch}/detail/owner/`;
+      const { data } = await api.get(endpoint);
+      setCashboxDetails(data);
+      setSelectedCashbox(data);
+    } catch (err) {
+      const errorMessage = validateResErrors(err, "Ошибка при загрузке данных кассы. ")
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [company?.subscription_plan?.name]);
+
+  useEffect(() => {
+    if (cashboxId) {
+      fetchCashboxDetails(cashboxId);
+    } else {
+      setError("ID кассы не указан в URL.");
+      setLoading(false);
+    }
+  }, [cashboxId, fetchCashboxDetails]);
+
+  const loadCashflowsPage = useCallback(
+    async (page) => {
+      if (!cashboxId) return;
+      if (activeFlowType === "pending" || activeFlowType === "reports") return;
+      setFlowsLoading(true);
+      try {
+        const search = (debouncedFilterSearch || "").trim();
+        const params = {
+          cashbox: cashboxId,
+          status: "approved",
+          page_size: CASHFLOWS_PAGE_SIZE,
+          page: Math.max(1, page),
+        };
+        if (search) params.search = search;
+        if (activeFlowType && activeFlowType !== "all") params.type = activeFlowType;
+
+        const { data } = await api.get("/construction/cashflows/", { params });
+        const flows = Array.isArray(data) ? data : data.results || [];
+        const pageNum = Math.max(1, page);
+        const count = typeof data.count === "number" ? data.count : null;
+        const visibleFlows = flows.filter(isApprovedFlow);
+
+        if (visibleFlows.length === 0 && pageNum > 1) {
+          setFlowsPage(pageNum - 1);
+          return;
+        }
+
+        setFlowsList(flows);
+        setFlowsTotalCount(count);
+        setFlowsHasNext(
+          Boolean(data.next) ||
+            (count != null && pageNum * CASHFLOWS_PAGE_SIZE < count) ||
+            (count == null && flows.length === CASHFLOWS_PAGE_SIZE),
+        );
+      } catch (err) {
+        const errorMessage = validateResErrors(err, "Ошибка при загрузке потоков. ");
+        alert(errorMessage, true);
+        setFlowsList([]);
+        setFlowsTotalCount(null);
+        setFlowsHasNext(false);
+      } finally {
+        setFlowsLoading(false);
+      }
+    },
+    [cashboxId, debouncedFilterSearch, activeFlowType, alert],
+  );
+
+  useEffect(() => {
+    if (!cashboxId) return;
+    if (activeFlowType === "pending" || activeFlowType === "reports") return;
+
+    const search = (debouncedFilterSearch || "").trim();
+    const sig = `${cashboxId}|${search}|${activeFlowType}`;
+    const filtersChanged = filtersSigRef.current !== sig;
+    if (filtersChanged) {
+      filtersSigRef.current = sig;
+      if (flowsPage !== 1) {
+        setFlowsPage(1);
+        return;
+      }
+    }
+    void loadCashflowsPage(flowsPage);
+  }, [cashboxId, debouncedFilterSearch, activeFlowType, flowsPage, loadCashflowsPage]);
+
+  const handleAddCashbox = async () => {
+    if (!newCashbox.name || !newCashbox.amount) {
+      alert("Пожалуйста, заполните все поля.", true);
+      return;
+    }
+    try {
+      await dispatch(
+        addCashFlows({
+          name: newCashbox.name,
+          amount: newCashbox.amount,
+          cashbox: cashboxId,
+          type: newCashbox.type,
+          status: canApproveDirectly ? "approved" : "pending",
+        })
+      ).unwrap();
+
+      setFlowsPage(1);
+      await fetchCashboxDetails(cashboxId);
+      await loadCashflowsPage(1);
+      setShowAddCashboxModal(false);
+      setNewCashbox({ name: "", amount: 0, type: "expense" });
+    } catch (err) {
+      const errorMessage = validateResErrors(err, 'Не удалось добавить операцию по кассе. Пожалуйста, проверьте данные и попробуйте еще раз.')
+      alert(errorMessage, true)
+    }
+  };
+
+  const handleEditCashbox = async () => {
+    if (!selectedCashbox || !cashboxId) return;
+
+    try {
+      const { data: updatedCashbox } = await api.patch(
+        `/construction/cashboxes/${cashboxId}/`,
+        {
+          title: selectedCashbox.title,
+          department: selectedCashbox.department,
+        }
+      );
+
+      setCashboxDetails(updatedCashbox);
+      setShowEditCashboxModal(false);
+      setSelectedCashbox(updatedCashbox);
+      fetchCashboxDetails(cashboxId);
+    } catch (err) {
+      const errorMessage = validateResErrors(err, "Не удалось обновить кассу. Пожалуйста, проверьте данные и попробуйте еще раз.")
+      setError(errorMessage);
+    }
+  };
+
+  // Статус фильтрует сервер (?status=approved); клиентский фильтр — страховка от "true"
+  const filteredCashflows = flowsList.filter(isApprovedFlow);
+
+  const handleResetFilters = () => {
+    setFilterSearch("");
+    setDebouncedFilterSearch("");
+    setActiveFlowType("all");
+    setFlowsPage(1);
+    setShowFilter(false);
+  };
+
+  // Загрузка всех страниц для отчётов (с защитой от бесконечного цикла)
+  const fetchAllCashflows = async (baseParams) => {
+    const allFlows = [];
+    let page = 1;
+    let guard = 0;
+    let truncated = false;
+
+    while (guard < REPORT_MAX_PAGES) {
+      const { data } = await api.get("/construction/cashflows/", {
+        params: { ...baseParams, page, page_size: REPORT_PAGE_SIZE },
+      });
+      const flows = Array.isArray(data) ? data : data?.results || [];
+      allFlows.push(...flows);
+      guard += 1;
+
+      const hasNext =
+        Boolean(data?.next) ||
+        (typeof data?.count === "number" &&
+          page * REPORT_PAGE_SIZE < data.count) ||
+        (typeof data?.count !== "number" && flows.length === REPORT_PAGE_SIZE);
+
+      if (!hasNext) break;
+      page += 1;
+      if (guard >= REPORT_MAX_PAGES) truncated = true;
+    }
+
+    return { flows: allFlows, truncated };
+  };
+
+  const fetchMonthlyReport = async () => {
+    if (!cashboxId) return;
+    setReportLoading(true);
+    try {
+      const [year, month] = selectedMonth.split("-");
+      // Период и статус фильтрует сервер (date_from/date_to включительно)
+      const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+      const params = {
+        cashbox: cashboxId,
+        status: "approved",
+        date_from: `${selectedMonth}-01`,
+        date_to: `${selectedMonth}-${String(lastDay).padStart(2, "0")}`,
+      };
+      const { flows, truncated } = await fetchAllCashflows(params);
+      if (truncated) {
+        alert(
+          "Загружены не все операции за период (лимит отчёта). Уточните период или обратитесь к администратору.",
+          true,
+        );
+      }
+
+      // Группировка по дням
+      const dailyGroups = {};
+      flows.forEach((flow) => {
+        const date = new Date(flow.created_at).toISOString().split("T")[0];
+        if (!dailyGroups[date]) {
+          dailyGroups[date] = { income: 0, expense: 0, flows: [] };
+        }
+        if (flow.type === "income") {
+          dailyGroups[date].income += parseFloat(flow.amount) || 0;
+        } else {
+          dailyGroups[date].expense += parseFloat(flow.amount) || 0;
+        }
+        dailyGroups[date].flows.push(flow);
+      });
+
+      const totalIncome = flows
+        .filter((f) => f.type === "income")
+        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+      const totalExpense = flows
+        .filter((f) => f.type === "expense")
+        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+
+      setReportData({
+        type: "monthly",
+        month: selectedMonth,
+        totalIncome,
+        totalExpense,
+        net: totalIncome - totalExpense,
+        dailyGroups,
+        flows,
+      });
+    } catch (err) {
+      console.error("Failed to fetch monthly report:", err);
+      setError(`Не удалось загрузить ежемесячный отчет: ${err.message}`);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const fetchDailyReport = async () => {
+    if (!cashboxId) return;
+    setReportLoading(true);
+    try {
+      // Период и статус фильтрует сервер (date_from/date_to включительно)
+      const params = {
+        cashbox: cashboxId,
+        status: "approved",
+        date_from: selectedDate,
+        date_to: selectedDate,
+      };
+      const { flows, truncated } = await fetchAllCashflows(params);
+      if (truncated) {
+        alert(
+          "Загружены не все операции за период (лимит отчёта). Уточните период или обратитесь к администратору.",
+          true,
+        );
+      }
+
+      const totalIncome = flows
+        .filter((f) => f.type === "income")
+        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+      const totalExpense = flows
+        .filter((f) => f.type === "expense")
+        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+
+      setReportData({
+        type: "daily",
+        date: selectedDate,
+        totalIncome,
+        totalExpense,
+        net: totalIncome - totalExpense,
+        flows,
+      });
+    } catch (err) {
+      console.error("Failed to fetch daily report:", err);
+      const errorMessage = validateResErrors(err, "Не удалось загрузить дневной отчет. ")
+      setError(errorMessage);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeFlowType === "reports" && cashboxId) {
+      if (reportType === "monthly") {
+        fetchMonthlyReport();
+      } else {
+        fetchDailyReport();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFlowType, reportType, selectedMonth, selectedDate, cashboxId]);
+
+
+  useEffect(() => {
+    if (error) {
+      alert(validateResErrors(error, 'Не удалось загрузить данные кассы. Пожалуйста, попробуйте еще раз.'), true)
+    }
+  }, [error, alert])
+
+  // if (error) {
+  //   return (
+  //     <div className="kassa-page">
+  //       <div
+  //         className="kassa__alert kassa__alert--error"
+  //         style={{ padding: 16 }}
+  //       >
+  //         {error}
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+
+  // if (!cashboxDetails) {
+  //   return (
+  //     <div className="kassa-page">
+  //       <div className="kassa-table__empty" style={{ padding: 40 }}>
+  //         Данные о кассе не доступны.
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  return (
+    <div className="kassa-page">
+      {
+        loading && (
+          <Loading />
+        )
+      }
+      <div className="kassa-header">
+        <div className="kassa-header__left">
+          <div className="kassa-header__icon-box">💰</div>
+          <div className="kassa-header__title-section">
+            <h2 className="kassa-header__title">
+              {cashboxDetails?.department_name ?? cashboxDetails?.name ?? "Касса"}
+            </h2>
+            <p className="kassa-header__subtitle">Движения по кассе</p>
+          </div>
+        </div>
+        <nav className="kassa-header__nav-tabs">
+          <Link className="kassa-header__nav-tab" to="/crm/kassa/">
+            ← Назад
+          </Link>
+          <button
+            type="button"
+            className={`kassa-header__nav-tab ${activeFlowType === "all" ? "kassa-header__nav-tab--active" : ""
+              }`}
+            onClick={() => setActiveFlowType("all")}
+          >
+            Все
+          </button>
+          <button
+            type="button"
+            className={`kassa-header__nav-tab ${activeFlowType === "expense"
+              ? "kassa-header__nav-tab--active"
+              : ""
+              }`}
+            onClick={() => setActiveFlowType("expense")}
+          >
+            Расход
+          </button>
+          <button
+            type="button"
+            className={`kassa-header__nav-tab ${activeFlowType === "income" ? "kassa-header__nav-tab--active" : ""
+              }`}
+            onClick={() => setActiveFlowType("income")}
+          >
+            Приход
+          </button>
+          {company?.subscription_plan?.name !== "Старт" && (
+            <button
+              type="button"
+              className={`kassa-header__nav-tab ${activeFlowType === "pending"
+                ? "kassa-header__nav-tab--active"
+                : ""
+                }`}
+              onClick={() => setActiveFlowType("pending")}
+            >
+              Запросы
+            </button>
+          )}
+          <button
+            type="button"
+            className={`kassa-header__nav-tab ${activeFlowType === "reports"
+              ? "kassa-header__nav-tab--active"
+              : ""
+              }`}
+            onClick={() => setActiveFlowType("reports")}
+          >
+            Отчеты
+          </button>
+        </nav>
+        {activeFlowType !== "reports" && (
+          <button
+            className="kassa-header__create-btn"
+            onClick={() => setShowAddCashboxModal(true)}
+          >
+            <Plus size={16} />
+            Добавить операцию
+          </button>
+        )}
+      </div>
+
+      {activeFlowType === "pending" ? (
+        <Pending />
+      ) : activeFlowType === "reports" ? (
+        <div className="cashbox-reports">
+          <div className="cashbox-reports__tabs">
+            <button
+              className={`cashbox-reports__tab ${reportType === "monthly" ? "cashbox-reports__tab--active" : ""
+                }`}
+              onClick={() => setReportType("monthly")}
+            >
+              Ежемесячный отчет
+            </button>
+            <button
+              className={`cashbox-reports__tab ${reportType === "daily" ? "cashbox-reports__tab--active" : ""
+                }`}
+              onClick={() => setReportType("daily")}
+            >
+              Дневной отчет
+            </button>
+          </div>
+
+          <div className="cashbox-reports__filters">
+            {reportType === "monthly" ? (
+              <div className="cashbox-reports__filter-group">
+                <label htmlFor="month-select">Выберите месяц:</label>
+                <input
+                  id="month-select"
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="cashbox-reports__date-input"
+                />
+              </div>
+            ) : (
+              <div className="cashbox-reports__filter-group">
+                <label htmlFor="date-select">Выберите дату:</label>
+                <input
+                  id="date-select"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="cashbox-reports__date-input"
+                />
+              </div>
+            )}
+          </div>
+
+          {reportLoading ? (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              Загрузка отчета...
+            </div>
+          ) : reportData ? (
+            <DataContainer>
+
+              <div className="cashbox-reports__content">
+                <div className="cashbox-reports__summary">
+                  <div className="cashbox-reports__summary-item">
+                    <span className="cashbox-reports__summary-label">
+                      Приход:
+                    </span>
+                    <span className="cashbox-reports__summary-value cashbox-reports__summary-value--income">
+                      {reportData.totalIncome.toFixed(2)} сом
+                    </span>
+                  </div>
+                  <div className="cashbox-reports__summary-item">
+                    <span className="cashbox-reports__summary-label">
+                      Расход:
+                    </span>
+                    <span className="cashbox-reports__summary-value cashbox-reports__summary-value--expense">
+                      {reportData.totalExpense.toFixed(2)} сом
+                    </span>
+                  </div>
+                  <div className="cashbox-reports__summary-item">
+                    <span className="cashbox-reports__summary-label">Итого:</span>
+                    <span
+                      className={`cashbox-reports__summary-value ${reportData.net >= 0
+                        ? "cashbox-reports__summary-value--income"
+                        : "cashbox-reports__summary-value--expense"
+                        }`}
+                    >
+                      {reportData.net.toFixed(2)} сом
+                    </span>
+                  </div>
+                </div>
+
+                {reportType === "monthly" && reportData.dailyGroups ? (
+                  <div className="cashbox-reports__monthly">
+                    {Object.entries(reportData.dailyGroups)
+                      .sort(([a], [b]) => new Date(b) - new Date(a))
+                      .map(([date, data]) => (
+                        <div key={date} className="cashbox-reports__day-group">
+                          <div className="cashbox-reports__day-header">
+                            <h4>
+                              {new Date(date).toLocaleDateString("ru-RU", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </h4>
+                            <div className="cashbox-reports__day-totals">
+                              <span>Приход: {data.income.toFixed(2)} сом</span>
+                              <span>Расход: {data.expense.toFixed(2)} сом</span>
+                              <span>
+                                Итого: {(data.income - data.expense).toFixed(2)}{" "}
+                                сом
+                              </span>
+                            </div>
+                          </div>
+                          <table className="kassa-table">
+                            <thead>
+                              <tr>
+                                <th>Тип</th>
+                                <th>Наименование</th>
+                                <th>Сумма</th>
+                                <th>Время</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.flows.map((flow) => (
+                                <tr key={flow.id}>
+                                  <td data-label="Тип">
+                                    {flow.type === "income" ? "Приход" : "Расход"}
+                                  </td>
+                                  <td data-label="Наименование">
+                                    {flow.name || flow.title}
+                                  </td>
+                                  <td data-label="Сумма">{flow.amount}</td>
+                                  <td data-label="Время">
+                                    {new Date(flow.created_at).toLocaleTimeString(
+                                      "ru-RU",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="cashbox-reports__daily">
+                    {reportData.flows && reportData.flows.length > 0 ? (
+                      <table className="kassa-table">
+                        <thead>
+                          <tr>
+                            <th>Тип</th>
+                            <th>Наименование</th>
+                            <th>Сумма</th>
+                            <th>Время</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportData.flows.map((flow) => (
+                            <tr key={flow.id}>
+                              <td data-label="Тип">
+                                {flow.type === "income" ? "Приход" : "Расход"}
+                              </td>
+                              <td data-label="Наименование">
+                                {flow.name || flow.title}
+                              </td>
+                              <td data-label="Сумма">{flow.amount}</td>
+                              <td data-label="Время">
+                                {new Date(flow.created_at).toLocaleTimeString(
+                                  "ru-RU",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p style={{ padding: "20px", textAlign: "center" }}>
+                        Нет операций за выбранную дату
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </DataContainer>
+
+          ) : (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              Выберите период для просмотра отчета
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="kassa-search-section">
+            <div className="kassa-search">
+              <Search className="kassa-search__icon" size={18} />
+              <input
+                type="text"
+                className="kassa-search__input"
+                placeholder="Поиск потоков"
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+              />
+            </div>
+            <div className="kassa-search__meta">
+              {
+                !isMobile && (
+                  <div className="kassa-search__view-toggle">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("table")}
+                      className={`kassa-view-btn ${viewMode === "table" ? "kassa-view-btn--active" : ""
+                        }`}
+                      title="Таблица"
+                    >
+                      <Table2 size={16} />
+                      Таблица
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("cards")}
+                      className={`kassa-view-btn ${viewMode === "cards" ? "kassa-view-btn--active" : ""
+                        }`}
+                      title="Карточки"
+                    >
+                      <LayoutGrid size={16} />
+                      Карточки
+                    </button>
+                  </div>
+                )
+              }
+
+              <button
+                className="kassa-search__filter-btn"
+                onClick={() => setShowFilter(true)}
+              >
+                <SlidersHorizontal size={18} />
+                Фильтры
+              </button>
+            </div>
+          </div>
+          <DataContainer>
+
+            <div className="kassa-table-container">
+              {flowsLoading ? (
+                <div className="kassa-table__loading" style={{ padding: 40 }}>
+                  Загрузка…
+                </div>
+              ) : !filteredCashflows || filteredCashflows.length === 0 ? (
+                <div className="kassa-table__empty" style={{ padding: 40 }}>
+                  Нет движений денежных средств для этой кассы
+                  {activeFlowType === "income"
+                    ? " (Приходы)."
+                    : activeFlowType === "expense"
+                      ? " (Расходы)."
+                      : "."}
+                </div>
+              ) : viewMode === "table" ? (
+                <table className="kassa-table">
+                  <thead>
+                    <tr>
+                      <th>Тип</th>
+                      <th>Наименование</th>
+                      <th>Сумма</th>
+                      <th>Дата создания</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCashflows.map((flow, idx) => {
+                      const curDay = dayKeyOf(flow.created_at);
+                      const prevDay =
+                        idx > 0
+                          ? dayKeyOf(filteredCashflows[idx - 1].created_at)
+                          : null;
+                      const showDaySep =
+                        idx === 0 || (curDay && curDay !== prevDay);
+                      return (
+                        <React.Fragment key={flow.id}>
+                          {showDaySep && (
+                            <tr className="kassa-day-sep">
+                              <td colSpan={4}>{dayLabelOf(flow.created_at)}</td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td>
+                              {flow.type === "income" ? "Приход" : "Расход"}
+                            </td>
+                            <td>{flow.name}</td>
+                            <td>{flow.amount}</td>
+                            <td>
+                              {new Date(flow.created_at).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="kassa-cards-wrapper">
+                  <div className="kassa-cards">
+                    {filteredCashflows.map((flow, idx) => {
+                      const curDay = dayKeyOf(flow.created_at);
+                      const prevDay =
+                        idx > 0
+                          ? dayKeyOf(filteredCashflows[idx - 1].created_at)
+                          : null;
+                      const showDaySep =
+                        idx === 0 || (curDay && curDay !== prevDay);
+                      return (
+                      <React.Fragment key={flow.id}>
+                      {showDaySep && (
+                        <div className="kassa-day-sep kassa-day-sep--cards">
+                          {dayLabelOf(flow.created_at)}
+                        </div>
+                      )}
+                      <div className="kassa-card">
+                        <div className="kassa-card__header">
+                          <span
+                            className={`kassa-card__num ${flow.type === "income"
+                              ? "kassa-card__num--income"
+                              : "kassa-card__num--expense"
+                              }`}
+                          >
+                            {flow.type === "income" ? "Приход" : "Расход"}
+                          </span>
+                          <h3 className="kassa-card__title">
+                            {flow.name || "—"}
+                          </h3>
+                        </div>
+                        <div className="kassa-card__fields">
+                          <div className="kassa-card__field">
+                            <span className="kassa-card__label">Сумма</span>
+                            <span
+                              className={`kassa-card__value ${flow.type === "income"
+                                ? "kassa-card__value--income"
+                                : "kassa-card__value--expense"
+                                }`}
+                            >
+                              {flow.amount} с
+                            </span>
+                          </div>
+                          <div className="kassa-card__field">
+                            <span className="kassa-card__label">Дата</span>
+                            <span className="kassa-card__value">
+                              {flow.created_at
+                                ? new Date(flow.created_at).toLocaleDateString(
+                                  "ru-RU"
+                                )
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            {!flowsLoading &&
+              (filteredCashflows.length > 0 || flowsPage > 1 || flowsHasNext) && (
+                <div className="kassa-pagination" role="navigation" aria-label="Страницы движений">
+                  <button
+                    type="button"
+                    className="kassa__btn kassa__btn--secondary"
+                    disabled={flowsPage <= 1 || flowsLoading}
+                    onClick={() => setFlowsPage((p) => Math.max(1, p - 1))}
+                  >
+                    Назад
+                  </button>
+                  <span className="kassa-pagination__info">
+                    Страница {flowsPage}
+                    {flowsTotalCount != null
+                      ? ` · ${flowsTotalCount} записей`
+                      : ""}
+                  </span>
+                  <button
+                    type="button"
+                    className="kassa__btn kassa__btn--secondary"
+                    disabled={!flowsHasNext || flowsLoading}
+                    onClick={() => setFlowsPage((p) => p + 1)}
+                  >
+                    Вперёд
+                  </button>
+                </div>
+              )}
+          </DataContainer>
+
+        </>
+      )}
+
+      {showFilter && (
+        <div className="kassa-modal block" style={{ display: "block" }}>
+          <div
+            className="kassa-modal__overlay"
+            onClick={() => setShowFilter(false)}
+            aria-hidden="true"
+          />
+          <div className="kassa-modal__card kassa-filter-modal">
+            <div className="kassa-filter-modal__header">
+              <h3 className="kassa-filter-modal__title">Фильтры потоков</h3>
+              <button
+                type="button"
+                className="kassa-modal__close"
+                onClick={() => setShowFilter(false)}
+                aria-label="Закрыть"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="kassa-filter-modal__body">
+              <div className="kassa-filter-modal__field">
+                <label className="kassa-filter-modal__label">Поиск</label>
+                <div className="kassa-filter-modal__search">
+                  <Search
+                    className="kassa-filter-modal__search-icon"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Поиск потоков"
+                    className="kassa-filter-modal__search-input"
+                    value={filterSearch}
+                    onChange={(e) => setFilterSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="kassa-filter-modal__field">
+                <label className="kassa-filter-modal__label">Тип потока</label>
+                <select
+                  className="kassa-filter-modal__select-native"
+                  value={activeFlowType}
+                  onChange={(e) => setActiveFlowType(e.target.value)}
+                >
+                  <option value="all">Все</option>
+                  <option value="income">Приход</option>
+                  <option value="expense">Расход</option>
+                </select>
+              </div>
+            </div>
+            <div className="kassa-filter-modal__footer">
+              <button
+                type="button"
+                className="kassa-filter-modal__reset"
+                onClick={handleResetFilters}
+              >
+                Сбросить фильтры
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddCashboxModal && (
+        <div className="vitrina__overlay">
+          <div className="vitrina__modal vitrina__modal--add">
+            <div className="vitrina__modal-header">
+              <h3>Добавление операции</h3>
+              <X
+                className="vitrina__close-icon"
+                size={20}
+                onClick={() => setShowAddCashboxModal(false)}
+              />
+            </div>
+            <div className="vitrina__modal-section">
+              <label>Наименование</label>
+              <input
+                required
+                type="text"
+                placeholder="Например, Закупка материалов"
+                className="vitrina__modal-input"
+                value={newCashbox.name}
+                onChange={(e) =>
+                  setNewCashbox({ ...newCashbox, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="vitrina__modal-section">
+              <label>Сумма</label>
+              <input
+                type="text"
+                placeholder="Например, 10000"
+                className="vitrina__modal-input"
+                value={newCashbox.amount}
+                onChange={(e) =>
+                  setNewCashbox({
+                    ...newCashbox,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
+            </div>
+            <div className="vitrina__modal-section">
+              <label>Тип операции</label>
+              <select
+                className="vitrina__modal-input"
+                value={newCashbox.type}
+                onChange={(e) =>
+                  setNewCashbox({ ...newCashbox, type: e.target.value })
+                }
+              >
+                <option value="expense">Расход</option>
+                <option value="income">Приход</option>
+              </select>
+            </div>
+            <div className="vitrina__modal-footer">
+              <button
+                className="vitrina__button vitrina__button--cancel"
+                onClick={() => setShowAddCashboxModal(false)}
+              >
+                Отмена
+              </button>
+              <button
+                className="vitrina__button vitrina__button--save"
+                onClick={handleAddCashbox}
+              >
+                Добавить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditCashboxModal && selectedCashbox && (
+        <div className="vitrina__overlay">
+          <div className="vitrina__modal vitrina__modal--edit">
+            <div className="vitrina__modal-header">
+              <h3>Редактирование кассы</h3>
+              <X
+                className="vitrina__close-icon"
+                size={20}
+                onClick={() => setShowEditCashboxModal(false)}
+              />
+            </div>
+            <div className="vitrina__modal-section">
+              <label>ID</label>
+              <input
+                type="text"
+                value={selectedCashbox.id || ""}
+                readOnly
+                className="vitrina__modal-input"
+              />
+            </div>
+            <div className="vitrina__modal-section">
+              <label>Название</label>
+              <input
+                type="text"
+                value={selectedCashbox.title || ""}
+                onChange={(e) =>
+                  setSelectedCashbox({
+                    ...selectedCashbox,
+                    title: e.target.value,
+                  })
+                }
+                className="vitrina__modal-input"
+              />
+            </div>
+            <div className="vitrina__modal-footer">
+              {/* <button className="vitrina__button vitrina__button--reset" onClick={handleDeleteCashbox}>Удалить кассу</button> */}
+              <button
+                className="vitrina__button vitrina__button--save"
+                onClick={handleEditCashbox}
+              >
+                Сохранить изменения
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showPending && (
+        <PendingModal
+          onClose={() => setShowPending(false)}
+          cashName={cashboxDetails.department_name ?? cashboxDetails.name}
+          onChanged={() => fetchCashboxDetails(id)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default KassaDet;
