@@ -1,0 +1,1413 @@
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import "./BarcodePrintTab.scss";
+import {
+  printXp365bBarcodeLabel,
+  attachXp365bUsbListenersOnce,
+  checkXp365bConnection,
+  connectXp365bManually,
+} from "../services/xp365bPrintService";
+import UniversalModal from "@shared/ui/legacy-production/ProductionAgents/UniversalModal/UniversalModal";
+import BarcodeA4PrintModal from "./BarcodeA4PrintModal";
+import Loading from "@shared/ui/Loading/Loading";
+import JsBarcode from "jsbarcode";
+import {
+  getBarcodePrintEncoding,
+  getProductBarcodes,
+} from "@shared/lib/tools/productBarcode";
+
+/**
+ * Компонент таба для печати штрих-кодов
+ *
+ * Улучшения/ошибки:
+ * - printingIds раньше был “мертвым” (не использовался) — теперь реально блокирует кнопку печати конкретного товара.
+ * - Canvas был 400x80, а JsBarcode рисовал height=90 → обрезало. Теперь размер canvas подстраивается под выбранный размер этикетки.
+ * - Превью стало ближе к реальным пропорциям 203 DPI (dots), без магии “на глаз”.
+ */
+const BarcodePrintTab = ({
+  products,
+  loading,
+  searchTerm,
+  onSearchChange,
+  page = 1,
+  totalPages = 1,
+  count = 0,
+  _pageSize = 100,
+  onPageChange,
+}) => {
+  const [printingIds, setPrintingIds] = useState(() => new Set());
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  // Количество копий для каждой позиции отдельно: { [productId]: number }
+  const [copiesById, setCopiesById] = useState({});
+  const [isBatchPrinting, setIsBatchPrinting] = useState(false);
+  const [isPrinterConnected, setIsPrinterConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [showA4Modal, setShowA4Modal] = useState(false);
+  const [labelSize, setLabelSize] = useState("30x20"); // размер этикетки по умолчанию
+  const [customWidthMm, setCustomWidthMm] = useState(40);
+  const [customHeightMm, setCustomHeightMm] = useState(30);
+  const [didTouchTextScale, setDidTouchTextScale] = useState(false);
+  const [didTouchBarcodeSize, setDidTouchBarcodeSize] = useState(false);
+  // Что отображать на этикетке (как в печати на A4)
+  const [showName, setShowName] = useState(true);
+  const [showPrice, setShowPrice] = useState(true);
+  const barcodeCanvasRef = useRef(null);
+
+  // ====== Настройки/утилиты ======
+  const DOTS_PER_MM = 8; // 203 DPI ≈ 8 dots/mm
+  const PREVIEW_SCALE = 2; // масштаб для предпросмотра
+  const defaultSettings = useMemo(
+    () => ({
+      // Default to raster (no encoding issues)
+      fontId: "__RASTER__",
+      textScale: 1,
+      copies: 1,
+      lineGap: 22,
+      gapAfterTitle: 7,
+      gapAfterPrice: 4,
+      barcodeRaise: 3,
+      barcodeHeight: 44,
+      barcodeBarWidth: 2,
+    }),
+    []
+  );
+  const [printSettings, setPrintSettings] = useState(defaultSettings);
+  const {
+    fontId,
+    textScale,
+    copies,
+    lineGap,
+    gapAfterTitle,
+    gapAfterPrice,
+    barcodeRaise,
+    barcodeHeight,
+    barcodeBarWidth,
+  } = printSettings;
+  const textScaleValue = Math.max(0.5, Number(textScale) || 1);
+  const copiesValue = Math.max(1, Math.min(100, Math.round(Number(copies) || 1)));
+
+  // Копии конкретной позиции: своё значение, иначе общее из шапки
+  const getProductCopies = useCallback(
+    (id) => {
+      const own = copiesById[id];
+      if (own === undefined || own === null || own === "") return copiesValue;
+      return Math.max(1, Math.min(100, Math.round(Number(own) || 1)));
+    },
+    [copiesById, copiesValue]
+  );
+
+  const setProductCopies = useCallback((id, value) => {
+    setCopiesById((prev) => ({
+      ...prev,
+      [id]: Math.max(1, Math.min(100, Math.round(Number(value) || 1))),
+    }));
+  }, []);
+
+  // Какой штрих-код печатать для позиции: { [productId]: barcode }.
+  // По умолчанию — основной; товар может иметь ещё и дополнительные.
+  const [barcodeById, setBarcodeById] = useState({});
+
+  const getProductBarcodeOptions = useCallback(
+    (product) => getProductBarcodes(product),
+    []
+  );
+
+  /** Выбранный (или основной) штрих-код позиции. */
+  const getSelectedBarcode = useCallback(
+    (product) => {
+      if (!product) return "";
+      const options = getProductBarcodes(product);
+      const chosen = String(barcodeById[product.id] ?? "").trim();
+      if (chosen && options.includes(chosen)) return chosen;
+      return options[0] || "";
+    },
+    [barcodeById]
+  );
+
+  const setSelectedBarcode = useCallback((id, barcode) => {
+    setBarcodeById((prev) => ({ ...prev, [id]: String(barcode || "") }));
+  }, []);
+  const availableFonts = useMemo(
+    () => [
+      { value: "__RASTER__", label: "Растер (без кодировок) — рекомендовано" },
+      // Built-in numeric fonts (firmware-dependent)
+      { value: "1", label: 'Font "1" (built-in)' },
+      { value: "2", label: 'Font "2" (built-in)' },
+      { value: "3", label: 'Font "3" (built-in)' },
+      { value: "4", label: 'Font "4" (built-in)' },
+      { value: "5", label: 'Font "5" (built-in)' },
+      // Common BF2 fonts on many TSPL firmwares (may or may not exist on a конкретном принтере)
+      { value: "TSS16.BF2", label: "TSS16.BF2 (часто лучше для кириллицы)" },
+      { value: "TSS24.BF2", label: "TSS24.BF2 (часто лучше для кириллицы)" },
+    ],
+    []
+  );
+  const fontBaseMap = useMemo(
+    () => ({
+      1: 4,
+      2: 5,
+      3: 6,
+      4: 7,
+      5: 8,
+    }),
+    []
+  );
+
+  const getBarcodeModuleCount = useCallback((codeValue) => {
+    const code = String(codeValue || "");
+    if (/^\d{13}$/.test(code)) return 95 + 20;
+    if (/^\d{8}$/.test(code)) return 67 + 20;
+    if (/^\d{12}$/.test(code)) return 95 + 20;
+    return 11 * code.length + 35 + 20;
+  }, []);
+  const sizeMap = useMemo(
+    () => ({
+      "30x20": { widthMm: 30, heightMm: 20 },
+      "58x40": { widthMm: 58, heightMm: 40 },
+      "58x30": { widthMm: 58, heightMm: 30 },
+    }),
+    []
+  );
+
+  const isRasterFont = String(fontId || "") === "__RASTER__";
+
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+  const clampMm = (value, min, max, fallback) => {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return fallback;
+    return clamp(n, min, max);
+  };
+
+  const currentLabel = useMemo(() => {
+    if (labelSize === "custom") {
+      return {
+        widthMm: clampMm(customWidthMm, 15, 110, 30),
+        heightMm: clampMm(customHeightMm, 10, 110, 20),
+      };
+    }
+    return sizeMap[labelSize] || sizeMap["30x20"];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [labelSize, customWidthMm, customHeightMm, sizeMap]);
+
+  const getAutoPrintSettingsBySize = useCallback(
+    ({ heightMm, fontId: currentFontId }) => {
+      // Базовая калибровка была под 30x20 и raster (lineGap=22).
+      // Для более крупных этикеток увеличиваем lineGap (а значит и fontSize в raster),
+      // и при TSPL-шрифтах увеличиваем textScale.
+      const base = defaultSettings;
+      const factor = Math.max(0.75, Number(heightMm || 20) / 20);
+      const isRaster = String(currentFontId || "") === "__RASTER__";
+
+      const scaled = (v) => Math.round(Number(v || 0) * factor);
+
+      // Для raster: textScale оставляем 1 (иначе в сервисе оно квадратично влияет на fontSize),
+      // для TSPL: textScale зависит от высоты.
+      const autoTextScale = isRaster
+        ? 1
+        : clamp(Math.round(factor), 1, 3);
+
+      return {
+        // текст
+        textScale: autoTextScale,
+        lineGap: clamp(scaled(base.lineGap), 16, 64),
+        gapAfterTitle: clamp(scaled(base.gapAfterTitle), 0, 40),
+        gapAfterPrice: clamp(scaled(base.gapAfterPrice), 0, 40),
+
+        // штрих‑код (не критично, но на больших этикетках выглядит гармоничнее)
+        barcodeRaise: clamp(scaled(base.barcodeRaise), 0, 40),
+        barcodeHeight: clamp(scaled(base.barcodeHeight), 20, 200),
+        barcodeBarWidth: base.barcodeBarWidth,
+      };
+    },
+    [defaultSettings]
+  );
+
+  // Автоматически подстраиваем параметры под выбранный размер,
+  // чтобы на больших этикетках текст реально становился крупнее.
+  useEffect(() => {
+    const { heightMm } = currentLabel;
+    setPrintSettings((prev) => {
+      const auto = getAutoPrintSettingsBySize({
+        heightMm,
+        fontId: prev.fontId,
+      });
+
+      return {
+        ...prev,
+        // lineGap и связанные интервалы всегда масштабируем по размеру
+        lineGap: auto.lineGap,
+        gapAfterTitle: auto.gapAfterTitle,
+        gapAfterPrice: auto.gapAfterPrice,
+        barcodeRaise: auto.barcodeRaise,
+
+        // размеры штрих-кода авто-масштабируем, только если пользователь их не менял
+        ...(didTouchBarcodeSize
+          ? null
+          : {
+              barcodeHeight: auto.barcodeHeight,
+              barcodeBarWidth: auto.barcodeBarWidth,
+            }),
+
+        // textScale меняем автоматически только если пользователь сам не трогал масштаб
+        ...(didTouchTextScale ? null : { textScale: auto.textScale }),
+      };
+    });
+  }, [
+    labelSize,
+    currentLabel,
+    getAutoPrintSettingsBySize,
+    didTouchTextScale,
+    didTouchBarcodeSize,
+  ]);
+
+  const previewLayout = useMemo(() => {
+    const fontBase = fontBaseMap[Number(fontId)] ?? 6;
+    const lineGapDots = Math.max(1, Math.round(lineGap));
+    const textScaleInt = Math.max(1, Math.round(textScaleValue));
+    const textSizeDots = isRasterFont
+      ? Math.max(8, Math.round(lineGapDots * 0.85 * textScaleInt))
+      : Math.max(3, fontBase * textScaleValue);
+    const widthDots = Math.max(1, Math.round(currentLabel.widthMm * DOTS_PER_MM));
+    const heightDots = Math.max(1, Math.round(currentLabel.heightMm * DOTS_PER_MM));
+
+    return {
+      widthDots,
+      heightDots,
+      widthPx: Math.round(widthDots * PREVIEW_SCALE),
+      heightPx: Math.round(heightDots * PREVIEW_SCALE),
+      scale: PREVIEW_SCALE,
+      text: {
+        x: 8,
+        y: 10,
+        lineGap: lineGapDots,
+        size: textSizeDots,
+      },
+      barcode: {
+        x: 12,
+        height: Math.max(1, Math.round(barcodeHeight)),
+      },
+      border: {
+        margin: 6,
+        thick: 2,
+      },
+    };
+  }, [
+    currentLabel.widthMm,
+    currentLabel.heightMm,
+    lineGap,
+    textScaleValue,
+    barcodeHeight,
+    fontId,
+    isRasterFont,
+    fontBaseMap,
+  ]);
+
+  const wrapPreviewText = (text = "", width = 16, maxLines = 2) => {
+    const words = String(text).trim().split(/\s+/).filter(Boolean);
+    const out = [];
+    let line = "";
+
+    for (const w of words) {
+      const next = line ? `${line} ${w}` : w;
+      if (next.length <= width) {
+        line = next;
+      } else {
+        if (line) out.push(line);
+        line = w;
+      }
+    }
+
+    if (line) out.push(line);
+
+    return out.slice(0, maxLines);
+  };
+
+  const previewWrapWidth = Math.max(6, Math.round(16 / textScaleValue));
+  const previewLines = useMemo(
+    () =>
+      showName
+        ? wrapPreviewText(previewProduct?.name || "Товар", previewWrapWidth, 2)
+        : [],
+    [previewProduct, previewWrapWidth, showName]
+  );
+
+  const formatPrice = (value) => {
+    const num = Number(String(value ?? "").replace(",", "."));
+    if (!Number.isFinite(num)) return "";
+    return Math.round(num).toString();
+  };
+
+  const previewPriceText =
+    showPrice &&
+    previewProduct?.price !== undefined &&
+    previewProduct?.price !== null &&
+    String(previewProduct?.price).trim() !== ""
+      ? `Цена: ${formatPrice(previewProduct.price)} с`
+      : "";
+
+  const previewPositions = useMemo(() => {
+    const lineCount = previewLines.length;
+    const gapTitle = Math.max(0, Math.round(gapAfterTitle));
+    const gapPrice = Math.max(0, Math.round(gapAfterPrice));
+    const barcodeRaiseDots = Math.max(0, Math.round(barcodeRaise));
+    const barcodeBottomGap = 2;
+    const safePad = previewLayout.border.margin + previewLayout.border.thick;
+    const safeLeft = safePad;
+    const safeTop = safePad;
+    const safeW = previewLayout.widthDots - safePad * 2;
+    const safeH = previewLayout.heightDots - safePad * 2;
+    const textBlockHeight = previewLayout.text.lineGap * lineCount;
+    const priceBlockHeight = previewPriceText ? gapTitle + previewLayout.text.lineGap : 0;
+    const gapToBarcode = previewPriceText ? gapPrice : gapTitle;
+    const barcodeBlockHeight =
+      gapToBarcode + previewLayout.barcode.height + barcodeBottomGap;
+    const contentHeight = textBlockHeight + priceBlockHeight + barcodeBlockHeight;
+    const startY = safeTop + Math.max(0, Math.round((safeH - contentHeight) / 2));
+    const textY = startY;
+    const desiredPriceY = previewPriceText
+      ? textY + textBlockHeight + gapTitle
+      : null;
+    const barcodeY =
+      textY + textBlockHeight + priceBlockHeight + gapToBarcode - barcodeRaiseDots;
+    const maxBarcodeY =
+      safeTop + safeH - previewLayout.barcode.height - barcodeBottomGap;
+    const clampedBarcodeY = Math.min(barcodeY, maxBarcodeY);
+    const maxPriceY = clampedBarcodeY - gapPrice - previewLayout.text.lineGap;
+    const priceY = previewPriceText ? Math.min(desiredPriceY, maxPriceY) : null;
+    const textX = safeLeft;
+    const priceX = safeLeft;
+    const barcodeModules = getBarcodeModuleCount(getSelectedBarcode(previewProduct));
+    const barcodeWidthDots = Math.round(barcodeModules * Math.max(1, barcodeBarWidth));
+    const barcodeShiftX = Math.round(previewLayout.widthDots * 0.03);
+    const barcodeX =
+      safeLeft + Math.max(0, Math.round((safeW - barcodeWidthDots) / 2)) - barcodeShiftX;
+
+    return {
+      priceY,
+      barcodeY: clampedBarcodeY,
+      textX,
+      priceX,
+      barcodeX,
+      textY,
+      textW: safeW,
+    };
+  }, [
+    previewLines.length,
+    previewPriceText,
+    previewLayout.text.lineGap,
+    previewLayout.heightDots,
+    previewLayout.border.margin,
+    previewLayout.border.thick,
+    previewLayout.barcode.height,
+    gapAfterTitle,
+    gapAfterPrice,
+    barcodeRaise,
+    previewLayout.widthDots,
+    previewProduct,
+    barcodeBarWidth,
+    getBarcodeModuleCount,
+    getSelectedBarcode,
+  ]);
+
+
+
+  // слушатели USB — один раз
+  useEffect(() => {
+    attachXp365bUsbListenersOnce();
+  }, []);
+
+  // периодическая проверка подключения
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkConnection = async () => {
+      try {
+        const connected = await checkXp365bConnection();
+        if (!cancelled) setIsPrinterConnected(connected);
+      } catch {
+        if (!cancelled) setIsPrinterConnected(false);
+      }
+    };
+
+    checkConnection();
+    const interval = setInterval(checkConnection, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Список приходит уже отфильтрованным с API (debounce в BarcodePrintPage)
+  const filteredProducts = useMemo(
+    () => (Array.isArray(products) ? products : []),
+    [products],
+  );
+
+  // выбранные товары с штрих-кодом (для массовой печати).
+  // Штрих-код может быть как основным, так и дополнительным (alternate_barcodes).
+  const selectedWithBarcode = useMemo(() => {
+    return filteredProducts.filter(
+      (p) => selectedIds.has(p.id) && getSelectedBarcode(p)
+    );
+  }, [filteredProducts, selectedIds, getSelectedBarcode]);
+
+  // Всего этикеток с учётом копий каждой позиции
+  const selectedLabelsTotal = useMemo(
+    () => selectedWithBarcode.reduce((sum, p) => sum + getProductCopies(p.id), 0),
+    [selectedWithBarcode, getProductCopies]
+  );
+
+  const toggleSelection = useCallback((id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAllOnPage = useCallback(() => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      filteredProducts.forEach((p) => {
+        if (getSelectedBarcode(p)) next.add(p.id);
+      });
+      return next;
+    });
+  }, [filteredProducts, getSelectedBarcode]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleConnectPrinter = async () => {
+    try {
+      setIsConnecting(true);
+      await connectXp365bManually();
+      const connected = await checkXp365bConnection();
+      setIsPrinterConnected(connected);
+
+      if (!connected) {
+        alert("Принтер не обнаружен. Убедитесь, что он подключен по USB.");
+      }
+    } catch (e) {
+      console.error("Ошибка подключения принтера:", e);
+      alert(e?.message || "Не удалось подключиться к принтеру");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleOpenPreview = (product) => {
+    const bc = getSelectedBarcode(product);
+    if (!bc) {
+      alert("У товара отсутствует штрих-код");
+      return;
+    }
+    setPreviewProduct(product);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewProduct(null);
+    setIsPrinting(false);
+  };
+
+  const handlePrintFromPreview = async () => {
+    const previewBarcode = getSelectedBarcode(previewProduct);
+    if (!previewBarcode) return;
+
+    const { widthMm, heightMm } = currentLabel;
+    const gapTitle = Math.max(0, Math.round(gapAfterTitle));
+    const gapPrice = Math.max(0, Math.round(gapAfterPrice));
+    const barcodeRaiseDots = Math.max(0, Math.round(barcodeRaise));
+    const lineGapDots = Math.max(1, Math.round(lineGap));
+    const textScaleForPrint = Math.max(1, Math.round(textScaleValue));
+    const barcodeHeightDots = Math.max(1, Math.round(barcodeHeight));
+    const barcodeBarWidthDots = Math.max(1, Math.round(barcodeBarWidth));
+    const copiesForPrint = getProductCopies(previewProduct.id);
+
+    setIsPrinting(true);
+    setPrintingIds((prev) => {
+      const next = new Set(prev);
+      next.add(previewProduct.id);
+      return next;
+    });
+
+    try {
+      await printXp365bBarcodeLabel({
+        barcode: previewBarcode,
+        title: showName ? previewProduct.name || "Товар" : "",
+        price: showPrice ? previewProduct.price : "",
+        copies: copiesForPrint,
+        widthMm,
+        heightMm,
+        gapAfterTitle: gapTitle,
+        gapAfterPrice: gapPrice,
+        barcodeRaise: barcodeRaiseDots,
+        lineGap: lineGapDots,
+        textScale: textScaleForPrint,
+        fontId,
+        barcodeHeight: barcodeHeightDots,
+        barcodeBarWidth: barcodeBarWidthDots,
+      });
+
+      const connected = await checkXp365bConnection();
+      setIsPrinterConnected(connected);
+
+      handleClosePreview();
+    } catch (error) {
+      console.error("Ошибка при печати на XP-365B:", error);
+
+      const connected = await checkXp365bConnection();
+      setIsPrinterConnected(connected);
+
+      let errorMessage = "Не удалось отправить данные на принтер";
+
+      const msg = String(error?.message || "");
+      if (msg.includes("WebUSB")) {
+        errorMessage = "Браузер не поддерживает WebUSB. Используйте Chrome или Edge.";
+      } else if (msg.includes("не найден") || msg.includes("не найдено")) {
+        errorMessage = "Принтер не подключен. Подключите принтер XP-365B и попробуйте снова.";
+      } else if (msg) {
+        errorMessage = msg;
+      }
+
+      alert(errorMessage);
+    } finally {
+      setIsPrinting(false);
+      setPrintingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(previewProduct?.id);
+        return next;
+      });
+    }
+  };
+
+  const handlePrintSelected = useCallback(async () => {
+    if (selectedWithBarcode.length === 0 || !isPrinterConnected) return;
+
+    const { widthMm, heightMm } = currentLabel;
+    const gapTitle = Math.max(0, Math.round(gapAfterTitle));
+    const gapPrice = Math.max(0, Math.round(gapAfterPrice));
+    const barcodeRaiseDots = Math.max(0, Math.round(barcodeRaise));
+    const lineGapDots = Math.max(1, Math.round(lineGap));
+    const textScaleForPrint = Math.max(1, Math.round(textScaleValue));
+    const barcodeHeightDots = Math.max(1, Math.round(barcodeHeight));
+    const barcodeBarWidthDots = Math.max(1, Math.round(barcodeBarWidth));
+
+    setIsBatchPrinting(true);
+    setPrintingIds((prev) => {
+      const next = new Set(prev);
+      selectedWithBarcode.forEach((p) => next.add(p.id));
+      return next;
+    });
+
+    let printed = 0;
+    let printedLabels = 0;
+    const total = selectedWithBarcode.length;
+    const totalLabelsPlanned = selectedWithBarcode.reduce(
+      (sum, p) => sum + getProductCopies(p.id),
+      0
+    );
+
+    try {
+      for (const product of selectedWithBarcode) {
+        const productCopies = getProductCopies(product.id);
+        await printXp365bBarcodeLabel({
+          barcode: getSelectedBarcode(product),
+          title: showName ? product.name || "Товар" : "",
+          price: showPrice ? product.price : "",
+          copies: productCopies,
+          widthMm,
+          heightMm,
+          gapAfterTitle: gapTitle,
+          gapAfterPrice: gapPrice,
+          barcodeRaise: barcodeRaiseDots,
+          lineGap: lineGapDots,
+          textScale: textScaleForPrint,
+          fontId,
+          barcodeHeight: barcodeHeightDots,
+          barcodeBarWidth: barcodeBarWidthDots,
+        });
+        printed += 1;
+        printedLabels += productCopies;
+        setPrintingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(product.id);
+          return next;
+        });
+      }
+
+      const connected = await checkXp365bConnection();
+      setIsPrinterConnected(connected);
+      setSelectedIds(new Set());
+      if (printed === total) {
+        alert(
+          printedLabels > printed
+            ? `Напечатано: ${printed} товаров, ${printedLabels} этикеток (с учётом копий)`
+            : `Напечатано этикеток: ${printed}`
+        );
+      }
+    } catch (error) {
+      console.error("Ошибка при массовой печати:", error);
+      const connected = await checkXp365bConnection();
+      setIsPrinterConnected(connected);
+      const msg = String(error?.message || "");
+      let errorMessage = "Не удалось отправить данные на принтер";
+      if (msg.includes("WebUSB")) {
+        errorMessage = "Браузер не поддерживает WebUSB. Используйте Chrome или Edge.";
+      } else if (msg.includes("не найден") || msg.includes("не найдено")) {
+        errorMessage = "Принтер не подключен. Подключите принтер XP-365B и попробуйте снова.";
+      } else if (msg) errorMessage = msg;
+      alert(
+        totalLabelsPlanned > total
+          ? `${errorMessage}\nНапечатано до ошибки: ${printed} из ${total} товаров (${printedLabels} из ${totalLabelsPlanned} этикеток)`
+          : `${errorMessage}\nНапечатано до ошибки: ${printed} из ${total}`
+      );
+    } finally {
+      setIsBatchPrinting(false);
+      setPrintingIds((prev) => {
+        const next = new Set(prev);
+        selectedWithBarcode.forEach((p) => next.delete(p.id));
+        return next;
+      });
+    }
+  }, [
+    selectedWithBarcode,
+    isPrinterConnected,
+    currentLabel,
+    getProductCopies,
+    gapAfterTitle,
+    gapAfterPrice,
+    barcodeRaise,
+    lineGap,
+    textScaleValue,
+    barcodeHeight,
+    barcodeBarWidth,
+    fontId,
+    showName,
+    showPrice,
+    getSelectedBarcode,
+  ]);
+
+  // Генерация визуализации штрих-кода для предпросмотра
+  useEffect(() => {
+    if (!previewProduct || !barcodeCanvasRef.current) return;
+
+    const canvas = barcodeCanvasRef.current;
+    const barcode = getSelectedBarcode(previewProduct);
+    if (!barcode) return;
+
+    let printCode;
+    let printFormat;
+    try {
+      const encoded = getBarcodePrintEncoding(barcode);
+      printCode = encoded.code;
+      printFormat = encoded.format;
+    } catch {
+      printCode = barcode.replace(/\D/g, "") || barcode;
+      printFormat = "CODE128";
+    }
+
+    const { scale, barcode: barcodeLayout } = previewLayout;
+    const lineGapDots = Math.max(1, Math.round(lineGap));
+    const textScaleInt = Math.max(1, Math.round(textScaleValue));
+    const autoBarcodeFontDots = isRasterFont
+      ? Math.max(8, Math.round(lineGapDots * 0.72 * textScaleInt))
+      : Math.round(10 * textScaleValue);
+    const extraBelowBarcodeDots = Math.max(18, autoBarcodeFontDots + 8);
+    const barcodeCanvasWidth = Math.round(previewLayout.widthDots * scale);
+    const barcodeCanvasHeight = Math.round(
+      (barcodeLayout.height + extraBelowBarcodeDots) * scale
+    );
+
+    canvas.width = barcodeCanvasWidth;
+    canvas.height = barcodeCanvasHeight;
+
+    try {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const jsFormat =
+        printFormat === "EAN8"
+          ? "EAN8"
+          : printFormat === "EAN13"
+            ? "EAN13"
+            : "CODE128";
+
+      const barWidth = Math.max(1, Math.round(barcodeBarWidth * scale));
+      const barHeight = Math.round(barcodeLayout.height * scale);
+
+      JsBarcode(canvas, printCode, {
+        format: jsFormat,
+        width: barWidth,
+        height: barHeight,
+        displayValue: true,
+        fontSize: Math.round(autoBarcodeFontDots * scale),
+        textMargin: Math.round(2 * scale),
+        margin: 0,
+        background: "transparent",
+        lineColor: "#000000",
+      });
+    } catch (error) {
+      console.error("Ошибка генерации штрих-кода:", error);
+
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 14px 'Courier New', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(printCode, canvas.width / 2, canvas.height / 2);
+    }
+  }, [
+    previewProduct,
+    previewLayout,
+    barcodeBarWidth,
+    lineGap,
+    textScaleValue,
+    isRasterFont,
+    getSelectedBarcode,
+  ]);
+
+  const hasProducts = Array.isArray(products) && products.length > 0;
+  const isInitialLoading = Boolean(loading) && !hasProducts;
+  const isContentRefreshing = Boolean(loading) && hasProducts;
+
+  return (
+    <div className="barcode-print-tab">
+      <div className="barcode-print-tab__header">
+        <div className="barcode-print-tab__search-wrapper">
+          <input
+            type="text"
+            placeholder="Поиск по названию или штрих-коду"
+            value={searchTerm || ""}
+            onChange={onSearchChange}
+            className="barcode-print-tab__search"
+            disabled={isInitialLoading}
+          />
+          {isContentRefreshing && (
+            <span
+              className="barcode-print-tab__search-spinner"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+
+        <div className="barcode-print-tab__printer-controls">
+          <div className="barcode-print-tab__size-select-wrapper">
+            <label className="barcode-print-tab__size-label">
+              Размер этикетки:
+              <select
+                className="barcode-print-tab__size-select"
+                value={labelSize}
+                  onChange={(e) => {
+                    setLabelSize(e.target.value);
+                    setDidTouchTextScale(false);
+                    setDidTouchBarcodeSize(false);
+                  }}
+              >
+                <option value="30x20">30×20 мм</option>
+                <option value="58x40">58×40 мм</option>
+                <option value="58x30">58×30 мм</option>
+                <option value="custom">Свой размер…</option>
+              </select>
+            </label>
+
+            {labelSize === "custom" && (
+              <>
+                <label className="barcode-print-tab__size-label">
+                  Ширина (мм):
+                  <input
+                    className="barcode-print-tab__custom-size-input"
+                    type="number"
+                    min={15}
+                    max={110}
+                    step={1}
+                    value={customWidthMm}
+                    onChange={(e) => setCustomWidthMm(e.target.value)}
+                    title="Ширина этикетки в миллиметрах (15–110)"
+                  />
+                </label>
+                <label className="barcode-print-tab__size-label">
+                  Высота (мм):
+                  <input
+                    className="barcode-print-tab__custom-size-input"
+                    type="number"
+                    min={10}
+                    max={110}
+                    step={1}
+                    value={customHeightMm}
+                    onChange={(e) => setCustomHeightMm(e.target.value)}
+                    title="Высота этикетки в миллиметрах (10–110)"
+                  />
+                </label>
+              </>
+            )}
+
+            <label className="barcode-print-tab__size-label">
+              Копий (по умолчанию):
+              <input
+                className="barcode-print-tab__copies-input"
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                value={copiesValue}
+                onChange={(e) =>
+                  setPrintSettings((prev) => ({
+                    ...prev,
+                    copies: e.target.value,
+                  }))
+                }
+                title="Значение копий для позиций, у которых не задано своё количество"
+              />
+            </label>
+
+            {Object.keys(copiesById).length > 0 && (
+              <button
+                type="button"
+                className="barcode-print-tab__selection-btn"
+                onClick={() => setCopiesById({})}
+                title="Вернуть всем позициям количество копий по умолчанию"
+              >
+                Сбросить копии позиций
+              </button>
+            )}
+          </div>
+
+          <div className="barcode-print-tab__printer-status">
+            <span
+              className={`barcode-print-tab__status-indicator ${
+                isPrinterConnected
+                  ? "barcode-print-tab__status-indicator--connected"
+                  : "barcode-print-tab__status-indicator--disconnected"
+              }`}
+            />
+            <span className="barcode-print-tab__status-text">
+              {isPrinterConnected ? "Принтер подключен" : "Принтер не подключен"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="barcode-print-tab__connect-btn"
+            onClick={handleConnectPrinter}
+            disabled={isConnecting}
+          >
+            {isConnecting ? "Подключение..." : "Подключить принтер"}
+          </button>
+        </div>
+
+        <div className="barcode-print-tab__display-settings">
+          <span className="barcode-print-tab__display-settings-title">
+            Отображать на этикетке:
+          </span>
+
+          <label className="barcode-print-tab__display-checkbox">
+            <input
+              type="checkbox"
+              checked={showName}
+              onChange={(e) => setShowName(e.target.checked)}
+            />
+            Название
+          </label>
+
+          <label className="barcode-print-tab__display-checkbox">
+            <input
+              type="checkbox"
+              checked={showPrice}
+              onChange={(e) => setShowPrice(e.target.checked)}
+            />
+            Цена
+          </label>
+
+          <label className="barcode-print-tab__size-label">
+            Высота штрих-кода:
+            <input
+              className="barcode-print-tab__custom-size-input"
+              type="number"
+              min={20}
+              max={200}
+              step={2}
+              value={Math.round(barcodeHeight)}
+              onChange={(e) => {
+                setDidTouchBarcodeSize(true);
+                setPrintSettings((prev) => ({
+                  ...prev,
+                  barcodeHeight: clamp(Number(e.target.value) || 44, 20, 200),
+                }));
+              }}
+              title="Высота штрих-кода в точках (203 DPI ≈ 8 точек/мм)"
+            />
+          </label>
+
+          <label className="barcode-print-tab__size-label">
+            Толщина штриха:
+            <select
+              className="barcode-print-tab__size-select"
+              value={String(Math.max(1, Math.round(barcodeBarWidth)))}
+              onChange={(e) => {
+                setDidTouchBarcodeSize(true);
+                setPrintSettings((prev) => ({
+                  ...prev,
+                  barcodeBarWidth: Number(e.target.value) || 2,
+                }));
+              }}
+              title="Ширина минимального штриха в точках"
+            >
+              <option value="1">1 (тонкий)</option>
+              <option value="2">2 (стандарт)</option>
+              <option value="3">3 (толстый)</option>
+              <option value="4">4 (очень толстый)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div className="barcode-print-tab__content">
+        {isInitialLoading ? (
+          <div className="barcode-print-tab__loading">
+            <Loading message="Загрузка товаров..." />
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="barcode-print-tab__empty">
+            <div className="barcode-print-tab__empty-icon">📦</div>
+            <div className="barcode-print-tab__empty-text">Товары не найдены</div>
+          </div>
+        ) : (
+          <>
+            <div className="barcode-print-tab__selection-bar">
+              <span className="barcode-print-tab__selection-count">
+                Выбрано: {selectedIds.size}
+                {selectedWithBarcode.length < selectedIds.size && selectedIds.size > 0 && (
+                  <span className="barcode-print-tab__selection-hint">
+                    {" "}(с штрих-кодом: {selectedWithBarcode.length})
+                  </span>
+                )}
+              </span>
+              <div className="barcode-print-tab__selection-actions">
+                <button
+                  type="button"
+                  className="barcode-print-tab__selection-btn"
+                  onClick={selectAllOnPage}
+                  disabled={isBatchPrinting || filteredProducts.length === 0}
+                >
+                  Выбрать все на странице
+                </button>
+                <button
+                  type="button"
+                  className="barcode-print-tab__selection-btn"
+                  onClick={clearSelection}
+                  disabled={selectedIds.size === 0 || isBatchPrinting}
+                >
+                  Снять выбор
+                </button>
+                <button
+                  type="button"
+                  className="barcode-print-tab__selection-btn"
+                  onClick={() => setShowA4Modal(true)}
+                  title="Печать штрих-кодов на листе A4 (обычный принтер)"
+                >
+                  🖨️ Печать на A4
+                </button>
+                <button
+                  type="button"
+                  className="barcode-print-tab__batch-print-btn"
+                  onClick={handlePrintSelected}
+                  disabled={
+                    isBatchPrinting ||
+                    !isPrinterConnected ||
+                    selectedWithBarcode.length === 0
+                  }
+                  title={
+                    !isPrinterConnected
+                      ? "Подключите принтер"
+                      : selectedWithBarcode.length === 0
+                      ? "Выберите товары с штрих-кодом"
+                      : `Распечатать ${selectedLabelsTotal} этикеток (${selectedWithBarcode.length} позиций)`
+                  }
+                >
+                  {isBatchPrinting ? (
+                    <>
+                      <span className="barcode-print-tab__spinner" />
+                      Печать...
+                    </>
+                  ) : (
+                    <>
+                      <span className="barcode-print-tab__print-icon">🖨️</span>
+                      Печать выбранных ({selectedWithBarcode.length}
+                      {selectedLabelsTotal > selectedWithBarcode.length
+                        ? ` · ${selectedLabelsTotal} эт.`
+                        : ""}
+                      )
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="barcode-print-tab__grid">
+              {filteredProducts.map((product) => {
+                const isItemPrinting = printingIds.has(product.id);
+                const barcodeOptions = getProductBarcodeOptions(product);
+                const selectedBarcode = getSelectedBarcode(product);
+                const hasBarcode = Boolean(selectedBarcode);
+                const isSelected = selectedIds.has(product.id);
+
+                return (
+                  <div
+                    key={product.id}
+                    className={`barcode-print-tab__card ${
+                      isSelected ? "barcode-print-tab__card--selected" : ""
+                    }`}
+                  >
+                    <div className="barcode-print-tab__card-header">
+                      <label className="barcode-print-tab__card-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelection(product.id)}
+                          disabled={!hasBarcode || isBatchPrinting}
+                          title={
+                            !hasBarcode
+                              ? "У товара нет штрих-кода"
+                              : "Выбрать для печати"
+                          }
+                        />
+                        <span className="barcode-print-tab__card-checkbox-label">
+                          В печать
+                        </span>
+                      </label>
+                      <div className="barcode-print-tab__barcode-label">Штрих-код:</div>
+                      {barcodeOptions.length > 1 ? (
+                        <select
+                          className="barcode-print-tab__barcode-select"
+                          value={selectedBarcode}
+                          onChange={(e) =>
+                            setSelectedBarcode(product.id, e.target.value)
+                          }
+                          disabled={isBatchPrinting}
+                          title="У товара несколько штрих-кодов — выберите, какой печатать"
+                        >
+                          {barcodeOptions.map((code, idx) => (
+                            <option key={code} value={code}>
+                              {code}
+                              {idx === 0 ? " (основной)" : " (доп.)"}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="barcode-print-tab__barcode-value">
+                          {selectedBarcode || "—"}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="barcode-print-tab__card-body">
+                      <button
+                        className="barcode-print-tab__print-btn"
+                        onClick={() => handleOpenPreview(product)}
+                        disabled={!hasBarcode || isItemPrinting}
+                        title={
+                          !hasBarcode
+                            ? "У товара отсутствует штрих-код"
+                            : isItemPrinting
+                            ? "Идёт печать..."
+                            : "Предпросмотр и печать штрих-кода"
+                        }
+                      >
+                        <span className="barcode-print-tab__print-icon">🖨️</span>
+                        {isItemPrinting ? "Печать..." : "Распечатать штрих-код"}
+                      </button>
+
+                      <div className="barcode-print-tab__product-name">{product.name}</div>
+
+                      <label
+                        className="barcode-print-tab__card-copies"
+                        title="Сколько копий этикетки печатать для этой позиции"
+                      >
+                        Копий:
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          step={1}
+                          value={getProductCopies(product.id)}
+                          onChange={(e) =>
+                            setProductCopies(product.id, e.target.value)
+                          }
+                          disabled={!hasBarcode || isBatchPrinting}
+                          className="barcode-print-tab__card-copies-input"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && onPageChange && (
+              <nav className="barcode-print-tab__pagination" aria-label="Пагинация">
+                <span className="barcode-print-tab__pagination-info">
+                  Страница {page} из {totalPages}
+                  {count > 0 && (
+                    <> · Всего: {count}</>
+                  )}
+                </span>
+                <div className="barcode-print-tab__pagination-buttons">
+                  <button
+                    type="button"
+                    className="barcode-print-tab__pagination-btn"
+                    onClick={() => onPageChange(page - 1)}
+                    disabled={page <= 1 || loading}
+                    aria-label="Предыдущая страница"
+                  >
+                    Назад
+                  </button>
+                  <button
+                    type="button"
+                    className="barcode-print-tab__pagination-btn"
+                    onClick={() => onPageChange(page + 1)}
+                    disabled={page >= totalPages || loading}
+                    aria-label="Следующая страница"
+                  >
+                    Вперёд
+                  </button>
+                </div>
+              </nav>
+            )}
+          </>
+        )}
+      </div>
+
+      {showA4Modal && (
+        <BarcodeA4PrintModal
+          products={(selectedWithBarcode.length > 0
+            ? selectedWithBarcode
+            : filteredProducts.filter((p) => getSelectedBarcode(p))
+          ).map((p) => ({
+            ...p,
+            // Печатаем выбранный код позиции (основной или дополнительный)
+            barcode: getSelectedBarcode(p),
+            __copies: getProductCopies(p.id),
+          }))}
+          onClose={() => setShowA4Modal(false)}
+        />
+      )}
+
+      {previewProduct && (
+        <UniversalModal title="Предпросмотр этикетки" onClose={handleClosePreview}>
+          <div className="barcode-print-tab__preview">
+            <div
+              className="barcode-print-tab__preview-settings"
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                flexWrap: "wrap",
+                marginBottom: 12,
+              }}
+            >
+              <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                Шрифт:
+                <select
+                  value={String(fontId || "")}
+                  onChange={(e) =>
+                    setPrintSettings((prev) => ({
+                      ...prev,
+                      fontId: e.target.value,
+                    }))
+                  }
+                >
+                  {availableFonts.map((f) => (
+                    <option key={f.value} value={f.value}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                Масштаб:
+                <select
+                  value={String(textScaleValue)}
+                  onChange={(e) => {
+                    setDidTouchTextScale(true);
+                    setPrintSettings((prev) => ({
+                      ...prev,
+                      textScale: Number(e.target.value),
+                    }));
+                  }}
+                  title="TSPL масштаб целочисленный. Для уменьшения — выбирайте другой шрифт."
+                >
+                  <option value="1">1×</option>
+                  <option value="2">2×</option>
+                  <option value="3">3×</option>
+                </select>
+              </label>
+
+              {getProductBarcodeOptions(previewProduct).length > 1 && (
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  Штрих-код:
+                  <select
+                    value={getSelectedBarcode(previewProduct)}
+                    onChange={(e) =>
+                      setSelectedBarcode(previewProduct.id, e.target.value)
+                    }
+                    title="У товара несколько штрих-кодов — выберите, какой печатать"
+                  >
+                    {getProductBarcodeOptions(previewProduct).map((code, idx) => (
+                      <option key={code} value={code}>
+                        {code}
+                        {idx === 0 ? " (основной)" : " (доп.)"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                Копий:
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={getProductCopies(previewProduct.id)}
+                  onChange={(e) =>
+                    setProductCopies(previewProduct.id, e.target.value)
+                  }
+                  style={{ width: 80 }}
+                  title="Сколько копий этикетки печатать для этой позиции"
+                />
+              </label>
+
+              <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input
+                  type="checkbox"
+                  checked={showName}
+                  onChange={(e) => setShowName(e.target.checked)}
+                />
+                Название
+              </label>
+
+              <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input
+                  type="checkbox"
+                  checked={showPrice}
+                  onChange={(e) => setShowPrice(e.target.checked)}
+                />
+                Цена
+              </label>
+            </div>
+
+            <div className="barcode-print-tab__preview-label">
+              <div
+                className="barcode-print-tab__preview-label-sheet"
+                style={{
+                  width: `${previewLayout.widthPx}px`,
+                  height: `${previewLayout.heightPx}px`,
+                  "--preview-scale": previewLayout.scale,
+                }}
+              >
+                <div
+                  className="barcode-print-tab__preview-border"
+                  style={{
+                    inset: `${previewLayout.border.margin * previewLayout.scale}px`,
+                    borderWidth: `${previewLayout.border.thick * previewLayout.scale}px`,
+                  }}
+                />
+
+                {previewLines.map((line, i) => (
+                  <div
+                    key={`${line}-${i}`}
+                    className="barcode-print-tab__preview-title-line"
+                    style={{
+                      left: `${previewPositions.textX * previewLayout.scale}px`,
+                      top: `${
+                        (previewPositions.textY +
+                          previewLayout.text.lineGap * i) *
+                        previewLayout.scale
+                      }px`,
+                      fontSize: `${previewLayout.text.size * previewLayout.scale}px`,
+                      width: `${previewPositions.textW * previewLayout.scale}px`,
+                      textAlign: "center",
+                    }}
+                  >
+                    {line}
+                  </div>
+                ))}
+
+                <canvas
+                  ref={barcodeCanvasRef}
+                  className="barcode-print-tab__preview-barcode-canvas"
+                  style={{
+                    left: `${previewPositions.barcodeX * previewLayout.scale}px`,
+                    top: `${previewPositions.barcodeY * previewLayout.scale}px`,
+                  }}
+                />
+
+                {previewPriceText && (
+                    <div
+                      className="barcode-print-tab__preview-price"
+                      style={{
+                        left: `${previewPositions.priceX * previewLayout.scale}px`,
+                        top: `${previewPositions.priceY * previewLayout.scale}px`,
+                        fontSize: `${previewLayout.text.size * previewLayout.scale}px`,
+                        fontWeight: 700,
+                        width: `${previewPositions.textW * previewLayout.scale}px`,
+                        textAlign: "center",
+                      }}
+                    >
+                      {previewPriceText}
+                    </div>
+                  )}
+              </div>
+            </div>
+
+            <div className="barcode-print-tab__preview-actions">
+              <button
+                type="button"
+                className="barcode-print-tab__preview-cancel-btn"
+                onClick={handleClosePreview}
+                disabled={isPrinting}
+              >
+                Отмена
+              </button>
+
+              <button
+                type="button"
+                className="barcode-print-tab__preview-print-btn"
+                onClick={handlePrintFromPreview}
+                disabled={isPrinting || !isPrinterConnected}
+                title={
+                  !isPrinterConnected
+                    ? "Принтер не подключен. Подключите принтер XP-365B."
+                    : "Распечатать этикетку"
+                }
+              >
+                {isPrinting ? (
+                  <>
+                    <span className="barcode-print-tab__spinner"></span>
+                    Печать...
+                  </>
+                ) : (
+                  <>
+                    <span className="barcode-print-tab__print-icon">🖨️</span>
+                    Распечатать
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </UniversalModal>
+      )}
+    </div>
+  );
+};
+
+export default BarcodePrintTab;

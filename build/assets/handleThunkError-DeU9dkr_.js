@@ -1,0 +1,1 @@
+import{t as e}from"./validateResErrors-DU3F-pnI.js";var t=(t,n)=>n(e(t,t?.message||`Неизвестная ошибка`));export{t};

@@ -1,1 +1,0 @@
-import{t as e}from"./validateResErrors-Bh6ZqZvH.js";var t=(t,n)=>n(e(t,t?.message||`Неизвестная ошибка`));export{t};

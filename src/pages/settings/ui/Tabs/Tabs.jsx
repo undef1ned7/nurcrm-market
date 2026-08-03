@@ -1,0 +1,160 @@
+// import React, { useMemo } from "react";
+// import "./Tabs.scss";
+
+// const allTabs = [
+//   "Моя компания",
+//   "Безопасность",
+//   "Токен для весов",
+//   "Интерфейс",
+// ];
+
+// const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
+//   // Определяем, является ли сфера "магазин" (market)
+//   const isMarketSector = useMemo(() => {
+//     if (!company?.sector?.name) return false;
+//     const sectorName = company.sector.name.toLowerCase().trim();
+//     return (
+//       sectorName === "магазин" ||
+//       sectorName === "цветочный магазин" ||
+//       sectorName.includes("магазин")
+//     );
+//   }, [company?.sector?.name]);
+
+//   // Определяем, является ли пользователь владельцем
+//   const isOwner = useMemo(() => {
+//     return profile?.role === "owner";
+//   }, [profile?.role]);
+
+//   // Фильтруем табы в зависимости от роли и сферы
+//   const visibleTabs = useMemo(() => {
+//     return allTabs.filter((tab) => {
+//       if (tab === "Моя компания") {
+//         return isOwner;
+//       }
+//       if (tab === "Токен для весов") {
+//         return isMarketSector;
+//       }
+//       // "Безопасность" всегда видна
+//       return true;
+//     });
+//   }, [isOwner, isMarketSector]);
+
+//   return (
+//     <div className="settings-tabs">
+//       {visibleTabs.map((tab) => (
+//         <button
+//           key={tab}
+//           className={`settings-tabs__item ${
+//             activeTab === tab ? "settings-tabs__item--active" : ""
+//           }`}
+//           onClick={() => setActiveTab(tab)}
+//         >
+//           {tab}
+//         </button>
+//       ))}
+//     </div>
+//   );
+// };
+
+// export default Tabs;
+
+
+
+// src/Components/pages/Info/Settings/Tabs/Tabs.jsx
+import { useMemo } from "react";
+import "./Tabs.scss";
+import { canAccessOnlineShowcase } from "@shared/lib/subscriptionPlan";
+
+const allTabs = ["Моя компания", "Безопасность", "Касса", "Токен для весов", "Интерфейс", "Печать", "Онлайн"];
+
+const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
+  const sectorName = useMemo(() => String(company?.sector?.name || "").toLowerCase().trim(), [company?.sector?.name]);
+
+  // Определяем, является ли сфера "магазин" (market)
+  const isMarketSector = useMemo(() => {
+    return sectorName === "магазин" || sectorName === "цветочный магазин" || sectorName.includes("магазин");
+  }, [sectorName]);
+
+  // Определяем, является ли сфера "барбершоп"
+  const isBarberSector = useMemo(() => {
+    return sectorName === "барбершоп" || sectorName === "услуги" || sectorName === "стоматология" || sectorName === "салон красоты" || sectorName.includes("барбер") || sectorName.includes("парикмахер");
+  }, [sectorName]);
+
+  // Определяем, является ли сфера "кафе"
+  const isCafeSector = useMemo(() => {
+    return sectorName === "кафе" || sectorName.includes("кафе") || sectorName.includes("ресторан");
+  }, [sectorName]);
+
+  // Определяем, является ли сфера "производство"
+  const isProductionSector = useMemo(() => {
+    return sectorName === "производство" || sectorName === "production" || sectorName.includes("производ");
+  }, [sectorName]);
+
+  const isOwner = useMemo(() => profile?.role === "owner", [profile?.role]);
+
+  // Настройки кассы магазина доступны только владельцу и админу
+  const isAdmin = useMemo(() => profile?.role === "admin", [profile?.role]);
+  const canViewMarketCashierSettings = useMemo(
+    () => isMarketSector && (isOwner || isAdmin),
+    [isMarketSector, isOwner, isAdmin]
+  );
+
+  const canViewOnline = useMemo(() => {
+    const hasSlug = Boolean(company?.slug);
+    const canViewShowcase = Boolean(profile?.can_view_showcase);
+    const hasSectorWithOnline =
+      isBarberSector || isCafeSector || isMarketSector || isProductionSector;
+    if (!hasSlug || !hasSectorWithOnline) return false;
+    return canAccessOnlineShowcase({
+      tariffName: company?.subscription_plan?.name,
+      sectorName: company?.sector?.name,
+      isOwner,
+      canViewShowcase,
+    });
+  }, [
+    company?.slug,
+    company?.subscription_plan?.name,
+    company?.sector?.name,
+    profile?.can_view_showcase,
+    isOwner,
+    isBarberSector,
+    isCafeSector,
+    isMarketSector,
+    isProductionSector,
+  ]);
+
+  const visibleTabs = useMemo(() => {
+    return allTabs.filter((tab) => {
+      if (tab === "Моя компания") return isOwner;
+      if (tab === "Касса") return canViewMarketCashierSettings;
+      if (tab === "Токен для весов") return isMarketSector;
+      if (tab === "Печать") return isCafeSector;
+      if (tab === "Онлайн") return canViewOnline;
+      // "Безопасность" и "Интерфейс" всегда видны
+      return true;
+    });
+  }, [
+    isOwner,
+    isMarketSector,
+    isCafeSector,
+    canViewOnline,
+    canViewMarketCashierSettings,
+  ]);
+
+  return (
+    <div className="settings-tabs">
+      {visibleTabs.map((tab) => (
+        <button
+          key={tab}
+          type="button"
+          className={`settings-tabs__item ${activeTab === tab ? "settings-tabs__item--active" : ""}`}
+          onClick={() => setActiveTab(tab)}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+export default Tabs;
