@@ -1,3 +1,32 @@
-// Стили для CounterpartySearchSection компонента
-// Основные стили находятся в Counterparties.scss
+.warehouse-search-section {
+  width: 100%;
+}
 
+.warehouse-search {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+
+  &__icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--nur-muted);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &__input {
+    width: 100%;
+    padding-left: 40px;
+  }
+
+  &__view-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--nur-space-2);
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+}

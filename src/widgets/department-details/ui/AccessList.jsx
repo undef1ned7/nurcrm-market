@@ -7,7 +7,74 @@ import {
   getAdditionalServicesForMenu,
   ADDITIONAL_SERVICES_CONFIG,
 } from "@widgets/sidebar/ui/config/additionalServicesConfig";
+import "./AccessList.scss";
 
+function AccessItem({ accessType, checked, onToggle, tone = "success" }) {
+  return (
+    <label
+      className={`access-list-item access-list-item--${tone}${
+        checked ? " is-checked" : ""
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={() => onToggle(accessType.backendKey)}
+      />
+      <span>{accessType.label}</span>
+    </label>
+  );
+}
+
+function AccessSection({
+  title,
+  items,
+  selectedAccess,
+  onToggle,
+  onSelectAll,
+  tone = "success",
+  gridTone,
+}) {
+  if (!items?.length) return null;
+  return (
+    <div className="access-list-section">
+      <div className="access-list-section__head">
+        <h4 className="access-list-section__title">{title}</h4>
+        <div className="access-list-section__actions">
+          <button
+            type="button"
+            className="access-list-section__btn"
+            onClick={() => onSelectAll(items, true)}
+          >
+            Выбрать все
+          </button>
+          <button
+            type="button"
+            className="access-list-section__btn"
+            onClick={() => onSelectAll(items, false)}
+          >
+            Снять все
+          </button>
+        </div>
+      </div>
+      <div
+        className={`access-list-grid${
+          gridTone ? ` access-list-grid--${gridTone}` : ""
+        }`}
+      >
+        {items.map((accessType) => (
+          <AccessItem
+            key={accessType.backendKey}
+            accessType={accessType}
+            checked={!!selectedAccess[accessType.backendKey]}
+            onToggle={onToggle}
+            tone={tone}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 // Базовые permissions (общие для всех секторов)
 const BASIC_ACCESS_TYPES = [
   { value: "Касса", label: "Касса", backendKey: "can_view_cashbox" },
@@ -915,654 +982,75 @@ const AccessList = ({
   if (isModalMode) {
     return (
       <div className="access-list-modal">
-        {/* Поиск */}
-        <div
-          style={{
-            position: "relative",
-            marginBottom: "20px",
-          }}
-        >
-          <FaSearch
-            style={{
-              position: "absolute",
-              left: "12px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#999",
-              fontSize: "14px",
-            }}
-          />
+        <div className="access-list-modal__search">
+          <FaSearch className="access-list-modal__search-icon" />
           <input
             type="text"
+            className="access-list-modal__search-input"
             placeholder="Поиск доступов..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px 12px 10px 36px",
-              border: "1px solid #ddd",
-              borderRadius: "6px",
-              fontSize: "14px",
-              outline: "none",
-            }}
           />
-          {searchQuery && (
+          {searchQuery ? (
             <button
+              type="button"
+              className="access-list-modal__search-clear"
               onClick={() => setSearchQuery("")}
-              style={{
-                position: "absolute",
-                right: "8px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "#999",
-                padding: "4px",
-                display: "flex",
-                alignItems: "center",
-              }}
+              aria-label="Очистить поиск"
             >
               <FaTimes size={14} />
             </button>
-          )}
+          ) : null}
         </div>
 
-        {/* Базовые доступы */}
-        {filteredBasic.length > 0 && (
-          <div style={{ marginBottom: "24px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "2px solid #e0e0e0",
-              }}
-            >
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Базовые доступы
-              </h4>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => handleSelectAll(filteredBasic, true)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Выбрать все
-                </button>
-                <button
-                  onClick={() => handleSelectAll(filteredBasic, false)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Снять все
-                </button>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "8px",
-                maxHeight: "300px",
-                overflowY: "auto",
-                padding: "8px",
-                background: "#f9f9f9",
-                borderRadius: "6px",
-              }}
-            >
-              {filteredBasic.map((accessType) => (
-                <label
-                  key={accessType.backendKey}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    background: selectedAccess[accessType.backendKey]
-                      ? "#e8f5e9"
-                      : "white",
-                    border: `1px solid ${
-                      selectedAccess[accessType.backendKey] ? "#4caf50" : "#ddd"
-                    }`,
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "#f5f5f5";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "white";
-                    }
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedAccess[accessType.backendKey]}
-                    onChange={() => toggleAccess(accessType.backendKey)}
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      cursor: "pointer",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "#333",
-                      userSelect: "none",
-                    }}
-                  >
-                    {accessType.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
+        <AccessSection
+          title="Базовые доступы"
+          items={filteredBasic}
+          selectedAccess={selectedAccess}
+          onToggle={toggleAccess}
+          onSelectAll={handleSelectAll}
+          tone="success"
+        />
 
-        {/* Секторные доступы */}
-        {filteredSector.length > 0 && (
-          <div style={{ marginBottom: "24px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "2px solid #e0e0e0",
-              }}
-            >
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Секторные доступы
-              </h4>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => handleSelectAll(filteredSector, true)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Выбрать все
-                </button>
-                <button
-                  onClick={() => handleSelectAll(filteredSector, false)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Снять все
-                </button>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "8px",
-                maxHeight: "300px",
-                overflowY: "auto",
-                padding: "8px",
-                background: "#f9f9f9",
-                borderRadius: "6px",
-              }}
-            >
-              {filteredSector.map((accessType) => (
-                <label
-                  key={accessType.backendKey}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    background: selectedAccess[accessType.backendKey]
-                      ? "#e3f2fd"
-                      : "white",
-                    border: `1px solid ${
-                      selectedAccess[accessType.backendKey] ? "#2196f3" : "#ddd"
-                    }`,
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "#f5f5f5";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "white";
-                    }
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedAccess[accessType.backendKey]}
-                    onChange={() => toggleAccess(accessType.backendKey)}
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      cursor: "pointer",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "#333",
-                      userSelect: "none",
-                    }}
-                  >
-                    {accessType.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
+        <AccessSection
+          title="Секторные доступы"
+          items={filteredSector}
+          selectedAccess={selectedAccess}
+          onToggle={toggleAccess}
+          onSelectAll={handleSelectAll}
+          tone="info"
+        />
 
-        {/* Заказы кафе: оплата и возврат для официантов */}
-        {filteredCafeWaiterOrderSpecial.length > 0 && (
-          <div style={{ marginBottom: "24px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "2px solid #e0e0e0",
-              }}
-            >
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Заказы кафе — официанты
-              </h4>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() =>
-                    handleSelectAll(filteredCafeWaiterOrderSpecial, true)
-                  }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Выбрать все
-                </button>
-                <button
-                  onClick={() =>
-                    handleSelectAll(filteredCafeWaiterOrderSpecial, false)
-                  }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Снять все
-                </button>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "8px",
-                maxHeight: "300px",
-                overflowY: "auto",
-                padding: "8px",
-                background: "#e8f4fd",
-                borderRadius: "6px",
-              }}
-            >
-              {filteredCafeWaiterOrderSpecial.map((accessType) => (
-                <label
-                  key={accessType.backendKey}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    background: selectedAccess[accessType.backendKey]
-                      ? "#bbdefb"
-                      : "white",
-                    border: `1px solid ${
-                      selectedAccess[accessType.backendKey] ? "#1976d2" : "#ddd"
-                    }`,
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "#f5f5f5";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "white";
-                    }
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedAccess[accessType.backendKey]}
-                    onChange={() => toggleAccess(accessType.backendKey)}
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      cursor: "pointer",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "#333",
-                      userSelect: "none",
-                    }}
-                  >
-                    {accessType.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
+        <AccessSection
+          title="Заказы кафе — официанты"
+          items={filteredCafeWaiterOrderSpecial}
+          selectedAccess={selectedAccess}
+          onToggle={toggleAccess}
+          onSelectAll={handleSelectAll}
+          tone="info"
+          gridTone="info"
+        />
 
-        {/* Касса Маркета: специальные доступы */}
-        {filteredMarketCashierSpecial.length > 0 && (
-          <div style={{ marginBottom: "24px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "2px solid #e0e0e0",
-              }}
-            >
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Касса Маркета
-              </h4>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => handleSelectAll(filteredMarketCashierSpecial, true)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Выбрать все
-                </button>
-                <button
-                  onClick={() => handleSelectAll(filteredMarketCashierSpecial, false)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Снять все
-                </button>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "8px",
-                maxHeight: "300px",
-                overflowY: "auto",
-                padding: "8px",
-                background: "#fff7cc",
-                borderRadius: "6px",
-              }}
-            >
-              {filteredMarketCashierSpecial.map((accessType) => (
-                <label
-                  key={accessType.backendKey}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    background: selectedAccess[accessType.backendKey]
-                      ? "#ffe082"
-                      : "white",
-                    border: `1px solid ${
-                      selectedAccess[accessType.backendKey] ? "#ffb300" : "#ddd"
-                    }`,
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "#f5f5f5";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "white";
-                    }
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedAccess[accessType.backendKey]}
-                    onChange={() => toggleAccess(accessType.backendKey)}
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      cursor: "pointer",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "#333",
-                      userSelect: "none",
-                    }}
-                  >
-                    {accessType.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
+        <AccessSection
+          title="Касса Маркета"
+          items={filteredMarketCashierSpecial}
+          selectedAccess={selectedAccess}
+          onToggle={toggleAccess}
+          onSelectAll={handleSelectAll}
+          tone="warning"
+          gridTone="warning"
+        />
 
-        {/* Дополнительные услуги */}
-        {filteredAdditional.length > 0 && (
-          <div style={{ marginBottom: "24px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "2px solid #e0e0e0",
-              }}
-            >
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Дополнительные услуги
-              </h4>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => handleSelectAll(filteredAdditional, true)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Выбрать все
-                </button>
-                <button
-                  onClick={() => handleSelectAll(filteredAdditional, false)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    background: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Снять все
-                </button>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "8px",
-                maxHeight: "300px",
-                overflowY: "auto",
-                padding: "8px",
-                background: "#fff3e0",
-                borderRadius: "6px",
-              }}
-            >
-              {filteredAdditional.map((accessType) => (
-                <label
-                  key={accessType.backendKey}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    background: selectedAccess[accessType.backendKey]
-                      ? "#ffe0b2"
-                      : "white",
-                    border: `1px solid ${
-                      selectedAccess[accessType.backendKey] ? "#ff9800" : "#ddd"
-                    }`,
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "#f5f5f5";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selectedAccess[accessType.backendKey]) {
-                      e.currentTarget.style.background = "white";
-                    }
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedAccess[accessType.backendKey]}
-                    onChange={() => toggleAccess(accessType.backendKey)}
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      cursor: "pointer",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "#333",
-                      userSelect: "none",
-                    }}
-                  >
-                    {accessType.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
+        <AccessSection
+          title="Дополнительные услуги"
+          items={filteredAdditional}
+          selectedAccess={selectedAccess}
+          onToggle={toggleAccess}
+          onSelectAll={handleSelectAll}
+          tone="warning"
+          gridTone="warning"
+        />
 
-        {/* Кнопка сохранения */}
         <div
           style={{
             display: "flex",
@@ -1570,28 +1058,13 @@ const AccessList = ({
             gap: "12px",
             marginTop: "24px",
             paddingTop: "16px",
-            borderTop: "1px solid #e0e0e0",
+            borderTop: "1px solid var(--nur-border)",
           }}
         >
           <button
+            type="button"
+            className="nur-btn nur-btn--primary"
             onClick={handleSave}
-            style={{
-              padding: "10px 24px",
-              borderRadius: "6px",
-              border: "none",
-              backgroundColor: "#007bff",
-              color: "white",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "600",
-              transition: "background-color 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#0056b3";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#007bff";
-            }}
           >
             Сохранить доступы
           </button>
@@ -1625,8 +1098,8 @@ const AccessList = ({
             position: "absolute",
             top: "40px",
             width: "100%",
-            background: "white",
-            border: "1px solid #ddd",
+            background: "var(--nur-surface)",
+            border: "1px solid var(--nur-border)",
             borderRadius: "6px",
             boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
             zIndex: 10,
@@ -1648,7 +1121,7 @@ const AccessList = ({
                   cursor: "pointer",
                 }}
               >
-                <span>{accessType.label}</span>
+                <span style={{ color: "var(--nur-text)" }}>{accessType.label}</span>
                 {selectedAccess[accessType.backendKey] ? (
                   <FaCheckCircle color="#2ecc71" />
                 ) : (
@@ -1667,7 +1140,7 @@ const AccessList = ({
               padding: "10px",
               borderRadius: "4px",
               border: "none",
-              backgroundColor: "#007bff",
+              backgroundColor: "var(--nur-info)",
               color: "white",
               cursor: "pointer",
             }}

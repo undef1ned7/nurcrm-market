@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "@shared/api";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+import BarberMastersPortal from "./BarberMastersPortal";
 
 const listFrom = (data) =>
   Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
@@ -179,6 +180,7 @@ const CafeWaiterPayProfileModal = ({
   if (!open || !employee) return null;
 
   return (
+    <BarberMastersPortal wrapperId="barbermasters-cafewaiterpayprofilemodal">
     <div className="barbermasters__overlay" role="presentation" onClick={onClose}>
       <div
         className="barbermasters__modal barbermasters__modal--cafeWaiterPay"
@@ -328,6 +330,7 @@ const CafeWaiterPayProfileModal = ({
         </form>
       </div>
     </div>
+    </BarberMastersPortal>
   );
 };
 

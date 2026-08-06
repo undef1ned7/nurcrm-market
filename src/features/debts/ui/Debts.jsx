@@ -1,4 +1,4 @@
-import  { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "@shared/api";
 import "./debts.scss";
 import { useDispatch } from "react-redux";
@@ -7,6 +7,7 @@ import {
   getCashBoxes,
   useCash,
 } from "@entities/cash";
+import { PageShell, PagePanel } from "@shared/ui/page-shell";
 
 import {
   listFrom,
@@ -294,7 +295,7 @@ const Debts = () => {
   };
 
   return (
-    <section className="catalog">
+    <PageShell className="debts-page">
       <DebtsHeader
         q={q}
         setQ={setQ}
@@ -306,33 +307,25 @@ const Debts = () => {
       />
 
       {loadErr && (
-        <div
-          style={{
-            background: "#fff1f2",
-            border: "1px solid #fecdd3",
-            color: "#b91c1c",
-            borderRadius: 10,
-            padding: "8px 10px",
-            marginBottom: 10,
-            fontSize: 13,
-          }}
-        >
+        <div className="debts-page__alert debts-page__alert--danger">
           {loadErr}
         </div>
       )}
 
       <Notifications notifications={notifications} />
 
-      <DebtsTable
-        loading={loading}
-        items={filtered}
-        confirmId={confirmId}
-        onAskDelete={askDelete}
-        onCancelDelete={cancelDelete}
-        onDelete={doDelete}
-        onOpenPay={openPay}
-        onOpenEdit={openEdit}
-      />
+      <PagePanel flush>
+        <DebtsTable
+          loading={loading}
+          items={filtered}
+          confirmId={confirmId}
+          onAskDelete={askDelete}
+          onCancelDelete={cancelDelete}
+          onDelete={doDelete}
+          onOpenPay={openPay}
+          onOpenEdit={openEdit}
+        />
+      </PagePanel>
 
       <NewDebtModal
         open={isNewOpen}
@@ -375,7 +368,7 @@ const Debts = () => {
         onClose={() => setEditOpen(false)}
         onSubmit={submitEdit}
       />
-    </section>
+    </PageShell>
   );
 };
 

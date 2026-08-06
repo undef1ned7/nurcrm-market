@@ -8,6 +8,7 @@ import {
   setEscposFont,
   setEscposLineHeight,
 } from "@pages/sell/ui/services/printService";
+import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
 import "./Settings.scss";
 
 const readNumber = (key, fallback) => {
@@ -133,35 +134,29 @@ export default function PosPrintSettings() {
   }, [msg]);
 
   return (
-    <div className="settings">
-      <div className="settings__header">
-        <div className="settings__header-content">
-          <h1>Печать чеков</h1>
-          <p>Настройки ESC/POS принтера для POS-кассы</p>
-        </div>
-        <div className="settings__header-icon">
-          <span className="settings__emoji" aria-hidden>
-            🖨️
-          </span>
-        </div>
-      </div>
+    <PageShell className="settings">
+      <PageHeader
+        title="Печать чеков"
+        subtitle="Настройки ESC/POS принтера для POS-кассы"
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--secondary"
+            onClick={() => navigate(-1)}
+          >
+            Назад
+          </button>
+        }
+      />
 
-      <div className="settings__content">
-        <div className="settings__section settings__tab-content--print">
-          <div className="settings__sectionHeadRow">
-            <h2 className="settings__section-title">
-              <span className="settings__emoji">🖨️</span> POS принтер • ESC/POS
-            </h2>
-            <div className="settings__sectionHeadBtns">
-              <button
-                type="button"
-                className="settings__btn settings__btn--secondary"
-                onClick={() => navigate(-1)}
-              >
-                Назад
-              </button>
-            </div>
-          </div>
+      <PagePanel>
+        <div className="settings__section settings__tab-content--print" style={{ marginBottom: 0 }}>
+          <h2 className="settings__section-title">
+            <span className="settings__emoji" aria-hidden>
+              🖨️
+            </span>{" "}
+            POS принтер • ESC/POS
+          </h2>
 
           <p className="settings__mutedText">
             Настройки сохраняются в <code>localStorage</code> и влияют на печать
@@ -170,10 +165,13 @@ export default function PosPrintSettings() {
 
           {msg && <div className={msgClassName}>{msg.text}</div>}
 
-          <div className="settings__form-group">
-            <div className="settings__label">Ширина бумаги</div>
+          <div className="settings__form-group nur-field">
+            <label className="nur-label" htmlFor="pos-paper-width">
+              Ширина бумаги
+            </label>
             <select
-              className="settings__select"
+              id="pos-paper-width"
+              className="nur-select"
               value={selectedPreset}
               onChange={(e) => applyPreset(e.target.value)}
             >
@@ -185,12 +183,13 @@ export default function PosPrintSettings() {
             </select>
           </div>
 
-          <div className="settings__form-group">
-            <div className="settings__label">
+          <div className="settings__form-group nur-field">
+            <label className="nur-label" htmlFor="pos-dpl">
               DOTS_PER_LINE (точек по ширине, для PDF/картинок)
-            </div>
+            </label>
             <input
-              className="settings__input settings__input--plain"
+              id="pos-dpl"
+              className="nur-input"
               type="number"
               min={200}
               step={1}
@@ -199,12 +198,13 @@ export default function PosPrintSettings() {
             />
           </div>
 
-          <div className="settings__form-group">
-            <div className="settings__label">
+          <div className="settings__form-group nur-field">
+            <label className="nur-label" htmlFor="pos-cpl">
               CHARS_PER_LINE (символов в строке, для текстовых чеков)
-            </div>
+            </label>
             <input
-              className="settings__input settings__input--plain"
+              id="pos-cpl"
+              className="nur-input"
               type="number"
               min={16}
               step={1}
@@ -214,7 +214,7 @@ export default function PosPrintSettings() {
           </div>
 
           <div className="settings__form-group">
-            <div className="settings__label">Шрифт</div>
+            <div className="nur-label">Шрифт</div>
             <div className="settings__segmented">
               <button
                 type="button"
@@ -233,10 +233,13 @@ export default function PosPrintSettings() {
             </div>
           </div>
 
-          <div className="settings__form-group">
-            <div className="settings__label">Межстрочный интервал (escpos_line)</div>
+          <div className="settings__form-group nur-field">
+            <label className="nur-label" htmlFor="pos-line">
+              Межстрочный интервал (escpos_line)
+            </label>
             <input
-              className="settings__input settings__input--plain"
+              id="pos-line"
+              className="nur-input"
               type="number"
               min={10}
               step={1}
@@ -245,10 +248,13 @@ export default function PosPrintSettings() {
             />
           </div>
 
-          <div className="settings__form-group">
-            <div className="settings__label">CodePage (ESC/POS: ESC t n)</div>
+          <div className="settings__form-group nur-field">
+            <label className="nur-label" htmlFor="pos-codepage">
+              CodePage (ESC/POS: ESC t n)
+            </label>
             <select
-              className="settings__select"
+              id="pos-codepage"
+              className="nur-select"
               value={codepage}
               onChange={(e) => setCodepage(Number(e.target.value))}
             >
@@ -265,7 +271,7 @@ export default function PosPrintSettings() {
               другой номер.
             </div>
             <input
-              className="settings__input settings__input--plain"
+              className="nur-input"
               type="number"
               min={0}
               max={255}
@@ -273,6 +279,7 @@ export default function PosPrintSettings() {
               value={codepage}
               onChange={(e) => setCodepage(Number(e.target.value))}
               style={{ marginTop: 8 }}
+              aria-label="CodePage вручную"
             />
             <div className="settings__fieldHint">
               Если печатает “кракозябрами” — попробуйте переключить <b>17 ↔ 66</b>{" "}
@@ -283,7 +290,7 @@ export default function PosPrintSettings() {
           <div className="settings__actions">
             <button
               type="button"
-              className="settings__btn settings__btn--primary"
+              className="nur-btn nur-btn--primary"
               onClick={save}
               disabled={saving}
             >
@@ -291,7 +298,7 @@ export default function PosPrintSettings() {
             </button>
             <button
               type="button"
-              className="settings__btn settings__btn--secondary"
+              className="nur-btn nur-btn--secondary"
               onClick={testUsb}
               disabled={testing}
             >
@@ -299,8 +306,7 @@ export default function PosPrintSettings() {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </PagePanel>
+    </PageShell>
   );
 }
-

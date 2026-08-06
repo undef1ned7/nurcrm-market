@@ -27,6 +27,15 @@ import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import { useAlert } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import InventorySessionsTab from "./components/InventorySessionsTab";
+import {
+  PageShell,
+  PageHeader,
+  PagePanel,
+  FilterBar,
+  StatusChip,
+  EmptyState,
+  LoadingState,
+} from "@shared/ui/page-shell";
 
 const Documents = () => {
   const alert = useAlert();
@@ -346,222 +355,218 @@ const Documents = () => {
     });
   };
 
+  const statusTone = (statusType) =>
+    statusType === "approved" ? "success" : "warning";
+
   return (
-    <div className="documents">
-      {/* Header with search and filters */}
-      <div
-        className={`documents__header${
-          activeTab === "inventory" ? " documents__header--inventory-only" : ""
-        }`}
-      >
-        {activeTab !== "inventory" ? (
-          <div className="documents__search">
-            <Search size={20} className="documents__search-icon" />
-            <input
-              type="text"
-              className="documents__search-input"
-              placeholder="Поиск по номеру или контрагенту..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        ) : null}
-        <div className="documents__header-actions">
-          {activeTab === "inventory" ? (
+    <PageShell className="documents">
+      <PageHeader
+        title="Документы"
+        subtitle="Чеки, накладные и инвентаризация"
+        actions={
+          activeTab === "inventory" ? (
             <button
               type="button"
-              className="documents__create-btn"
+              className="nur-btn nur-btn--primary"
               onClick={() => navigate("/crm/sklad")}
+              title="Создать инвентаризацию"
+              aria-label="Создать инвентаризацию"
             >
               <ClipboardList size={18} />
-              Создать инвентаризацию
+              <span className="nur-btn__label">Создать инвентаризацию</span>
             </button>
           ) : (
             <button
-              className="documents__filter-btn"
+              type="button"
+              className="nur-btn nur-btn--secondary"
               onClick={() => setShowReconciliationModal(true)}
-              style={{ marginRight: 10 }}
             >
               Создать акт сверки
             </button>
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
-      {/* Tabs */}
-      <div className="documents__tabs">
+      <div className="nur-tabs documents__tabs" role="tablist" aria-label="Тип документов">
         <button
-          className={`documents__tab ${
-            activeTab === "receipts" ? "documents__tab--active" : ""
-          }`}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "receipts"}
+          className={`nur-tabs__tab${activeTab === "receipts" ? " is-active" : ""}`}
           onClick={() => setActiveTab("receipts")}
         >
           Чеки
         </button>
         <button
-          className={`documents__tab ${
-            activeTab === "invoices" ? "documents__tab--active" : ""
-          }`}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "invoices"}
+          className={`nur-tabs__tab${activeTab === "invoices" ? " is-active" : ""}`}
           onClick={() => setActiveTab("invoices")}
         >
           Накладные
         </button>
         <button
-          className={`documents__tab ${
-            activeTab === "inventory" ? "documents__tab--active" : ""
-          }`}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "inventory"}
+          className={`nur-tabs__tab${activeTab === "inventory" ? " is-active" : ""}`}
           onClick={() => setActiveTab("inventory")}
         >
           Инвентаризация
         </button>
       </div>
 
-      {/* Table */}
-      <DataContainer>
+      {activeTab !== "inventory" && (
+        <FilterBar className="documents__search-bar">
+          <div className="documents__search">
+            <Search size={18} className="documents__search-icon" />
+            <input
+              type="text"
+              className="nur-input documents__search-input"
+              placeholder="Поиск по номеру или контрагенту..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </FilterBar>
+      )}
+
+      <DataContainer className="documents__data">
         {activeTab === "inventory" ? (
           <InventorySessionsTab />
         ) : (
-        <div className="documents__table-wrapper">
-          <table className="documents__table">
-            <thead>
-              <tr>
-                {activeTab === "receipts" && (
-                  <>
-                    <th>Номер</th>
-                    <th>Дата и время</th>
-                    <th>Клиент</th>
-                    <th>Товаров</th>
-                    <th>Сумма</th>
-                    <th>Статус</th>
-                    <th>Действия</th>
-                  </>
-                )}
-                {activeTab === "invoices" && (
-                  <>
-                    <th>Номер</th>
-                    <th>Дата</th>
-                    <th>Контрагент</th>
-                    <th>Позиций</th>
-                    <th>Сумма</th>
-                    <th>Статус</th>
-                    <th>Действия</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {documentsLoading ? (
-                <tr>
-                  <td colSpan={7} className="documents__empty">
-                    Загрузка...
-                  </td>
-                </tr>
-              ) : getCurrentData().length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="documents__empty">
-                    Документы не найдены
-                  </td>
-                </tr>
-              ) : (
-                getCurrentData().map((item, _idx) => (
-                  <tr key={item.id}>
+          <PagePanel flush className="documents__panel">
+            <div className="nur-table-wrap">
+              <table className="nur-table nur-table--dense">
+                <thead>
+                  <tr>
                     {activeTab === "receipts" && (
                       <>
-                        <td>{item.number}</td>
-                        <td>{item.date}</td>
-                        <td>{item.client}</td>
-                        <td>{item.products}</td>
-                        <td>{formatAmount(item.amount)} сом</td>
-                        <td>
-                          <span
-                            className={`documents__status documents__status--${item.statusType}`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="documents__actions">
-                            <button
-                              className="documents__action-btn"
-                              onClick={() => handleView(item)}
-                              title="Просмотр"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            {/* <button
-                            className="documents__action-btn"
-                            onClick={() => handleEdit(item)}
-                            title="Редактировать"
-                          >
-                            <Pencil size={18} />
-                          </button> */}
-                            <button
-                              className="documents__action-btn"
-                              onClick={() => handlePrint(item)}
-                              title="Печать"
-                            >
-                              <Printer size={18} />
-                            </button>
-                          </div>
-                        </td>
+                        <th>Номер</th>
+                        <th>Дата и время</th>
+                        <th>Клиент</th>
+                        <th>Товаров</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
                       </>
                     )}
                     {activeTab === "invoices" && (
                       <>
-                        <td>{item.number}</td>
-                        <td>{item.date}</td>
-                        <td>{item.counterparty}</td>
-                        <td>{item.positions}</td>
-                        <td>{formatAmount(item.amount)} сом</td>
-                        <td>
-                          <span
-                            className={`documents__status documents__status--${item.statusType}`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="documents__actions">
-                            <button
-                              className="documents__action-btn"
-                              onClick={() => handleView(item)}
-                              title="Просмотр"
-                            >
-                              <Eye size={18} />
-                            </button>
-                            {/* <button
-                            className="documents__action-btn"
-                            onClick={() => handleEdit(item)}
-                            title="Редактировать"
-                          >
-                            <Pencil size={18} />
-                          </button> */}
-                            <button
-                              className="documents__action-btn"
-                              onClick={() => handlePrint(item)}
-                              title="Печать"
-                            >
-                              <Printer size={18} />
-                            </button>
-                          </div>
-                        </td>
+                        <th>Номер</th>
+                        <th>Дата</th>
+                        <th>Контрагент</th>
+                        <th>Позиций</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
                       </>
                     )}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {documentsLoading ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <LoadingState rows={4} />
+                      </td>
+                    </tr>
+                  ) : getCurrentData().length === 0 ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <EmptyState
+                          title="Документы не найдены"
+                          text="Измените поиск или создайте новый документ."
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    getCurrentData().map((item) => (
+                      <tr key={item.id}>
+                        {activeTab === "receipts" && (
+                          <>
+                            <td>{item.number}</td>
+                            <td>{item.date}</td>
+                            <td>{item.client}</td>
+                            <td>{item.products}</td>
+                            <td>{formatAmount(item.amount)} сом</td>
+                            <td>
+                              <StatusChip tone={statusTone(item.statusType)}>
+                                {item.status}
+                              </StatusChip>
+                            </td>
+                            <td>
+                              <div className="documents__actions">
+                                <button
+                                  type="button"
+                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+                                  onClick={() => handleView(item)}
+                                  title="Просмотр"
+                                >
+                                  <Eye size={18} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+                                  onClick={() => handlePrint(item)}
+                                  title="Печать"
+                                >
+                                  <Printer size={18} />
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                        {activeTab === "invoices" && (
+                          <>
+                            <td>{item.number}</td>
+                            <td>{item.date}</td>
+                            <td>{item.counterparty}</td>
+                            <td>{item.positions}</td>
+                            <td>{formatAmount(item.amount)} сом</td>
+                            <td>
+                              <StatusChip tone={statusTone(item.statusType)}>
+                                {item.status}
+                              </StatusChip>
+                            </td>
+                            <td>
+                              <div className="documents__actions">
+                                <button
+                                  type="button"
+                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+                                  onClick={() => handleView(item)}
+                                  title="Просмотр"
+                                >
+                                  <Eye size={18} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+                                  onClick={() => handlePrint(item)}
+                                  title="Печать"
+                                >
+                                  <Printer size={18} />
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </PagePanel>
         )}
       </DataContainer>
 
-      {/* Пагинация для чеков и накладных */}
       {activeTab !== "inventory" && totalPages > 1 && (
         <div className="documents__pagination">
           <button
             type="button"
-            className="documents__pagination-btn"
+            className="nur-btn nur-btn--secondary"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={
               currentPage === 1 || documentsLoading || !documentsPrevious
@@ -575,7 +580,7 @@ const Documents = () => {
           </span>
           <button
             type="button"
-            className="documents__pagination-btn"
+            className="nur-btn nur-btn--secondary"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={
               documentsLoading ||
@@ -621,7 +626,7 @@ const Documents = () => {
           onSaved={handleSaved}
         />
       )}
-    </div>
+    </PageShell>
   );
 };
 

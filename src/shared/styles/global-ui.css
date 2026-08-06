@@ -1,0 +1,208 @@
+/**
+ * Global UI polish — focus, motion, legacy bridges, a11y helpers.
+ * Loaded after tokens.css
+ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--nur-font);
+  font-size: var(--nur-font-body);
+  line-height: var(--nur-line-body);
+  color: var(--nur-text);
+  background: var(--nur-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Visible keyboard focus for interactive elements missing custom styles */
+:where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--nur-primary);
+  outline-offset: 2px;
+}
+
+:where(a, button, [role="button"]):not(:disabled) {
+  cursor: pointer;
+}
+
+/* Prevent iOS zoom on focus */
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .nur-skeleton,
+  .nur-skeleton-table__row .nur-skeleton {
+    animation: none !important;
+    background: var(--nur-border);
+  }
+
+  .nur-btn:active:not(:disabled),
+  .nur-card-interactive:hover,
+  .scroll-top-btn:hover {
+    transform: none !important;
+  }
+}
+
+/* Screen-reader only */
+.nur-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link */
+.nur-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 10000;
+  padding: 12px 16px;
+  background: var(--nur-primary);
+  color: var(--nur-primary-ink);
+  font-weight: 700;
+  border-radius: 0 0 8px 0;
+}
+
+.nur-skip-link:focus {
+  left: 0;
+}
+
+/* Legacy color safety: never white text on brand yellow buttons */
+button[style*="background: #f7d74f"],
+button[style*="background:#f7d74f"],
+button[style*="background: #F7D74F"],
+.btn-primary,
+.create-btn,
+.add-btn {
+  color: var(--nur-primary-ink);
+}
+
+/* Soften common hard-coded gray text toward AA muted */
+.muted,
+.text-muted,
+.text-secondary {
+  color: var(--nur-muted) !important;
+}
+
+/* Placeholders: light enough in dark theme; kill browser opacity fade */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: var(--nur-placeholder);
+  opacity: 1;
+}
+
+/* Content measure on large screens — CRM pages only, not fullscreen POS */
+@media (min-width: 1440px) {
+  .content_content > .nur-page:not(.cashier-page),
+  .content_content > [class*="-page"]:not(.cashier-page) {
+    max-width: var(--nur-content-max);
+  }
+}
+
+/* Fullscreen cashier / POS must always fill the viewport */
+.cashier-page,
+.content--full-width .cashier-page,
+.content_content > .cashier-page {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+/* Horizontal overflow guard */
+.content,
+.nur-page,
+[class*="-page"]:not(.cashier-page) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Action menu (three dots) */
+.nur-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.nur-menu__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--nur-surface);
+  border: 1px solid var(--nur-border);
+  border-radius: var(--nur-radius-sm);
+  box-shadow: var(--nur-shadow);
+}
+
+.nur-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--nur-text);
+  font-size: var(--nur-font-meta);
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nur-menu__item:hover {
+  background: var(--nur-primary-soft);
+}
+
+.nur-menu__item--danger {
+  color: var(--nur-danger-ink);
+}
+
+.nur-menu__item--danger:hover {
+  background: var(--nur-danger-soft);
+}

@@ -23,7 +23,8 @@ import {
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import { Wallet, X, Pencil, Trash2 } from "lucide-react";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
-import "../ClientModals.redesign.scss";
+import "../ClientModals.scss";
+import ClientModalPortal from "./ClientModalPortal";
 
 const DebtModal = ({ id, onClose, onChanged, clientType }) => {
   const dispatch = useDispatch();
@@ -284,6 +285,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
   if (!id) return null;
 
   return (
+    <ClientModalPortal wrapperId="client-debt-modal">
     <div className="cmx__overlay" data-theme={mode} onClick={onClose}>
       <div
         className="cmx__dialog cmx__dialog--xl"
@@ -840,6 +842,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
         />
       </div>
     </div>
+    </ClientModalPortal>
   );
 };
 

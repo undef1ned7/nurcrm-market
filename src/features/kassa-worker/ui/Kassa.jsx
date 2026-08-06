@@ -22,6 +22,12 @@ import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import api from "@shared/api";
 import Loading from "@shared/ui/Loading/Loading";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+} from "@shared/ui/page-shell";
 
 const CASHFLOWS_PAGE_SIZE = 100;
 const REPORT_PAGE_SIZE = 200;
@@ -463,85 +469,66 @@ const KassaDet = () => {
   // }
 
   return (
-    <div className="kassa-page">
+    <PageShell className="kassa-page">
       {
         loading && (
           <Loading />
         )
       }
-      <div className="kassa-header">
-        <div className="kassa-header__left">
-          <div className="kassa-header__icon-box">💰</div>
-          <div className="kassa-header__title-section">
-            <h2 className="kassa-header__title">
-              {cashboxDetails?.department_name ?? cashboxDetails?.name ?? "Касса"}
-            </h2>
-            <p className="kassa-header__subtitle">Движения по кассе</p>
-          </div>
-        </div>
-        <nav className="kassa-header__nav-tabs">
-          <Link className="kassa-header__nav-tab" to="/crm/kassa/">
-            ← Назад
-          </Link>
-          <button
-            type="button"
-            className={`kassa-header__nav-tab ${activeFlowType === "all" ? "kassa-header__nav-tab--active" : ""
-              }`}
-            onClick={() => setActiveFlowType("all")}
-          >
-            Все
-          </button>
-          <button
-            type="button"
-            className={`kassa-header__nav-tab ${activeFlowType === "expense"
-              ? "kassa-header__nav-tab--active"
-              : ""
-              }`}
-            onClick={() => setActiveFlowType("expense")}
-          >
-            Расход
-          </button>
-          <button
-            type="button"
-            className={`kassa-header__nav-tab ${activeFlowType === "income" ? "kassa-header__nav-tab--active" : ""
-              }`}
-            onClick={() => setActiveFlowType("income")}
-          >
-            Приход
-          </button>
-          {company?.subscription_plan?.name !== "Старт" && (
+      <PageHeader
+        title={cashboxDetails?.department_name ?? cashboxDetails?.name ?? "Касса"}
+        subtitle="Движения по кассе"
+        actions={
+          <>
+            <Link className="nur-btn nur-btn--ghost nur-btn--sm" to="/crm/kassa/">
+              ← Назад
+            </Link>
+            {activeFlowType !== "reports" && (
+              <button
+                type="button"
+                className="nur-btn nur-btn--primary nur-btn--sm"
+                onClick={() => setShowAddCashboxModal(true)}
+                title="Добавить операцию"
+                aria-label="Добавить операцию"
+              >
+                <Plus size={16} />
+                <span className="nur-btn__label">Добавить операцию</span>
+              </button>
+            )}
+          </>
+        }
+      />
+
+      <FilterBar className="kassa-page__toolbar">
+        <div
+          className="kassa-flow-tabs"
+          role="tablist"
+          aria-label="Разделы кассы"
+        >
+          {[
+            { id: "all", label: "Все" },
+            { id: "expense", label: "Расход" },
+            { id: "income", label: "Приход" },
+            ...(company?.subscription_plan?.name !== "Старт"
+              ? [{ id: "pending", label: "Запросы" }]
+              : []),
+            { id: "reports", label: "Отчёты" },
+          ].map((tab) => (
             <button
+              key={tab.id}
               type="button"
-              className={`kassa-header__nav-tab ${activeFlowType === "pending"
-                ? "kassa-header__nav-tab--active"
-                : ""
-                }`}
-              onClick={() => setActiveFlowType("pending")}
-            >
-              Запросы
-            </button>
-          )}
-          <button
-            type="button"
-            className={`kassa-header__nav-tab ${activeFlowType === "reports"
-              ? "kassa-header__nav-tab--active"
-              : ""
+              role="tab"
+              aria-selected={activeFlowType === tab.id}
+              className={`kassa-flow-tabs__tab${
+                activeFlowType === tab.id ? " is-active" : ""
               }`}
-            onClick={() => setActiveFlowType("reports")}
-          >
-            Отчеты
-          </button>
-        </nav>
-        {activeFlowType !== "reports" && (
-          <button
-            className="kassa-header__create-btn"
-            onClick={() => setShowAddCashboxModal(true)}
-          >
-            <Plus size={16} />
-            Добавить операцию
-          </button>
-        )}
-      </div>
+              onClick={() => setActiveFlowType(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </FilterBar>
 
       {activeFlowType === "pending" ? (
         <Pending />
@@ -651,7 +638,7 @@ const KassaDet = () => {
                               </span>
                             </div>
                           </div>
-                          <table className="kassa-table">
+                          <table className="nur-table kassa-table">
                             <thead>
                               <tr>
                                 <th>Тип</th>
@@ -689,7 +676,7 @@ const KassaDet = () => {
                 ) : (
                   <div className="cashbox-reports__daily">
                     {reportData.flows && reportData.flows.length > 0 ? (
-                      <table className="kassa-table">
+                      <table className="nur-table kassa-table">
                         <thead>
                           <tr>
                             <th>Тип</th>
@@ -744,7 +731,7 @@ const KassaDet = () => {
               <Search className="kassa-search__icon" size={18} />
               <input
                 type="text"
-                className="kassa-search__input"
+                className="nur-input kassa-search__input"
                 placeholder="Поиск потоков"
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
@@ -804,7 +791,7 @@ const KassaDet = () => {
                       : "."}
                 </div>
               ) : viewMode === "table" ? (
-                <table className="kassa-table">
+                <table className="nur-table kassa-table">
                   <thead>
                     <tr>
                       <th>Тип</th>
@@ -940,182 +927,212 @@ const KassaDet = () => {
       )}
 
       {showFilter && (
-        <div className="kassa-modal block" style={{ display: "block" }}>
+        <ReactPortal wrapperId="kassa-filter-modal">
           <div
             className="kassa-modal__overlay"
+            role="presentation"
             onClick={() => setShowFilter(false)}
-            aria-hidden="true"
-          />
-          <div className="kassa-modal__card kassa-filter-modal">
-            <div className="kassa-filter-modal__header">
-              <h3 className="kassa-filter-modal__title">Фильтры потоков</h3>
-              <button
-                type="button"
-                className="kassa-modal__close"
-                onClick={() => setShowFilter(false)}
-                aria-label="Закрыть"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="kassa-filter-modal__body">
-              <div className="kassa-filter-modal__field">
-                <label className="kassa-filter-modal__label">Поиск</label>
-                <div className="kassa-filter-modal__search">
-                  <Search
-                    className="kassa-filter-modal__search-icon"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Поиск потоков"
-                    className="kassa-filter-modal__search-input"
-                    value={filterSearch}
-                    onChange={(e) => setFilterSearch(e.target.value)}
-                  />
+          >
+            <div
+              className="kassa-modal__card kassa-filter-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Фильтры потоков"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="kassa-filter-modal__header">
+                <h3 className="kassa-filter-modal__title">Фильтры потоков</h3>
+                <button
+                  type="button"
+                  className="kassa-modal__close"
+                  onClick={() => setShowFilter(false)}
+                  aria-label="Закрыть"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="kassa-filter-modal__body">
+                <div className="kassa-filter-modal__field">
+                  <label className="kassa-filter-modal__label">Поиск</label>
+                  <div className="kassa-filter-modal__search">
+                    <Search
+                      className="kassa-filter-modal__search-icon"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Поиск потоков"
+                      className="kassa-filter-modal__search-input"
+                      value={filterSearch}
+                      onChange={(e) => setFilterSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="kassa-filter-modal__field">
+                  <label className="kassa-filter-modal__label">Тип потока</label>
+                  <select
+                    className="kassa-filter-modal__select-native"
+                    value={activeFlowType}
+                    onChange={(e) => setActiveFlowType(e.target.value)}
+                  >
+                    <option value="all">Все</option>
+                    <option value="income">Приход</option>
+                    <option value="expense">Расход</option>
+                  </select>
                 </div>
               </div>
-              <div className="kassa-filter-modal__field">
-                <label className="kassa-filter-modal__label">Тип потока</label>
-                <select
-                  className="kassa-filter-modal__select-native"
-                  value={activeFlowType}
-                  onChange={(e) => setActiveFlowType(e.target.value)}
+              <div className="kassa-filter-modal__footer">
+                <button
+                  type="button"
+                  className="kassa-filter-modal__reset"
+                  onClick={handleResetFilters}
                 >
-                  <option value="all">Все</option>
-                  <option value="income">Приход</option>
-                  <option value="expense">Расход</option>
-                </select>
+                  Сбросить фильтры
+                </button>
               </div>
             </div>
-            <div className="kassa-filter-modal__footer">
-              <button
-                type="button"
-                className="kassa-filter-modal__reset"
-                onClick={handleResetFilters}
-              >
-                Сбросить фильтры
-              </button>
-            </div>
           </div>
-        </div>
+        </ReactPortal>
       )}
 
       {showAddCashboxModal && (
-        <div className="vitrina__overlay">
-          <div className="vitrina__modal vitrina__modal--add">
-            <div className="vitrina__modal-header">
-              <h3>Добавление операции</h3>
-              <X
-                className="vitrina__close-icon"
-                size={20}
-                onClick={() => setShowAddCashboxModal(false)}
-              />
-            </div>
-            <div className="vitrina__modal-section">
-              <label>Наименование</label>
-              <input
-                required
-                type="text"
-                placeholder="Например, Закупка материалов"
-                className="vitrina__modal-input"
-                value={newCashbox.name}
-                onChange={(e) =>
-                  setNewCashbox({ ...newCashbox, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="vitrina__modal-section">
-              <label>Сумма</label>
-              <input
-                type="text"
-                placeholder="Например, 10000"
-                className="vitrina__modal-input"
-                value={newCashbox.amount}
-                onChange={(e) =>
-                  setNewCashbox({
-                    ...newCashbox,
-                    amount: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div className="vitrina__modal-section">
-              <label>Тип операции</label>
-              <select
-                className="vitrina__modal-input"
-                value={newCashbox.type}
-                onChange={(e) =>
-                  setNewCashbox({ ...newCashbox, type: e.target.value })
-                }
-              >
-                <option value="expense">Расход</option>
-                <option value="income">Приход</option>
-              </select>
-            </div>
-            <div className="vitrina__modal-footer">
-              <button
-                className="vitrina__button vitrina__button--cancel"
-                onClick={() => setShowAddCashboxModal(false)}
-              >
-                Отмена
-              </button>
-              <button
-                className="vitrina__button vitrina__button--save"
-                onClick={handleAddCashbox}
-              >
-                Добавить
-              </button>
+        <ReactPortal wrapperId="kassa-add-operation-modal">
+          <div
+            className="vitrina__overlay"
+            role="presentation"
+            onClick={() => setShowAddCashboxModal(false)}
+          >
+            <div
+              className="vitrina__modal vitrina__modal--add"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Добавление операции"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="vitrina__modal-header">
+                <h3>Добавление операции</h3>
+                <X
+                  className="vitrina__close-icon"
+                  size={20}
+                  onClick={() => setShowAddCashboxModal(false)}
+                />
+              </div>
+              <div className="vitrina__modal-section">
+                <label>Наименование</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Например, Закупка материалов"
+                  className="vitrina__modal-input"
+                  value={newCashbox.name}
+                  onChange={(e) =>
+                    setNewCashbox({ ...newCashbox, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="vitrina__modal-section">
+                <label>Сумма</label>
+                <input
+                  type="text"
+                  placeholder="Например, 10000"
+                  className="vitrina__modal-input"
+                  value={newCashbox.amount}
+                  onChange={(e) =>
+                    setNewCashbox({
+                      ...newCashbox,
+                      amount: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+              <div className="vitrina__modal-section">
+                <label>Тип операции</label>
+                <select
+                  className="vitrina__modal-input"
+                  value={newCashbox.type}
+                  onChange={(e) =>
+                    setNewCashbox({ ...newCashbox, type: e.target.value })
+                  }
+                >
+                  <option value="expense">Расход</option>
+                  <option value="income">Приход</option>
+                </select>
+              </div>
+              <div className="vitrina__modal-footer">
+                <button
+                  className="vitrina__button vitrina__button--cancel"
+                  onClick={() => setShowAddCashboxModal(false)}
+                >
+                  Отмена
+                </button>
+                <button
+                  className="vitrina__button vitrina__button--save"
+                  onClick={handleAddCashbox}
+                >
+                  Добавить
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ReactPortal>
       )}
 
       {showEditCashboxModal && selectedCashbox && (
-        <div className="vitrina__overlay">
-          <div className="vitrina__modal vitrina__modal--edit">
-            <div className="vitrina__modal-header">
-              <h3>Редактирование кассы</h3>
-              <X
-                className="vitrina__close-icon"
-                size={20}
-                onClick={() => setShowEditCashboxModal(false)}
-              />
-            </div>
-            <div className="vitrina__modal-section">
-              <label>ID</label>
-              <input
-                type="text"
-                value={selectedCashbox.id || ""}
-                readOnly
-                className="vitrina__modal-input"
-              />
-            </div>
-            <div className="vitrina__modal-section">
-              <label>Название</label>
-              <input
-                type="text"
-                value={selectedCashbox.title || ""}
-                onChange={(e) =>
-                  setSelectedCashbox({
-                    ...selectedCashbox,
-                    title: e.target.value,
-                  })
-                }
-                className="vitrina__modal-input"
-              />
-            </div>
-            <div className="vitrina__modal-footer">
-              {/* <button className="vitrina__button vitrina__button--reset" onClick={handleDeleteCashbox}>Удалить кассу</button> */}
-              <button
-                className="vitrina__button vitrina__button--save"
-                onClick={handleEditCashbox}
-              >
-                Сохранить изменения
-              </button>
+        <ReactPortal wrapperId="kassa-edit-modal">
+          <div
+            className="vitrina__overlay"
+            role="presentation"
+            onClick={() => setShowEditCashboxModal(false)}
+          >
+            <div
+              className="vitrina__modal vitrina__modal--edit"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Редактирование кассы"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="vitrina__modal-header">
+                <h3>Редактирование кассы</h3>
+                <X
+                  className="vitrina__close-icon"
+                  size={20}
+                  onClick={() => setShowEditCashboxModal(false)}
+                />
+              </div>
+              <div className="vitrina__modal-section">
+                <label>ID</label>
+                <input
+                  type="text"
+                  value={selectedCashbox.id || ""}
+                  readOnly
+                  className="vitrina__modal-input"
+                />
+              </div>
+              <div className="vitrina__modal-section">
+                <label>Название</label>
+                <input
+                  type="text"
+                  value={selectedCashbox.title || ""}
+                  onChange={(e) =>
+                    setSelectedCashbox({
+                      ...selectedCashbox,
+                      title: e.target.value,
+                    })
+                  }
+                  className="vitrina__modal-input"
+                />
+              </div>
+              <div className="vitrina__modal-footer">
+                <button
+                  className="vitrina__button vitrina__button--save"
+                  onClick={handleEditCashbox}
+                >
+                  Сохранить изменения
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ReactPortal>
       )}
       {showPending && (
         <PendingModal
@@ -1124,7 +1141,7 @@ const KassaDet = () => {
           onChanged={() => fetchCashboxDetails(id)}
         />
       )}
-    </div>
+    </PageShell>
   );
 };
 

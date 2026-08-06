@@ -1,35 +1,20 @@
-/* ====== Тема: белый + жёлтый (#ffd600) ====== */
-:root {
-  --c-bg: #ffffff; /* общий фон */
-  --c-surface: #ffffff; /* карточки/панели */
-  --c-ink: #0b0b0b; /* основной текст (чёрный) */
-  --c-muted: #4b4b4b; /* приглушённый текст */
-  --c-border: #f1f1f1; /* тонкие границы/разделители */
-  --c-accent: #ffd600; /* жёлтый акцент */
-
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.05);
-  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.08);
-
-  --r-lg: 14px;
-  --r-md: 10px;
-
-  --focus: 0 0 0 3px rgba(255, 214, 0, 0.45); /* жёлтое кольцо фокуса */
-}
-
-/* фиксируем единую тему (без авто-инверсии) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --c-bg: #ffffff;
-    --c-surface: #ffffff;
-    --c-ink: #0b0b0b;
-    --c-muted: #4b4b4b;
-    --c-border: #f1f1f1;
-    --c-accent: #ffd600;
-  }
-}
-
 /* ===== base ===== */
 .analytics {
+  --c-bg: var(--nur-bg);
+  --c-surface: var(--nur-surface);
+  --c-ink: var(--nur-text);
+  --c-muted: var(--nur-muted);
+  --c-border: var(--nur-border);
+  --c-accent: var(--nur-primary);
+
+  --shadow-1: var(--nur-shadow-sm);
+  --shadow-2: var(--nur-shadow-lg);
+
+  --r-lg: var(--nur-radius-lg);
+  --r-md: var(--nur-radius-sm);
+
+  --focus: 0 0 0 3px var(--nur-primary-ring);
+
   margin-top: 20px;
   min-height: 100vh;
   background: var(--c-bg);
@@ -163,7 +148,7 @@
 
     &--active {
       background: var(--c-accent);
-      color: #000;
+      color: var(--nur-text);
       border-color: var(--c-accent);
     }
   }
@@ -297,7 +282,7 @@
 
       &.is-active {
         background: var(--c-accent);
-        color: #000;
+        color: var(--nur-text);
       }
       &:not(.is-active):hover {
         background: #fffef2;
@@ -872,7 +857,7 @@
       font-weight: 800;
       &.is-active {
         background: var(--c-accent);
-        color: #000;
+        color: var(--nur-text);
       }
       &:focus-visible {
         outline: none;
@@ -1060,7 +1045,7 @@
     margin: 0 0 8px 0;
     font-size: 24px;
     font-weight: 900;
-    color: #000;
+    color: var(--nur-text);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1097,7 +1082,7 @@
       right: 0;
       top: 0;
       height: 4px;
-      background: linear-gradient(90deg, #ffd600 0%, #ffed4e 100%);
+      background: linear-gradient(90deg, var(--nur-primary, #f7d74f) 0%, #ffed4e 100%);
       border-radius: var(--r-lg) var(--r-lg) 0 0;
     }
   }
@@ -1114,7 +1099,7 @@
     margin-top: 6px;
     font-size: 26px;
     font-weight: 900;
-    color: #000;
+    color: var(--nur-text);
   }
 
   &__grid {
@@ -1133,7 +1118,7 @@
   &__card-title {
     font-weight: 900;
     margin-bottom: 8px;
-    color: #000;
+    color: var(--nur-text);
     display: flex;
     align-items: center;
     gap: 8px;

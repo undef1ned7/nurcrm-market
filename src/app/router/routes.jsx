@@ -13,7 +13,17 @@ const RegisterAccessSettings = lazy(
 );
 
 export const publicRoutes = [
-  <Route key="root" path="/" element={<Navigate to="/crm" replace />} />,
+  <Route
+    key="root"
+    path="/"
+    element={
+      localStorage.getItem("accessToken") ? (
+        <Navigate to="/crm" replace />
+      ) : (
+        <Navigate to="/login" replace />
+      )
+    }
+  />,
   <Route key="login" path="/login" element={<Login />} />,
   <Route
     key="register"

@@ -1,22 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-
 $mountains: url("https://e-cis.info/upload/iblock/4b4/n0n59zv1k5pgk7cc7ai3829cuh1w5rhe.png");
 $radius: 14px;
 $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
-
-:root {
-  --register-primary: #f7d74f;
-  --register-primary-dark: #d4b800;
-  --register-ink: #0f172a;
-  --register-surface: #ffffff;
-  --register-border: #e5e7eb;
-}
 
 * {
   box-sizing: border-box;
 }
 
 .register {
+  --register-primary: var(--nur-primary);
+  --register-primary-dark: var(--nur-primary-dark);
+  --register-ink: var(--nur-text);
+  --register-surface: var(--nur-surface);
+  --register-border: var(--nur-border);
+
   position: relative;
   min-height: 100svh;
   display: flex;
@@ -28,7 +24,7 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
     linear-gradient(0deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.28)),
     $mountains center/cover no-repeat fixed;
 
-  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+  font-family: inherit;
 
   &::after {
     content: "";
@@ -67,7 +63,7 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
   &__subtitle,
   &__hint {
     font-size: 14px;
-    color: #64748b;
+    color: var(--nur-muted);
     line-height: 1.45;
     margin: 0 0 22px;
     text-align: center;
@@ -80,14 +76,14 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
     margin: 0 0 14px;
 
     &--error {
-      background: #fef2f2;
-      color: #991b1b;
+      background: var(--nur-danger-soft);
+      color: var(--nur-danger-ink);
       border: 1px solid #fecaca;
     }
 
     &--success {
-      background: #ecfdf5;
-      color: #065f46;
+      background: var(--nur-success-soft);
+      color: var(--nur-success-ink);
       border: 1px solid #a7f3d0;
     }
   }
@@ -101,9 +97,9 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
     display: grid;
     gap: 14px;
     padding: 18px;
-    border: 1px solid #eef2f7;
+    border: 1px solid var(--nur-border);
     border-radius: 12px;
-    background: #fafbfd;
+    background: var(--nur-bg);
   }
 
   &__section-title {
@@ -112,7 +108,7 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #475569;
+    color: var(--nur-text-2);
   }
 
   &__row {
@@ -132,13 +128,13 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
 
   &__label {
     font-size: 13px;
-    color: #334155;
+    color: var(--nur-text-2);
     font-weight: 600;
   }
 
   &__optional {
     font-weight: 500;
-    color: #94a3b8;
+    color: var(--nur-muted);
   }
 
   &__input,
@@ -146,11 +142,11 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
     width: 100%;
     padding: 11px 12px;
     font-size: 15px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--nur-border-strong);
     border-radius: 10px;
     outline: none;
-    background: #fff;
-    color: #0f172a;
+    background: var(--nur-surface);
+    color: var(--nur-text);
     transition: box-shadow 0.2s, border-color 0.2s;
 
     &:focus {
@@ -159,7 +155,8 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
     }
 
     &::placeholder {
-      color: #94a3b8;
+      color: var(--nur-placeholder);
+      opacity: 1;
     }
   }
 
@@ -186,31 +183,31 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    border: 1px solid #e2e8f0;
-    background: #fff;
+    border: 1px solid var(--nur-border-strong);
+    background: var(--nur-surface);
     padding: 7px 10px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    color: #475569;
+    color: var(--nur-text-2);
     cursor: pointer;
 
     &:hover {
-      background: #f8fafc;
+      background: var(--nur-surface-2);
     }
   }
 
   &__field-hint {
     font-size: 12px;
-    color: #64748b;
+    color: var(--nur-muted);
     margin: 0;
 
     &--ok {
-      color: #047857;
+      color: var(--nur-success-ink);
     }
 
     &--error {
-      color: #b91c1c;
+      color: var(--nur-danger-ink);
     }
   }
 
@@ -222,10 +219,11 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
 
   &__button {
     background: var(--register-primary);
-    color: #111827;
+    color: var(--nur-primary-ink);
     font-size: 15px;
     font-weight: 800;
     padding: 13px 16px;
+    min-height: var(--nur-control-h, 44px);
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -250,14 +248,14 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
   &__footer {
     margin-top: 18px;
     padding-top: 16px;
-    border-top: 1px solid #eef2f7;
+    border-top: 1px solid var(--nur-border);
     text-align: center;
     font-size: 14px;
-    color: #64748b;
+    color: var(--nur-muted);
   }
 
   &__link {
-    color: #b45309;
+    color: var(--nur-warning-ink);
     font-weight: 700;
     text-decoration: none;
 
@@ -288,6 +286,6 @@ $shadow: 0 10px 30px rgba(2, 6, 23, 0.12);
 
 input:-webkit-autofill,
 select:-webkit-autofill {
-  box-shadow: 0 0 0 1000px #fff inset;
-  -webkit-text-fill-color: #111827;
+  box-shadow: 0 0 0 1000px var(--nur-surface) inset;
+  -webkit-text-fill-color: var(--nur-text);
 }

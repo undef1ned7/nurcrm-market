@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
-import { X, CheckCheck, BellOff } from "lucide-react";
+import { X, CheckCheck, BellOff, Bell, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import classes from "./NotificationModal.module.scss";
 import {
   fetchNotificationsAsync,
@@ -21,14 +22,15 @@ const fmtDateTime = (s) => {
 const idOf = (n) => n?.id ?? n?.uuid ?? n?.pk;
 const isUnread = (n) => !(n?.is_read ?? n?.read ?? false);
 
-// Цвет полоски слева по уровню важности.
-const levelColor = (n) => {
-  const lvl = String(n?.level ?? n?.importance ?? n?.priority ?? "").toLowerCase();
+const levelTone = (n) => {
+  const lvl = String(
+    n?.level ?? n?.importance ?? n?.priority ?? "",
+  ).toLowerCase();
   if (["critical", "urgent", "high", "danger", "error"].includes(lvl))
-    return "#ef4444";
-  if (["warning", "medium", "warn"].includes(lvl)) return "#f59e0b";
-  if (["success", "ok"].includes(lvl)) return "#10b981";
-  return "#3b82f6";
+    return "danger";
+  if (["warning", "medium", "warn"].includes(lvl)) return "warning";
+  if (["success", "ok"].includes(lvl)) return "success";
+  return "info";
 };
 
 const NotificationModal = ({ onClose }) => {
@@ -45,14 +47,20 @@ const NotificationModal = ({ onClose }) => {
     markingAllRead = false,
   } = useSelector((state) => state.notification);
 
-  // Подгружаем первую страницу, только если список пуст (нет лишних запросов,
-  // когда данные уже пришли из WebSocket / были загружены в шапке).
   useEffect(() => {
     if (list.length === 0 && !loading) {
       dispatch(fetchNotificationsAsync({ limit: PAGE_SIZE, offset: 0 }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;
@@ -65,7 +73,6 @@ const NotificationModal = ({ onClose }) => {
     );
   }, [dispatch, hasMore, loadingMore, list.length]);
 
-  // Lazy loading при прокрутке к низу списка.
   const onScroll = useCallback(
     (e) => {
       const el = e.currentTarget;
@@ -93,120 +100,156 @@ const NotificationModal = ({ onClose }) => {
     if (unreadCount > 0) dispatch(markAllNotificationsReadAsync());
   }, [dispatch, unreadCount]);
 
+  const isEmpty = !loading && list.length === 0;
+
   return (
-    <div className={classes.modal}>
-      <div className={classes.header}>
-        <h3>Центр уведомлений</h3>
-        <X className={classes.close} onClick={onClose} size={20} />
-      </div>
+    <ReactPortal wrapperId="notification-center-portal">
+      <div className={classes.root} role="presentation">
+        <button
+          type="button"
+          className={classes.backdrop}
+          aria-label="Закрыть уведомления"
+          onClick={onClose}
+        />
 
-      <ul className={classes.list} ref={listRef} onScroll={onScroll}>
-        {loading && list.length === 0 ? (
-          <li className={classes.item} style={{ justifyContent: "center" }}>
-            <span className={classes.count}>Загрузка…</span>
-          </li>
-        ) : list.length === 0 ? (
-          <li
-            className={classes.item}
-            style={{
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 8,
-              padding: "28px 12px",
-              color: "#9ca3af",
-            }}
+        <aside
+          className={classes.panel}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notification-center-title"
+        >
+          <header className={classes.header}>
+            <div className={classes.headerMain}>
+              <span className={classes.headerIcon} aria-hidden="true">
+                <Bell size={18} />
+              </span>
+              <div className={classes.headerText}>
+                <h3 id="notification-center-title">Центр уведомлений</h3>
+                <p className={classes.headerMeta}>
+                  {unreadCount > 0
+                    ? `${unreadCount} непрочитанн${
+                        unreadCount === 1 ? "ое" : "ых"
+                      }`
+                    : "Все прочитаны"}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className={classes.close}
+              onClick={onClose}
+              aria-label="Закрыть"
+            >
+              <X size={18} />
+            </button>
+          </header>
+
+          <div
+            className={classes.body}
+            ref={listRef}
+            onScroll={onScroll}
           >
-            <BellOff size={28} />
-            <span>Уведомлений нет</span>
-          </li>
-        ) : (
-          list.map((n) => {
-            const unread = isUnread(n);
-            const title =
-              n?.title || n?.verb || n?.subject || "Уведомление";
-            const message =
-              n?.message || n?.description || n?.text || n?.body || "";
-            const actor =
-              n?.actor_name || n?.actor || n?.initiator_name || n?.initiator || "";
-            return (
-              <li
-                key={idOf(n)}
-                className={classes.item}
-                onClick={() => handleClick(n)}
-                style={{
-                  cursor: "pointer",
-                  borderLeft: `3px solid ${levelColor(n)}`,
-                  background: unread ? "rgba(59,130,246,0.06)" : "transparent",
-                  alignItems: "flex-start",
-                }}
-              >
-                <div className={classes.texts} style={{ flex: 1, minWidth: 0 }}>
-                  <span
-                    className={classes.title}
-                    style={{ fontWeight: unread ? 700 : 500 }}
-                  >
-                    {title}
-                  </span>
-                  {message && (
-                    <span
-                      className={classes.count}
-                      style={{
-                        whiteSpace: "normal",
-                        color: "#4b5563",
-                        marginTop: 2,
-                      }}
-                    >
-                      {message}
-                    </span>
-                  )}
-                  <span
-                    className={classes.count}
-                    style={{ color: "#9ca3af", marginTop: 4, fontSize: 11 }}
-                  >
-                    {actor ? `${actor} · ` : ""}
-                    {fmtDateTime(n?.created_at || n?.created || n?.date)}
-                  </span>
+            {loading && list.length === 0 ? (
+              <div className={classes.loading} role="status">
+                <Loader2 className={classes.spinner} size={22} />
+                <span>Загрузка уведомлений…</span>
+              </div>
+            ) : isEmpty ? (
+              <div className={classes.empty} role="status">
+                <div className={classes.emptyIcon} aria-hidden="true">
+                  <BellOff size={28} />
                 </div>
-                {unread && (
-                  <span
-                    aria-label="Непрочитано"
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: levelColor(n),
-                      flexShrink: 0,
-                      marginTop: 6,
-                    }}
-                  />
-                )}
-              </li>
-            );
-          })
-        )}
+                <h4 className={classes.emptyTitle}>Уведомлений нет</h4>
+                <p className={classes.emptyText}>
+                  Когда появятся новые события, они отобразятся здесь.
+                </p>
+              </div>
+            ) : (
+              <ul className={classes.list}>
+                {list.map((n) => {
+                  const unread = isUnread(n);
+                  const tone = levelTone(n);
+                  const title =
+                    n?.title || n?.verb || n?.subject || "Уведомление";
+                  const message =
+                    n?.message ||
+                    n?.description ||
+                    n?.text ||
+                    n?.body ||
+                    "";
+                  const actor =
+                    n?.actor_name ||
+                    n?.actor ||
+                    n?.initiator_name ||
+                    n?.initiator ||
+                    "";
 
-        {loadingMore && (
-          <li className={classes.item} style={{ justifyContent: "center" }}>
-            <span className={classes.count}>Загрузка…</span>
-          </li>
-        )}
-      </ul>
+                  return (
+                    <li key={idOf(n)}>
+                      <button
+                        type="button"
+                        className={[
+                          classes.item,
+                          classes[`item--${tone}`],
+                          unread ? classes["item--unread"] : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        onClick={() => handleClick(n)}
+                      >
+                        <div className={classes.itemBody}>
+                          <div className={classes.itemTop}>
+                            <span className={classes.itemTitle}>{title}</span>
+                            {unread ? (
+                              <span
+                                className={classes.dot}
+                                aria-label="Непрочитано"
+                              />
+                            ) : null}
+                          </div>
+                          {message ? (
+                            <span className={classes.itemMessage}>
+                              {message}
+                            </span>
+                          ) : null}
+                          <span className={classes.itemMeta}>
+                            {actor ? `${actor} · ` : ""}
+                            {fmtDateTime(
+                              n?.created_at || n?.created || n?.date,
+                            )}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
 
-      {/* «Прочитать все» — внизу, только когда есть непрочитанные уведомления */}
-      {unreadCount > 0 && (
-        <div className={classes.footer}>
-          <button
-            type="button"
-            className={classes.markAllBtn}
-            onClick={markAll}
-            disabled={markingAllRead}
-          >
-            <CheckCheck size={16} />
-            Прочитать все
-          </button>
-        </div>
-      )}
-    </div>
+                {loadingMore ? (
+                  <li className={classes.loadingMore} role="status">
+                    <Loader2 className={classes.spinner} size={16} />
+                    Загрузка…
+                  </li>
+                ) : null}
+              </ul>
+            )}
+          </div>
+
+          {unreadCount > 0 ? (
+            <footer className={classes.footer}>
+              <button
+                type="button"
+                className={classes.markAllBtn}
+                onClick={markAll}
+                disabled={markingAllRead}
+              >
+                <CheckCheck size={16} />
+                {markingAllRead ? "Отмечаем…" : "Прочитать все"}
+              </button>
+            </footer>
+          ) : null}
+        </aside>
+      </div>
+    </ReactPortal>
   );
 };
 

@@ -47,6 +47,10 @@ import {
 } from "./branchTabsConfig";
 import api from "@shared/api";
 import "./BranchDetails.scss";
+import {
+  PageShell,
+  PageHeader,
+} from "@shared/ui/page-shell";
 import { fetchClientsAsync } from "@entities/client";
 
 const baseTabIconMap = {
@@ -948,50 +952,47 @@ const BranchDetails = () => {
 
   if (loading) {
     return (
-      <div className="branch-details">
+      <PageShell className="branch-details">
         <div className="branch-details__loading">
           <FaSpinner className="spinner" />
           <p>Загрузка данных филиала...</p>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   if (error || !branch) {
     return (
-      <div className="branch-details">
+      <PageShell className="branch-details">
         <div className="branch-details__error">
           <p>{error || "Филиал не найден"}</p>
           <button
-            className="branch-details__btn branch-details__btn--primary"
+            type="button"
+            className="nur-btn nur-btn--primary"
             onClick={() => navigate("/crm/branch")}
           >
             Вернуться к списку филиалов
           </button>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="branch-details">
-      <div className="branch-details__header">
-        <button
-          className="branch-details__back-btn"
-          onClick={() => navigate("/crm/branch")}
-        >
-          <FaArrowLeft /> Назад
-        </button>
-        <div className="branch-details__title-section">
-          <FaBuilding className="branch-details__icon" />
-          <div>
-            <h1 className="branch-details__title">{branch.name || "Филиал"}</h1>
-            {branch.address && (
-              <p className="branch-details__subtitle">{branch.address}</p>
-            )}
-          </div>
-        </div>
-      </div>
+    <PageShell className="branch-details">
+      <PageHeader
+        title={branch.name || "Филиал"}
+        subtitle={branch.address || "Данные филиала"}
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--ghost"
+            onClick={() => navigate("/crm/branch")}
+          >
+            <FaArrowLeft /> Назад
+          </button>
+        }
+      />
 
       <div className="branch-details__tabs">
         {tabs.map((tab) => {
@@ -1026,8 +1027,8 @@ const BranchDetails = () => {
             ) : filteredCashFlows.length === 0 ? (
               <p className="branch-details__empty">Нет данных о кассе</p>
             ) : (
-              <div className="branch-details__table-wrapper">
-                <table className="branch-details__table">
+              <div className="nur-table-wrap branch-details__table-wrapper">
+                <table className="nur-table branch-details__table">
                   <thead>
                     <tr>
                       <th>Дата</th>
@@ -1064,8 +1065,8 @@ const BranchDetails = () => {
             ) : filteredProducts.length === 0 ? (
               <p className="branch-details__empty">Нет данных о складе</p>
             ) : (
-              <div className="branch-details__table-wrapper">
-                <table className="branch-details__table">
+              <div className="nur-table-wrap branch-details__table-wrapper">
+                <table className="nur-table branch-details__table">
                   <thead>
                     <tr>
                       <th>Название</th>
@@ -1097,8 +1098,8 @@ const BranchDetails = () => {
             {filteredSales.length === 0 ? (
               <p className="branch-details__empty">Нет данных о продажах</p>
             ) : (
-              <div className="branch-details__table-wrapper">
-                <table className="branch-details__table">
+              <div className="nur-table-wrap branch-details__table-wrapper">
+                <table className="nur-table branch-details__table">
                   <thead>
                     <tr>
                       <th>Дата</th>
@@ -1329,8 +1330,8 @@ const BranchDetails = () => {
                 Нет сотрудников в этом филиале
               </p>
             ) : (
-              <div className="branch-details__table-wrapper">
-                <table className="branch-details__table">
+              <div className="nur-table-wrap branch-details__table-wrapper">
+                <table className="nur-table branch-details__table">
                   <thead>
                     <tr>
                       <th>Имя</th>
@@ -1369,8 +1370,8 @@ const BranchDetails = () => {
                 Нет клиентов в этом филиале
               </p>
             ) : (
-              <div className="branch-details__table-wrapper">
-                <table className="branch-details__table">
+              <div className="nur-table-wrap branch-details__table-wrapper">
+                <table className="nur-table branch-details__table">
                   <thead>
                     <tr>
                       <th>Имя</th>
@@ -1834,8 +1835,8 @@ const BranchDetails = () => {
                     Нет данных для этого раздела
                   </p>
                 ) : (
-                  <div className="branch-details__table-wrapper">
-                    <table className="branch-details__table">
+                  <div className="nur-table-wrap branch-details__table-wrapper">
+                    <table className="nur-table branch-details__table">
                       <thead>
                         <tr>
                           {columns.map((col, idx) => (
@@ -1862,7 +1863,7 @@ const BranchDetails = () => {
             );
           })()}
       </div>
-    </div>
+    </PageShell>
   );
 };
 

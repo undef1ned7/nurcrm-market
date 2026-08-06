@@ -56,9 +56,12 @@ const userSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.accessToken = null;
+      state.profile = null;
+      state.company = null;
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userId");
+      localStorage.removeItem("userData");
     },
   },
   extraReducers: (builder) => {

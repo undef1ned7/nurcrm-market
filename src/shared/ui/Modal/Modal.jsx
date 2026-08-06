@@ -15,12 +15,14 @@ import "./Modal.scss";
  * @param {string} [wrapperId] - id контейнера для портала (по умолчанию уникальный)
  * @param {string} [className] - доп. класс для обёртки диалога
  * @param {string} [contentClassName] - доп. класс для области с children
+ * @param {React.ReactNode} [footer] - футер с действиями (.nur-btn)
  */
 const Modal = ({
   open,
   onClose,
   children,
   title,
+  footer,
   closeOnOverlayClick = true,
   showCloseButton = true,
   wrapperId = "common-modal",
@@ -82,6 +84,9 @@ const Modal = ({
           >
             {children}
           </div>
+          {footer ? (
+            <div className="common-modal-footer">{footer}</div>
+          ) : null}
         </div>
       </div>
     </ReactPortal>

@@ -32,15 +32,21 @@ export const loginUserAsync = createAsyncThunk(
   async (formData, { rejectWithValue, dispatch }) => {
     try {
       const response = await loginUser(formData);
-      localStorage.setItem("userData", JSON.stringify(response));
-      if (response.access) {
-        localStorage.setItem("accessToken", response.access);
+      // Не кладём токены в userData — только не-секретный профиль при необходимости
+      const { access, refresh, ...safeUserData } = response || {};
+      try {
+        localStorage.setItem("userData", JSON.stringify(safeUserData));
+      } catch {
+        /* ignore */
       }
-      if (response.refresh) {
-        localStorage.setItem("refreshToken", response.refresh);
+      if (access) {
+        localStorage.setItem("accessToken", access);
+      }
+      if (refresh) {
+        localStorage.setItem("refreshToken", refresh);
       }
 
-      if (response.access) {
+      if (access) {
         // Миграция permissions — не блокируем логин при её падении
         try {
           await migrateUserPermissions();

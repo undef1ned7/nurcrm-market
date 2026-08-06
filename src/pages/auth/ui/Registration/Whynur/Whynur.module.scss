@@ -8,18 +8,18 @@
   font-family: sans-serif;
   max-width: 500px;
   margin: 50px auto;
-  background-color: #fff;
+  background-color: var(--nur-surface);
 
   &__title {
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 10px;
-    color: #000;
+    color: var(--nur-text);
   }
 
   &__subtitle {
     font-size: 14px;
-    color: #666;
+    color: var(--nur-muted);
     margin-bottom: 20px;
   }
 
@@ -59,7 +59,7 @@
     border-radius: 6px;
     background-color: #f9f9f9;
     font-size: 14px;
-    color: #000;
+    color: var(--nur-text);
 
     &:focus {
       outline: none;
@@ -77,7 +77,7 @@
 
   &__navPrev {
     font-size: 20px;
-    color: #333;
+    color: var(--nur-text);
     cursor: pointer;
     transition: color 0.3s;
 
@@ -88,12 +88,12 @@
 
   &__navText {
     font-size: 14px;
-    color: #333;
+    color: var(--nur-text);
   }
 
   &__nextButton {
     background-color: #ffd900;
-    color: #000;
+    color: var(--nur-text);
     border: none;
     padding: 10px 20px;
     border-radius: 6px;
@@ -125,7 +125,7 @@
     z-index: 1000;
 
     &__content {
-      background: #fff;
+      background: var(--nur-surface);
       padding: 30px;
       border-radius: 10px;
       max-width: 400px;
@@ -140,7 +140,7 @@
 
   &__successText {
     font-size: 14px;
-    color: #333;
+    color: var(--nur-text);
     line-height: 1.5;
   }
 

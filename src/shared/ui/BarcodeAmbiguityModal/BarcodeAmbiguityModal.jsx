@@ -56,7 +56,7 @@ const BarcodeAmbiguityModal = ({
           </div>
           <button
             type="button"
-            className="barcode-ambiguity-modal__cancel"
+            className="nur-btn nur-btn--secondary barcode-ambiguity-modal__cancel"
             disabled={loading}
             onClick={onClose}
           >

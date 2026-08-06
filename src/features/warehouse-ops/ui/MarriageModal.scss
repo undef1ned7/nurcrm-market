@@ -3,10 +3,10 @@
 .marriage-modal {
   // локальные переменные (с фолбэками)
   --mm-bg: var(--panel-bg, #ffffff);
-  --mm-text: var(--text, #111827);
-  --mm-muted: var(--c-muted, #6b7280);
-  --mm-border: var(--c-border, #e5e7eb);
-  --mm-soft: var(--c-bg-soft, #f9fafb);
+  --mm-text: var(--text, var(--nur-text));
+  --mm-muted: var(--c-muted, var(--nur-muted));
+  --mm-border: var(--c-border, var(--nur-border));
+  --mm-soft: var(--c-bg-soft, var(--nur-surface-3));
   --mm-accent: var(--fg-accent, #f7d74f);
   --mm-accent-hover: var(--fg-accent-darker, #e6c530);
 
@@ -163,7 +163,7 @@
 
 .marriage-modal__btn--primary {
   background: var(--mm-accent);
-  color: #000;
+  color: var(--nur-text);
   box-shadow: 0 6px 16px rgba(247, 215, 79, 0.18);
 }
 

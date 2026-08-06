@@ -1,4 +1,5 @@
 import { FaTimes } from "react-icons/fa";
+import BarberMastersPortal from "./BarberMastersPortal";
 
 const RoleCreateModal = ({
   roleCreateOpen,
@@ -12,6 +13,7 @@ const RoleCreateModal = ({
   if (!roleCreateOpen) return null;
 
   return (
+    <BarberMastersPortal wrapperId="barbermasters-rolecreatemodal">
     <div
       className="barbermasters__overlay"
       onClick={() => !roleCreateSaving && setRoleCreateOpen(false)}
@@ -80,6 +82,7 @@ const RoleCreateModal = ({
         </form>
       </div>
     </div>
+    </BarberMastersPortal>
   );
 };
 

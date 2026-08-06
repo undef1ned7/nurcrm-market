@@ -1,5 +1,6 @@
 import React from "react";
 import { ClipboardList, Plus } from "lucide-react";
+import { PageHeader } from "@shared/ui/page-shell";
 import "./WarehouseHeader.scss";
 
 /**
@@ -14,44 +15,46 @@ const WarehouseHeader = ({
   selectedCount = 0,
 }) => {
   return (
-    <div className="warehouse-header">
-      <div className="warehouse-header__left">
-        <div className="warehouse-header__icon">
-          <div className="warehouse-header__icon-box">📦</div>
-        </div>
-        <div className="warehouse-header__title-section">
-          <h1 className="warehouse-header__title">Склад</h1>
-          <p className="warehouse-header__subtitle">
-            Управление товарами и запасами
-          </p>
-        </div>
-      </div>
-      <div className="warehouse-header__actions">
-        <button
-          className="warehouse-header__inventory-btn"
-          onClick={onInventory}
-          type="button"
-          title={
-            selectedCount > 0
-              ? "Открыть документы: инвентаризация с выбранными товарами"
-              : "Открыть раздел актов инвентаризации (Документы)"
-          }
-        >
-          <ClipboardList size={16} />
-          Инвентаризация{selectedCount > 0 ? ` (${selectedCount})` : ""}
-        </button>
-        <button
-          className="warehouse-header__create-btn"
-          onClick={onCreateProduct}
-          type="button"
-        >
-          <Plus size={16} />
-          Создать товар
-        </button>
-      </div>
-    </div>
+    <PageHeader
+      className="warehouse-header"
+      title="Склад"
+      subtitle="Управление товарами и запасами"
+      actions={
+        <>
+          <button
+            className="nur-btn nur-btn--secondary"
+            onClick={onInventory}
+            type="button"
+            title={
+              selectedCount > 0
+                ? "Открыть документы: инвентаризация с выбранными товарами"
+                : "Открыть раздел актов инвентаризации (Документы)"
+            }
+            aria-label={
+              selectedCount > 0
+                ? `Инвентаризация (${selectedCount})`
+                : "Инвентаризация"
+            }
+          >
+            <ClipboardList size={16} />
+            <span className="nur-btn__label">
+              Инвентаризация{selectedCount > 0 ? ` (${selectedCount})` : ""}
+            </span>
+          </button>
+          <button
+            className="nur-btn nur-btn--primary"
+            onClick={onCreateProduct}
+            type="button"
+            title="Создать товар"
+            aria-label="Создать товар"
+          >
+            <Plus size={16} />
+            <span className="nur-btn__label">Создать товар</span>
+          </button>
+        </>
+      }
+    />
   );
 };
 
 export default React.memo(WarehouseHeader);
-

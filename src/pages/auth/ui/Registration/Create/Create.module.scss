@@ -1,7 +1,7 @@
 .create {
   text-align: center;
   padding: 20px;
-  background-color: #f9f9f9;
+  background-color: var(--nur-surface-2);
   max-width: 400px;
   margin: 50px auto;
   border-radius: 15px;
@@ -9,7 +9,7 @@
 
   &__title {
     font-size: 24px;
-    color: #000;
+    color: var(--nur-text);
     margin-bottom: 20px;
     font-weight: 600;
   }
@@ -23,8 +23,8 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 16px;
-    background-color: #fff;
-    color: #000;
+    background-color: var(--nur-surface);
+    color: var(--nur-text);
 
     &:focus {
       outline: none;
@@ -41,7 +41,7 @@
     background-color: #ffd700;
     border: none;
     border-radius: 5px;
-    color: #000;
+    color: var(--nur-text);
     font-weight: bold;
     font-size: 16px;
     cursor: pointer;
@@ -60,7 +60,7 @@
 
 .success {
   padding: 30px;
-  background-color: #fff;
+  background-color: var(--nur-surface);
   border-radius: 15px;
   width: 400px;
   margin: 50px auto;
@@ -74,14 +74,14 @@
   &__title {
     font-weight: bold;
     font-size: 22px;
-    color: #000;
+    color: var(--nur-text);
     margin: 10px 0;
     line-height: 1.5;
   }
 
   &__text {
     font-size: 15px;
-    color: #000;
+    color: var(--nur-text);
     margin: 10px 0;
     line-height: 1.5;
   }
@@ -100,7 +100,7 @@
     background-color: #ffd700;
     border: none;
     border-radius: 5px;
-    color: #000;
+    color: var(--nur-text);
     font-weight: bold;
     font-size: 16px;
     cursor: pointer;

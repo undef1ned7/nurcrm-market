@@ -1,5 +1,6 @@
 import { FaTimes } from "react-icons/fa";
 import AccessList from "@widgets/department-details/ui/AccessList";
+import BarberMastersPortal from "./BarberMastersPortal";
 
 const EmployeeAccessModal = ({
   accessModalOpen,
@@ -21,146 +22,102 @@ const EmployeeAccessModal = ({
   if (!accessModalOpen || !accessModalEmployee) return null;
 
   const showWarehouseWholesaleSection = isWarehouseSector && isOwnerOrAdmin;
+  const employeeName =
+    accessModalEmployee.first_name && accessModalEmployee.last_name
+      ? `${accessModalEmployee.first_name} ${accessModalEmployee.last_name}`
+      : accessModalEmployee.email || "Сотрудник";
 
   return (
-    <div
-      className="barbermasters__overlay"
-      onClick={() => !empSaving && setAccessModalOpen(false)}
-      style={{ zIndex: 1000 }}
-    >
+    <BarberMastersPortal wrapperId="barbermasters-employeeaccessmodal">
       <div
-        className="barbermasters__modal barbermasters__modal--taller"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          zIndex: 1001,
-          maxWidth: "800px",
-          width: "90%",
-          maxHeight: "90vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        className="barbermasters__overlay"
+        onClick={() => !empSaving && setAccessModalOpen(false)}
       >
         <div
-          className="barbermasters__modalHeader"
-          style={{
-            borderBottom: "1px solid #e0e0e0",
-            paddingBottom: "16px",
-            marginBottom: "0",
-          }}
+          className="barbermasters__modal barbermasters__modal--taller barbermasters__modal--access"
+          onClick={(e) => e.stopPropagation()}
         >
-          <h3
-            className="barbermasters__modalTitle"
-            style={{ margin: 0, fontSize: "20px", fontWeight: "600" }}
-          >
-            Управление доступами:{" "}
-            {accessModalEmployee.first_name && accessModalEmployee.last_name
-              ? `${accessModalEmployee.first_name} ${accessModalEmployee.last_name}`
-              : accessModalEmployee.email || "Сотрудник"}
-          </h3>
-          <button
-            className="barbermasters__iconBtn"
-            onClick={() => !empSaving && setAccessModalOpen(false)}
-            aria-label="Закрыть"
-            style={{
-              position: "absolute",
-              top: "16px",
-              right: "16px",
-            }}
-          >
-            <FaTimes />
-          </button>
-        </div>
-
-        <div
-          className="barbermasters__form"
-          style={{
-            padding: "24px",
-            maxHeight: "70vh",
-            overflowY: "auto",
-          }}
-        >
-          {showWarehouseWholesaleSection && (
-            <div
-              style={{
-                marginBottom: "24px",
-                paddingBottom: "20px",
-                borderBottom: "1px solid #e0e0e0",
-              }}
+          <div className="barbermasters__modalHeader">
+            <h3 className="barbermasters__modalTitle">
+              Управление доступами: {employeeName}
+            </h3>
+            <button
+              type="button"
+              className="barbermasters__iconBtn"
+              onClick={() => !empSaving && setAccessModalOpen(false)}
+              aria-label="Закрыть"
+              disabled={empSaving}
             >
-              <h4
-                style={{
-                  margin: "0 0 12px",
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#333",
-                }}
-              >
-                Агент склада
-              </h4>
+              <FaTimes />
+            </button>
+          </div>
 
-              {warehouseMembershipLoading ? (
-                <div style={{ color: "#666", fontSize: "14px" }}>
-                  Загрузка настроек агента…
-                </div>
-              ) : warehouseMembership ? (
-                <>
-                  <label
-                    className="barbermasters__label"
-                    style={{ display: "block", marginBottom: "8px" }}
-                  >
-                    Оптовые продажи
-                  </label>
-                  <div className="barbermasters__seg">
-                    <button
-                      type="button"
-                      className={`barbermasters__segBtn ${
-                        !canSellWholesale ? "is-active" : ""
-                      }`}
-                      onClick={() => onCanSellWholesaleChange?.(false)}
-                      disabled={empSaving}
-                    >
-                      Оптовая цена
-                    </button>
-                    <button
-                      type="button"
-                      className={`barbermasters__segBtn ${
-                        canSellWholesale ? "is-active" : ""
-                      }`}
-                      onClick={() => onCanSellWholesaleChange?.(true)}
-                      disabled={empSaving}
-                    >
-                      Цена агента
-                    </button>
-                  </div>
-                  <div className="barbermasters__help" style={{ marginTop: 8 }}>
-                    Сохраняется вместе с доступами. Агент сможет создавать
-                    продажи с переключателем «Опт».
-                  </div>
-                </>
-              ) : (
-                <div
-                  style={{ color: "#666", fontSize: "14px", lineHeight: 1.5 }}
-                >
-                  Сотрудник ещё не назначен агентом склада. Сначала нажмите
-                  «Агент склада» в карточке сотрудника.
-                </div>
-              )}
-            </div>
-          )}
+          <div className="barbermasters__form barbermasters__form--access">
+            {showWarehouseWholesaleSection && (
+              <div className="barbermasters__accessWarehouse">
+                <h4 className="barbermasters__accessWarehouse-title">
+                  Агент склада
+                </h4>
 
-          <AccessList
-            employeeAccesses={accessModalAccesses}
-            onSaveAccesses={handleSaveEmployeeAccesses}
-            role={accessModalEmployee.role}
-            sectorName={company?.sector?.name}
-            profile={profile}
-            tariff={tariff || company?.subscription_plan?.name}
-            company={company}
-            isModalMode={true}
-          />
+                {warehouseMembershipLoading ? (
+                  <div className="barbermasters__accessWarehouse-muted">
+                    Загрузка настроек агента…
+                  </div>
+                ) : warehouseMembership ? (
+                  <>
+                    <label className="barbermasters__label">
+                      Оптовые продажи
+                    </label>
+                    <div className="barbermasters__seg">
+                      <button
+                        type="button"
+                        className={`barbermasters__segBtn ${
+                          !canSellWholesale ? "is-active" : ""
+                        }`}
+                        onClick={() => onCanSellWholesaleChange?.(false)}
+                        disabled={empSaving}
+                      >
+                        Оптовая цена
+                      </button>
+                      <button
+                        type="button"
+                        className={`barbermasters__segBtn ${
+                          canSellWholesale ? "is-active" : ""
+                        }`}
+                        onClick={() => onCanSellWholesaleChange?.(true)}
+                        disabled={empSaving}
+                      >
+                        Цена агента
+                      </button>
+                    </div>
+                    <div className="barbermasters__help">
+                      Сохраняется вместе с доступами. Агент сможет создавать
+                      продажи с переключателем «Опт».
+                    </div>
+                  </>
+                ) : (
+                  <div className="barbermasters__accessWarehouse-muted">
+                    Сотрудник ещё не назначен агентом склада. Сначала нажмите
+                    «Агент склада» в карточке сотрудника.
+                  </div>
+                )}
+              </div>
+            )}
+
+            <AccessList
+              employeeAccesses={accessModalAccesses}
+              onSaveAccesses={handleSaveEmployeeAccesses}
+              role={accessModalEmployee.role}
+              sectorName={company?.sector?.name}
+              profile={profile}
+              tariff={tariff || company?.subscription_plan?.name}
+              company={company}
+              isModalMode={true}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </BarberMastersPortal>
   );
 };
 

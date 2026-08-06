@@ -314,20 +314,18 @@ const RefundPurchase = ({ onClose, onChanged, item }) => {
             <div className="sellReturn__actions">
               <button
                 type="button"
-                className="btn"
+                className="nur-btn nur-btn--secondary sellReturn__btn"
                 onClick={onClose}
                 disabled={submitting || loading}
-                style={{ flex: 1, justifyContent: "center" }}
               >
                 Отмена
               </button>
 
               <button
                 type="button"
-                className="btn"
+                className="nur-btn nur-btn--primary sellReturn__btn"
                 onClick={onConfirmFull}
                 disabled={submitting || loading || !isReturnableStatus}
-                style={{ flex: 1, justifyContent: "center" }}
               >
                 {submitting && partialCount === 0
                   ? "Оформляем..."
@@ -336,12 +334,11 @@ const RefundPurchase = ({ onClose, onChanged, item }) => {
 
               <button
                 type="button"
-                className="btn danger-btn"
+                className="nur-btn nur-btn--danger sellReturn__btn"
                 onClick={onConfirmPartial}
                 disabled={
                   submitting || loading || !isReturnableStatus || partialCount === 0
                 }
-                style={{ flex: 1, justifyContent: "center" }}
               >
                 {submitting && partialCount > 0
                   ? "Оформляем..."

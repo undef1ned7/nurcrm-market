@@ -24,74 +24,62 @@ const CounterpartyCard = React.memo(
     const inn = counterparty?.inn || "—";
 
     return (
-      <div className="warehouse-table__row warehouse-card rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 flex-none items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xl">
+      <div className="warehouse-card">
+        <div className="warehouse-card__top">
+          <div className="warehouse-card__avatar" aria-hidden>
             👥
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="text-xs text-slate-500">#{rowNumber}</div>
-            <div className="warehouse-table__name mt-0.5 truncate text-sm font-semibold text-slate-900">
-              {name}
-            </div>
+          <div className="warehouse-card__body">
+            <div className="warehouse-card__num">#{rowNumber}</div>
+            <div className="warehouse-card__name">{name}</div>
 
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-              <span className="whitespace-nowrap">
-                Тип:{" "}
-                <span className="font-medium">{typeLabel}</span>
+            <div className="warehouse-card__meta">
+              <span>
+                Тип: <strong>{typeLabel}</strong>
               </span>
-              {showAgentColumn && (counterparty?.agent || counterparty?.agent_display) && (
-                <span className="whitespace-nowrap">
-                  Агент:{" "}
-                  <span className="font-medium">
-                    {getAgentDisplay(counterparty)}
+              {showAgentColumn &&
+                (counterparty?.agent || counterparty?.agent_display) && (
+                  <span>
+                    Агент: <strong>{getAgentDisplay(counterparty)}</strong>
                   </span>
-                </span>
-              )}
+                )}
               {phone !== "—" && (
-                <span className="whitespace-nowrap">
-                  Телефон:{" "}
-                  <span className="font-medium">{phone}</span>
+                <span>
+                  Телефон: <strong>{phone}</strong>
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="warehouse-card__stats">
           {email !== "—" && (
-            <div className="rounded-xl bg-slate-50 p-2">
-              <div className="text-slate-500">Email</div>
-              <div className="mt-0.5 truncate font-semibold text-slate-900">
-                {email}
-              </div>
+            <div className="warehouse-card__stat">
+              <span>Email</span>
+              <strong>{email}</strong>
             </div>
           )}
 
           {inn !== "—" && (
-            <div className="rounded-xl bg-slate-50 p-2">
-              <div className="text-slate-500">ИНН</div>
-              <div className="mt-0.5 font-semibold text-slate-900">
-                {inn}
-              </div>
+            <div className="warehouse-card__stat">
+              <span>ИНН</span>
+              <strong>{inn}</strong>
             </div>
           )}
 
           {phone !== "—" && email === "—" && (
-            <div className="col-span-2 rounded-xl bg-slate-50 p-2">
-              <div className="text-slate-500">Телефон</div>
-              <div className="mt-0.5 font-semibold text-slate-900">
-                {phone}
-              </div>
+            <div className="warehouse-card__stat warehouse-card__stat--wide">
+              <span>Телефон</span>
+              <strong>{phone}</strong>
             </div>
           )}
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="warehouse-card__actions">
           <button
             type="button"
-            className="warehouse-card__open-btn"
+            className="nur-btn nur-btn--primary nur-btn--sm"
             onClick={(e) => {
               e.stopPropagation();
               onCounterpartyClick(counterparty);
@@ -133,28 +121,24 @@ const CounterpartyCards = ({
 
   if (loading && counterparties.length === 0) {
     return (
-      <div className="warehouse-table__loading rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
-        Загрузка...
-      </div>
+      <div className="warehouse-cards__status">Загрузка...</div>
     );
   }
 
   if (counterparties.length === 0 && !loading) {
     return (
-      <div className="warehouse-table__empty rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
-        Контрагенты не найдены
-      </div>
+      <div className="warehouse-cards__status">Контрагенты не найдены</div>
     );
   }
 
   return (
-    <div className="block relative">
+    <div className="warehouse-cards-root">
       {loading && counterparties.length > 0 && (
-        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
-          <div className="text-sm text-slate-600">Загрузка...</div>
+        <div className="warehouse-cards__overlay">
+          <div className="warehouse-cards__status">Загрузка...</div>
         </div>
       )}
-      <div className="warehouse-cards grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="warehouse-cards">
         {counterpartiesData.map((data) => (
           <CounterpartyCard
             key={data.counterparty.id}
@@ -196,4 +180,3 @@ const areEqual = (prevProps, nextProps) => {
 };
 
 export default React.memo(CounterpartyCards, areEqual);
-

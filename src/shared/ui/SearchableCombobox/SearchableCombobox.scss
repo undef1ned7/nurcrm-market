@@ -11,7 +11,7 @@
       height: 44px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--nur-surface);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -19,8 +19,8 @@
       transition: 0.15s all ease;
 
       &:hover {
-        border-color: #dbe3ef;
-        background: #fff;
+        border-color: var(--nur-border-strong);
+        background: var(--nur-surface);
       }
 
       &--open {
@@ -49,8 +49,9 @@
       padding: 0;
 
       &::placeholder {
-        color: #94a3b8;
+        color: var(--nur-placeholder);
         font-weight: 600;
+        opacity: 1;
       }
 
       &:disabled {
@@ -72,9 +73,9 @@
       width: 22px;
       height: 22px;
       border-radius: 6px;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      color: #475569;
+      border: 1px solid var(--nur-border);
+      background: var(--nur-surface);
+      color: var(--nur-text-2);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -84,9 +85,9 @@
       flex-shrink: 0;
 
       &:hover {
-        background: #f3f4f6;
-        border-color: #cbd5e1;
-        color: #0f172a;
+        background: var(--nur-surface-3);
+        border-color: var(--nur-border-strong);
+        color: var(--nur-text);
       }
 
       &:active {
@@ -109,8 +110,8 @@
       left: 0;
       right: 0;
       top: calc(100% + 8px);
-      background: #fff;
-      border: 1px solid #e5e7eb;
+      background: var(--nur-surface);
+      border: 1px solid var(--nur-border);
       border-radius: 14px;
       box-shadow: 0 22px 50px rgba(0, 0, 0, 0.14);
       z-index: 80;
@@ -143,11 +144,11 @@
       }
 
       &::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
+        background: var(--nur-border-strong);
         border-radius: 3px;
 
         &:hover {
-          background: #94a3b8;
+          background: var(--nur-muted);
         }
       }
     }
@@ -157,9 +158,9 @@
       width: 100%;
       text-align: left;
       padding: 12px;
-      background: #fff;
+      background: var(--nur-surface);
       border: 0;
-      border-bottom: 1px solid #eef2f7;
+      border-bottom: 1px solid var(--nur-border);
       cursor: pointer;
       font-size: 14px;
       font-weight: 700;
@@ -171,12 +172,12 @@
       }
 
       &:hover {
-        background: #f8fafc;
+        background: var(--nur-surface-3);
       }
 
       &--active {
         background: rgba(247, 215, 79, 0.25);
-        color: #111;
+        color: var(--nur-primary-ink);
       }
     }
 

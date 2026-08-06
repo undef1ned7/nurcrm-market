@@ -1,6 +1,13 @@
 // src/components/Categories/Categories.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+  PagePanel,
+  EmptyState,
+} from "@shared/ui/page-shell";
 import styles from "./Categories.module.scss";
 import api from "@shared/api"; // axios instance
 
@@ -116,11 +123,21 @@ function MarketCategories() {
   };
 
   return (
-    <section className={styles["cats"]}>
-      {/* header */}
-      <header className={styles["cats__header"]}>
+    <PageShell className={styles["cats"]}>
+      <PageHeader
+        title={isCats ? "Категории" : "Бренды"}
+        subtitle="Справочник номенклатуры"
+        actions={
+          <button type="button" className="nur-btn nur-btn--primary" onClick={openNew}>
+            + Добавить
+          </button>
+        }
+      />
+
+      <FilterBar className={styles["cats__toolbar"]}>
         <div className={styles["cats__tabs"]}>
           <button
+            type="button"
             className={`${styles["cats__tab"]} ${
               !isCats ? styles["cats__tab--active"] : ""
             }`}
@@ -129,6 +146,7 @@ function MarketCategories() {
             Бренды
           </button>
           <button
+            type="button"
             className={`${styles["cats__tab"]} ${
               isCats ? styles["cats__tab--active"] : ""
             }`}
@@ -138,66 +156,68 @@ function MarketCategories() {
           </button>
         </div>
 
-        <div className={styles["cats__controls"]}>
-          <button className={styles["cats__add"]} onClick={openNew}>
-            + Добавить
-          </button>
-          <input
-            className={styles["cats__search"]}
-            placeholder="Поиск"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </header>
+        <input
+          className={`nur-input ${styles["cats__search"]}`}
+          placeholder="Поиск"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </FilterBar>
 
       {err && <div className={styles["cats__error"]}>{err}</div>}
 
-      {/* table */}
-      <div className={styles["cats__tableWrap"]}>
-        <table className={styles["cats__table"]}>
-          <thead>
-            <tr>
-              <th>№</th>
-              <th>Название</th>
-              <th className={styles["cats__thActions"]} />
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      <PagePanel flush>
+        <div className={`nur-table-wrap ${styles["cats__tableWrap"]}`}>
+          <table className={`nur-table nur-table--clickable ${styles["cats__table"]}`}>
+            <thead>
               <tr>
-                <td className={styles["cats__empty"]} colSpan={3}>
-                  Загрузка…
-                </td>
+                <th>№</th>
+                <th>Название</th>
+                <th className={styles["cats__thActions"]} />
               </tr>
-            ) : filtered.length ? (
-              filtered.map((item, i) => (
-                <tr key={item.id}>
-                  <td>{i + 1}</td>
-                  <td>{item.name}</td>
-                  <td className={styles["cats__actionsCell"]}>
-                    <button
-                      className={styles["cats__dots"]}
-                      onClick={() => openEdit(item.id)}
-                      aria-label="Редактировать"
-                    >
-                      ⋮
-                    </button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td className={styles["cats__empty"]} colSpan={3}>
+                    Загрузка…
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td className={styles["cats__empty"]} colSpan={3}>
-                  Ничего не найдено
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : filtered.length ? (
+                filtered.map((item, i) => (
+                  <tr key={item.id} onClick={() => openEdit(item.id)}>
+                    <td>{i + 1}</td>
+                    <td>{item.name}</td>
+                    <td className={styles["cats__actionsCell"]}>
+                      <button
+                        type="button"
+                        className="nur-btn nur-btn--ghost nur-btn--sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEdit(item.id);
+                        }}
+                        aria-label="Редактировать"
+                      >
+                        ⋮
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3}>
+                    <EmptyState
+                      title="Ничего не найдено"
+                      text="Измените поиск или добавьте новый элемент."
+                    />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </PagePanel>
 
-      {/* modal */}
       {editingId !== null && (
         <div className={styles["cats__modalOverlay"]} onClick={closeModal}>
           <div
@@ -212,8 +232,9 @@ function MarketCategories() {
                 : `Редактировать ${isCats ? "категорию" : "бренд"}`}
             </h3>
 
+            <label className="nur-label">Название</label>
             <input
-              className={styles["cats__input"]}
+              className="nur-input"
               placeholder="Название"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -223,7 +244,8 @@ function MarketCategories() {
             <div className={styles["cats__modalActions"]}>
               {editingId === "new" ? (
                 <button
-                  className={styles["cats__primary"]}
+                  type="button"
+                  className="nur-btn nur-btn--primary"
                   onClick={save}
                   disabled={!name.trim()}
                 >
@@ -232,19 +254,21 @@ function MarketCategories() {
               ) : (
                 <>
                   <button
-                    className={styles["cats__primary"]}
+                    type="button"
+                    className="nur-btn nur-btn--primary"
                     onClick={save}
                     disabled={!name.trim()}
                   >
                     Сохранить
                   </button>
-                  <button className={styles["cats__danger"]} onClick={remove}>
+                  <button type="button" className="nur-btn nur-btn--danger" onClick={remove}>
                     Удалить
                   </button>
                 </>
               )}
               <button
-                className={styles["cats__secondary"]}
+                type="button"
+                className="nur-btn nur-btn--secondary"
                 onClick={closeModal}
               >
                 Отмена
@@ -253,7 +277,7 @@ function MarketCategories() {
           </div>
         </div>
       )}
-    </section>
+    </PageShell>
   );
 }
 

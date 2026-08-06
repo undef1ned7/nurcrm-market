@@ -1,4 +1,3 @@
-import { Button } from "@mui/material";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import "@shared/ui/AlertModal/SystemDialog.scss";
 
@@ -10,11 +9,11 @@ const ConfirmModal = ({ message, isOpen, onConfirm, onCancel }) => {
       <div className="system-dialog-overlay">
         <div className="system-dialog" role="dialog" aria-modal="true">
           <div className="system-dialog__body">
-            <div className="system-dialog__icon-wrap">
+            <div className="system-dialog__icon-wrap system-dialog__icon-wrap--danger">
               <svg
                 fill="none"
                 height="28"
-                stroke="#f87171"
+                stroke="currentColor"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
@@ -32,10 +31,20 @@ const ConfirmModal = ({ message, isOpen, onConfirm, onCancel }) => {
             <p className="system-dialog__message">{message}</p>
           </div>
           <div className="system-dialog__actions">
-            <Button onClick={() => onCancel?.()}>Отменить</Button>
-            <Button color="warning" variant="contained" onClick={() => onConfirm?.()}>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => onCancel?.()}
+            >
+              Отменить
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--danger"
+              onClick={() => onConfirm?.()}
+            >
               Подтвердить
-            </Button>
+            </button>
           </div>
         </div>
       </div>

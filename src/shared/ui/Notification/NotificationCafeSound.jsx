@@ -139,16 +139,23 @@ export default function NotificationCafeSound({
         <>
             {showUnlockButton && !audioUnlocked && (
                 <div className="fixed bottom-4 right-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-4 max-w-xs animate-slide-up">
+                    <div
+                        className="rounded-xl shadow-xl p-4 max-w-xs animate-slide-up"
+                        style={{
+                            background: "var(--nur-surface)",
+                            border: "1px solid var(--nur-border)",
+                            color: "var(--nur-text)",
+                        }}
+                    >
                         <div className="flex items-start gap-3 mb-3">
                             <div className="bg-emerald-500 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0">
                                 🔔
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-800 text-sm">
+                                <h3 className="font-semibold text-sm" style={{ color: "var(--nur-text)" }}>
                                     Звуковые уведомления
                                 </h3>
-                                <p className="text-gray-600 text-xs mt-1">
+                                <p className="text-xs mt-1" style={{ color: "var(--nur-muted)" }}>
                                     Кликните, чтобы разрешить звуковые уведомления
                                 </p>
                             </div>
@@ -165,7 +172,11 @@ export default function NotificationCafeSound({
 
                             <button
                                 onClick={() => setShowUnlockButton(false)}
-                                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200"
+                                className="flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200"
+                                style={{
+                                    background: "var(--nur-surface-3)",
+                                    color: "var(--nur-text)",
+                                }}
                             >
                                 Позже
                             </button>

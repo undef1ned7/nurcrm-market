@@ -27,6 +27,7 @@ import {
 } from "@entities/cash";
 import { useUser } from "@entities/user";
 import { createDeal } from "@entities/sale";
+import { PageShell, PageHeader, FilterBar, PagePanel, StatusChip } from "@shared/ui/page-shell";
 import "./Warehouse.scss";
 import "./SupplierReceiptPage.scss";
 
@@ -704,6 +705,7 @@ export default function SupplierReceiptPage() {
 
     const supplierLabel = buildSupplierLabel(selectedSupplier);
 
+    let receiptPosted = false;
     try {
       setSubmitting(true);
       const { data: receiptData } = await api.post(
@@ -719,8 +721,10 @@ export default function SupplierReceiptPage() {
                 : "cash",
         },
       );
+      receiptPosted = true;
 
       const receiptId = receiptData?.id ?? receiptData?.uuid ?? null;
+      const sideEffectWarnings = [];
 
       if (
         totalReceiptAmount > 0 &&
@@ -732,44 +736,62 @@ export default function SupplierReceiptPage() {
             ? Math.max(0, totalReceiptAmount - prepaymentValue)
             : totalReceiptAmount;
 
-        if (company?.subscription_plan?.name === "Старт" && remainingDebt > 0) {
-          await api.post("/main/debts/", {
-            name: supplierLabel,
-            phone: selectedSupplier?.phone || "",
-            due_date: firstPaymentDate,
-            amount: remainingDebt,
-          });
-        }
+        try {
+          if (company?.subscription_plan?.name === "Старт" && remainingDebt > 0) {
+            await api.post("/main/debts/", {
+              name: supplierLabel,
+              phone: selectedSupplier?.phone || "",
+              due_date: firstPaymentDate,
+              amount: remainingDebt,
+            });
+          }
 
-        await dispatch(
-          createDeal({
-            clientId: selectedSupplierId,
-            title: `${paymentType === "prepayment" ? "Предоплата" : "Долги"} ${supplierLabel}`,
-            statusRu: paymentType === "prepayment" ? "Предоплата" : "Долги",
-            amount: totalReceiptAmount,
-            prepayment:
-              paymentType === "prepayment" ? prepaymentValue : undefined,
-            debtMonths: Number(debtMonths || 1),
-            first_due_date: firstPaymentDate,
-          }),
-        ).unwrap();
+          await dispatch(
+            createDeal({
+              clientId: selectedSupplierId,
+              title: `${paymentType === "prepayment" ? "Предоплата" : "Долги"} ${supplierLabel}`,
+              statusRu: paymentType === "prepayment" ? "Предоплата" : "Долги",
+              amount: totalReceiptAmount,
+              prepayment:
+                paymentType === "prepayment" ? prepaymentValue : undefined,
+              debtMonths: Number(debtMonths || 1),
+              first_due_date: firstPaymentDate,
+            }),
+          ).unwrap();
+        } catch (dealError) {
+          sideEffectWarnings.push(
+            validateResErrors(
+              dealError,
+              "Товары оприходованы, но не удалось создать запись о долге. ",
+            ),
+          );
+        }
       }
 
       if (cashExpenseAmount > 0 && selectCashBox) {
-        await dispatch(
-          addCashFlows({
-            cashbox: selectCashBox,
-            type: "expense",
-            name: `Закупка: ${supplierLabel}`,
-            amount: Number(cashExpenseAmount).toFixed(2),
-            ...(receiptId != null && { source_cashbox_flow_id: receiptId }),
-            source_business_operation_id: "Закупки",
-            status:
-              company?.subscription_plan?.name === "Старт"
-                ? "approved"
-                : "pending",
-          }),
-        ).unwrap();
+        try {
+          await dispatch(
+            addCashFlows({
+              cashbox: selectCashBox,
+              type: "expense",
+              name: `Закупка: ${supplierLabel}`,
+              amount: Number(cashExpenseAmount).toFixed(2),
+              ...(receiptId != null && { source_cashbox_flow_id: receiptId }),
+              source_business_operation_id: "Закупки",
+              status:
+                company?.subscription_plan?.name === "Старт"
+                  ? "approved"
+                  : "pending",
+            }),
+          ).unwrap();
+        } catch (cashError) {
+          sideEffectWarnings.push(
+            validateResErrors(
+              cashError,
+              "Товары оприходованы, но не удалось записать расход в кассу. ",
+            ),
+          );
+        }
       }
 
       setCompletedReceiptSnapshot({
@@ -783,10 +805,16 @@ export default function SupplierReceiptPage() {
       setQtyByProductId({});
       setSuccessModalOpen(true);
       await loadSupplierProducts(selectedSupplierId);
+
+      if (sideEffectWarnings.length > 0) {
+        alert(sideEffectWarnings.join("\n"), true);
+      }
     } catch (error) {
       const errorMessage = validateResErrors(
         error,
-        "Ошибка при оприходовании товаров",
+        receiptPosted
+          ? "Товары могли быть оприходованы, но завершение операции прервалось"
+          : "Ошибка при оприходовании товаров",
       );
       alert(errorMessage, true);
     } finally {
@@ -820,31 +848,37 @@ export default function SupplierReceiptPage() {
   }, [paymentType, prepayment, totalReceiptAmount]);
 
   return (
-    <div className="warehouse-page market-receipt-page">
-      <div className="warehouse-header">
-        <div className="warehouse-header__left">
+    <PageShell className="warehouse-page market-receipt-page">
+      <PageHeader
+        title="Закупки"
+        subtitle="Выберите поставщика и оприходуйте его товары на склад"
+        actions={
           <button
-            className="market-receipt-page__back-button"
+            className="nur-btn nur-btn--secondary"
             onClick={() => navigate("/crm/market/procurement")}
             type="button"
           >
             <ArrowLeft size={16} />
             Назад к закупкам
           </button>
-          <div className="warehouse-header__title-section">
-            <h1 className="warehouse-header__title">Закупки</h1>
-            <p className="warehouse-header__subtitle">
-              Выберите поставщика и оприходуйте его товары на склад
-            </p>
-          </div>
-        </div>
+        }
+      />
+
+      <div className="market-receipt-page__steps" aria-label="Этапы приёмки">
+        <StatusChip tone={selectedSupplierId ? "success" : "primary"}>
+          1. Поставщик
+        </StatusChip>
+        <StatusChip tone={selectedSupplierId ? "primary" : "default"}>
+          2. Товары
+        </StatusChip>
+        <StatusChip>3. Итог</StatusChip>
       </div>
 
       <DataContainer>
-        <div className="market-receipt-page__card">
-          <div className="market-receipt-page__toolbar">
+        <PagePanel className="market-receipt-page__card">
+          <FilterBar className="market-receipt-page__toolbar">
             <div className="market-receipt-page__field">
-              <label className="market-receipt-page__label">Поставщик</label>
+              <label className="nur-label">Поставщик</label>
               <div className="market-receipt-page__supplier-row">
                 <SearchableCombobox
                   value={selectedSupplierId}
@@ -857,7 +891,7 @@ export default function SupplierReceiptPage() {
                 />
                 <button
                   type="button"
-                  className="market-receipt-page__supplier-add"
+                  className="nur-btn nur-btn--secondary nur-btn--sm market-receipt-page__supplier-add"
                   onClick={() => setCreateSupplierOpen(true)}
                   title="Добавить поставщика"
                 >
@@ -865,8 +899,7 @@ export default function SupplierReceiptPage() {
                 </button>
               </div>
             </div>
-
-          </div>
+          </FilterBar>
 
           <div className="market-receipt-page__summary">
             <div className="market-receipt-page__summary-item">
@@ -1064,7 +1097,7 @@ export default function SupplierReceiptPage() {
               Оприходовать товары
             </button>
           </div>
-        </div>
+        </PagePanel>
       </DataContainer>
       {createSupplierOpen && (
         <div className="market-receipt-page__modal-overlay" onClick={() => setCreateSupplierOpen(false)}>
@@ -1438,6 +1471,6 @@ export default function SupplierReceiptPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

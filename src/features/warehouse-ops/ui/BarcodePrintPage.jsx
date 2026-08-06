@@ -4,6 +4,7 @@ import BarcodePrintTab from "./components/BarcodePrintTab";
 import { fetchProductsAsync } from "@entities/product";
 import { clearProducts } from "@entities/product";
 import { useDebouncedValue } from "@shared/hooks/useDebounce";
+import { PageShell, PageHeader } from "@shared/ui/page-shell";
 
 const PAGE_SIZE = 100;
 
@@ -47,7 +48,11 @@ const BarcodePrintPage = () => {
   const totalPages = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
 
   return (
-    <div className="barcode-print-page">
+    <PageShell className="barcode-print-page">
+      <PageHeader
+        title="Печать штрихкодов"
+        subtitle="Поиск товаров и печать этикеток"
+      />
       <BarcodePrintTab
         products={products}
         loading={loading}
@@ -59,10 +64,8 @@ const BarcodePrintPage = () => {
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
       />
-    </div>
+    </PageShell>
   );
 };
 
 export default BarcodePrintPage;
-
-

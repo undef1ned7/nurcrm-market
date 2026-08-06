@@ -69,21 +69,22 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
 
   // Загрузка должников
   useEffect(() => {
+    let cancelled = false;
     const loadDebtors = async () => {
       try {
         setLoading(true);
         const allDebtors = await fetchAllPages("/main/clients/with-debts/");
+        if (cancelled) return;
         setDebtors(allDebtors);
 
         // Загружаем deals для каждого клиента, чтобы получить сумму долга
-        // Используем Promise.allSettled для параллельной загрузки с обработкой ошибок
         const debtsMap = new Map();
         const debtPromises = allDebtors.map(async (client) => {
+          if (cancelled) return { clientId: client.id, debt: 0 };
           try {
             const deals = await fetchAllPages(
               `/main/clients/${client.id}/deals/?kind=debt`
             );
-            // Суммируем remaining_debt из всех deals типа "debt"
             const totalDebt = deals.reduce((sum, deal) => {
               const remainingDebt = parseFloat(deal.remaining_debt || 0);
               return sum + remainingDebt;
@@ -102,16 +103,21 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         });
 
         await Promise.allSettled(debtPromises);
+        if (cancelled) return;
         setClientDebts(debtsMap);
       } catch (error) {
+        if (cancelled) return;
         console.error("Ошибка при загрузке должников:", error);
         showAlert("error", "Ошибка", "Не удалось загрузить список должников");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadDebtors();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Фильтруем по поисковому запросу и показываем только тех, у кого есть долг
@@ -302,7 +308,11 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         ).unwrap();
       } catch (cashError) {
         console.warn("Ошибка при создании денежного потока:", cashError);
-        // Не блокируем успешное погашение, если ошибка с кассой
+        showAlert(
+          "warning",
+          "Предупреждение",
+          "Долг погашен, но не удалось записать доход в кассу. Проверьте кассовые операции.",
+        );
       }
 
       // Обновляем общий долг клиента из обновленной сделки

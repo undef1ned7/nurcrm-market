@@ -26,6 +26,7 @@ const MenuItem = ({
   isDropdownOpen,
   onToggleDropdown,
   toggleSidebar,
+  iconsOnly = false,
 }) => {
   const { label, to, icon, children } = item;
   const location = useLocation();
@@ -39,22 +40,27 @@ const MenuItem = ({
     "warehouse/documents/create",
   );
 
-  // Проверяем настройку автоматического закрытия сайдбара
   const shouldCloseOnClick = () => {
     const isMobile = window.innerWidth < 769;
     const sidebarAutoClose =
       localStorage.getItem("sidebarAutoClose") === "true";
 
-    // На мобильных всегда закрываем при клике
     if (isMobile) {
       return true;
     }
 
-    // На десктопе закрываем только если настройка включена
     return sidebarAutoClose;
   };
 
   const handleClick = (e) => {
+    if (iconsOnly && children) {
+      // В режиме иконок сразу переходим на родительский route
+      if (shouldCloseOnClick()) {
+        toggleSidebar();
+      }
+      return;
+    }
+
     if (children) {
       if (!isDropdownOpen) {
         e.preventDefault();
@@ -67,14 +73,11 @@ const MenuItem = ({
           toggleSidebar();
         }
       }
-    } else {
-      if (shouldCloseOnClick()) {
-        toggleSidebar();
-      }
+    } else if (shouldCloseOnClick()) {
+      toggleSidebar();
     }
   };
 
-  // «Бренды и категории» в складе: одна страница с вкладками (brands/categories/payment_categories) — пункт сайдбара должен оставаться активным на любой вкладке
   const brandCategoryPaths = [
     "/crm/warehouse/brands",
     "/crm/warehouse/categories",
@@ -93,6 +96,8 @@ const MenuItem = ({
     >
       <NavLink
         to={to}
+        title={label}
+        aria-label={label}
         className={({ isActive }) => {
           const active = isActive || isBrandCategorySection;
           return `sidebar__menu-item ${active ? "sidebar__menu-item--active" : ""}`;
@@ -100,46 +105,57 @@ const MenuItem = ({
         onClick={handleClick}
       >
         {IconComponent}
-        <span>{label}</span>
+        <span className="sidebar__menu-label">{label}</span>
       </NavLink>
-      {children && (
-        <ul className={`sidebar__submenu ${isDropdownOpen ? "open" : ""}`}>
-          {children.map((child) => {
-            const ChildIcon =
-              typeof child.icon === "function" ? child.icon() : child.icon;
-            const isMoneyDocument = child.to?.includes("/money/");
-            const childPathSegment = child.to?.split("/").filter(Boolean).pop();
-            const childDocType = DOC_TYPE_PATH_TO_API[childPathSegment];
-            const isActiveOnCreatePage =
-              isDocumentsSection &&
-              isOnCreatePage &&
-              !isMoneyDocument &&
-              childDocType &&
-              createPageDocType === childDocType;
-            return (
-              <li key={child.label}>
-                <NavLink
-                  to={child.to}
-                  className={({ isActive }) =>
-                    `sidebar__submenu-item ${
-                      isActive || isActiveOnCreatePage
-                        ? "sidebar__submenu-item--active"
-                        : ""
-                    }`
-                  }
-                  onClick={() => {
-                    if (shouldCloseOnClick()) {
-                      toggleSidebar();
+      {!iconsOnly && children && (
+        <div
+          className={`sidebar__submenu ${isDropdownOpen ? "open" : ""}`}
+          aria-hidden={!isDropdownOpen}
+        >
+          <ul className="sidebar__submenu-list">
+            {children.map((child) => {
+              const ChildIcon =
+                typeof child.icon === "function" ? child.icon() : child.icon;
+              const isMoneyDocument = child.to?.includes("/money/");
+              const childPathSegment = child
+                .to?.split("/")
+                .filter(Boolean)
+                .pop();
+              const childDocType = DOC_TYPE_PATH_TO_API[childPathSegment];
+              const isActiveOnCreatePage =
+                isDocumentsSection &&
+                isOnCreatePage &&
+                !isMoneyDocument &&
+                childDocType &&
+                createPageDocType === childDocType;
+              return (
+                <li key={child.label}>
+                  <NavLink
+                    to={child.to}
+                    title={child.label}
+                    aria-label={child.label}
+                    className={({ isActive }) =>
+                      `sidebar__submenu-item ${
+                        isActive || isActiveOnCreatePage
+                          ? "sidebar__submenu-item--active"
+                          : ""
+                      }`
                     }
-                  }}
-                >
-                  {ChildIcon}
-                  <span>{child.label}</span>
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
+                    tabIndex={isDropdownOpen ? undefined : -1}
+                    onClick={() => {
+                      if (shouldCloseOnClick()) {
+                        toggleSidebar();
+                      }
+                    }}
+                  >
+                    {ChildIcon}
+                    <span className="sidebar__menu-label">{child.label}</span>
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </li>
   );

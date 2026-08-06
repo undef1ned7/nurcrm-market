@@ -1,6 +1,7 @@
-/* Кроссплатформенная модалка: overlay + диалог со скроллом на всех устройствах */
+/* Shared modal — tokenized chrome (aliases .common-modal-* for back-compat) */
 
-.common-modal-overlay {
+.common-modal-overlay,
+.nur-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -8,12 +9,11 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  /* safe-area для вырезов и notch на мобильных */
   padding-top: max(16px, env(safe-area-inset-top));
   padding-right: max(16px, env(safe-area-inset-right));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
   padding-left: max(16px, env(safe-area-inset-left));
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--nur-scrim);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   overflow: auto;
@@ -21,19 +21,21 @@
   overscroll-behavior: contain;
 }
 
-.common-modal-dialog {
+.common-modal-dialog,
+.nur-modal {
   position: relative;
   width: min(560px, 100%);
   max-width: 100%;
-  /* Ограничиваем высоту диалога, чтобы контент мог скроллиться */
   max-height: min(90dvh, 90vh);
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  background: var(--nur-surface);
+  border: 1px solid var(--nur-border);
+  border-radius: var(--nur-radius-lg);
+  box-shadow: var(--nur-shadow-lg);
   overflow: hidden;
   flex-shrink: 0;
+  color: var(--nur-text);
 }
 
 .common-modal-header {
@@ -42,15 +44,16 @@
   justify-content: space-between;
   gap: 12px;
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--nur-border);
   flex-shrink: 0;
 }
 
 .common-modal-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--nur-font-title-sm, 18px);
   font-weight: 700;
-  color: #0f172a;
+  color: var(--nur-text);
+  letter-spacing: -0.01em;
 }
 
 .common-modal-close {
@@ -61,25 +64,25 @@
   height: 36px;
   padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--nur-radius-sm);
   background: transparent;
-  color: #64748b;
+  color: var(--nur-muted);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--nur-duration-fast) var(--nur-ease-standard),
+    color var(--nur-duration-fast) var(--nur-ease-standard);
   flex-shrink: 0;
 }
 
 .common-modal-close:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--nur-bg);
+  color: var(--nur-text);
 }
 
 .common-modal-close:focus-visible {
-  outline: 2px solid #f7d74f;
+  outline: 2px solid var(--nur-primary);
   outline-offset: 2px;
 }
 
-/* Область с children — единственная скроллируемая часть */
 .common-modal-content {
   flex: 1 1 auto;
   min-height: 0;
@@ -90,27 +93,38 @@
   padding: 20px;
 }
 
-/* Скроллбар (опционально, для десктопа) */
 .common-modal-content::-webkit-scrollbar {
   width: 8px;
 }
 
 .common-modal-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--nur-bg);
 }
 
 .common-modal-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--nur-border-strong);
   border-radius: 4px;
 }
 
 .common-modal-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--nur-muted);
 }
 
-/* Мобильные: меньше отступы, больше высота диалога */
+.common-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-top: 1px solid var(--nur-border);
+  background: var(--nur-surface-2);
+  flex-shrink: 0;
+}
+
 @media (max-width: 600px) {
-  .common-modal-overlay {
+  .common-modal-overlay,
+  .nur-modal-overlay {
     padding: 12px;
     padding-top: max(12px, env(safe-area-inset-top));
     padding-right: max(12px, env(safe-area-inset-right));
@@ -118,9 +132,10 @@
     padding-left: max(12px, env(safe-area-inset-left));
   }
 
-  .common-modal-dialog {
+  .common-modal-dialog,
+  .nur-modal {
     max-height: min(92dvh, 92vh);
-    border-radius: 12px;
+    border-radius: var(--nur-radius);
   }
 
   .common-modal-header {
@@ -136,9 +151,9 @@
   }
 }
 
-/* Небольшие экраны */
 @media (max-width: 380px) {
-  .common-modal-overlay {
+  .common-modal-overlay,
+  .nur-modal-overlay {
     padding: 8px;
     padding-top: max(8px, env(safe-area-inset-top));
     padding-right: max(8px, env(safe-area-inset-right));
@@ -146,9 +161,9 @@
     padding-left: max(8px, env(safe-area-inset-left));
   }
 
-  .common-modal-dialog {
+  .common-modal-dialog,
+  .nur-modal {
     max-height: min(96dvh, 96vh);
-    border-radius: 10px;
   }
 
   .common-modal-header {
@@ -160,9 +175,9 @@
   }
 }
 
-/* Высокие экраны: можно чуть увеличить высоту диалога */
 @media (min-height: 800px) {
-  .common-modal-dialog {
+  .common-modal-dialog,
+  .nur-modal {
     max-height: min(85dvh, 85vh);
   }
 }

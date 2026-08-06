@@ -1,4 +1,4 @@
-import { getBuildingAppPath } from "./appUrls";
+import { getBuildingAppPath, isAllowedBuildingAppOrigin } from "./appUrls";
 import { isBuildingSector } from "./sectorMapping";
 import { isCompanySubscriptionActive } from "./companySubscription";
 
@@ -6,22 +6,84 @@ const AUTH_PARAM_ACCESS = "accessToken";
 const AUTH_PARAM_REFRESH = "refreshToken";
 const AUTH_PARAM_SECTOR = "sector";
 
+/**
+ * Кладёт токены в URL hash (не уходит в Referer/прокси-логи),
+ * sector — в query для совместимости с роутингом.
+ */
 export const buildAuthRedirectUrl = (targetUrl, tokens = {}) => {
   const url = new URL(targetUrl, window.location.origin);
+
+  if (!isAllowedBuildingAppOrigin(url.origin)) {
+    throw new Error(
+      `buildAuthRedirectUrl: origin не в allowlist: ${url.origin}`,
+    );
+  }
+
   const access = tokens.access || tokens.accessToken;
   const refresh = tokens.refresh || tokens.refreshToken;
+  const hashParams = new URLSearchParams();
 
   if (access) {
-    url.searchParams.set(AUTH_PARAM_ACCESS, access);
+    hashParams.set(AUTH_PARAM_ACCESS, access);
   }
   if (refresh) {
-    url.searchParams.set(AUTH_PARAM_REFRESH, refresh);
+    hashParams.set(AUTH_PARAM_REFRESH, refresh);
   }
   if (tokens.sector) {
     url.searchParams.set(AUTH_PARAM_SECTOR, tokens.sector);
+    hashParams.set(AUTH_PARAM_SECTOR, tokens.sector);
+  }
+
+  const hash = hashParams.toString();
+  if (hash) {
+    url.hash = hash;
   }
 
   return url.toString();
+};
+
+/**
+ * Читает токены из hash (предпочтительно) или query (legacy handoff).
+ * После чтения очищает их из URL.
+ */
+export const consumeAuthParamsFromUrl = () => {
+  const hashParams = new URLSearchParams(
+    String(window.location.hash || "").replace(/^#/, ""),
+  );
+  const queryParams = new URLSearchParams(window.location.search);
+
+  const access =
+    hashParams.get(AUTH_PARAM_ACCESS) || queryParams.get(AUTH_PARAM_ACCESS);
+  const refresh =
+    hashParams.get(AUTH_PARAM_REFRESH) || queryParams.get(AUTH_PARAM_REFRESH);
+  const sector =
+    hashParams.get(AUTH_PARAM_SECTOR) || queryParams.get(AUTH_PARAM_SECTOR);
+
+  const hadAuthInUrl =
+    hashParams.has(AUTH_PARAM_ACCESS) ||
+    hashParams.has(AUTH_PARAM_REFRESH) ||
+    queryParams.has(AUTH_PARAM_ACCESS) ||
+    queryParams.has(AUTH_PARAM_REFRESH);
+
+  if (hadAuthInUrl) {
+    hashParams.delete(AUTH_PARAM_ACCESS);
+    hashParams.delete(AUTH_PARAM_REFRESH);
+    hashParams.delete(AUTH_PARAM_SECTOR);
+    queryParams.delete(AUTH_PARAM_ACCESS);
+    queryParams.delete(AUTH_PARAM_REFRESH);
+
+    const search = queryParams.toString();
+    const nextHash = hashParams.toString();
+    window.history.replaceState(
+      {},
+      "",
+      window.location.pathname +
+        (search ? `?${search}` : "") +
+        (nextHash ? `#${nextHash}` : ""),
+    );
+  }
+
+  return { access, refresh, sector };
 };
 
 export const getStoredAuthTokens = () => ({
@@ -59,11 +121,16 @@ export const redirectToBuildingApp = (currentPath = "/building/projects") => {
     return false;
   }
 
-  window.location.href = buildAuthRedirectUrl(
-    getBuildingAppPath(targetPath),
-    tokens,
-  );
-  return true;
+  try {
+    window.location.href = buildAuthRedirectUrl(
+      getBuildingAppPath(targetPath),
+      tokens,
+    );
+    return true;
+  } catch (err) {
+    console.error("redirectToBuildingApp:", err);
+    return false;
+  }
 };
 
 /**

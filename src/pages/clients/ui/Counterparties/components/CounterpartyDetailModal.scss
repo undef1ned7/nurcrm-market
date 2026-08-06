@@ -12,7 +12,7 @@
 }
 
 .counterparty-detail-modal {
-  background: white;
+  background: var(--nur-surface);
   border-radius: var(--radius, 12px);
   width: 100%;
   max-width: 720px;
@@ -27,14 +27,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
-    border-bottom: 1px solid var(--border, #e5e7eb);
+    border-bottom: 1px solid var(--border, var(--nur-border));
     flex-shrink: 0;
   }
 
   &__title {
     font-size: 20px;
     font-weight: 700;
-    color: var(--text, #111827);
+    color: var(--text, var(--nur-text));
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -46,7 +46,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--muted, #6b7280);
+    color: var(--muted, var(--nur-muted));
     padding: 4px;
     display: flex;
     align-items: center;
@@ -55,8 +55,8 @@
     transition: background 0.2s, color 0.2s;
 
     &:hover {
-      background: #f3f4f6;
-      color: var(--text, #111827);
+      background: var(--nur-surface-3);
+      color: var(--text, var(--nur-text));
     }
   }
 
@@ -81,15 +81,15 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border, var(--nur-border));
     border-radius: 8px;
     overflow: hidden;
   }
 
   &__tab-list {
     display: flex;
-    background: #f9fafb;
-    border-bottom: 1px solid var(--border, #e5e7eb);
+    background: var(--nur-surface-3);
+    border-bottom: 1px solid var(--border, var(--nur-border));
   }
 
   &__tab {
@@ -97,7 +97,7 @@
     padding: 12px 16px;
     font-size: 14px;
     font-weight: 500;
-    color: var(--muted, #6b7280);
+    color: var(--muted, var(--nur-muted));
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
@@ -105,28 +105,28 @@
     transition: color 0.2s, background 0.2s, border-color 0.2s;
 
     &:hover {
-      color: var(--text, #111827);
-      background: #f3f4f6;
+      color: var(--text, var(--nur-text));
+      background: var(--nur-surface-3);
     }
 
     &--active {
-      color: var(--text, #111827);
-      background: white;
-      border-bottom-color: var(--primary, #2563eb);
+      color: var(--text, var(--nur-text));
+      background: var(--nur-surface);
+      border-bottom-color: var(--primary, var(--nur-primary, #f7d74f));
       font-weight: 600;
     }
   }
 
   &__tab-panel {
     padding: 16px;
-    background: white;
+    background: var(--nur-surface);
     min-height: 120px;
   }
 
   &__section-title {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text, #111827);
+    color: var(--text, var(--nur-text));
     margin: 0 0 12px 0;
   }
 
@@ -138,7 +138,7 @@
 
   &__table-wrap {
     overflow-x: auto;
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border, var(--nur-border));
     border-radius: 8px;
   }
 
@@ -151,13 +151,13 @@
     td {
       padding: 10px 14px;
       text-align: left;
-      border-bottom: 1px solid var(--border, #e5e7eb);
+      border-bottom: 1px solid var(--border, var(--nur-border));
     }
 
     th {
       font-weight: 600;
-      color: var(--muted, #6b7280);
-      background: #f9fafb;
+      color: var(--muted, var(--nur-muted));
+      background: var(--nur-surface-3);
     }
 
     tr:last-child td {
@@ -165,7 +165,7 @@
     }
 
     td {
-      color: var(--text, #111827);
+      color: var(--text, var(--nur-text));
     }
   }
 
@@ -174,14 +174,14 @@
   &__empty {
     padding: 16px;
     font-size: 14px;
-    color: var(--muted, #6b7280);
+    color: var(--muted, var(--nur-muted));
     text-align: center;
-    background: #f9fafb;
+    background: var(--nur-surface-3);
     border-radius: 8px;
   }
 
   &__error {
     color: #b91c1c;
-    background: #fef2f2;
+    background: var(--nur-danger-soft);
   }
 }

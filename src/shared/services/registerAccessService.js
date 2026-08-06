@@ -8,8 +8,10 @@ const SESSION_UNLOCK_KEY = "nur_register_access_unlocked";
 
 const USE_BACKEND = import.meta.env.VITE_REGISTER_ACCESS_BACKEND === "true";
 
-const DEFAULT_PASSWORD =
-  import.meta.env.VITE_REGISTER_ACCESS_PASSWORD || "nurcrm2026";
+/** Пароль только из env — без дефолта в бандле. */
+const DEFAULT_PASSWORD = String(
+  import.meta.env.VITE_REGISTER_ACCESS_PASSWORD || "",
+).trim();
 
 async function hashPassword(password) {
   const data = new TextEncoder().encode(password);
@@ -37,7 +39,11 @@ function writeStoredHash(hash) {
 
 async function ensureLocalPasswordInitialized() {
   if (readStoredHash()) return;
-
+  if (!DEFAULT_PASSWORD) {
+    throw new Error(
+      "VITE_REGISTER_ACCESS_PASSWORD не задан. Укажите пароль в .env или включите VITE_REGISTER_ACCESS_BACKEND=true",
+    );
+  }
   const hash = await hashPassword(DEFAULT_PASSWORD);
   writeStoredHash(hash);
 }
@@ -97,16 +103,32 @@ export async function verifyAccessPassword(password) {
     }
   }
 
-  const isValid = await verifyLocalPassword(password);
-  return isValid ? { ok: true } : { ok: false, error: "Неверный пароль" };
+  try {
+    const isValid = await verifyLocalPassword(password);
+    return isValid ? { ok: true } : { ok: false, error: "Неверный пароль" };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error?.message ||
+        "Регистрация недоступна: не настроен пароль доступа",
+    };
+  }
 }
 
 export async function unlockRegistration(password) {
-  const result = await verifyAccessPassword(password);
-  if (result.ok) {
-    setSessionUnlocked(true);
+  try {
+    const result = await verifyAccessPassword(password);
+    if (result.ok) {
+      setSessionUnlocked(true);
+    }
+    return result;
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || "Регистрация недоступна: не настроен пароль доступа",
+    };
   }
-  return result;
 }
 
 export async function changeAccessPassword(currentPassword, newPassword) {

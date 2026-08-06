@@ -6,6 +6,7 @@ import { Layout } from "@widgets/layout";
 import { ScrollToTop } from "@shared/hooks/ScrollToTop.jsx";
 import { publicRoutes } from "@app/router/routes.jsx";
 import RouteFallback from "@shared/ui/RouteFallback/RouteFallback.jsx";
+import ErrorBoundary from "@shared/ui/ErrorBoundary/ErrorBoundary.jsx";
 import { ThemeModeProvider } from "@shared/theme/ThemeModeProvider.jsx";
 import { Box } from "@mui/system";
 import "@shared/config/i18n";
@@ -68,18 +69,20 @@ function App() {
   }, []);
 
   return (
-    <AuthGuard onProfileLoaded={handleProfileLoaded}>
-      <ThemeModeProvider>
-        <ModalProvider>
-          <Box sx={{ minHeight: "100vh", bgcolor: "transparent" }}>
+    <ThemeModeProvider>
+      <ModalProvider>
+        <Box sx={{ minHeight: "100vh", bgcolor: "transparent" }}>
+          <ErrorBoundary>
             <BrowserRouter>
-              <ScrollToTop />
-              <AppRoutes profile={profile} />
+              <AuthGuard onProfileLoaded={handleProfileLoaded}>
+                <ScrollToTop />
+                <AppRoutes profile={profile} />
+              </AuthGuard>
             </BrowserRouter>
-          </Box>
-        </ModalProvider>
-      </ThemeModeProvider>
-    </AuthGuard>
+          </ErrorBoundary>
+        </Box>
+      </ModalProvider>
+    </ThemeModeProvider>
   );
 }
 

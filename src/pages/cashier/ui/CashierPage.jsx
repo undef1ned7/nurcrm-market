@@ -2490,7 +2490,7 @@ const CashierPage = () => {
               ? { salePackageId: existingCartLine.salePackage }
               : {}),
           }),
-        );
+        ).unwrap();
         requestCartQuantityFocus({
           itemId: existingCartLine.itemId,
           productId: product.id,
@@ -2505,14 +2505,14 @@ const CashierPage = () => {
             quantity: qtyToAdd,
             ...(salePackageId ? { salePackageId } : {}),
           }),
-        );
+        ).unwrap();
         requestCartQuantityFocus({
           productId: product.id,
           salePackage: salePackageId ?? null,
         });
         // Некоторые бэки возвращают не строку корзины, а sale без items.
         // Тогда принудительно обновляем активную продажу, иначе новая позиция не появится в UI.
-        const payload = res?.payload;
+        const payload = res;
         const hasItemsInResponse =
           Array.isArray(payload?.items) || Array.isArray(payload?.cart?.items);
         const hasCartsInResponse = Array.isArray(payload?.carts) || payload?.sale;
@@ -2681,7 +2681,7 @@ const CashierPage = () => {
             id: saleId,
             productId: item.itemId,
           }),
-        );
+        ).unwrap();
         // Удаляем товар из сохраненного порядка
         cartOrderRef.current = cartOrderRef.current.filter(
           (id) => id !== item.id,
@@ -2703,7 +2703,7 @@ const CashierPage = () => {
             quantity: newQuantity,
             ...(item.salePackage ? { salePackageId: item.salePackage } : {}),
           }),
-        );
+        ).unwrap();
         // Обновляем локальное значение количества
         setCartQuantities((prev) => ({
           ...prev,
@@ -2756,7 +2756,7 @@ const CashierPage = () => {
           id: saleId,
           productId: item.itemId,
         }),
-      );
+      ).unwrap();
       // Удаляем товар из сохраненного порядка
       cartOrderRef.current = cartOrderRef.current.filter(
         (id) => id !== item.id,
@@ -2821,16 +2821,22 @@ const CashierPage = () => {
       if (
         product &&
         !isMarketWarehouseServiceProduct(product) &&
-        !item.salePackage &&
-        availableQuantity > 0 &&
-        qtyNum > availableQuantity
+        !item.salePackage
       ) {
-        showAlert(
-          "warning",
-          "Недостаточно товара",
-          `Доступно только ${availableQuantity} ${product.unit || "шт"}`,
-        );
-        return;
+        if (
+          !Number.isFinite(availableQuantity) ||
+          availableQuantity <= 0 ||
+          qtyNum > availableQuantity
+        ) {
+          showAlert(
+            "warning",
+            availableQuantity > 0 ? "Недостаточно товара" : "Товар отсутствует",
+            availableQuantity > 0
+              ? `Доступно только ${availableQuantity} ${product.unit || "шт"}`
+              : "Товар отсутствует в наличии",
+          );
+          return;
+        }
       } else if (
         product &&
         item.salePackage &&
@@ -3005,13 +3011,18 @@ const CashierPage = () => {
         ) {
           const availableQuantity = parseFloat(product.quantity || 0);
           if (
-            availableQuantity > 0 &&
+            !Number.isFinite(availableQuantity) ||
+            availableQuantity <= 0 ||
             qtyNum > availableQuantity
           ) {
             showAlert(
               "warning",
-              "Недостаточно товара",
-              `Доступно только ${availableQuantity} ${product.unit || "шт"}`,
+              availableQuantity > 0
+                ? "Недостаточно товара"
+                : "Товар отсутствует",
+              availableQuantity > 0
+                ? `Доступно только ${availableQuantity} ${product.unit || "шт"}`
+                : "Товар отсутствует в наличии",
             );
             setCartQuantities((prev) => ({
               ...prev,
@@ -3122,6 +3133,12 @@ const CashierPage = () => {
           ...prev,
           [item.id]: formatPrice(item.price ?? 0),
         }));
+        setCart((prev) =>
+          prev.map((c) =>
+            String(c.id) === lineKey ? { ...c, price: item.price ?? 0 } : c,
+          ),
+        );
+        pendingPricePatchRef.current.delete(lineKey);
         return;
       }
     }
@@ -3525,25 +3542,25 @@ const CashierPage = () => {
           </div>
         </div>
         <div className="cashier-page__header-right">
-          <div style={{ display: "flex", gap: 6, marginRight: 8 }}>
+          <div
+            className="cashier-page__mode-toggle"
+            role="group"
+            aria-label="Режим продажи"
+          >
             <button
-              className="cashier-page__close-shift-btn"
-              style={{
-                padding: "8px 10px",
-                backgroundColor: !isWholesaleMode ? "#f7d617" : "#f3f4f6",
-                color: !isWholesaleMode ? "#111827" : "#6b7280",
-              }}
+              type="button"
+              className={`cashier-page__mode-btn${
+                !isWholesaleMode ? " cashier-page__mode-btn--active" : ""
+              }`}
               onClick={() => handleSwitchSaleMode(false)}
             >
               Розница
             </button>
             <button
-              className="cashier-page__close-shift-btn"
-              style={{
-                padding: "8px 10px",
-                backgroundColor: isWholesaleMode ? "#f7d617" : "#f3f4f6",
-                color: isWholesaleMode ? "#111827" : "#6b7280",
-              }}
+              type="button"
+              className={`cashier-page__mode-btn${
+                isWholesaleMode ? " cashier-page__mode-btn--active" : ""
+              }`}
               onClick={() => handleSwitchSaleMode(true)}
             >
               Опт
@@ -3551,6 +3568,7 @@ const CashierPage = () => {
           </div>
           {openShiftId && openShift?.status === "open" ? (
             <button
+              type="button"
               className="cashier-page__close-shift-btn"
               onClick={handleCloseShift}
             >
@@ -3558,18 +3576,20 @@ const CashierPage = () => {
             </button>
           ) : (
             <button
-              className="cashier-page__close-shift-btn"
+              type="button"
+              className="cashier-page__close-shift-btn cashier-page__close-shift-btn--start"
               onClick={handleStartShift}
-              style={{ backgroundColor: "#22c55e" }}
             >
               Начать смену
             </button>
           )}
           <button
+            type="button"
             className="cashier-page__menu-btn"
             onClick={() => setShowMenuModal(true)}
+            aria-label="Меню кассы"
           >
-            <Menu size={24} />
+            <Menu size={22} />
           </button>
         </div>
       </div>
@@ -3580,8 +3600,9 @@ const CashierPage = () => {
           style={
             isDesktopLayout
               ? {
-                  flex: "0 0 auto",
-                  width: `calc(${desktopProductsWidth}% - 12px)`,
+                  flex: `${desktopProductsWidth} 1 0`,
+                  width: 0,
+                  minWidth: 0,
                 }
               : undefined
           }
@@ -3860,9 +3881,9 @@ const CashierPage = () => {
               ? cartFull
                 ? { flex: "1 1 auto", width: "100%", minWidth: 0 }
                 : {
-                    flex: "0 0 auto",
-                    width: `calc(${100 - desktopProductsWidth}% - 12px)`,
-                    minWidth: 340,
+                    flex: `${100 - desktopProductsWidth} 1 0`,
+                    width: 0,
+                    minWidth: 320,
                   }
               : undefined
           }
@@ -4327,19 +4348,28 @@ const CashierPage = () => {
                                   product.quantity || 0,
                                 );
                                 if (
-                                  availableQuantity > 0 &&
+                                  !Number.isFinite(availableQuantity) ||
+                                  availableQuantity <= 0 ||
                                   numValue > availableQuantity
                                 ) {
+                                  const capped =
+                                    availableQuantity > 0
+                                      ? availableQuantity
+                                      : 0;
                                   setCartQuantities((prev) => ({
                                     ...prev,
-                                    [item.id]: String(availableQuantity),
+                                    [item.id]: String(capped),
                                   }));
                                   showAlert(
                                     "warning",
-                                    "Недостаточно товара",
-                                    `Доступно только ${availableQuantity} ${product.unit || "шт"}`,
+                                    availableQuantity > 0
+                                      ? "Недостаточно товара"
+                                      : "Товар отсутствует",
+                                    availableQuantity > 0
+                                      ? `Доступно только ${availableQuantity} ${product.unit || "шт"}`
+                                      : "Товар отсутствует в наличии",
                                   );
-                                  const capStr = String(availableQuantity);
+                                  const capStr = String(capped);
                                   pendingQtyLineInputRef.current.set(lineKey, capStr);
                                   debouncedQtyApiByLine.schedule(lineKey, () => {
                                     void flushPendingQuantityLine(item.id);
@@ -4516,10 +4546,11 @@ const CashierPage = () => {
                 <span>{formatPrice(total)} сом</span>
               </div>
               <button
+                type="button"
                 className="cashier-page__checkout-btn"
                 onClick={handleCheckout}
               >
-                ОФОРМИТЬ{" "}
+                Оплатить {formatPrice(total)} сом
               </button>
             </div>
           )}

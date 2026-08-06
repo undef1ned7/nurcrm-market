@@ -2,6 +2,13 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserCircle, Package, Users, Filter } from "lucide-react";
 import "./Counterparties.scss";
+import {
+  PageShell,
+  FilterBar,
+  PagePanel,
+  EmptyState,
+  LoadingState,
+} from "@shared/ui/page-shell";
 import CounterpartyHeader from "./components/CounterpartyHeader";
 import CounterpartySearchSection from "./components/CounterpartySearchSection";
 import CounterpartyTable from "./components/CounterpartyTable";
@@ -245,13 +252,19 @@ const Counterparties = () => {
     },
   ];
 
+  const emptyText = agentFilter
+    ? "По выбранному агенту никого нет. Выберите «Все агенты» или другого агента."
+    : searchTerm.trim()
+      ? "Попробуйте изменить запрос или вкладку (Клиент / Поставщик)"
+      : "Добавьте контрагента кнопкой «Создать контрагента»";
+
   return (
-    <div className="warehouse-page counterparties-page">
+    <PageShell className="warehouse-page counterparties-page">
       <CounterpartyHeader onCreateCounterparty={handleCreateCounterparty} />
 
-      <section className="counterparties-toolbar">
+      <FilterBar className="counterparties-toolbar">
         <div
-          className="counterparties-type-tabs"
+          className="nur-tabs counterparties-type-tabs"
           role="tablist"
           aria-label="Тип контрагента"
         >
@@ -261,9 +274,7 @@ const Counterparties = () => {
               type="button"
               role="tab"
               aria-selected={typeTab === key}
-              className={`counterparties-type-tabs__btn ${
-                typeTab === key ? "counterparties-type-tabs__btn--active" : ""
-              }`}
+              className={`nur-tabs__tab${typeTab === key ? " is-active" : ""}`}
               onClick={() => setTypeTab(key)}
             >
               <Icon size={18} aria-hidden />
@@ -286,7 +297,7 @@ const Counterparties = () => {
             </label>
             <select
               id="counterparties-agent-select"
-              className="counterparties-agent-filter__select"
+              className="nur-select counterparties-agent-filter__select"
               value={agentFilter}
               onChange={(e) => setAgentFilter(e.target.value)}
               aria-label="Фильтр по агенту"
@@ -299,7 +310,7 @@ const Counterparties = () => {
             </select>
           </div>
         )}
-      </section>
+      </FilterBar>
 
       <CounterpartyBalanceBar
         mode={periodMode}
@@ -324,32 +335,26 @@ const Counterparties = () => {
         foundCount={filteredCounterparties.length}
       />
 
-      <div className="counterparties-content">
+      <PagePanel flush className="counterparties-content">
         {loading && counterparties.length === 0 ? (
-          <div className="counterparties-loading">
-            <div className="counterparties-loading__spinner" aria-hidden />
-            <p className="counterparties-loading__text">
-              Загрузка контрагентов...
-            </p>
-          </div>
+          <LoadingState rows={6} />
         ) : filteredCounterparties.length === 0 ? (
-          <div className="counterparties-empty">
-            <Users
-              size={48}
-              className="counterparties-empty__icon"
-              aria-hidden
-            />
-            <p className="counterparties-empty__title">
-              Контрагенты не найдены
-            </p>
-            <p className="counterparties-empty__hint">
-              {agentFilter
-                ? "По выбранному агенту никого нет. Выберите «Все агенты» или другого агента."
-                : searchTerm.trim()
-                ? "Попробуйте изменить запрос или вкладку (Клиент / Поставщик)"
-                : "Добавьте контрагента кнопкой «Создать контрагента»"}
-            </p>
-          </div>
+          <EmptyState
+            icon={<Users size={22} aria-hidden />}
+            title="Контрагенты не найдены"
+            text={emptyText}
+            action={
+              !agentFilter && !searchTerm.trim() ? (
+                <button
+                  type="button"
+                  className="nur-btn nur-btn--primary"
+                  onClick={handleCreateCounterparty}
+                >
+                  Создать контрагента
+                </button>
+              ) : null
+            }
+          />
         ) : viewMode === VIEW_MODES.TABLE ? (
           <div className="counterparties-table-wrap">
             <CounterpartyTable
@@ -383,14 +388,14 @@ const Counterparties = () => {
             onPageChange={handlePageChange}
           />
         )}
-      </div>
+      </PagePanel>
 
       {showCreateModal && (
         <ReactPortal wrapperId="create_counter_modal">
           <CreateCounterpartyModal onClose={() => setShowCreateModal(false)} />
         </ReactPortal>
       )}
-    </div>
+    </PageShell>
   );
 };
 

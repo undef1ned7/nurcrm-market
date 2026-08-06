@@ -16,70 +16,68 @@ export const NewDebtModal = ({
   if (!open) return null;
 
   return (
-    <div className="catalog__overlay" onClick={onClose}>
+    <div className="debts-page__overlay" onClick={onClose}>
       <div
-        className="catalog__modal"
+        className="debts-page__modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="debt-new-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="catalog__modalTitle" id="debt-new-title">
+        <div className="debts-page__modal-title" id="debt-new-title">
           Новый долг
         </div>
 
         {formErr && (
-          <div
-            style={{
-              background: "#fff1f2",
-              border: "1px solid #fecdd3",
-              color: "#b91c1c",
-              borderRadius: 10,
-              padding: "8px 10px",
-              marginBottom: 10,
-              fontSize: 13,
-            }}
-          >
+          <div className="debts-page__alert debts-page__alert--danger">
             {formErr}
           </div>
         )}
 
         <form onSubmit={onSubmit}>
+          <label className="nur-label" htmlFor="debt-new-name">Имя *</label>
           <input
-            className="catalog__input"
+            id="debt-new-name"
+            className="nur-input debts-page__modal-input"
             placeholder="Имя *"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             autoFocus
           />
+          <label className="nur-label" htmlFor="debt-new-phone">Телефон *</label>
           <input
-            className="catalog__input"
-            placeholder="Телефон * (только цифры, уникальный)"
+            id="debt-new-phone"
+            className="nur-input debts-page__modal-input"
+            placeholder="Только цифры, уникальный"
             inputMode="numeric"
             pattern="\d*"
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
           />
+          <label className="nur-label" htmlFor="debt-new-amount">Сумма долга *</label>
           <input
-            className="catalog__input"
-            placeholder="Сумма долга * (только цифры)"
+            id="debt-new-amount"
+            className="nur-input debts-page__modal-input"
+            placeholder="Только цифры"
             inputMode="numeric"
             pattern="\d*"
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
           />
+          <label className="nur-label" htmlFor="debt-new-due">Дата возврата</label>
           <input
-            className="catalog__input"
+            id="debt-new-due"
+            className="nur-input debts-page__modal-input"
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             title="Дата возврата долга (необязательно)"
           />
 
-          <div className="catalog__modalActions" style={{ gap: 10 }}>
+          <div className="debts-page__modal-actions">
             <button
               type="button"
-              className="catalog__btn"
+              className="nur-btn nur-btn--ghost"
               onClick={onClose}
               disabled={savingNew}
             >
@@ -87,7 +85,7 @@ export const NewDebtModal = ({
             </button>
             <button
               type="submit"
-              className="catalog__btn catalog__btn--primary"
+              className="nur-btn nur-btn--primary"
               disabled={savingNew}
             >
               {savingNew ? "Сохранение…" : "Сохранить"}

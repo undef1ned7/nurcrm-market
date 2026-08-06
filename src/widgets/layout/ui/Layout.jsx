@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@widgets/sidebar/ui/Sidebar";
 import Header from "@widgets/header/ui/Header";
 import { Outlet, useLocation } from "react-router-dom";
-import arnament from "@shared/ui/Photo/Group 1216.png";
-import arnament2 from "@shared/ui/Photo/Group 1204.png";
-import arnament3 from "@shared/ui/Photo/Group 1215.png";
 import "./Layout.scss";
-import { X } from "lucide-react";
+import { X, ArrowUp } from "lucide-react";
 import { useUser } from "@entities/user";
-import { FaArrowUp } from "react-icons/fa";
 import { useDebounce } from "@shared/hooks/useDebounce";
+import { PageChromeProvider } from "@shared/ui/page-shell";
+
 const useAnnouncement = (company, setHideAnnouncement) => {
   const [daysLeft, setDaysLeft] = useState(null);
 
@@ -30,9 +28,9 @@ const useAnnouncement = (company, setHideAnnouncement) => {
       }, 10000);
 
       return () => clearTimeout(timer);
-    } else {
-      setDaysLeft(null);
     }
+
+    setDaysLeft(null);
   }, [company, setHideAnnouncement]);
 
   return daysLeft;
@@ -40,9 +38,7 @@ const useAnnouncement = (company, setHideAnnouncement) => {
 
 const Layout = () => {
   const { company } = useUser();
-  const rootBlock = useMemo(() => {
-    return document.getElementById('root')
-  }, [])
+  const rootBlock = useMemo(() => document.getElementById("root"), []);
   const [isArrowView, setIsArrowView] = useState(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -70,16 +66,15 @@ const Layout = () => {
   useEffect(() => {
     const savedSetting = localStorage.getItem("sidebarAutoClose");
     const sidebarAutoClose = savedSetting === "true";
-
     if (sidebarAutoClose) setIsSidebarOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
     const handleResize = () => {
-      if (rootBlock.scrollTop > 800) {
-        setIsArrowView(true)
+      if (rootBlock?.scrollTop > 800) {
+        setIsArrowView(true);
       } else {
-        setIsArrowView(false)
+        setIsArrowView(false);
       }
       const savedSetting = localStorage.getItem("sidebarAutoClose");
       const sidebarAutoClose = savedSetting === "true";
@@ -93,16 +88,18 @@ const Layout = () => {
   }, [rootBlock]);
 
   const scrollHandle = useDebounce(() => {
-    if (rootBlock.scrollTop > 800) {
-      setIsArrowView(true)
+    if (rootBlock?.scrollTop > 800) {
+      setIsArrowView(true);
     } else {
-      setIsArrowView(false)
+      setIsArrowView(false);
     }
   });
+
   useEffect(() => {
+    if (!rootBlock) return undefined;
     rootBlock.addEventListener("scroll", scrollHandle);
     return () => rootBlock.removeEventListener("scroll", scrollHandle);
-  }, [rootBlock, scrollHandle])
+  }, [rootBlock, scrollHandle]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -151,90 +148,83 @@ const Layout = () => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
 
-  const lan = localStorage.getItem("i18nextLng") || "ru";
-  const languageFunc = () => {
-    if (lan === "ru") return "app-ru";
-    if (lan === "ky") return "app-ky";
-    if (lan === "en") return "app-en";
-  };
-
   const daysLeft = useAnnouncement(company, setHideAnnouncement);
+
   return (
     <div className="layout-wrapper">
-      {/* насилное поставка вона  */}
-      <div
-        className="content_background"
-
-      ></div>
-
-      <div className={`App ${!isSidebarOpen ? "sidebar-collapsed" : ""}`}>
-        {!isHidden && (
-          <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        )}
-
-        {isSidebarOpen && !isHidden && (
-          <div
-            className="sidebar-overlay"
-            onClick={closeSidebar}
-            aria-hidden="true"
-          />
-        )}
-
+      <a href="#main-content" className="nur-skip-link">
+        Перейти к содержимому
+      </a>
+      <PageChromeProvider active={!isHidden}>
         <div
-          className={`content ${languageFunc()} ${isSidebarOpen && !isHidden ? "content--sidebar-open" : ""
-            } ${isHidden ? "content--full-width" : ""}`}
+          className={`App ${!isSidebarOpen ? "sidebar-collapsed" : ""} ${
+            isHidden ? "App--fullscreen" : ""
+          }`}
         >
-          {daysLeft !== null && !hideAnnouncement && (
-            <div className="announcement">
-              <span></span>
-              <div className="announcement__content">
-                <p>
-                  ⚠️ Уведомляем, что срок вашей <br />
-                  подписки истекает через <b>{daysLeft}</b>{" "}
-                  {daysLeft === 1 ? "день" : "дня(ей)"}. <br />
-                  Рекомендуем продлить её заранее, <br />
-                  чтобы сохранить доступ ко всем функциям.
-                </p>
-              </div>
-              <button
-                className="announcement__close"
-                onClick={() => setHideAnnouncement(true)}
-              >
-                <X />
-              </button>
-            </div>
+          {!isHidden && (
+            <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
           )}
 
-          {!isHidden && (
-            <>
-              <Header
-                toggleSidebar={toggleSidebar}
-                isSidebarOpen={isSidebarOpen}
-              />
-            </>
+          {isSidebarOpen && !isHidden && (
+            <div
+              className="sidebar-overlay"
+              onClick={closeSidebar}
+              aria-hidden="true"
+            />
           )}
-          <div className="content_content">
-            <Outlet />
-            {lan === "ru" && !isHidden && (
-              <>
-                <img src={arnament} className="content_image1" alt="" />
-                <img src={arnament2} className="content_image2" alt="" />
-                <img src={arnament3} className="content_image3" alt="" />
-              </>
-            )}{
-              isArrowView && (
-                <button onClick={() => {
-                  rootBlock?.scrollTo?.({
-                    top: 0,
-                    behavior: 'smooth'
-                  })
+
+          <div
+            className={`content ${
+              isSidebarOpen && !isHidden ? "content--sidebar-open" : ""
+            } ${isHidden ? "content--full-width" : ""}`}
+          >
+            {daysLeft !== null && !hideAnnouncement && (
+              <div className="announcement" role="status">
+                <div className="announcement__bar" aria-hidden="true" />
+                <div className="announcement__content">
+                  <strong>Подписка заканчивается через {daysLeft} дн.</strong>
+                  <span>
+                    Продлите заранее, чтобы сохранить доступ ко всем функциям.
+                  </span>
+                </div>
+                <button
+                  className="announcement__close"
+                  onClick={() => setHideAnnouncement(true)}
+                  aria-label="Закрыть уведомление"
+                  type="button"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
+            {!isHidden && <Header />}
+
+            <main id="main-content" className="content_content" tabIndex={-1}>
+              <div
+                key={location.pathname}
+                className={
+                  isHidden ? "nur-route-enter--instant" : "nur-route-enter"
                 }
-                } className="bg-amber-400 fixed text-white p-2 rounded-full cursor-pointer z-50 bottom-10 right-10">
-                  <FaArrowUp />
-                </button>)}
+              >
+                <Outlet />
+              </div>
+              {isArrowView && (
+                <button
+                  type="button"
+                  className="scroll-top-btn"
+                  aria-label="Наверх"
+                  onClick={() => {
+                    rootBlock?.scrollTo?.({ top: 0, behavior: "smooth" });
+                  }}
+                >
+                  <ArrowUp size={18} />
+                </button>
+              )}
+            </main>
           </div>
         </div>
-      </div>
+      </PageChromeProvider>
     </div>
   );
 };

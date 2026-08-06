@@ -75,7 +75,7 @@ const ProductRow = React.memo(
         <td>{product.unit || "—"}</td>
         <td>{formatPrice(product.price)}</td>
         <td>{formatPrice(product.discount_percent || 0)}</td>
-        <td className={outOfStock ? "text-red-600 font-semibold" : ""}>
+        <td className={outOfStock ? "warehouse-table__stock--out" : ""}>
           {formatStock(product.quantity)}
         </td>
       </tr>
@@ -135,8 +135,8 @@ const ProductTable = ({
   // Только если данных нет вообще - показываем загрузку
   if (loading && products.length === 0) {
     return (
-      <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="warehouse-table w-full min-w-[1100px]">
+      <div className="nur-table-wrap warehouse-table-wrap">
+        <table className="nur-table warehouse-table min-w-[1100px]">
           <tbody>
             <tr>
               <td colSpan={9} className="warehouse-table__loading">
@@ -151,8 +151,8 @@ const ProductTable = ({
 
   if (products.length === 0 && !loading) {
     return (
-      <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="warehouse-table w-full min-w-[1100px]">
+      <div className="nur-table-wrap warehouse-table-wrap">
+        <table className="nur-table warehouse-table min-w-[1100px]">
           <tbody>
             <tr>
               <td colSpan={9} className="warehouse-table__empty">
@@ -166,13 +166,13 @@ const ProductTable = ({
   }
 
   return (
-    <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm relative">
+    <div className="nur-table-wrap warehouse-table-wrap relative">
       {loading && products.length > 0 && (
-        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
-          <div className="text-sm text-slate-600">Загрузка...</div>
+        <div className="warehouse-table__loading-overlay">
+          <div className="warehouse-table__loading-text">Загрузка...</div>
         </div>
       )}
-      <table className="warehouse-table w-full min-w-[1100px]">
+      <table className="nur-table nur-table--clickable warehouse-table min-w-[1100px]">
         <thead>
           <tr>
             <th>

@@ -79,14 +79,18 @@ export function useMarketCashierMultiCart({
       if (String(activeSaleId) === id && String(currentSale?.id) === id) {
         return;
       }
-      switchingTargetRef.current = id;
+      const requestId = id;
+      switchingTargetRef.current = requestId;
       setSwitching(true);
       try {
-        await dispatch(getSale({ id })).unwrap();
-        await refreshCartsFromStart({ sale_id: id });
+        await dispatch(getSale({ id: requestId })).unwrap();
+        await refreshCartsFromStart({ sale_id: requestId });
       } finally {
-        switchingTargetRef.current = null;
-        setSwitching(false);
+        // Не сбрасываем флаг, если уже ушли на другой target
+        if (switchingTargetRef.current === requestId) {
+          switchingTargetRef.current = null;
+          setSwitching(false);
+        }
       }
     },
     [shiftId, activeSaleId, currentSale?.id, dispatch, refreshCartsFromStart],

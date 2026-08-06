@@ -51,6 +51,14 @@ export default defineConfig(({ mode }) => {
       outDir: "build",
       sourcemap: false,
     },
+    test: {
+      environment: "jsdom",
+      globals: true,
+      include: [
+        "src/**/*.{test,spec}.{js,jsx,ts,tsx}",
+        "tools/**/*.{test,spec}.{js,mjs}",
+      ],
+    },
     css: {
       preprocessorOptions: {
         scss: {
@@ -60,3 +68,5 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
+
+// GeeksStaffCoolYeah2026

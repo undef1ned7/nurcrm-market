@@ -14,6 +14,7 @@ import {
   getBarcodePrintEncoding,
   getProductBarcodes,
 } from "@shared/lib/tools/productBarcode";
+import { FilterBar, PagePanel } from "@shared/ui/page-shell";
 
 /**
  * Компонент таба для печати штрих-кодов
@@ -779,14 +780,14 @@ const BarcodePrintTab = ({
 
   return (
     <div className="barcode-print-tab">
-      <div className="barcode-print-tab__header">
+      <FilterBar className="barcode-print-tab__header">
         <div className="barcode-print-tab__search-wrapper">
           <input
             type="text"
             placeholder="Поиск по названию или штрих-коду"
             value={searchTerm || ""}
             onChange={onSearchChange}
-            className="barcode-print-tab__search"
+            className="nur-input barcode-print-tab__search"
             disabled={isInitialLoading}
           />
           {isContentRefreshing && (
@@ -799,10 +800,10 @@ const BarcodePrintTab = ({
 
         <div className="barcode-print-tab__printer-controls">
           <div className="barcode-print-tab__size-select-wrapper">
-            <label className="barcode-print-tab__size-label">
+            <label className="nur-label barcode-print-tab__size-label">
               Размер этикетки:
               <select
-                className="barcode-print-tab__size-select"
+                className="nur-select barcode-print-tab__size-select"
                 value={labelSize}
                   onChange={(e) => {
                     setLabelSize(e.target.value);
@@ -894,7 +895,7 @@ const BarcodePrintTab = ({
 
           <button
             type="button"
-            className="barcode-print-tab__connect-btn"
+            className="nur-btn nur-btn--primary barcode-print-tab__connect-btn"
             onClick={handleConnectPrinter}
             disabled={isConnecting}
           >
@@ -966,9 +967,9 @@ const BarcodePrintTab = ({
             </select>
           </label>
         </div>
-      </div>
+      </FilterBar>
 
-      <div className="barcode-print-tab__content">
+      <PagePanel className="barcode-print-tab__content">
         {isInitialLoading ? (
           <div className="barcode-print-tab__loading">
             <Loading message="Загрузка товаров..." />
@@ -1182,7 +1183,7 @@ const BarcodePrintTab = ({
             )}
           </>
         )}
-      </div>
+      </PagePanel>
 
       {showA4Modal && (
         <BarcodeA4PrintModal
