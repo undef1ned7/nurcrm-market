@@ -22,7 +22,7 @@ const ProductCard = React.memo(
     const outOfStock = isOutOfStock?.(product) ?? false;
     return (
       <div
-        className="warehouse-table__row warehouse-card cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-px hover:shadow-md"
+        className="warehouse-table__row warehouse-card"
         onClick={() => onProductClick(product)}
       >
         <div className="flex items-start gap-3">
@@ -66,7 +66,7 @@ const ProductCard = React.memo(
 
           <div className="min-w-0 flex-1">
             <div className="text-xs text-slate-500">#{rowNumber}</div>
-            <div className="warehouse-table__name mt-0.5 truncate text-sm font-semibold text-slate-900">
+            <div className="warehouse-table__name mt-0.5 truncate text-sm font-semibold" style={{ color: "var(--nur-text)" }}>
               {product.name || "—"}
             </div>
 
@@ -88,25 +88,25 @@ const ProductCard = React.memo(
             </div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-xl bg-slate-50 p-2">
-            <div className="text-slate-500">Цена продажи</div>
-            <div className="mt-0.5 font-semibold text-slate-900">
+        <div className="warehouse-card__stats">
+          <div className="warehouse-card__stat">
+            <div className="warehouse-card__stat-label">Цена продажи</div>
+            <div className="warehouse-card__stat-value">
               {formatPrice(product.price)}
             </div>
           </div>
 
-          <div className="rounded-xl bg-slate-50 p-2">
-            <div className="text-slate-500">Скидка</div>
-            <div className="mt-0.5 font-semibold text-slate-900">
+          <div className="warehouse-card__stat">
+            <div className="warehouse-card__stat-label">Скидка</div>
+            <div className="warehouse-card__stat-value">
               {formatPrice(product.discount_percent || 0)}%
             </div>
           </div>
 
-          <div className="col-span-2 rounded-xl bg-slate-50 p-2">
-            <div className="text-slate-500">Остатки</div>
+          <div className="warehouse-card__stat warehouse-card__stat--full">
+            <div className="warehouse-card__stat-label">Остатки</div>
             <div
-              className={`mt-0.5 font-semibold ${outOfStock ? "text-red-600" : "text-slate-900"}`}
+              className={`warehouse-card__stat-value${outOfStock ? " warehouse-card__stat-value--out" : ""}`}
             >
               {formatStock(product.quantity)}
             </div>
@@ -161,7 +161,7 @@ const ProductCards = ({
   // Только если данных нет вообще - показываем загрузку
   if (loading && products.length === 0) {
     return (
-      <div className="warehouse-table__loading rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
+      <div className="warehouse-table__loading">
         Загрузка...
       </div>
     );
@@ -169,22 +169,22 @@ const ProductCards = ({
 
   if (products.length === 0 && !loading) {
     return (
-      <div className="warehouse-table__empty rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
+      <div className="warehouse-table__empty">
         Товары не найдены
       </div>
     );
   }
 
   return (
-    <div className="block relative">
+    <div className="warehouse-cards relative">
       {loading && products.length > 0 && (
-        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
-          <div className="text-sm text-slate-600">Загрузка...</div>
+        <div className="warehouse-table__loading-overlay">
+          <div className="warehouse-table__loading-text">Загрузка...</div>
         </div>
       )}
-      <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="warehouse-cards__toolbar">
         <label
-          className="flex items-center gap-2 text-sm text-slate-700"
+          className="warehouse-cards__select-all"
           onClick={(e) => e.stopPropagation()}
         >
           <input
@@ -192,17 +192,16 @@ const ProductCards = ({
             checked={isAllSelected}
             onChange={onSelectAll}
             disabled={loading}
-            className="h-4 w-4 rounded border-slate-300"
           />
           Выбрать все
         </label>
 
-        <div className="text-sm text-slate-600">
-          Выбрано: <span className="font-semibold">{selectedRows.size}</span>
+        <div className="warehouse-cards__selected">
+          Выбрано: <strong>{selectedRows.size}</strong>
         </div>
       </div>
 
-      <div className="warehouse-cards grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="warehouse-cards__grid">
         {productsData.map((productData) => (
           <ProductCard
             key={productData.product.id}

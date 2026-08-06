@@ -11,6 +11,14 @@ import {
   Lock,
 } from "lucide-react";
 import { fetchShiftsAsync } from "@entities/shift";
+import {
+  PageShell,
+  PageHeader,
+  EmptyState,
+  StatusChip,
+  LoadingState,
+  PagePanel,
+} from "@shared/ui/page-shell";
 import "./Shifts.scss";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 
@@ -138,23 +146,33 @@ const Shifts = () => {
 
   if (loading) {
     return (
-      <div className="shifts-page">
-        <div className="shifts-page__loading">Загрузка...</div>
-      </div>
+      <PageShell className="shifts-page">
+        <PageHeader
+          title="Смены"
+          subtitle="Открытие, закрытие и контроль кассовых смен"
+        />
+        <PagePanel flush>
+          <LoadingState rows={6} />
+        </PagePanel>
+      </PageShell>
     );
   }
 
   return (
-    <div className="shifts-page">
-      <div className="shifts-page__header">
-        <h1 className="shifts-page__title">Смены</h1>
-      </div>
+    <PageShell className="shifts-page">
+      <PageHeader
+        title="Смены"
+        subtitle="Открытие, закрытие и контроль кассовых смен"
+      />
 
       {/* Табы */}
-      <div className="shifts-page__tabs">
+      <div className="nur-tabs shifts-page__tabs" role="tablist" aria-label="Статус смен">
         <button
-          className={`shifts-page__tab ${
-            activeTab === "open" ? "shifts-page__tab--active" : ""
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "open"}
+          className={`nur-tabs__tab ${
+            activeTab === "open" ? "is-active" : ""
           }`}
           onClick={() => {
             setActiveTab("open");
@@ -173,8 +191,11 @@ const Shifts = () => {
           )}
         </button>
         <button
-          className={`shifts-page__tab ${
-            activeTab === "closed" ? "shifts-page__tab--active" : ""
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "closed"}
+          className={`nur-tabs__tab ${
+            activeTab === "closed" ? "is-active" : ""
           }`}
           onClick={() => {
             setActiveTab("closed");
@@ -196,11 +217,14 @@ const Shifts = () => {
       <DataContainer>
         <div className="shifts-page__list">
           {displayedShifts.length === 0 ? (
-            <div className="shifts-page__empty">
-              {activeTab === "open"
-                ? "Открытые смены не найдены"
-                : "Закрытые смены не найдены"}
-            </div>
+            <EmptyState
+              title={
+                activeTab === "open"
+                  ? "Открытые смены не найдены"
+                  : "Закрытые смены не найдены"
+              }
+              text="Выберите другой фильтр или откройте смену в кассе"
+            />
           ) : (
             <ul className="shifts-page__shift-list">
               {displayedShifts.map((shift) => {
@@ -225,7 +249,7 @@ const Shifts = () => {
                     <div className="shifts-page__shift-header">
                       <div className="shifts-page__shift-header-left">
                         <div className="shifts-page__shift-icon">
-                          <Wallet size={24} style={{ color: "#fff" }} />
+                          <Wallet size={24} />
                         </div>
                         <div className="shifts-page__shift-header-info">
                           <h3 className="shifts-page__shift-title">
@@ -237,8 +261,9 @@ const Shifts = () => {
                           </div>
                         </div>
                       </div>
-                      <div
-                        className={`shifts-page__shift-status shifts-page__shift-status--${shift.status}`}
+                      <StatusChip
+                        tone={shift.status === "open" ? "success" : "danger"}
+                        className="shifts-page__shift-status"
                       >
                         {shift.status === "open" ? (
                           <>
@@ -251,7 +276,7 @@ const Shifts = () => {
                             <span>Закрыта</span>
                           </>
                         )}
-                      </div>
+                      </StatusChip>
                     </div>
 
                     {/* Карточки с метриками */}
@@ -327,7 +352,7 @@ const Shifts = () => {
         <div className="shifts-page__pagination">
           <button
             type="button"
-            className="shifts-page__pagination-btn"
+            className="nur-btn nur-btn--secondary"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1 || loading || !hasPrevPage}
           >
@@ -339,7 +364,7 @@ const Shifts = () => {
           </span>
           <button
             type="button"
-            className="shifts-page__pagination-btn"
+            className="nur-btn nur-btn--secondary"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={
               loading ||
@@ -351,7 +376,7 @@ const Shifts = () => {
           </button>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 

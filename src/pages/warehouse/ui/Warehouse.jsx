@@ -6,7 +6,8 @@ import api from "@shared/api";
 import FilterModal from "./components/FilterModal";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import BarcodeAmbiguityModal from "@shared/ui/BarcodeAmbiguityModal/BarcodeAmbiguityModal";
-import WarehouseHeader from "./components/WarehouseHeader";
+import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
+import { ClipboardList, Plus } from "lucide-react";
 import SearchSection from "./components/SearchSection";
 import BulkActionsBar from "./components/BulkActionsBar";
 import BulkEditModal from "./components/BulkEditModal";
@@ -445,11 +446,44 @@ const Warehouse = () => {
   );
 
   return (
-    <div className="warehouse-page">
-      <WarehouseHeader
-        onCreateProduct={handleCreateProduct}
-        onInventory={handleOpenInventory}
-        selectedCount={selectedCount}
+    <PageShell className="warehouse-page">
+      <PageHeader
+        title="Склад"
+        subtitle="Управление товарами и запасами"
+        actions={
+          <>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={handleOpenInventory}
+              title={
+                selectedCount > 0
+                  ? "Открыть документы: инвентаризация с выбранными товарами"
+                  : "Открыть раздел актов инвентаризации (Документы)"
+              }
+              aria-label={
+                selectedCount > 0
+                  ? `Инвентаризация (${selectedCount})`
+                  : "Инвентаризация"
+              }
+            >
+              <ClipboardList size={16} />
+              <span className="nur-btn__label">
+                Инвентаризация{selectedCount > 0 ? ` (${selectedCount})` : ""}
+              </span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={handleCreateProduct}
+              title="Создать товар"
+              aria-label="Создать товар"
+            >
+              <Plus size={16} />
+              <span className="nur-btn__label">Создать товар</span>
+            </button>
+          </>
+        }
       />
 
       <SearchSection
@@ -472,7 +506,7 @@ const Warehouse = () => {
         isUpdating={bulkUpdating}
       />
       <DataContainer>
-        <div className="warehouse-table-container w-full">
+        <PagePanel flush className="warehouse-table-container w-full">
           {viewMode === VIEW_MODES.TABLE ? (
             <ProductTable
               products={products}
@@ -506,7 +540,7 @@ const Warehouse = () => {
             hasPrevPage={hasPrevPage}
             onPageChange={handlePageChange}
           />
-        </div>
+        </PagePanel>
       </DataContainer>
 
       {showFilterModal && (
@@ -559,7 +593,7 @@ const Warehouse = () => {
         }}
         onClose={() => setBarcodeAmbiguity(null)}
       />
-    </div>
+    </PageShell>
   );
 };
 

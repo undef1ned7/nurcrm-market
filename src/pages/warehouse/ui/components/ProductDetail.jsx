@@ -22,6 +22,7 @@ import AddProductModal from "@features/warehouse-ops/ui/AddProduct/AddProductMod
 import MarriageModal from "@features/warehouse-ops/ui/MarriageModal";
 import { deleteProductAsync } from "@entities/product";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
+import { PageShell, PageHeader, PagePanel, StatusChip } from "@shared/ui/page-shell";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import {useAlert} from "@shared/hooks/useDialog";
 
@@ -142,56 +143,92 @@ const ProductDetail = () => {
   };
 
   if (loading) {
-    return <div className="product-detail-loading">Загрузка...</div>;
+    return (
+      <PageShell className="product-detail">
+        <div className="product-detail-loading">Загрузка...</div>
+      </PageShell>
+    );
   }
 
   if (!product) {
-    return <div className="product-detail-error">Товар не найден</div>;
+    return (
+      <PageShell className="product-detail">
+        <div className="product-detail-error">Товар не найден</div>
+      </PageShell>
+    );
   }
 
   return (
-    <div className="product-detail">
-      {/* Header */}
-      <div className="product-detail__header flex-wrap">
-        <button
-          className="product-detail__close-btn"
-          onClick={() => navigate(-1)}
-        >
-          <X size={20} />
-        </button>
-        <button className="product-detail__edit-btn" onClick={handleEdit}>
-          <Edit size={16} />
-          Редактировать
-        </button>
-        <button
-          className="product-detail__duplicate-btn"
-          onClick={handleDuplicate}
-        >
-          <Copy size={16} />
-          Дублировать товар
-        </button>
-        <button className="product-detail__delete-btn" onClick={handleDelete}>
-          <Trash2 size={16} />
-          Удалить
-        </button>
-        <button
-          className="product-detail__add-btn"
-          onClick={() => setShowAddProductModal(true)}
-        >
-          <Plus size={16} />
-          Добавить
-        </button>
-        <button
-          className="product-detail__marriage-btn"
-          onClick={() => setShowMarriageModal(true)}
-        >
-          <AlertTriangle size={16} />
-          Брак
-        </button>
-      </div>
+    <PageShell className="product-detail">
+      <PageHeader
+        title={product.name || "Товар"}
+        subtitle="Карточка товара на складе"
+        actions={
+          <div className="product-detail__header">
+            <button
+              type="button"
+              className="nur-btn nur-btn--ghost nur-btn--sm product-detail__close-btn"
+              onClick={() => navigate(-1)}
+              aria-label="Назад"
+              title="Назад"
+            >
+              <X size={20} />
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary nur-btn--sm"
+              onClick={handleEdit}
+              title="Редактировать"
+              aria-label="Редактировать"
+            >
+              <Edit size={16} />
+              <span className="nur-btn__label">Редактировать</span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary nur-btn--sm"
+              onClick={handleDuplicate}
+              title="Дублировать"
+              aria-label="Дублировать"
+            >
+              <Copy size={16} />
+              <span className="nur-btn__label">Дублировать</span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--danger nur-btn--sm"
+              onClick={handleDelete}
+              title="Удалить"
+              aria-label="Удалить"
+            >
+              <Trash2 size={16} />
+              <span className="nur-btn__label">Удалить</span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary nur-btn--sm"
+              onClick={() => setShowAddProductModal(true)}
+              title="Добавить"
+              aria-label="Добавить"
+            >
+              <Plus size={16} />
+              <span className="nur-btn__label">Добавить</span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary nur-btn--sm"
+              onClick={() => setShowMarriageModal(true)}
+              title="Брак"
+              aria-label="Брак"
+            >
+              <AlertTriangle size={16} />
+              <span className="nur-btn__label">Брак</span>
+            </button>
+          </div>
+        }
+      />
 
-      {/* Main Content */}
-      <div className="product-detail__content">
+      <PagePanel className="product-detail__content">
         {/* Image Section */}
         <div className="block lg:flex gap-3">
           <div className="product-detail__image-section w-1/2">
@@ -264,7 +301,7 @@ const ProductDetail = () => {
 
           {/* Product Info */}
           <div className="product-detail__info-section w-1/2">
-            <div className="product-detail__type-badge">товар</div>
+            <StatusChip tone="primary">товар</StatusChip>
             <h2 className="product-detail__name">{product.name || "—"}</h2>
             <div className="product-detail__details">
               <div className="product-detail__detail-item">
@@ -493,7 +530,7 @@ const ProductDetail = () => {
         {/* ) : ( */}
           {/* <MovementHistory productId={id} productCode={product.code} /> */}
         {/* )} */}
-      </div>
+      </PagePanel>
 
       {/* Модальные окна */}
       {showAddProductModal && (
@@ -528,7 +565,7 @@ const ProductDetail = () => {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={confirmDelete}
       />
-    </div>
+    </PageShell>
   );
 };
 

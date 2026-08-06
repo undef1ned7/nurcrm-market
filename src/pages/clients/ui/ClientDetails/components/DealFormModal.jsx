@@ -13,7 +13,8 @@ import {
 import api from "@shared/api";
 import { useConfirm } from "@shared/hooks/useDialog";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
-import "../ClientModals.redesign.scss";
+import "../ClientModals.scss";
+import ClientModalPortal from "./ClientModalPortal";
 
 export default function DealFormModal({
   open,
@@ -169,6 +170,7 @@ export default function DealFormModal({
   };
 
   return (
+    <ClientModalPortal wrapperId="client-deal-modal">
     <div className="cmx__overlay" data-theme={mode} onClick={() => onClose?.()}>
       <div
         className="cmx__dialog cmx__dialog--md"
@@ -382,5 +384,6 @@ export default function DealFormModal({
         </div>
       </div>
     </div>
+    </ClientModalPortal>
   );
 }

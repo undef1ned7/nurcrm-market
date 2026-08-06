@@ -4,13 +4,12 @@ import { useUser, getProfile } from "@entities/user";
 import { useMenuItems } from "./hooks/useMenuItems";
 import MenuItem from "./components/MenuItem";
 import "./Sidebar.scss";
-import { X } from "lucide-react";
+import { Menu, Settings, X } from "lucide-react";
 
-import arnament1 from "@shared/ui/Photo/Group 1203.png";
-import arnament2 from "@shared/ui/Photo/Group 1204 (1).png";
 import Logo from "@shared/ui/Photo/logo2.png";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getCompany } from "@entities/user";
+import { groupMenuItems } from "./config/menuGroups";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const location = useLocation();
-  const menuRef = useRef(null); // 👈 ref теперь на меню
+  const menuRef = useRef(null);
   const pathnameRef = useRef(location.pathname);
   const openDropdownRef = useRef(openDropdown);
 
@@ -31,7 +30,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     openDropdownRef.current = openDropdown;
   }, [openDropdown]);
 
-  // Раскрывать подменю «Документы» / «Доп услуги» на соответствующих страницах
   useEffect(() => {
     const p = location.pathname;
     if (p.includes("warehouse/documents")) {
@@ -61,13 +59,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     profile
   );
 
-  // клик вне сайдбара
+  const menuSections = groupMenuItems(menuItems);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
-        // На страницах документов склада фиксируем раскрытие «Документы»,
-        // чтобы при кликах по контенту (например, кнопка «Создать») dropdown
-        // не закрывался и не "открывался заново" после навигации.
         const pathname = pathnameRef.current || "";
         const currentOpen = openDropdownRef.current;
         const isWarehouseDocuments = pathname.includes("warehouse/documents");
@@ -91,7 +87,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     };
   }, []);
 
-  // 🔥 сброс скролла меню при смене страницы
   useEffect(() => {
     if (menuRef.current) {
       menuRef.current.scrollTo({
@@ -108,58 +103,130 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   useEffect(() => {
     dispatch(getCompany());
-    dispatch(getProfile())
-  }, [dispatch])
+    dispatch(getProfile());
+  }, [dispatch]);
 
   const isLoading = !company || !profile;
   useEffect(() => {
-    if (location.pathname.includes('crm') && location.pathname.split('/').map(el => el.trim()).filter(Boolean).length == 1 && menuItems.length && !isLoading) {
+    if (
+      location.pathname.includes("crm") &&
+      location.pathname.split("/").map((el) => el.trim()).filter(Boolean)
+        .length == 1 &&
+      menuItems.length &&
+      !isLoading
+    ) {
       navigate(menuItems.at(0).to);
     }
-  }, [menuItems, isLoading, location.pathname, navigate])
+  }, [menuItems, isLoading, location.pathname, navigate]);
+
+  const brandTitle = company?.name?.trim() || "NUR CRM";
+  const brandSubtitle = currentSector || "Магазин";
+
   return (
-    <div
-      className={`sidebar ${isOpen ? "sidebar--visible" : "sidebar--collapsed"
-        }`}
+    <aside
+      className={`sidebar ${isOpen ? "sidebar--visible" : "sidebar--collapsed"}`}
+      aria-label="Основная навигация"
     >
-      <img src={arnament1} className="sidebar__arnament1" alt="Декор" />
-      <img src={arnament2} className="sidebar__arnament2" alt="Декор" />
       <div className="sidebar__header">
-        <div className="sidebar__logo">
-          <img src={Logo} alt="Логотип" />
+        <div className="sidebar__brand-row">
+          <button
+            type="button"
+            className="sidebar__logo"
+            onClick={() => {
+              if (!isOpen) toggleSidebar();
+            }}
+            aria-label={isOpen ? "NUR CRM" : "Открыть меню"}
+          >
+            <img
+              src={Logo}
+              alt="NUR CRM"
+              className={
+                isOpen
+                  ? "sidebar__logo-img"
+                  : "sidebar__logo-img sidebar__logo-img--rail"
+              }
+            />
+          </button>
+
+          {isOpen && (
+            <div className="sidebar__brand">
+              <div className="sidebar__brand-title" title={brandTitle}>
+                {brandTitle}
+              </div>
+              <div className="sidebar__brand-subtitle" title={brandSubtitle}>
+                {brandSubtitle}
+              </div>
+            </div>
+          )}
         </div>
-        <button
-          className="sidebar__close-btn"
-          onClick={toggleSidebar}
-          aria-label="Закрыть сайдбар"
-        >
-          <X size={20} />
-        </button>
+
+        {isOpen && (
+          <button
+            className="sidebar__close-btn"
+            onClick={toggleSidebar}
+            aria-label="Свернуть меню"
+            type="button"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       <div className="sidebar__wrapper">
         {isLoading && (
           <div className="sidebar__loading">
-            <div className="sidebar__loading-spinner"></div>
-            <p className="sidebar__loading-text">Загрузка данных...</p>
+            <div className="sidebar__loading-spinner" />
+            {isOpen && (
+              <p className="sidebar__loading-text">Загрузка меню…</p>
+            )}
           </div>
         )}
 
-        <ul className="sidebar__menu" ref={menuRef}>
+        <nav className="sidebar__nav" ref={menuRef}>
           {!isLoading &&
-            menuItems.map((item) => (
-              <MenuItem
-                key={item.label}
-                item={item}
-                isDropdownOpen={openDropdown === item.label}
-                onToggleDropdown={() => handleToggleDropdown(item.label)}
-                toggleSidebar={toggleSidebar}
-              />
+            menuSections.map((section) => (
+              <div key={section.label} className="sidebar__section">
+                <div className="sidebar__section-label">{section.label}</div>
+                <ul className="sidebar__menu">
+                  {section.items.map((item) => (
+                    <MenuItem
+                      key={item.label}
+                      item={item}
+                      isDropdownOpen={isOpen && openDropdown === item.label}
+                      onToggleDropdown={() =>
+                        handleToggleDropdown(item.label)
+                      }
+                      toggleSidebar={toggleSidebar}
+                      iconsOnly={!isOpen}
+                    />
+                  ))}
+                </ul>
+              </div>
             ))}
-          {/* <Lang /> */}
-        </ul>
+        </nav>
       </div>
-    </div>
+
+      <div className="sidebar__footer">
+        <button
+          type="button"
+          className="sidebar__footer-btn"
+          title="Настройки"
+          aria-label="Настройки"
+          onClick={() => navigate("/crm/set")}
+        >
+          <Settings size={20} strokeWidth={1.75} />
+        </button>
+        <button
+          type="button"
+          className="sidebar__footer-btn"
+          title={isOpen ? "Свернуть меню" : "Открыть меню"}
+          aria-label={isOpen ? "Свернуть меню" : "Открыть меню"}
+          onClick={toggleSidebar}
+        >
+          <Menu size={20} strokeWidth={1.75} />
+        </button>
+      </div>
+    </aside>
   );
 };
 

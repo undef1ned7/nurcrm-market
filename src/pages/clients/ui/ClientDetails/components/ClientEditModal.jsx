@@ -4,7 +4,8 @@ import { msgFromError, toIsoDate10 } from "../clientDetails.helpers";
 import api from "@shared/api";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
-import "../ClientModals.redesign.scss";
+import "../ClientModals.scss";
+import ClientModalPortal from "./ClientModalPortal";
 
 export default function ClientEditModal({
   open,
@@ -160,6 +161,7 @@ export default function ClientEditModal({
   };
 
   return (
+    <ClientModalPortal wrapperId="client-edit-modal">
     <div className="cmx__overlay" data-theme={mode} onClick={onClose}>
       <div
         className="cmx__dialog cmx__dialog--lg"
@@ -371,5 +373,6 @@ export default function ClientEditModal({
         />
       </div>
     </div>
+    </ClientModalPortal>
   );
 }

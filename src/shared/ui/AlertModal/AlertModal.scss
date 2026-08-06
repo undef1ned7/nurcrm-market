@@ -1,0 +1,87 @@
+.alert-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: var(--nur-scrim);
+    cursor: default;
+    animation: nur-fade-in var(--nur-duration, 220ms) var(--nur-ease-enter) both;
+  }
+
+  &__dialog {
+    position: relative;
+    width: min(420px, 92vw);
+    max-height: min(500px, 90vh);
+    overflow-y: auto;
+    padding: 24px;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-lg);
+    box-shadow: var(--nur-shadow-lg);
+    text-align: center;
+    color: var(--nur-text);
+    animation: nur-scale-in var(--nur-duration, 220ms) var(--nur-ease-enter) both;
+  }
+
+  &__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    background: var(--nur-success);
+    animation: nur-check-pop 280ms var(--nur-ease-emphasized) both;
+  }
+
+  &--error &__icon {
+    background: var(--nur-danger);
+  }
+
+  &--warning &__icon {
+    background: var(--nur-warning);
+  }
+
+  &--info &__icon {
+    background: var(--nur-info);
+  }
+
+  &__title {
+    margin: 0 0 6px;
+    font-size: var(--nur-font-title-sm, 18px);
+    font-weight: 700;
+    color: var(--nur-text);
+  }
+
+  &__message {
+    white-space: pre-wrap;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--nur-text);
+    line-height: 1.45;
+  }
+
+  &__actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alert-modal__backdrop,
+  .alert-modal__dialog,
+  .alert-modal__icon {
+    animation: none !important;
+  }
+}

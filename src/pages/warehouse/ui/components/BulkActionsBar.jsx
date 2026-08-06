@@ -26,7 +26,7 @@ const BulkActionsBar = ({
       <div className="warehouse-bulk-actions__content">
         <div className="warehouse-bulk-actions__info">
           <div className="warehouse-bulk-actions__badge">
-            <span className="warehouse-bulk-actions__count">
+            <span className="nur-chip nur-chip--primary warehouse-bulk-actions__count">
               {selectedCount}
             </span>
             <span className="warehouse-bulk-actions__text">
@@ -36,7 +36,8 @@ const BulkActionsBar = ({
         </div>
         <div className="warehouse-bulk-actions__buttons">
           <button
-            className="warehouse-bulk-actions__clear-btn"
+            type="button"
+            className="nur-btn nur-btn--ghost nur-btn--sm"
             onClick={onClearSelection}
             disabled={isDeleting}
             title="Снять выбор"
@@ -46,7 +47,8 @@ const BulkActionsBar = ({
           </button>
           {onBulkEdit && (
             <button
-              className="warehouse-bulk-actions__edit-btn"
+              type="button"
+              className="nur-btn nur-btn--secondary nur-btn--sm"
               onClick={onBulkEdit}
               disabled={isDeleting || isUpdating}
               title="Изменить бренд, категорию или поставщика у выбранных товаров"
@@ -56,7 +58,8 @@ const BulkActionsBar = ({
             </button>
           )}
           <button
-            className="warehouse-bulk-actions__delete-btn"
+            type="button"
+            className="nur-btn nur-btn--danger nur-btn--sm"
             onClick={onBulkDelete}
             disabled={isDeleting}
             title="Удалить выбранные товары"
@@ -71,4 +74,3 @@ const BulkActionsBar = ({
 };
 
 export default React.memo(BulkActionsBar);
-

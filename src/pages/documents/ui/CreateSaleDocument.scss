@@ -1,18 +1,50 @@
 .create-sale-document {
-  height: 100vh;
+  min-height: calc(100vh - 120px);
   overflow: hidden;
-  background: #f5f5f5;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: var(--nur-space-3);
+
+  &__progress {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--nur-surface, #fff);
+    border-bottom: 1px solid var(--nur-border, #e9ecf1);
+  }
+
+  &__progress-step {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--nur-text-2, var(--nur-text-2));
+    background: var(--nur-bg, #f6f7f9);
+    border: 1px solid var(--nur-border, #e9ecf1);
+
+    &--active {
+      background: var(--nur-primary-soft);
+      border-color: rgba(247, 215, 79, 0.5);
+      color: var(--nur-primary-ink, #1a1505);
+    }
+  }
 
   &__container {
     display: flex;
     height: 100%;
+    min-height: 0;
+    flex: 1;
   }
 
   // Левая панель
   &__sidebar {
     width: 350px;
-    background: white;
-    border-right: 1px solid #e5e7eb;
+    background: var(--nur-surface, #fff);
+    border-right: 1px solid var(--nur-border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -20,7 +52,7 @@
 
   &__search-wrapper {
     padding: 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--nur-border);
     display: flex;
     gap: 8px;
   }
@@ -34,21 +66,14 @@
     &-icon {
       position: absolute;
       left: 12px;
-      color: #9ca3af;
+      color: var(--nur-muted);
       pointer-events: none;
     }
 
+    .nur-input,
     input {
       width: 100%;
-      padding: 10px 12px 10px 40px;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      font-size: 14px;
-
-      &:focus {
-        outline: none;
-        border-color: #3b82f6;
-      }
+      padding-left: 40px;
     }
   }
 
@@ -56,28 +81,13 @@
     display: flex;
     gap: 8px;
     align-items: center;
-    color: #6b7280;
+    color: var(--nur-muted);
     cursor: pointer;
   }
 
   &__create-product-btn {
-    margin: 16px;
-    padding: 10px 16px;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background 0.2s;
-
-    &:hover {
-      background: #2563eb;
-    }
+    margin: 0 var(--nur-space-4) var(--nur-space-4);
+    width: calc(100% - 2 * var(--nur-space-4));
   }
 
   &__products-list {
@@ -88,7 +98,7 @@
 
   &__product-item {
     padding: 12px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--nur-bg);
     cursor: pointer;
     transition: background 0.2s;
     display: flex;
@@ -96,11 +106,11 @@
     align-items: center;
 
     &:hover {
-      background: #f9fafb;
+      background: var(--nur-surface-2);
     }
 
     &.active {
-      background: #dbeafe;
+      background: var(--nur-info-soft);
     }
   }
 
@@ -111,7 +121,7 @@
   &__product-name {
     font-size: 14px;
     font-weight: 500;
-    color: #111827;
+    color: var(--nur-text);
     margin-bottom: 4px;
   }
 
@@ -119,32 +129,32 @@
     display: flex;
     gap: 12px;
     font-size: 12px;
-    color: #6b7280;
+    color: var(--nur-muted);
   }
 
   &__product-price {
-    color: #059669;
+    color: var(--nur-success);
     font-weight: 600;
   }
 
   &__product-check {
-    color: #3b82f6;
+    color: var(--nur-info);
   }
 
   &__show-more {
     padding: 12px;
     width: 100%;
     border: none;
-    background: #f9fafb;
-    color: #6b7280;
+    background: var(--nur-surface-2);
+    color: var(--nur-muted);
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     cursor: pointer;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--nur-border);
 
     &:hover {
-      background: #f3f4f6;
+      background: var(--nur-bg);
     }
   }
 
@@ -152,7 +162,7 @@
   &__empty {
     padding: 24px;
     text-align: center;
-    color: #9ca3af;
+    color: var(--nur-muted);
     font-size: 14px;
   }
 
@@ -165,9 +175,9 @@
   }
 
   &__header {
-    background: white;
+    background: var(--nur-surface, #fff);
     padding: 16px 24px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--nur-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -181,9 +191,9 @@
   &__save-btn {
     padding: 10px 20px;
     background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 6px;
+    color: var(--nur-primary-ink, #1a1505);
+border: none;
+border-radius: var(--nur-radius-sm, 8px);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -200,8 +210,8 @@
 
   &__save-print-btn {
     padding: 10px 20px;
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--nur-surface, #fff);
+    border: 1px solid var(--nur-border);
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
@@ -211,8 +221,8 @@
     transition: all 0.2s;
 
     &:hover {
-      background: #f9fafb;
-      border-color: #d1d5db;
+      background: var(--nur-surface-2);
+      border-color: var(--nur-border-strong);
     }
   }
 
@@ -221,8 +231,8 @@
     top: 100%;
     left: 0;
     margin-top: 4px;
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--nur-surface, #fff);
+    border: 1px solid var(--nur-border);
     border-radius: 6px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     min-width: 200px;
@@ -239,7 +249,7 @@
       transition: background 0.2s;
 
       &:hover {
-        background: #f9fafb;
+        background: var(--nur-surface-2);
       }
 
       &:first-child {
@@ -264,7 +274,7 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #374151;
+    color: var(--nur-text-2);
     cursor: pointer;
 
     input[type="checkbox"] {
@@ -291,21 +301,21 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #6b7280;
+    color: var(--nur-muted);
     cursor: pointer;
     user-select: none;
 
     &:hover {
-      color: #374151;
+      color: var(--nur-text-2);
     }
 
     svg {
-      color: #9ca3af;
+      color: var(--nur-muted);
       transition: color 0.2s;
     }
 
     &:hover svg {
-      color: #6b7280;
+      color: var(--nur-muted);
     }
   }
 
@@ -318,7 +328,7 @@
   &__title {
     font-size: 20px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     margin-bottom: 24px;
   }
 
@@ -335,22 +345,22 @@
       display: block;
       font-size: 14px;
       font-weight: 500;
-      color: #374151;
+      color: var(--nur-text-2);
       margin-bottom: 8px;
     }
 
     select {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--nur-border);
       border-radius: 6px;
       font-size: 14px;
-      background: white;
+      background: var(--nur-surface, #fff);
       cursor: pointer;
 
       &:focus {
         outline: none;
-        border-color: #3b82f6;
+        border-color: var(--nur-primary, #f7d74f);
       }
     }
   }
@@ -359,7 +369,7 @@
     display: flex;
     gap: 8px;
     margin-bottom: 16px;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid var(--nur-border);
   }
 
   &__tab {
@@ -368,19 +378,19 @@
     background: none;
     font-size: 14px;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--nur-muted);
     cursor: pointer;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
     transition: all 0.2s;
 
     &:hover {
-      color: #374151;
+      color: var(--nur-text-2);
     }
 
     &.active {
-      color: #3b82f6;
-      border-bottom-color: #3b82f6;
+      color: var(--nur-info);
+      border-bottom-color: var(--nur-info);
     }
   }
 
@@ -389,13 +399,13 @@
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--nur-border);
     border-radius: 6px;
-    background: white;
+    background: var(--nur-surface, #fff);
     margin-bottom: 16px;
 
     svg {
-      color: #9ca3af;
+      color: var(--nur-muted);
     }
 
     input {
@@ -405,13 +415,14 @@
       font-size: 14px;
 
       &::placeholder {
-        color: #9ca3af;
+        color: var(--nur-placeholder);
+        opacity: 1;
       }
     }
   }
 
   &__table-wrapper {
-    background: white;
+    background: var(--nur-surface, #fff);
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 24px;
@@ -422,7 +433,7 @@
     border-collapse: collapse;
 
     thead {
-      background: #f9fafb;
+      background: var(--nur-surface-2);
     }
 
     th {
@@ -430,21 +441,21 @@
       text-align: left;
       font-size: 12px;
       font-weight: 600;
-      color: #6b7280;
+      color: var(--nur-muted);
       text-transform: uppercase;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--nur-border);
     }
 
     td {
       padding: 12px 16px;
       font-size: 14px;
-      color: #111827;
-      border-bottom: 1px solid #f3f4f6;
+      color: var(--nur-text);
+      border-bottom: 1px solid var(--nur-bg);
     }
 
     tbody tr {
       &:hover {
-        background: #f9fafb;
+        background: var(--nur-surface-2);
       }
 
       &:last-child td {
@@ -456,14 +467,14 @@
   &__qty-input {
     width: 60px;
     padding: 6px 8px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--nur-border);
     border-radius: 4px;
     font-size: 14px;
     text-align: center;
 
     &:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: var(--nur-primary, #f7d74f);
     }
   }
 
@@ -471,7 +482,7 @@
     padding: 4px;
     border: none;
     background: none;
-    color: #dc2626;
+    color: var(--nur-danger);
     cursor: pointer;
     border-radius: 4px;
     transition: background 0.2s;
@@ -484,11 +495,11 @@
   &__empty-table {
     text-align: center;
     padding: 48px;
-    color: #9ca3af;
+    color: var(--nur-muted);
   }
 
   &__totals {
-    background: white;
+    background: var(--nur-surface, #fff);
     padding: 20px;
     border-radius: 8px;
     display: flex;
@@ -501,7 +512,7 @@
     justify-content: space-between;
     font-size: 16px;
     font-weight: 500;
-    color: #111827;
+    color: var(--nur-text);
 
     span:last-child {
       font-weight: 600;
@@ -511,7 +522,7 @@
   &__payment-tab {
     padding: 48px;
     text-align: center;
-    color: #9ca3af;
+    color: var(--nur-muted);
   }
 
   &__help-icon {
@@ -520,8 +531,8 @@
     height: 16px;
     margin-left: 4px;
     border-radius: 50%;
-    background: #e5e7eb;
-    color: #9ca3af;
+    background: var(--nur-border);
+    color: var(--nur-muted);
     font-size: 10px;
     text-align: center;
     line-height: 16px;
@@ -537,20 +548,20 @@
   &__discount-input {
     width: 60px;
     padding: 4px 8px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--nur-border);
     border-radius: 4px;
     font-size: 14px;
     text-align: right;
 
     &:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: var(--nur-primary, #f7d74f);
     }
   }
 
   &__comment-section {
     margin-top: 24px;
-    background: white;
+    background: var(--nur-surface, #fff);
     padding: 20px;
     border-radius: 8px;
   }
@@ -559,14 +570,14 @@
     display: block;
     font-size: 14px;
     font-weight: 500;
-    color: #9ca3af;
+    color: var(--nur-muted);
     margin-bottom: 8px;
   }
 
   &__comment-textarea {
     width: 100%;
     padding: 12px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--nur-border);
     border-radius: 6px;
     font-size: 14px;
     font-family: inherit;
@@ -575,11 +586,12 @@
 
     &:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: var(--nur-primary, #f7d74f);
     }
 
     &::placeholder {
-      color: #9ca3af;
+      color: var(--nur-placeholder);
+      opacity: 1;
     }
   }
 }
@@ -595,7 +607,7 @@
       width: 100%;
       max-height: 40vh;
       border-right: none;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--nur-border);
     }
 
     &__main {

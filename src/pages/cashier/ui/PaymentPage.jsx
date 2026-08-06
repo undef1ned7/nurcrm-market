@@ -582,14 +582,12 @@ const PaymentPage = ({
                   "Ошибка при создании долга для тарифа Старт:",
                   startDebtError
                 );
-                const errorMessage = validateResErrors(startDebtError, "Оплата оформлена, но не удалось создать запись о долге для тарифа Старт. ")
-                // Не блокируем успешную оплату, если ошибка с долгом
-                showAlert(
-                  "warning",
-                  "Предупреждение",
-                  errorMessage
+                const errorMessage = validateResErrors(
+                  startDebtError,
+                  "Оплата оформлена, но не удалось создать запись о долге для тарифа Старт. ",
                 );
-                return;
+                // Продажа уже проведена — только предупреждение, без abort/retry
+                showAlert("warning", "Предупреждение", errorMessage);
               }
             }
 
@@ -650,6 +648,14 @@ const PaymentPage = ({
             ).unwrap();
           } catch (cashError) {
             console.warn("Ошибка при создании денежного потока предоплаты:", cashError);
+            showAlert(
+              "warning",
+              "Предупреждение",
+              validateResErrors(
+                cashError,
+                "Оплата оформлена, но не удалось записать предоплату в кассу. ",
+              ),
+            );
           }
         }
 
@@ -697,6 +703,14 @@ const PaymentPage = ({
             }
           } catch (cashError) {
             console.warn("Ошибка при создании денежного потока:", cashError);
+            showAlert(
+              "warning",
+              "Предупреждение",
+              validateResErrors(
+                cashError,
+                "Оплата оформлена, но не удалось записать доход в кассу. ",
+              ),
+            );
           }
         }
 
@@ -750,9 +764,12 @@ const PaymentPage = ({
               }
             }
           } catch (receiptError) {
-            // Ошибка получения чека не блокирует продажу
             console.warn("Не удалось получить чек для печати:", receiptError);
-            // Не показываем ошибку пользователю, только логируем
+            showAlert(
+              "warning",
+              "Печать",
+              "Не удалось распечатать чек. Вы можете повторить печать из окна успешной оплаты.",
+            );
           }
         }
 

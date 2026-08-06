@@ -96,14 +96,15 @@ const ProductSearch = ({
             top: "100%",
             left: 0,
             right: 0,
-            backgroundColor: "white",
-            border: "1px solid #ddd",
+            backgroundColor: "var(--nur-surface)",
+            border: "1px solid var(--nur-border)",
             borderRadius: "4px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            boxShadow: "var(--nur-shadow)",
             zIndex: 1000,
             maxHeight: "300px",
             overflowY: "auto",
             marginTop: "4px",
+            color: "var(--nur-text)",
           }}
         >
           {foundProduct.map((product) => (
@@ -113,14 +114,15 @@ const ProductSearch = ({
               style={{
                 padding: "10px 15px",
                 cursor: "pointer",
-                borderBottom: "1px solid #f0f0f0",
+                borderBottom: "1px solid var(--nur-border)",
                 transition: "background-color 0.2s",
+                backgroundColor: "var(--nur-surface)",
               }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#f5f5f5")
+                (e.currentTarget.style.backgroundColor = "var(--nur-surface-3)")
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "white")
+                (e.currentTarget.style.backgroundColor = "var(--nur-surface)")
               }
             >
               <div style={{ fontWeight: "500" }}>
@@ -130,7 +132,7 @@ const ProductSearch = ({
                 <div
                   style={{
                     fontSize: "12px",
-                    color: "#666",
+                    color: "var(--nur-muted)",
                     marginTop: "4px",
                   }}
                 >
@@ -156,14 +158,14 @@ const ProductSearch = ({
               top: "100%",
               left: 0,
               right: 0,
-              backgroundColor: "white",
-              border: "1px solid #ddd",
+              backgroundColor: "var(--nur-surface)",
+              border: "1px solid var(--nur-border)",
               borderRadius: "4px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              boxShadow: "var(--nur-shadow)",
               zIndex: 1000,
               padding: "15px",
               textAlign: "center",
-              color: "#666",
+              color: "var(--nur-muted)",
               marginTop: "4px",
             }}
           >

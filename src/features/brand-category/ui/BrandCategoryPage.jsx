@@ -23,7 +23,15 @@ import {
   updateCategoryAsync,
   deleteCategoryAsync,
 } from "@entities/product";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import "./Employ.scss";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+  PagePanel,
+  EmptyState,
+} from "@shared/ui/page-shell";
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
 import { useDebouncedValue } from "@shared/hooks/useDebounce";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
@@ -60,50 +68,56 @@ const TextModal = ({
   const [value, setValue] = useState(initial?.name || "");
 
   return (
-    <div className="edit-modal brand">
-      <div className="edit-modal__overlay" onClick={onClose} />
-      <div className="edit-modal__content brand-category-page__edit-modal-content">
-        <div className="edit-modal__header">
-          <h3>{title}</h3>
-          <X size={18} className="edit-modal__close-icon" onClick={onClose} />
-        </div>
-        <div className="edit-modal__section">
-          <label>Название *</label>
-          <input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="Введите название"
-            autoFocus
-          />
-        </div>
-        <div className="edit-modal__footer">
-          {initial && onDelete && (
-            <button
-              type="button"
-              className="edit-modal__reset"
-              onClick={onDelete}
-              disabled={deleting || saving}
-            >
-              {deleting ? "Удаление…" : "Удалить"}
-            </button>
-          )}
-          <button
-            type="button"
-            className="edit-modal__save"
-            onClick={() => onSubmit(value)}
-            disabled={deleting || saving}
-          >
-            {saving ? "Сохранение…" : initial ? "Сохранить" : "Добавить"}
-          </button>
+    <ReactPortal wrapperId="brand-category-text-modal">
+      {/* brandSection keeps Employ.scss modal rules after portal to body */}
+      <div className="brandSection">
+        <div className="edit-modal brand" role="dialog" aria-modal="true">
+          <div className="edit-modal__overlay" onClick={onClose} />
+          <div className="edit-modal__content brand-category-page__edit-modal-content">
+            <div className="edit-modal__header">
+              <h3>{title}</h3>
+              <X size={18} className="edit-modal__close-icon" onClick={onClose} />
+            </div>
+            <div className="edit-modal__section">
+              <label className="nur-label">Название *</label>
+              <input
+                className="nur-input"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="Введите название"
+                autoFocus
+              />
+            </div>
+            <div className="edit-modal__footer">
+              {initial && onDelete && (
+                <button
+                  type="button"
+                  className="nur-btn nur-btn--danger"
+                  onClick={onDelete}
+                  disabled={deleting || saving}
+                >
+                  {deleting ? "Удаление…" : "Удалить"}
+                </button>
+              )}
+              <button
+                type="button"
+                className="nur-btn nur-btn--primary"
+                onClick={() => onSubmit(value)}
+                disabled={deleting || saving}
+              >
+                {saving ? "Сохранение…" : initial ? "Сохранить" : "Добавить"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </ReactPortal>
   );
 };
 
 const ItemsTable = ({ items, onEdit, startIndex = 0 }) => (
-  <div className="brand-category-page__table-wrap">
-    <table className="brand-category-page__table">
+  <div className="nur-table-wrap brand-category-page__table-wrap">
+    <table className="nur-table nur-table--clickable brand-category-page__table">
       <thead>
         <tr>
           <th>№</th>
@@ -119,7 +133,7 @@ const ItemsTable = ({ items, onEdit, startIndex = 0 }) => (
             <td className="brand-category-page__table-actions-col">
               <button
                 type="button"
-                className="brand-category-page__row-btn"
+                className="nur-btn nur-btn--ghost nur-btn--sm brand-category-page__row-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(item);
@@ -504,26 +518,23 @@ export default function BrandCategoryPage() {
   const list = Array.isArray(items) ? items : [];
 
   return (
-    <div className="brand-category-page brandSection">
-      <header className="brand-category-page__header">
-        <div className="brand-category-page__heading">
-          <div className="brand-category-page__icon">
-            <TabIcon size={20} />
-          </div>
-          <div>
-            <h1 className="brand-category-page__title">Бренд и категория</h1>
-            <p className="brand-category-page__subtitle">{tabMeta.subtitle}</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="brand-category-page__create-btn"
-          onClick={handleCreate}
-        >
-          <Plus size={16} />
-          {tabMeta.createLabel}
-        </button>
-      </header>
+    <PageShell className="brand-category-page brandSection">
+      <PageHeader
+        title="Бренд и категория"
+        subtitle={tabMeta.subtitle}
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--primary"
+            onClick={handleCreate}
+            title={tabMeta.createLabel}
+            aria-label={tabMeta.createLabel}
+          >
+            <Plus size={16} />
+            <span className="nur-btn__label">{tabMeta.createLabel}</span>
+          </button>
+        }
+      />
 
       <nav className="brand-category-page__tabs" aria-label="Разделы">
         <button
@@ -533,6 +544,7 @@ export default function BrandCategoryPage() {
           }`}
           onClick={() => setActiveTab(TABS.BRANDS)}
         >
+          <Tag size={16} />
           Бренды
         </button>
         <button
@@ -542,15 +554,16 @@ export default function BrandCategoryPage() {
           }`}
           onClick={() => setActiveTab(TABS.CATEGORIES)}
         >
+          <FolderOpen size={16} />
           Категории
         </button>
       </nav>
 
-      <div className="brand-category-page__toolbar">
+      <FilterBar className="brand-category-page__toolbar">
         <div className="brand-category-page__search">
           <Search size={16} className="brand-category-page__search-icon" />
           <input
-            className="brand-category-page__search-input"
+            className="nur-input brand-category-page__search-input"
             placeholder={tabMeta.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -558,7 +571,7 @@ export default function BrandCategoryPage() {
           {search && (
             <button
               type="button"
-              className="brand-category-page__search-clear"
+              className="nur-btn nur-btn--ghost nur-btn--sm brand-category-page__search-clear"
               onClick={() => setSearch("")}
               aria-label="Очистить поиск"
             >
@@ -568,7 +581,7 @@ export default function BrandCategoryPage() {
         </div>
 
         <div className="brand-category-page__toolbar-meta">
-          <span className="brand-category-page__count">
+          <span className="nur-chip">
             Всего: {totalCount}
           </span>
 
@@ -579,10 +592,10 @@ export default function BrandCategoryPage() {
           >
             <button
               type="button"
-              className={`brand-category-page__view-btn${
+              className={`nur-btn nur-btn--sm ${
                 viewMode === VIEW_MODES.TABLE
-                  ? " brand-category-page__view-btn--active"
-                  : ""
+                  ? "nur-btn--primary"
+                  : "nur-btn--secondary"
               }`}
               onClick={() => setViewMode(VIEW_MODES.TABLE)}
             >
@@ -591,10 +604,10 @@ export default function BrandCategoryPage() {
             </button>
             <button
               type="button"
-              className={`brand-category-page__view-btn${
+              className={`nur-btn nur-btn--sm ${
                 viewMode === VIEW_MODES.CARDS
-                  ? " brand-category-page__view-btn--active"
-                  : ""
+                  ? "nur-btn--primary"
+                  : "nur-btn--secondary"
               }`}
               onClick={() => setViewMode(VIEW_MODES.CARDS)}
             >
@@ -603,9 +616,9 @@ export default function BrandCategoryPage() {
             </button>
           </div>
         </div>
-      </div>
+      </FilterBar>
 
-      <section className="brand-category-page__content">
+      <PagePanel className="brand-category-page__content" flush>
         {loading ? (
           <p className="brand-category-page__status">Загрузка…</p>
         ) : error ? (
@@ -613,17 +626,20 @@ export default function BrandCategoryPage() {
             {String(error?.message || error)}
           </p>
         ) : list.length === 0 ? (
-          <div className="brand-category-page__empty">
-            <p>{tabMeta.emptyText}</p>
-            <button
-              type="button"
-              className="brand-category-page__empty-btn"
-              onClick={handleCreate}
-            >
-              <Plus size={16} />
-              {tabMeta.createLabel}
-            </button>
-          </div>
+          <EmptyState
+            icon={<TabIcon size={22} />}
+            title={tabMeta.emptyText}
+            action={
+              <button
+                type="button"
+                className="nur-btn nur-btn--primary"
+                onClick={handleCreate}
+              >
+                <Plus size={16} />
+                {tabMeta.createLabel}
+              </button>
+            }
+          />
         ) : viewMode === VIEW_MODES.TABLE ? (
           <ItemsTable
             items={list}
@@ -637,7 +653,7 @@ export default function BrandCategoryPage() {
             startIndex={rowStartIndex}
           />
         )}
-      </section>
+      </PagePanel>
 
       {!loading && !error && list.length > 0 && (
         <BrandCategoryPagination
@@ -669,6 +685,6 @@ export default function BrandCategoryPage() {
           onDelete={modalCfg.mode === "edit" ? handleDelete : undefined}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -8,14 +8,6 @@ import {
  * @param {string} path - Путь для проверки
  * @returns {boolean}
  */
-
-// export const isAllowedPathWithoutToken = (path) => {
-//   return ALLOWED_PATHS_WITHOUT_TOKEN.some(
-//     (allowedPath) =>
-//       path === allowedPath || path.startsWith("/submit-application")
-//   );
-// };
-
 export const isAllowedPathWithoutToken = (path) => {
   return ALLOWED_PATHS_WITHOUT_TOKEN.some((allowedPath) => {
     // Точное совпадение
@@ -48,9 +40,11 @@ export const shouldRedirectToCrm = (path) => {
 };
 
 /**
- * Очищает токены из localStorage
+ * Очищает токены и связанные auth-данные из localStorage
  */
 export const clearTokens = () => {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("userData");
 };

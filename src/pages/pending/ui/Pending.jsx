@@ -26,6 +26,14 @@ import { deleteSale } from "@entities/sale";
 import { onPayDebtDeal } from "@entities/client";
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
 import Loading from "@shared/ui/Loading/Loading";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+  PagePanel,
+  EmptyState,
+  StatusChip,
+} from "@shared/ui/page-shell";
 
 const STORAGE_KEY = "pending_view_mode";
 const CASHFLOWS_PAGE_SIZE = 100;
@@ -370,76 +378,71 @@ const Pending = () => {
   }, [searchTerm]);
 
   return (
-    <div className="pending-page">
+    <PageShell className="pending-page">
       {location.pathname === "/crm/hostel/kassa/requests" && <HeaderTabs />}
 
-      {/* Header */}
-      {/* <div className="pending-header">
-        <div className="pending-header__left">
-          <div className="pending-header__icon">
-            <div className="pending-header__icon-box">⏳</div>
-          </div>
-          <div className="pending-header__title-section">
-            <h1 className="pending-header__title">Запросы</h1>
-            <p className="pending-header__subtitle">
-              Управление запросами на утверждение
-            </p>
-          </div>
-        </div>
-      </div> */}
+      <PageHeader
+        title="Запросы"
+        subtitle="Управление запросами на утверждение"
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--secondary"
+            onClick={() => loadCashFlows(page)}
+            disabled={isActionLocked}
+            title="Обновить"
+            aria-label="Обновить"
+          >
+            <RefreshCw
+              size={16}
+              className={cashFlowsLoading ? "pending-action-spinner" : ""}
+            />
+            <span className="nur-btn__label">Обновить</span>
+          </button>
+        }
+      />
 
-      {/* Search Section */}
-      <div className="pending-search-section">
+      <FilterBar className="pending-page__toolbar">
         <div className="pending-search">
           <Search className="pending-search__icon" size={18} />
           <input
             type="text"
-            className="pending-search__input"
+            className="nur-input pending-search__input"
             placeholder="Поиск по названию, кассе, сумме..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div className="pending-search__info flex flex-wrap items-center gap-2">
-          <span>
-            Всего: {totalCount ?? filteredPending.length} • На странице:{" "}
-            {filteredPending.length}
-            {selected.size > 0 && ` • Выбрано: ${selected.size}`}
-          </span>
+        <StatusChip>
+          Всего: {totalCount ?? filteredPending.length} · На странице:{" "}
+          {filteredPending.length}
+          {selected.size > 0 ? ` · Выбрано: ${selected.size}` : ""}
+        </StatusChip>
 
-          {/* view toggle */}
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`pending-view-btn inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition
-                ${
-                  viewMode === "table"
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
-            >
-              <Table2 size={16} />
-              Таблица
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setViewMode("cards")}
-              className={`pending-view-btn inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition
-                ${
-                  viewMode === "cards"
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
-            >
-              <LayoutGrid size={16} />
-              Карточки
-            </button>
-          </div>
+        <div className="pending-page__view-toggle">
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={`nur-btn nur-btn--sm ${
+              viewMode === "table" ? "nur-btn--primary" : "nur-btn--secondary"
+            }`}
+          >
+            <Table2 size={16} />
+            Таблица
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("cards")}
+            className={`nur-btn nur-btn--sm ${
+              viewMode === "cards" ? "nur-btn--primary" : "nur-btn--secondary"
+            }`}
+          >
+            <LayoutGrid size={16} />
+            Карточки
+          </button>
         </div>
-      </div>
+      </FilterBar>
 
       {/* Bulk Actions Bar */}
       {selected.size > 0 && (
@@ -461,7 +464,8 @@ const Pending = () => {
             </div>
             <div className="pending-bulk-actions__buttons">
               <button
-                className="pending-bulk-actions__clear-btn"
+                type="button"
+                className="nur-btn nur-btn--ghost nur-btn--sm"
                 onClick={() => setSelected(new Set())}
                 disabled={isActionLocked}
                 title="Снять выбор"
@@ -470,7 +474,8 @@ const Pending = () => {
                 Сбросить
               </button>
               <button
-                className="pending-bulk-actions__reject-btn"
+                type="button"
+                className="nur-btn nur-btn--danger nur-btn--sm"
                 onClick={handleBulkReject}
                 disabled={isActionLocked}
                 title="Отказать выбранным"
@@ -483,7 +488,8 @@ const Pending = () => {
                 {processing ? "Обработка..." : "Отказать выбранным"}
               </button>
               <button
-                className="pending-bulk-actions__accept-btn"
+                type="button"
+                className="nur-btn nur-btn--primary nur-btn--sm"
                 onClick={handleBulkAccept}
                 disabled={isActionLocked}
                 title="Одобрить выбранные"
@@ -499,27 +505,11 @@ const Pending = () => {
           </div>
         </div>
       )}
-      {filteredPending.length > 0 && (
-        <div className="pending-footer">
-          <button
-            className="pending-footer__refresh-btn"
-            onClick={() => loadCashFlows(page)}
-            disabled={isActionLocked}
-          >
-            <RefreshCw
-              size={16}
-              className={cashFlowsLoading ? "pending-action-spinner" : ""}
-            />
-            Обновить список
-          </button>
-        </div>
-      )}
-      {/* Content */}
-      <div className="pending-table-container w-full">
-        {/* ===== TABLE ===== */}
+
+      <PagePanel flush className="pending-page__content">
         {viewMode === "table" && (
-          <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="pending-table w-full min-w-[1000px]">
+          <div className="nur-table-wrap">
+            <table className="nur-table pending-table">
               <thead>
                 <tr>
                   <th>
@@ -550,10 +540,19 @@ const Pending = () => {
                   </tr>
                 ) : filteredPending.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="pending-table__empty">
-                      {searchTerm
-                        ? "Запросы не найдены"
-                        : "Нет запросов в ожидании"}
+                    <td colSpan={8}>
+                      <EmptyState
+                        title={
+                          searchTerm
+                            ? "Запросы не найдены"
+                            : "Нет запросов в ожидании"
+                        }
+                        text={
+                          searchTerm
+                            ? "Измените поисковый запрос."
+                            : "Новые запросы появятся здесь."
+                        }
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -586,7 +585,8 @@ const Pending = () => {
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="pending-table__actions">
                             <button
-                              className="pending-table__action-btn pending-table__action-btn--accept"
+                              type="button"
+                              className="nur-btn nur-btn--primary nur-btn--sm"
                               title="Одобрить"
                               onClick={() => handleAccept(item)}
                               disabled={rowDisabled || rowBusy}
@@ -602,7 +602,8 @@ const Pending = () => {
                               {rowBusy ? "Обработка..." : "Одобрить"}
                             </button>
                             <button
-                              className="pending-table__action-btn pending-table__action-btn--reject"
+                              type="button"
+                              className="nur-btn nur-btn--danger nur-btn--sm"
                               title="Отказать"
                               onClick={() => handleReject(item)}
                               disabled={rowDisabled || rowBusy}
@@ -628,12 +629,11 @@ const Pending = () => {
           </div>
         )}
 
-        {/* ===== CARDS ===== */}
         {viewMode === "cards" && (
-          <div className="block">
-            <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="pending-cards-wrap">
+            <div className="pending-cards-toolbar">
               <label
-                className="flex items-center gap-2 text-sm text-slate-700"
+                className="pending-cards-toolbar__select-all"
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
@@ -643,98 +643,69 @@ const Pending = () => {
                     if (el) el.indeterminate = someSelected;
                   }}
                   onChange={toggleAll}
-                  className="h-4 w-4 rounded border-slate-300"
                 />
                 Выбрать все на странице
               </label>
-
-              <div className="text-sm text-slate-600">
-                Выбрано: <span className="font-semibold">{selected.size}</span>
-              </div>
+              <StatusChip>Выбрано: {selected.size}</StatusChip>
             </div>
 
             {cashFlowsLoading ? (
-              <div className="pending-table__loading rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="pending-table__loading">
                 <Loading message="Загрузка запросов..." />
               </div>
             ) : filteredPending.length === 0 ? (
-              <div className="pending-table__empty rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
-                {searchTerm ? "Запросы не найдены" : "Нет запросов в ожидании"}
-              </div>
+              <EmptyState
+                title={
+                  searchTerm ? "Запросы не найдены" : "Нет запросов в ожидании"
+                }
+              />
             ) : (
-              <div className="pending-cards grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="pending-cards">
                 {filteredPending.map((item, idx) => {
                   const rowBusy = actingId === item.id;
                   const rowDisabled = isActionLocked && actingId !== item.id;
                   return (
                     <div
                       key={item.id}
-                      className={`pending-card cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-[1px] hover:shadow-md${rowBusy ? " pending-card--busy" : ""}`}
+                      className={`pending-card${rowBusy ? " pending-card--busy" : ""}`}
                     >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="pt-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleRow(item.id);
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selected.has(item.id)}
-                            onChange={() => toggleRow(item.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4 rounded border-slate-300"
-                            disabled={isActionLocked}
-                          />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs text-slate-500">
-                            #{rowNumber(idx)}
-                          </div>
-                          <div className="pending-card__name mt-0.5 truncate text-sm font-semibold text-slate-900">
-                            {item.name}
-                          </div>
-
-                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
-                            <span className="whitespace-nowrap">
-                              Тип:{" "}
-                              <span className="font-medium">
-                                {mapType(item.type)}
-                              </span>
-                            </span>
-                            <span className="whitespace-nowrap">
-                              Касса:{" "}
-                              <span className="font-medium">
-                                {item.cashbox_name || "—"}
-                              </span>
-                            </span>
+                      <div className="pending-card__top">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(item.id)}
+                          onChange={() => toggleRow(item.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={isActionLocked}
+                        />
+                        <div className="pending-card__body">
+                          <div className="pending-card__num">#{rowNumber(idx)}</div>
+                          <div className="pending-card__name">{item.name}</div>
+                          <div className="pending-card__meta">
+                            <span>Тип: {mapType(item.type)}</span>
+                            <span>Касса: {item.cashbox_name || "—"}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-xl bg-slate-50 p-2">
-                          <div className="text-slate-500">Дата</div>
-                          <div className="mt-0.5 font-semibold text-slate-900">
-                            {new Date(item.created_at).toLocaleDateString(
-                              "ru-RU",
-                            )}
-                          </div>
+                      <div className="pending-card__stats">
+                        <div className="pending-card__stat">
+                          <span>Дата</span>
+                          <strong>
+                            {new Date(item.created_at).toLocaleDateString("ru-RU")}
+                          </strong>
                         </div>
-
-                        <div className="rounded-xl bg-slate-50 p-2">
-                          <div className="text-slate-500">Сумма</div>
-                          <div className="mt-0.5 font-semibold text-slate-900">
+                        <div className="pending-card__stat">
+                          <span>Сумма</span>
+                          <strong>
                             {item.amount ? `${item.amount} сом` : "—"}
-                          </div>
+                          </strong>
                         </div>
                       </div>
 
-                      <div className="mt-3 flex gap-2">
+                      <div className="pending-card__actions">
                         <button
-                          className="pending-card__action-btn pending-card__action-btn--accept flex-1"
+                          type="button"
+                          className="nur-btn nur-btn--primary nur-btn--sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAccept(item);
@@ -742,17 +713,15 @@ const Pending = () => {
                           disabled={rowDisabled || rowBusy}
                         >
                           {rowBusy ? (
-                            <Loader2
-                              size={14}
-                              className="pending-action-spinner"
-                            />
+                            <Loader2 size={14} className="pending-action-spinner" />
                           ) : (
                             <CheckCircle2 size={14} />
                           )}
                           {rowBusy ? "Обработка..." : "Одобрить"}
                         </button>
                         <button
-                          className="pending-card__action-btn pending-card__action-btn--reject flex-1"
+                          type="button"
+                          className="nur-btn nur-btn--danger nur-btn--sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleReject(item);
@@ -760,10 +729,7 @@ const Pending = () => {
                           disabled={rowDisabled || rowBusy}
                         >
                           {rowBusy ? (
-                            <Loader2
-                              size={14}
-                              className="pending-action-spinner"
-                            />
+                            <Loader2 size={14} className="pending-action-spinner" />
                           ) : (
                             <XCircle size={14} />
                           )}
@@ -777,30 +743,29 @@ const Pending = () => {
             )}
           </div>
         )}
-      </div>
+      </PagePanel>
 
-      {/* Пагинация: /construction/cashflows/?page=&page_size= */}
       {(page > 1 || hasNext) && (
         <div
-          className="pending-pagination mt-4 flex items-center justify-center gap-3"
+          className="pending-pagination"
           role="navigation"
           aria-label="Страницы запросов"
         >
           <button
             type="button"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="nur-btn nur-btn--secondary nur-btn--sm"
             disabled={page <= 1 || cashFlowsLoading}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
           >
             Назад
           </button>
-          <span className="text-sm text-slate-600">
+          <span className="pending-pagination__meta">
             Страница {page}
             {totalCount != null ? ` · ${totalCount} запросов` : ""}
           </span>
           <button
             type="button"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="nur-btn nur-btn--secondary nur-btn--sm"
             disabled={!hasNext || cashFlowsLoading}
             onClick={() => setPage((p) => p + 1)}
           >
@@ -808,7 +773,7 @@ const Pending = () => {
           </button>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 

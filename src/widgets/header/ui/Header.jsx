@@ -1,12 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bell, Menu, ShoppingCart } from "lucide-react";
+import { Bell, ShoppingCart } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { useUser } from "@entities/user";
 import NotificationModal from "@widgets/notification-modal/ui/NotificationModal";
 import { fetchNotificationsAsync } from "@entities/notification";
 import { useNotificationsSocket } from "@entities/notification/lib/useNotificationsSocket";
-import { useEffect, useState } from "react";
+import { usePageChrome } from "@shared/ui/page-shell";
 import "./Header.scss";
 
 const pageTitles = {
@@ -37,9 +37,29 @@ const pageTitles = {
   "/crm/additional-services": "Доп. услуги",
 };
 
-function resolvePageTitle(pathname) {
-  const exact = pageTitles[pathname];
-  if (exact) return exact;
+const pageDescriptions = {
+  "/crm/sklad": "Товары, остатки и операции склада",
+  "/crm/clients": "Клиенты и контрагенты",
+  "/crm/market/analytics": "Показатели продаж и динамика",
+  "/crm/market/cashier": "Продажи и оплата",
+  "/crm/sell": "История и управление продажами",
+  "/crm/shifts": "Открытие, закрытие и отчёты смен",
+  "/crm/debts": "Долги клиентов и погашения",
+  "/crm/set": "Компания, пользователи и безопасность",
+  "/crm/branch": "Филиалы и точки продаж",
+  "/crm/market/documents": "Накладные, чеки и акты",
+  "/crm/market/history": "История продаж",
+  "/crm/employ": "Сотрудники и роли",
+  "/crm/kassa": "Кассовые операции",
+  "/crm/market/procurement": "Список оприходований поставщиков",
+};
+
+function resolvePageMeta(pathname) {
+  const exactTitle = pageTitles[pathname];
+  const exactDesc = pageDescriptions[pathname];
+  if (exactTitle) {
+    return { title: exactTitle, description: exactDesc ?? null };
+  }
 
   let bestKey = "";
   let bestTitle = null;
@@ -51,14 +71,29 @@ function resolvePageTitle(pathname) {
       }
     }
   }
-  return bestTitle ?? "Магазин";
+
+  let desc = null;
+  let descKey = "";
+  for (const key of Object.keys(pageDescriptions)) {
+    if (pathname === key || pathname.startsWith(`${key}/`)) {
+      if (key.length > descKey.length) {
+        descKey = key;
+        desc = pageDescriptions[key];
+      }
+    }
+  }
+
+  return { title: bestTitle ?? "Магазин", description: desc };
 }
 
-const Header = ({ toggleSidebar }) => {
+const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const title = resolvePageTitle(location.pathname);
+  const routeMeta = resolvePageMeta(location.pathname);
+  const { meta, actions } = usePageChrome();
+  const title = meta?.title ?? routeMeta.title;
+  const description = meta?.subtitle ?? routeMeta.description;
   const { profile: userProfile } = useUser();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -79,22 +114,28 @@ const Header = ({ toggleSidebar }) => {
     : "Гость";
 
   return (
-    <div className="header">
+    <header className="header">
       <div className="header__left">
-        <div className="header__burger" onClick={toggleSidebar}>
-          <Menu size={24} />
+        <div className="header__title-wrap">
+          <h1 className="header__title">{title}</h1>
+          {description ? (
+            <p className="header__subtitle">{description}</p>
+          ) : null}
         </div>
-        <h2 className="header__title">{title}</h2>
       </div>
       <div className="header__right">
+        <div className="header__page-actions-host" data-page-actions>
+          {actions}
+        </div>
         {showCashierButton && (
           <button
             className="header__cashier-btn"
             onClick={() => navigate("/crm/market/cashier")}
-            title="Касса"
+            title="Открыть кассу"
             type="button"
+            aria-label="Открыть кассу"
           >
-            <ShoppingCart size={20} />
+            <ShoppingCart size={18} />
             <span>Касса</span>
           </button>
         )}
@@ -102,34 +143,33 @@ const Header = ({ toggleSidebar }) => {
           className="header__notify-btn"
           type="button"
           title="Уведомления"
+          aria-label="Уведомления"
           onClick={() => setShowNotifications(true)}
         >
-          <Bell size={20} />
+          <Bell size={18} />
         </button>
-        <div
-          className="header__profile cursor-pointer"
+        <button
+          type="button"
+          className="header__profile"
           onClick={() => {
             if (!userProfile) return;
             navigate("/crm/set");
           }}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && userProfile) navigate("/crm/set");
-          }}
+          title="Настройки профиля"
+          aria-label="Настройки профиля"
         >
-          <div className="header__avatar">
+          <div className="header__avatar" aria-hidden="true">
             {usernameToDisplay
               ? usernameToDisplay.charAt(0).toUpperCase()
               : "?"}
           </div>
           <span className="header__username">{usernameToDisplay}</span>
-        </div>
+        </button>
       </div>
       {showNotifications && (
         <NotificationModal onClose={() => setShowNotifications(false)} />
       )}
-    </div>
+    </header>
   );
 };
 

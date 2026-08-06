@@ -2,21 +2,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+  min-height: 40px;
 
   &__empty {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--nur-muted);
     padding: 8px 4px;
     flex-shrink: 0;
   }
 
   &__label {
-    display: none;
-    font-size: 12px;
+    display: inline;
+    font-size: 11px;
     font-weight: 700;
-    color: #6b7280;
+    color: var(--nur-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     flex-shrink: 0;
@@ -24,10 +25,16 @@
 
   &__tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
     flex: 1;
     min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   &__tab-wrap {
@@ -40,23 +47,23 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    max-width: 140px;
-    padding: 6px 10px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: #fff;
-    color: #374151;
+    max-width: 160px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-sm);
+    background: var(--nur-surface);
+    color: var(--nur-text-2);
     font-size: 12px;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
     flex-shrink: 0;
-    transition:
-      border-color 0.15s,
-      background 0.15s;
+    transition: border-color var(--nur-duration), background var(--nur-duration);
 
     &:hover:not(:disabled) {
-      border-color: #f7d617;
-      background: #fffbeb;
+      border-color: var(--nur-primary);
+      background: var(--nur-primary-soft);
     }
 
     &:disabled {
@@ -65,9 +72,9 @@
     }
 
     &--active {
-      border-color: #f7d617;
-      background: #fef9c3;
-      color: #111827;
+      border-color: var(--nur-primary);
+      background: var(--nur-primary);
+      color: var(--nur-primary-ink);
     }
 
     &--main .cashier-carts-bar__tab-label {
@@ -86,11 +93,11 @@
     justify-content: center;
     width: 28px;
     padding: 0;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--nur-border);
     border-left: 0;
     border-radius: 0 8px 8px 0;
-    background: #fff;
-    color: #9ca3af;
+    background: var(--nur-surface);
+    color: var(--nur-muted);
     cursor: pointer;
     transition:
       border-color 0.15s,
@@ -99,8 +106,8 @@
 
     &:hover:not(:disabled) {
       border-color: #fecaca;
-      background: #fef2f2;
-      color: #dc2626;
+      background: var(--nur-danger-soft);
+      color: var(--nur-danger);
     }
 
     &:disabled {
@@ -120,8 +127,8 @@
     height: 18px;
     padding: 0 5px;
     border-radius: 999px;
-    background: #111827;
-    color: #fff;
+    background: var(--nur-text);
+    color: var(--nur-surface);
     font-size: 10px;
     font-weight: 700;
     line-height: 18px;
@@ -134,18 +141,21 @@
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
-    padding: 6px 10px;
-    border: 1px dashed #d1d5db;
-    border-radius: 8px;
-    background: #f9fafb;
-    color: #374151;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px dashed var(--nur-border-strong);
+    border-radius: var(--nur-radius-sm);
+    background: var(--nur-surface);
+    color: var(--nur-text-2);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
+    font-family: inherit;
     cursor: pointer;
 
     &:hover:not(:disabled) {
-      border-color: #f7d617;
-      background: #fffbeb;
+      border-color: var(--nur-primary);
+      background: var(--nur-primary-soft);
+      color: var(--nur-primary-ink);
     }
 
     &:disabled {
@@ -158,19 +168,19 @@
   &--toolbar {
     width: 100%;
     flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 10px 12px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     box-sizing: border-box;
 
     .cashier-carts-bar__label {
       display: flex;
       align-items: center;
-      padding-right: 4px;
+      padding-right: 2px;
     }
 
     .cashier-carts-bar__tabs {
@@ -178,37 +188,22 @@
       flex-wrap: nowrap;
       overflow-x: auto;
       overflow-y: hidden;
-      padding-bottom: 2px;
-      scrollbar-width: thin;
-      scrollbar-color: #d1d5db transparent;
-
-      &::-webkit-scrollbar {
-        height: 6px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 999px;
-      }
     }
 
     .cashier-carts-bar__tab {
       max-width: none;
-      padding: 8px 14px;
-      font-size: 13px;
     }
 
     .cashier-carts-bar__delete-btn {
-      width: 30px;
+      width: 32px;
+      min-height: 36px;
     }
 
     .cashier-carts-bar__tab-label {
-      max-width: 160px;
+      max-width: 140px;
     }
 
     .cashier-carts-bar__new-btn {
-      padding: 8px 12px;
-      font-size: 13px;
       align-self: center;
     }
   }

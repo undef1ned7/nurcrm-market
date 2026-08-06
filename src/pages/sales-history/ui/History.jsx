@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import api from "@shared/api";
+import {
+  PageShell,
+  PageHeader,
+  PagePanel,
+  FilterBar,
+  StatusChip,
+  EmptyState,
+  LoadingState,
+} from "@shared/ui/page-shell";
 import "./History.scss";
 
 const fmtMoney = (v) =>
@@ -10,6 +19,20 @@ const asArray = (data) =>
   Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
 
 const pickDate = (row) => row.paid_at || row.created_at || null;
+
+const statusTone = (status) => {
+  if (status === "paid") return "success";
+  if (status === "canceled") return "danger";
+  if (status === "new") return "warning";
+  return "default";
+};
+
+const statusLabel = (status) => {
+  if (status === "paid") return "Оплачено";
+  if (status === "canceled") return "Отменено";
+  if (status === "new") return "Новый";
+  return status || "—";
+};
 
 export default function MarketHistory() {
   const [rows, setRows] = useState([]);
@@ -26,52 +49,55 @@ export default function MarketHistory() {
   // модалка деталей
   const [openId, setOpenId] = useState(null);
 
-  const load = useCallback(async (url = null) => {
-    try {
-      setErr("");
-      setLoading(true);
+  const load = useCallback(
+    async (url = null) => {
+      try {
+        setErr("");
+        setLoading(true);
 
-      let resp;
-      if (url) {
-        resp = await api.get(url);
-      } else {
-        const q = new URLSearchParams();
-        if (status) q.set("status", status);
-        if (start) q.set("start", start);
-        if (end) q.set("end", end);
-        resp = await api.get(
-          `/main/pos/sales/${q.toString() ? `?${q.toString()}` : ""}`
-        );
+        let resp;
+        if (url) {
+          resp = await api.get(url);
+        } else {
+          const q = new URLSearchParams();
+          if (status) q.set("status", status);
+          if (start) q.set("start", start);
+          if (end) q.set("end", end);
+          resp = await api.get(
+            `/main/pos/sales/${q.toString() ? `?${q.toString()}` : ""}`
+          );
+        }
+
+        const data = resp.data || {};
+        const list = asArray(data);
+
+        const mapped = list.map((r) => ({
+          id: r.id,
+          status: r.status || "new",
+          subtotal: Number(r.subtotal) || 0,
+          discount: Number(r.discount_total) || 0,
+          tax: Number(r.tax_total) || 0,
+          total: Number(r.total) || 0,
+          createdAt: pickDate(r),
+          user: r.user_display || "—",
+        }));
+
+        if (url) {
+          setRows((prev) => [...prev, ...mapped]);
+        } else {
+          setRows(mapped);
+        }
+        setCount(Number(data.count || mapped.length));
+        setNextUrl(data.next || null);
+      } catch (e) {
+        console.error(e);
+        setErr("Не удалось загрузить историю продаж");
+      } finally {
+        setLoading(false);
       }
-
-      const data = resp.data || {};
-      const list = asArray(data);
-
-      const mapped = list.map((r) => ({
-        id: r.id,
-        status: r.status || "new",
-        subtotal: Number(r.subtotal) || 0,
-        discount: Number(r.discount_total) || 0,
-        tax: Number(r.tax_total) || 0,
-        total: Number(r.total) || 0,
-        createdAt: pickDate(r),
-        user: r.user_display || "—",
-      }));
-
-      if (url) {
-        setRows((prev) => [...prev, ...mapped]);
-      } else {
-        setRows(mapped);
-      }
-      setCount(Number(data.count || mapped.length));
-      setNextUrl(data.next || null);
-    } catch (e) {
-      console.error(e);
-      setErr("Не удалось загрузить историю продаж");
-    } finally {
-      setLoading(false);
-    }
-  }, [status, start, end]);
+    },
+    [status, start, end]
+  );
 
   useEffect(() => {
     load();
@@ -86,135 +112,146 @@ export default function MarketHistory() {
   );
 
   return (
-    <section className="history">
-      <header className="history__header">
-        <div>
-          <h2 className="history__title">История продаж</h2>
-          <p className="history__subtitle">Список чеков и их содержимое</p>
-        </div>
+    <PageShell className="history">
+      <PageHeader
+        title="История продаж"
+        subtitle="Чеки POS: статусы, суммы и позиции"
+      />
 
-        <div className="history__filters">
-          <label className="history__filter">
-            <span className="history__filterLabel">Статус</span>
-            <select
-              className="history__input"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="">Все</option>
-              <option value="new">Новые</option>
-              <option value="paid">Оплачено</option>
-              <option value="canceled">Отменено</option>
-            </select>
-          </label>
-
-          <label className="history__filter">
-            <span className="history__filterLabel">С</span>
-            <input
-              type="date"
-              className="history__input"
-              value={start}
-              max={end || undefined}
-              onChange={(e) => setStart(e.target.value)}
-            />
-          </label>
-
-          <label className="history__filter">
-            <span className="history__filterLabel">По</span>
-            <input
-              type="date"
-              className="history__input"
-              value={end}
-              min={start || undefined}
-              onChange={(e) => setEnd(e.target.value)}
-            />
-          </label>
-
-          <button
-            className="history__btn history__btn--secondary"
-            onClick={() => load()}
-            disabled={loading}
+      <FilterBar className="history__filters">
+        <label className="nur-field history__filter">
+          <span className="nur-label">Статус</span>
+          <select
+            className="nur-select"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
           >
-            Обновить
-          </button>
-        </div>
-      </header>
+            <option value="">Все</option>
+            <option value="new">Новые</option>
+            <option value="paid">Оплачено</option>
+            <option value="canceled">Отменено</option>
+          </select>
+        </label>
+
+        <label className="nur-field history__filter">
+          <span className="nur-label">С</span>
+          <input
+            type="date"
+            className="nur-input"
+            value={start}
+            max={end || undefined}
+            onChange={(e) => setStart(e.target.value)}
+          />
+        </label>
+
+        <label className="nur-field history__filter">
+          <span className="nur-label">По</span>
+          <input
+            type="date"
+            className="nur-input"
+            value={end}
+            min={start || undefined}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+        </label>
+
+        <button
+          type="button"
+          className="nur-btn nur-btn--secondary"
+          onClick={() => load()}
+          disabled={loading}
+        >
+          Обновить
+        </button>
+      </FilterBar>
 
       {err && <div className="history__error">{err}</div>}
 
-      <div className="history__tableWrap">
-        <table className="history__table">
-          <thead>
-            <tr>
-              <th>Дата</th>
-              <th>Пользователь</th>
-              <th>Статус</th>
-              <th>Итого</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && rows.length === 0 ? (
+      <PagePanel flush>
+        <div className="nur-table-wrap">
+          <table className="nur-table">
+            <thead>
               <tr>
-                <td className="history__empty" colSpan={6}>
-                  Загрузка…
-                </td>
+                <th>Дата</th>
+                <th>Пользователь</th>
+                <th>Статус</th>
+                <th>Итого</th>
+                <th></th>
               </tr>
-            ) : rows.length ? (
-              rows.map((r) => (
-                <tr key={r.id}>
-                  <td className="ellipsis" title={r.createdAt || "—"}>
-                    {r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"}
-                  </td>
-                  <td>{r.user}</td>
-                  <td>{r.status}</td>
-                  <td>{fmtMoney(r.total)}</td>
-                  <td className="ellipsis" title={r.id}></td>
-                  <td>
-                    <button
-                      className="history__btn history__btn--primary"
-                      onClick={() => onOpen(r.id)}
-                    >
-                      Открыть
-                    </button>
+            </thead>
+            <tbody>
+              {loading && rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <LoadingState rows={4} />
                   </td>
                 </tr>
-              ))
-            ) : (
+              ) : rows.length ? (
+                rows.map((r) => (
+                  <tr key={r.id}>
+                    <td className="ellipsis" title={r.createdAt || "—"}>
+                      {r.createdAt
+                        ? new Date(r.createdAt).toLocaleString()
+                        : "—"}
+                    </td>
+                    <td>{r.user}</td>
+                    <td>
+                      <StatusChip tone={statusTone(r.status)}>
+                        {statusLabel(r.status)}
+                      </StatusChip>
+                    </td>
+                    <td>{fmtMoney(r.total)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="nur-btn nur-btn--primary nur-btn--sm"
+                        onClick={() => onOpen(r.id)}
+                      >
+                        Открыть
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5}>
+                    <EmptyState
+                      title="Чеков пока нет"
+                      text="Продажи появятся здесь после оформления в кассе."
+                    />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            <tfoot>
               <tr>
-                <td className="history__empty" colSpan={6}>
-                  Нет данных
+                <td colSpan={3}>
+                  <strong>Всего чеков:</strong> {count}
+                </td>
+                <td colSpan={2}>
+                  <strong>Сумма по странице:</strong> {fmtMoney(totalSum)}
                 </td>
               </tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={3}>
-                <strong>Всего чеков:</strong> {count}
-              </td>
-              <td colSpan={3}>
-                <strong>Сумма по странице:</strong> {fmtMoney(totalSum)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            </tfoot>
+          </table>
+        </div>
+      </PagePanel>
 
       {nextUrl && (
-        <div style={{ display: "flex", justifyContent: "center" }}>
+        <div className="history__more">
           <button
-            className="history__btn"
+            type="button"
+            className="nur-btn nur-btn--secondary"
             onClick={() => load(nextUrl)}
             disabled={loading}
           >
-            Ещё
+            Загрузить ещё
           </button>
         </div>
       )}
 
       {openId && <SaleModal id={openId} onClose={onClose} />}
-    </section>
+    </PageShell>
   );
 }
 
@@ -224,7 +261,7 @@ function SaleModal({ id, onClose }) {
   const [err, setErr] = useState("");
   const [sale, setSale] = useState(null);
 
-  const fmtMoney = (v) =>
+  const fmtMoneyLocal = (v) =>
     (Number(v) || 0).toLocaleString(undefined, { minimumFractionDigits: 0 }) +
     " с";
 
@@ -269,14 +306,18 @@ function SaleModal({ id, onClose }) {
   }, [id]);
 
   return (
-    <div className="history__modalOverlay" onClick={onClose}>
-      <div className="history__modal" onClick={(e) => e.stopPropagation()}>
-        <div className="history__modalHeader">
-          <div className="history__modalTitle">
+    <div className="nur-modal-overlay" onClick={onClose}>
+      <div
+        className="nur-modal nur-modal--xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="nur-modal__header">
+          <h2 className="nur-modal__title">
             Продажа #{(id || "").slice(0, 8)}…
-          </div>
+          </h2>
           <button
-            className="history__iconBtn"
+            type="button"
+            className="nur-modal__close"
             onClick={onClose}
             aria-label="Закрыть"
           >
@@ -284,94 +325,102 @@ function SaleModal({ id, onClose }) {
           </button>
         </div>
 
-        {loading ? (
-          <div className="history__skeletonRow">
-            <div className="history__skeleton" />
-            <div className="history__skeleton" />
-            <div className="history__skeleton" />
-          </div>
-        ) : err ? (
-          <div className="history__error">{err}</div>
-        ) : sale ? (
-          <>
-            {/* Только создано, пользователь и итог */}
-            <div className="history__meta">
-              <div>
-                <strong>Создано:</strong>{" "}
-                {sale.createdAt
-                  ? new Date(sale.createdAt).toLocaleString()
-                  : "—"}
-              </div>
-              <div>
-                <strong>Пользователь:</strong> {sale.user}
-              </div>
-              <div>
-                <strong>Итого:</strong> {fmtMoney(sale.total)}
-              </div>
+        <div className="nur-modal__body">
+          {loading ? (
+            <div className="history__skeletonRow">
+              <div className="nur-skeleton history__skeleton" />
+              <div className="nur-skeleton history__skeleton" />
+              <div className="nur-skeleton history__skeleton" />
             </div>
+          ) : err ? (
+            <div className="history__error">{err}</div>
+          ) : sale ? (
+            <>
+              <div className="history__meta">
+                <div>
+                  <strong>Создано:</strong>{" "}
+                  {sale.createdAt
+                    ? new Date(sale.createdAt).toLocaleString()
+                    : "—"}
+                </div>
+                <div>
+                  <strong>Пользователь:</strong> {sale.user}
+                </div>
+                <div>
+                  <strong>Итого:</strong> {fmtMoneyLocal(sale.total)}
+                </div>
+              </div>
 
-            <div className="history__tableWrap">
-              <table className="history__table">
-                <thead>
-                  <tr>
-                    <th>Товар</th>
-                    <th>Штрих-код</th>
-                    <th>Кол-во</th>
-                    <th>Цена</th>
-                    <th>Сумма</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sale.items.length ? (
-                    sale.items.map((it) => (
-                      <tr key={it.id}>
-                        <td className="ellipsis" title={it.name}>
-                          {it.name}
-                        </td>
-                        <td className="ellipsis" title={it.barcode || "—"}>
-                          {it.barcode || "—"}
-                        </td>
-                        <td>{it.qty}</td>
-                        <td>{fmtMoney(it.unit_price)}</td>
-                        <td>{fmtMoney(it.line_total)}</td>
-                      </tr>
-                    ))
-                  ) : (
+              <div className="nur-table-wrap history__modalTable">
+                <table className="nur-table nur-table--dense">
+                  <thead>
                     <tr>
-                      <td className="history__empty" colSpan={5}>
-                        Позиции отсутствуют
-                      </td>
+                      <th>Товар</th>
+                      <th>Штрих-код</th>
+                      <th>Кол-во</th>
+                      <th>Цена</th>
+                      <th>Сумма</th>
                     </tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={3}></td>
-                    <td>
-                      <strong>Итого</strong>
-                    </td>
-                    <td>{fmtMoney(sale.total)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {sale.items.length ? (
+                      sale.items.map((it) => (
+                        <tr key={it.id}>
+                          <td className="ellipsis" title={it.name}>
+                            {it.name}
+                          </td>
+                          <td className="ellipsis" title={it.barcode || "—"}>
+                            {it.barcode || "—"}
+                          </td>
+                          <td>{it.qty}</td>
+                          <td>{fmtMoneyLocal(it.unit_price)}</td>
+                          <td>{fmtMoneyLocal(it.line_total)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5}>
+                          <EmptyState
+                            title="Позиции отсутствуют"
+                            text="В этом чеке нет товарных позиций."
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3}></td>
+                      <td>
+                        <strong>Итого</strong>
+                      </td>
+                      <td>{fmtMoneyLocal(sale.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </>
+          ) : null}
+        </div>
 
-            <div className="history__modalFooter">
-              <button
-                className="history__btn history__btn--secondary"
-                onClick={load}
-              >
-                Обновить
-              </button>
-              <button
-                className="history__btn history__btn--primary"
-                onClick={onClose}
-              >
-                Закрыть
-              </button>
-            </div>
-          </>
-        ) : null}
+        {sale && !loading && !err && (
+          <div className="nur-modal__footer">
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={load}
+            >
+              Обновить
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={onClose}
+            >
+              Закрыть
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

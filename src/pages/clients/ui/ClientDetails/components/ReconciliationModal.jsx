@@ -3,7 +3,8 @@ import { FileSpreadsheet, X, Download } from "lucide-react";
 import { msgFromError } from "../clientDetails.helpers";
 import api from "@shared/api";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
-import "../ClientModals.redesign.scss";
+import ClientModalPortal from "./ClientModalPortal";
+import "../ClientModals.scss";
 
 export default function ReconciliationModal({ open, clientId, onClose }) {
   const { mode } = useContext(ThemeModeContext);
@@ -116,13 +117,14 @@ export default function ReconciliationModal({ open, clientId, onClose }) {
   };
 
   return (
-    <div className="cmx__overlay" data-theme={mode} onClick={onClose}>
-      <div
-        className="cmx__dialog cmx__dialog--sm"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
+    <ClientModalPortal wrapperId="client-reconciliation-modal">
+      <div className="cmx__overlay" data-theme={mode} onClick={onClose}>
+        <div
+          className="cmx__dialog cmx__dialog--sm"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
         <div className="cmx__header">
           <div className="cmx__heading">
             <span className="cmx__heading-icon">
@@ -188,5 +190,6 @@ export default function ReconciliationModal({ open, clientId, onClose }) {
         </div>
       </div>
     </div>
+    </ClientModalPortal>
   );
 }

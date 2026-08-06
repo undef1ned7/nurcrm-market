@@ -12,7 +12,7 @@
   width: 90%;
   max-width: 600px;
   max-height: 80vh;
-  background: white;
+  background: var(--nur-surface);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
@@ -23,14 +23,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--nur-border);
   }
 
   &__title {
     font-size: 20px;
     font-weight: 700;
     margin: 0;
-    color: #111827;
+    color: var(--nur-text);
   }
 
   &__close {
@@ -46,7 +46,7 @@
     transition: background 0.2s;
 
     &:hover {
-      background: #f5f5f5;
+      background: var(--nur-bg);
     }
   }
 
@@ -55,7 +55,7 @@
     align-items: center;
     gap: 12px;
     padding: 16px 24px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--nur-border);
   }
 
   &__search-input {
@@ -66,7 +66,8 @@
     outline: none;
 
     &::placeholder {
-      color: #9ca3af;
+      color: var(--nur-placeholder);
+      opacity: 1;
     }
   }
 
@@ -75,10 +76,10 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--nur-surface-2);
+    border-bottom: 1px solid var(--nur-border);
     font-size: 14px;
-    color: #6b7280;
+    color: var(--nur-muted);
   }
 
   &__list {
@@ -90,7 +91,7 @@
   &__empty {
     text-align: center;
     padding: 40px 20px;
-    color: #9ca3af;
+    color: var(--nur-muted);
   }
 
   &__item {
@@ -103,7 +104,7 @@
     transition: background 0.2s;
 
     &:hover {
-      background: #f9fafb;
+      background: var(--nur-surface-2);
     }
   }
 
@@ -111,13 +112,13 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #f7d617;
+    background: var(--nur-primary, #f7d74f);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 18px;
-    color: #111827;
+    color: var(--nur-text);
     flex-shrink: 0;
   }
 
@@ -128,30 +129,30 @@
   &__item-name {
     font-size: 16px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     margin-bottom: 4px;
   }
 
   &__item-debt {
     font-size: 14px;
-    color: #ef4444;
+    color: var(--nur-danger);
     font-weight: 600;
   }
 
   &__footer {
     padding: 16px 24px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--nur-border);
   }
 
   &__close-btn {
     width: 100%;
     padding: 12px;
-    background: #f5f5f5;
+    background: var(--nur-bg);
     border: none;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     cursor: pointer;
     transition: background 0.2s;
 
@@ -162,8 +163,8 @@
 
   &__create-section {
     padding: 16px 24px;
-    border-top: 1px solid #e5e7eb;
-    background: white;
+    border-top: 1px solid var(--nur-border);
+    background: var(--nur-surface);
   }
 
   &__create-btn {
@@ -173,12 +174,12 @@
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    background: #f7d617;
+    background: var(--nur-primary, #f7d74f);
     border: none;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     cursor: pointer;
     transition: background 0.2s;
 
@@ -198,7 +199,7 @@
   }
 
   &__create-form {
-    background: white;
+    background: var(--nur-surface);
     border-radius: 0;
     padding: 0;
     margin: 0;
@@ -215,12 +216,12 @@
     align-items: center;
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--nur-border);
 
     h3 {
       font-size: 14px;
       font-weight: 600;
-      color: #111827;
+      color: var(--nur-text);
       margin: 0;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -238,20 +239,20 @@
     cursor: pointer;
     border-radius: 4px;
     transition: background 0.2s;
-    color: #6b7280;
+    color: var(--nur-muted);
 
     &:hover {
-      background: #e5e7eb;
-      color: #111827;
+      background: var(--nur-border);
+      color: var(--nur-text);
     }
   }
 
   &__create-error {
     padding: 12px;
-    background: #fee2e2;
+    background: var(--nur-danger-soft);
     border: 1px solid #fecaca;
     border-radius: 6px;
-    color: #dc2626;
+    color: var(--nur-danger);
     font-size: 14px;
     margin-bottom: 16px;
   }
@@ -271,25 +272,26 @@
     label {
       font-size: 13px;
       font-weight: 600;
-      color: #374151;
+      color: var(--nur-text-2);
     }
 
     input {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--nur-border-strong);
       border-radius: 6px;
       font-size: 14px;
-      color: #111827;
+      color: var(--nur-text);
       outline: none;
       transition: border-color 0.2s;
 
       &:focus {
-        border-color: #f7d617;
+        border-color: var(--nur-primary, #f7d74f);
       }
 
       &::placeholder {
-        color: #9ca3af;
+        color: var(--nur-placeholder);
+        opacity: 1;
       }
     }
   }
@@ -302,18 +304,18 @@
   &__create-form-cancel {
     flex: 1;
     padding: 10px;
-    background: white;
-    border: 1px solid #d1d5db;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border-strong);
     border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--nur-muted);
     cursor: pointer;
     transition: all 0.2s;
 
     &:hover:not(:disabled) {
-      background: #f9fafb;
-      border-color: #9ca3af;
+      background: var(--nur-surface-2);
+      border-color: var(--nur-muted);
     }
 
     &:disabled {
@@ -325,12 +327,12 @@
   &__create-form-submit {
     flex: 1;
     padding: 10px;
-    background: #f7d617;
+    background: var(--nur-primary, #f7d74f);
     border: none;
     border-radius: 6px;
     font-size: 14px;
     font-weight: 700;
-    color: #111827;
+    color: var(--nur-text);
     cursor: pointer;
     transition: background 0.2s;
 

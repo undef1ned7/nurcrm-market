@@ -4,9 +4,20 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "@shared/api";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+  PagePanel,
+  EmptyState,
+  StatGrid,
+  StatCard,
+} from "@shared/ui/page-shell";
 import Pagination from "./components/Pagination";
 import { useAlert } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
+import "./Warehouse.scss";
 import "./SupplierReceiptPage.scss";
 
 const DEFAULT_LIMIT = 20;
@@ -368,35 +379,39 @@ export default function SupplierReceiptsListPage() {
   };
 
   return (
-    <div className="warehouse-page market-receipt-page">
-      <div className="warehouse-header">
-        <div className="warehouse-header__left">
-          <div className="warehouse-header__title-section">
-            <h1 className="warehouse-header__title">Закупки</h1>
-            <p className="warehouse-header__subtitle">Список оприходований поставщиков</p>
-          </div>
-        </div>
-        {!dateRangeInvalid && (
-          <div
-            className={`market-receipt-page__summary market-receipt-page__summary--header${loading ? " market-receipt-page__summary--loading" : ""}`}
+    <PageShell className="warehouse-page market-receipt-page">
+      <PageHeader
+        title="Закупки"
+        subtitle="Список оприходований поставщиков"
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--primary"
+            onClick={() => navigate("/crm/market/procurement/receipt")}
+            title="Прием товара"
+            aria-label="Прием товара"
           >
-            <div className="market-receipt-page__summary-item">
-              <span className="market-receipt-page__summary-label">Всего закупок</span>
-              <strong>{listCount}</strong>
-            </div>
-            <div className="market-receipt-page__summary-item">
-              <span className="market-receipt-page__summary-label">Общая сумма</span>
-              <strong>{totalAmount != null ? fmtNum(totalAmount) : "—"}</strong>
-            </div>
-          </div>
-        )}
-      </div>
+            <Plus size={16} />
+            <span className="nur-btn__label">Прием товара</span>
+          </button>
+        }
+      />
+
+      {!dateRangeInvalid && (
+        <StatGrid>
+          <StatCard label="Всего закупок" value={listCount} />
+          <StatCard
+            label="Общая сумма"
+            value={totalAmount != null ? fmtNum(totalAmount) : "—"}
+          />
+        </StatGrid>
+      )}
 
       <DataContainer>
-        <div className="market-receipt-page__card">
-          <div className="market-receipt-page__toolbar">
+        <PagePanel className="market-receipt-page__card">
+          <FilterBar className="market-receipt-page__toolbar">
             <div className="market-receipt-page__field">
-              <label className="market-receipt-page__label">Поставщик</label>
+              <label className="nur-label">Поставщик</label>
               <div className="market-receipt-page__supplier-row">
                 <SearchableCombobox
                   value={filtersDraft.supplier_id}
@@ -409,7 +424,7 @@ export default function SupplierReceiptsListPage() {
                 />
                 <button
                   type="button"
-                  className="market-receipt-page__supplier-add"
+                  className="nur-btn nur-btn--secondary nur-btn--sm market-receipt-page__supplier-add"
                   onClick={() => setCreateSupplierOpen(true)}
                   title="Добавить поставщика"
                 >
@@ -418,9 +433,9 @@ export default function SupplierReceiptsListPage() {
               </div>
             </div>
             <div className="market-receipt-page__field market-receipt-page__field--date">
-              <label className="market-receipt-page__label">Дата от</label>
+              <label className="nur-label">Дата от</label>
               <input
-                className="market-receipt-page__qty-input"
+                className="nur-input"
                 type="date"
                 value={filtersDraft.date_from}
                 onChange={(e) =>
@@ -429,9 +444,9 @@ export default function SupplierReceiptsListPage() {
               />
             </div>
             <div className="market-receipt-page__field market-receipt-page__field--date">
-              <label className="market-receipt-page__label">Дата до</label>
+              <label className="nur-label">Дата до</label>
               <input
-                className="market-receipt-page__qty-input"
+                className="nur-input"
                 type="date"
                 value={filtersDraft.date_to}
                 onChange={(e) =>
@@ -439,12 +454,12 @@ export default function SupplierReceiptsListPage() {
                 }
               />
             </div>
-          </div>
+          </FilterBar>
 
           <div className="market-receipt-page__actions">
             <button
               type="button"
-              className="market-receipt-page__secondary-button"
+              className="nur-btn nur-btn--secondary"
               onClick={handleApplyFilters}
               disabled={loading || !hasPendingChanges || dateRangeInvalid}
             >
@@ -452,7 +467,7 @@ export default function SupplierReceiptsListPage() {
             </button>
             <button
               type="button"
-              className="market-receipt-page__secondary-button"
+              className="nur-btn nur-btn--ghost"
               onClick={handleResetFilters}
               disabled={loading || (!hasAnyFilter && !hasPendingChanges)}
             >
@@ -460,20 +475,12 @@ export default function SupplierReceiptsListPage() {
             </button>
             <button
               type="button"
-              className="market-receipt-page__secondary-button"
+              className="nur-btn nur-btn--secondary"
               onClick={loadReceipts}
               disabled={loading}
             >
               <RefreshCw size={16} />
               Обновить
-            </button>
-            <button
-              type="button"
-              className="market-receipt-page__primary-button"
-              onClick={() => navigate("/crm/market/procurement/receipt")}
-            >
-              <Plus size={16} />
-              Прием товара
             </button>
           </div>
           {dateRangeInvalid && (
@@ -485,10 +492,13 @@ export default function SupplierReceiptsListPage() {
           {loading ? (
             <div className="market-receipt-page__empty">Загрузка...</div>
           ) : receipts.length === 0 ? (
-            <div className="market-receipt-page__empty">Закупки не найдены.</div>
+            <EmptyState
+              title="Закупки не найдены"
+              text="Измените фильтры или создайте новое оприходование."
+            />
           ) : (
-            <div className="market-receipt-page__table-wrap">
-              <table className="market-receipt-page__table">
+            <div className="nur-table-wrap market-receipt-page__table-wrap">
+              <table className="nur-table nur-table--clickable market-receipt-page__table">
                 <thead>
                   <tr>
                     <th>Поставщик</th>
@@ -542,9 +552,10 @@ export default function SupplierReceiptsListPage() {
               onPageChange={handlePageChange}
             />
           )}
-        </div>
+        </PagePanel>
       </DataContainer>
       {detailReceipt && (
+        <ReactPortal wrapperId="receipts-list-detail-modal">
         <div
           className="market-receipt-page__modal-overlay"
           onClick={closeReceiptDetail}
@@ -591,8 +602,8 @@ export default function SupplierReceiptsListPage() {
                 );
               }
               return (
-                <div className="market-receipt-page__detail-table-wrap">
-                  <table className="market-receipt-page__detail-table">
+                <div className="nur-table-wrap market-receipt-page__detail-table-wrap">
+                  <table className="nur-table market-receipt-page__detail-table">
                     <thead>
                       <tr>
                         <th>№</th>
@@ -625,7 +636,7 @@ export default function SupplierReceiptsListPage() {
             <div className="market-receipt-page__actions">
               <button
                 type="button"
-                className="market-receipt-page__secondary-button"
+                className="nur-btn nur-btn--secondary"
                 onClick={closeReceiptDetail}
               >
                 Закрыть
@@ -633,24 +644,26 @@ export default function SupplierReceiptsListPage() {
             </div>
           </div>
         </div>
+        </ReactPortal>
       )}
       {createSupplierOpen && (
+        <ReactPortal wrapperId="receipts-list-supplier-modal">
         <div className="market-receipt-page__modal-overlay" onClick={() => setCreateSupplierOpen(false)}>
           <div className="market-receipt-page__modal-card" onClick={(e) => e.stopPropagation()}>
             <h3 className="market-receipt-page__modal-title">Новый поставщик</h3>
             <div className="market-receipt-page__field">
-              <label className="market-receipt-page__label">Имя *</label>
+              <label className="nur-label">Имя *</label>
               <input
-                className="market-receipt-page__qty-input market-receipt-page__qty-input--mobile"
+                className="nur-input"
                 value={createSupplierName}
                 onChange={(e) => setCreateSupplierName(e.target.value)}
                 placeholder="Название/ФИО"
               />
             </div>
             <div className="market-receipt-page__field">
-              <label className="market-receipt-page__label">Телефон *</label>
+              <label className="nur-label">Телефон *</label>
               <input
-                className="market-receipt-page__qty-input market-receipt-page__qty-input--mobile"
+                className="nur-input"
                 value={createSupplierPhone}
                 onChange={(e) => setCreateSupplierPhone(e.target.value)}
                 placeholder="+996..."
@@ -659,7 +672,7 @@ export default function SupplierReceiptsListPage() {
             <div className="market-receipt-page__actions">
               <button
                 type="button"
-                className="market-receipt-page__secondary-button"
+                className="nur-btn nur-btn--secondary"
                 onClick={() => setCreateSupplierOpen(false)}
                 disabled={createSupplierSaving}
               >
@@ -667,7 +680,7 @@ export default function SupplierReceiptsListPage() {
               </button>
               <button
                 type="button"
-                className="market-receipt-page__primary-button"
+                className="nur-btn nur-btn--primary"
                 onClick={handleCreateSupplier}
                 disabled={createSupplierSaving}
               >
@@ -676,7 +689,8 @@ export default function SupplierReceiptsListPage() {
             </div>
           </div>
         </div>
+        </ReactPortal>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -6,8 +6,6 @@ import {
   Wallet,
   Calendar,
   DollarSign,
-  ShoppingCart,
-  Store,
   TrendingUp,
   TrendingDown,
   RefreshCw,
@@ -15,7 +13,6 @@ import {
   XCircle,
   ChevronDown,
   FileText,
-  User,
   Banknote,
   CreditCard,
   AlertCircle,
@@ -25,6 +22,17 @@ import {
   fetchShiftByIdAsync,
   fetchShiftSalesAsync,
 } from "@entities/shift";
+import {
+  PageShell,
+  PageHeader,
+  PagePanel,
+  StatGrid,
+  StatCard,
+  StatusChip,
+  EmptyState,
+  LoadingState,
+  FilterBar,
+} from "@shared/ui/page-shell";
 import "./ShiftDetail.scss";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
@@ -258,142 +266,125 @@ const ShiftDetail = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="shift-detail-page">
-        <div className="shift-detail-page__loading">Загрузка...</div>
-      </div>
-    );
-  }
+  const shiftNumber =
+    shift?.code ||
+    (() => {
+      const idStr = shift?.id?.toString() || "";
+      const digitsOnly = idStr.replace(/\D/g, "");
+      return digitsOnly.length >= 4
+        ? digitsOnly.slice(-8)
+        : idStr.replace(/-/g, "").slice(-8).toUpperCase();
+    })() ||
+    "—";
 
   if (loading) {
     return (
-      <div className="shift-detail-page">
-        <div className="shift-detail-page__loading">Загрузка...</div>
-      </div>
+      <PageShell className="shift-detail-page">
+        <PageHeader
+          title="Смена"
+          subtitle="Загрузка данных кассовой смены"
+        />
+        <PagePanel flush>
+          <LoadingState rows={6} />
+        </PagePanel>
+      </PageShell>
     );
   }
 
   if (!shift) {
     return (
-      <div className="shift-detail-page">
-        <div className="shift-detail-page__error">Смена не найдена</div>
-      </div>
+      <PageShell className="shift-detail-page">
+        <PageHeader
+          title="Смена"
+          subtitle="Детали кассовой смены"
+          actions={
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => navigate("/crm/shifts")}
+            >
+              Назад
+            </button>
+          }
+        />
+        <EmptyState
+          title="Смена не найдена"
+          text="Возможно, смена была удалена или ссылка устарела."
+          action={
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={() => navigate("/crm/shifts")}
+            >
+              К списку смен
+            </button>
+          }
+        />
+      </PageShell>
     );
   }
 
   return (
-    <div className="shift-detail-page">
-      <div className="shift-detail-page__header">
-        <button
-          className="shift-detail-page__close"
-          onClick={() => navigate("/crm/shifts")}
-        >
-          <X size={24} />
-        </button>
-        <div className="shift-detail-page__header-content">
-          <div className="shift-detail-page__title-section">
-            <Wallet size={32} style={{ color: "#f7d617" }} />
-            <div>
-              <h1 className="shift-detail-page__title">
-                Смена #
-                {shift?.code ||
-                  (() => {
-                    const idStr = shift.id?.toString() || "";
-                    // Извлекаем только цифры из ID
-                    const digitsOnly = idStr.replace(/\D/g, "");
-                    // Если есть достаточно цифр (минимум 4), используем последние 8, иначе используем последние 8 символов без дефисов
-                    return digitsOnly.length >= 4
-                      ? digitsOnly.slice(-8)
-                      : idStr.replace(/-/g, "").slice(-8).toUpperCase();
-                  })() ||
-                  "—"}
-              </h1>
-              <div className="shift-detail-page__date">
-                <Calendar size={16} />
-                <span>Открыта {formatDate(shift.opened_at)}</span>
-              </div>
-              {shift.closed_at && (
-                <div className="shift-detail-page__date">
-                  <Calendar size={16} />
-                  <span>Закрыта {formatDate(shift.closed_at)}</span>
-                </div>
+    <PageShell className="shift-detail-page">
+      <PageHeader
+        title={`Смена #${shiftNumber}`}
+        subtitle={`Кассир: ${shift.cashier_display || "—"} · продажи и движение денег`}
+        actions={
+          <div className="shift-detail-page__header-actions">
+            <StatusChip tone={shift.status === "open" ? "success" : "danger"}>
+              {shift.status === "open" ? (
+                <>
+                  <CheckCircle size={16} />
+                  <span>Открыта</span>
+                </>
+              ) : (
+                <>
+                  <XCircle size={16} />
+                  <span>Закрыта</span>
+                </>
               )}
-              <div className="shift-detail-page__date">
-                <User size={16} />
-                <span>
-                  Кассир: {shift.cashier_display || "—"}
-                  {shift.cashier && (
-                    <span className="shift-detail-page__cashier-id">
-                      {" "}
-                      (ID: {shift.cashier.slice(0, 8)}...)
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
+            </StatusChip>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary nur-btn--sm"
+              onClick={() => navigate("/crm/shifts")}
+              aria-label="Назад к списку смен"
+              title="Назад"
+            >
+              <X size={18} />
+              <span className="nur-btn__label">Назад</span>
+            </button>
           </div>
-          <div
-            className={`shift-detail-page__status shift-detail-page__status--${shift.status}`}
-          >
-            {shift.status === "open" ? (
-              <>
-                <CheckCircle size={20} />
-                <span>Открыта</span>
-              </>
-            ) : (
-              <>
-                <XCircle size={20} />
-                <span>Закрыта</span>
-              </>
-            )}
-          </div>
-        </div>
+        }
+      />
+
+      <div className="shift-detail-page__dates">
+        <span className="shift-detail-page__meta-line">
+          <Calendar size={14} />
+          Открыта {formatDate(shift.opened_at)}
+        </span>
+        {shift.closed_at && (
+          <span className="shift-detail-page__meta-line">
+            <Calendar size={14} />
+            Закрыта {formatDate(shift.closed_at)}
+          </span>
+        )}
       </div>
 
-      <div className="shift-detail-page__metrics">
-        <div className="shift-detail-page__metric-card">
-          <DollarSign size={24} style={{ color: "#10b981" }} />
-          <div className="shift-detail-page__metric-content">
-            <div className="shift-detail-page__metric-label">Выручка</div>
-            <div className="shift-detail-page__metric-value">
-              {parseFloat(shift.sales_total || 0).toFixed(2)} сом
-            </div>
-          </div>
-        </div>
-        <div className="shift-detail-page__metric-card">
-          <ShoppingCart size={24} style={{ color: "#f7d617" }} />
-          <div className="shift-detail-page__metric-content">
-            <div className="shift-detail-page__metric-label">Продажи</div>
-            <div className="shift-detail-page__metric-value">
-              {shift.sales_count || 0}
-            </div>
-          </div>
-        </div>
-        <div className="shift-detail-page__metric-card">
-          <Wallet size={24} style={{ color: "#8b5cf6" }} />
-          <div className="shift-detail-page__metric-content">
-            <div className="shift-detail-page__metric-label">Касса</div>
-            <div className="shift-detail-page__metric-value">
-              {shift.cashbox_name || "—"}
-            </div>
-          </div>
-        </div>
-        <div className="shift-detail-page__metric-card">
-          <Store size={24} style={{ color: "#f59e0b" }} />
-          <div className="shift-detail-page__metric-content">
-            <div className="shift-detail-page__metric-label">Магазин</div>
-            <div className="shift-detail-page__metric-value">
-              {shift.branch || "—"}
-            </div>
-          </div>
-        </div>
-      </div>
+      <StatGrid className="shift-detail-page__metrics">
+        <StatCard
+          label="Выручка"
+          value={`${parseFloat(shift.sales_total || 0).toFixed(2)} сом`}
+        />
+        <StatCard label="Продажи" value={shift.sales_count || 0} />
+        <StatCard label="Касса" value={shift.cashbox_name || "—"} />
+        <StatCard label="Магазин" value={shift.branch || "—"} />
+      </StatGrid>
 
       <div className="shift-detail-page__details">
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
-            <TrendingUp size={20} style={{ color: "#10b981" }} />
+            <TrendingUp size={20} className="shift-detail-page__icon--success" />
             <h3 className="shift-detail-page__detail-title">Выручка</h3>
           </div>
           <div className="shift-detail-page__detail-content">
@@ -446,7 +437,7 @@ const ShiftDetail = () => {
 
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
-            <RefreshCw size={20} style={{ color: "#f59e0b" }} />
+            <RefreshCw size={20} className="shift-detail-page__icon--warning" />
             <h3 className="shift-detail-page__detail-title">Возвраты</h3>
           </div>
           <div className="shift-detail-page__detail-content">
@@ -481,7 +472,7 @@ const ShiftDetail = () => {
 
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
-            <Wallet size={20} style={{ color: "#3b82f6" }} />
+            <Wallet size={20} className="shift-detail-page__icon--info" />
             <h3 className="shift-detail-page__detail-title">
               Наличные в кассе
             </h3>
@@ -553,7 +544,7 @@ const ShiftDetail = () => {
 
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
-            <TrendingUp size={20} style={{ color: "#10b981" }} />
+            <TrendingUp size={20} className="shift-detail-page__icon--success" />
             <h3 className="shift-detail-page__detail-title">
               Приходы и расходы
             </h3>
@@ -590,52 +581,49 @@ const ShiftDetail = () => {
       </div>
 
       <div className="shift-detail-page__total">
-        <DollarSign size={24} style={{ color: "white" }} />
+        <DollarSign size={24} />
         <span className="shift-detail-page__total-label">Итоговая выручка</span>
         <span className="shift-detail-page__total-value">
           {parseFloat(shift.sales_total || 0).toFixed(2)} сом
         </span>
       </div>
 
-      <div className="shift-detail-page__operations">
+      <PagePanel className="shift-detail-page__operations">
         <h2 className="shift-detail-page__operations-title">
-          ПОСЛЕДНИЕ ОПЕРАЦИИ
+          Последние операции
         </h2>
-        <div className="shift-detail-page__tabs">
+        <div
+          className="nur-tabs shift-detail-page__tabs"
+          role="tablist"
+          aria-label="Операции смены"
+        >
           <button
-            className={`shift-detail-page__tab ${activeTab === "products" ? "shift-detail-page__tab--active" : ""
-              }`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "products"}
+            className={`nur-tabs__tab${activeTab === "products" ? " is-active" : ""}`}
             onClick={() => setActiveTab("products")}
           >
             Движение товара
           </button>
           <button
-            className={`shift-detail-page__tab ${activeTab === "money" ? "shift-detail-page__tab--active" : ""
-              }`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "money"}
+            className={`nur-tabs__tab${activeTab === "money" ? " is-active" : ""}`}
             onClick={() => setActiveTab("money")}
           >
             Движение денег
           </button>
-          {/* <button
-            className={`shift-detail-page__tab ${
-              activeTab === "list" ? "shift-detail-page__tab--active" : ""
-            }`}
-            onClick={() => setActiveTab("list")}
-          >
-            Список товара
-          </button> */}
         </div>
 
         {activeTab === "products" && (
           <div className="shift-detail-page__operations-list">
-            {/* Фильтры */}
-            <div className="shift-detail-page__filters">
-              <div className="shift-detail-page__filter-group">
-                <label className="shift-detail-page__filter-label">
-                  Статус:
-                </label>
+            <FilterBar className="shift-detail-page__filters">
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">Статус</label>
                 <select
-                  className="shift-detail-page__filter-select"
+                  className="nur-select"
                   value={filters.status}
                   onChange={(e) =>
                     setFilters({ ...filters, status: e.target.value })
@@ -646,12 +634,10 @@ const ShiftDetail = () => {
                   <option value="unpaid">Неоплаченные</option>
                 </select>
               </div>
-              <div className="shift-detail-page__filter-group">
-                <label className="shift-detail-page__filter-label">
-                  Способ оплаты:
-                </label>
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">Способ оплаты</label>
                 <select
-                  className="shift-detail-page__filter-select"
+                  className="nur-select"
                   value={filters.payment_method}
                   onChange={(e) =>
                     setFilters({ ...filters, payment_method: e.target.value })
@@ -662,13 +648,11 @@ const ShiftDetail = () => {
                   <option value="transfer">Безнал</option>
                 </select>
               </div>
-              <div className="shift-detail-page__filter-group">
-                <label className="shift-detail-page__filter-label">
-                  Поиск:
-                </label>
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">Поиск</label>
                 <input
                   type="text"
-                  className="shift-detail-page__filter-input"
+                  className="nur-input"
                   placeholder="Поиск по номеру чека"
                   value={filters.q}
                   onChange={(e) =>
@@ -676,14 +660,10 @@ const ShiftDetail = () => {
                   }
                 />
               </div>
-            </div>
+            </FilterBar>
 
             {/* Индикатор загрузки */}
-            {salesLoading && (
-              <div className="shift-detail-page__loading-message">
-                Загрузка истории продаж...
-              </div>
-            )}
+            {salesLoading && <LoadingState rows={3} />}
 
             {/* Ошибка */}
             {salesError && (
@@ -698,9 +678,10 @@ const ShiftDetail = () => {
               {!salesLoading && !salesError && (
                 <>
                   {productMovements.length === 0 ? (
-                    <div className="shift-detail-page__empty-message">
-                      Продажи не найдены
-                    </div>
+                    <EmptyState
+                      title="Продажи не найдены"
+                      text="За эту смену продаж нет или измените фильтры."
+                    />
                   ) : (
                     productMovements.map((movement, idx) => (
                       <div
@@ -758,14 +739,11 @@ const ShiftDetail = () => {
 
         {activeTab === "money" && (
           <div className="shift-detail-page__operations-list">
-            {/* Фильтры для движения денег */}
-            <div className="shift-detail-page__filters">
-              <div className="shift-detail-page__filter-group">
-                <label className="shift-detail-page__filter-label">
-                  Статус:
-                </label>
+            <FilterBar className="shift-detail-page__filters">
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">Статус</label>
                 <select
-                  className="shift-detail-page__filter-select"
+                  className="nur-select"
                   value={moneyFilters.status}
                   onChange={(e) =>
                     setMoneyFilters({
@@ -779,12 +757,10 @@ const ShiftDetail = () => {
                   <option value="unpaid">Неоплаченные</option>
                 </select>
               </div>
-              <div className="shift-detail-page__filter-group">
-                <label className="shift-detail-page__filter-label">
-                  Способ оплаты:
-                </label>
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">Способ оплаты</label>
                 <select
-                  className="shift-detail-page__filter-select"
+                  className="nur-select"
                   value={moneyFilters.payment_method}
                   onChange={(e) =>
                     setMoneyFilters({
@@ -798,13 +774,11 @@ const ShiftDetail = () => {
                   <option value="transfer">Безнал</option>
                 </select>
               </div>
-              <div className="shift-detail-page__filter-group">
-                <label className="shift-detail-page__filter-label">
-                  Поиск:
-                </label>
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">Поиск</label>
                 <input
                   type="text"
-                  className="shift-detail-page__filter-input"
+                  className="nur-input"
                   placeholder="Поиск по номеру чека"
                   value={moneyFilters.q}
                   onChange={(e) =>
@@ -812,14 +786,10 @@ const ShiftDetail = () => {
                   }
                 />
               </div>
-            </div>
+            </FilterBar>
 
             {/* Индикатор загрузки */}
-            {moneyLoading && (
-              <div className="shift-detail-page__loading-message">
-                Загрузка движения денег...
-              </div>
-            )}
+            {moneyLoading && <LoadingState rows={3} />}
 
             {/* Ошибка */}
             {moneyError && (
@@ -832,9 +802,10 @@ const ShiftDetail = () => {
             {!moneyLoading && !moneyError && (
               <>
                 {moneyMovements.length === 0 ? (
-                  <div className="shift-detail-page__empty-message">
-                    Движение денег не найдено
-                  </div>
+                  <EmptyState
+                    title="Движение денег не найдено"
+                    text="За эту смену движений нет или измените фильтры."
+                  />
                 ) : (
                   moneyMovements.map((movement, idx) => (
                     <div
@@ -884,7 +855,7 @@ const ShiftDetail = () => {
             <h3 className="shift-detail-page__product-list-title">
               Продажа товара
             </h3>
-            <table className="shift-detail-page__product-table">
+            <table className="nur-table nur-table--dense">
               <thead>
                 <tr>
                   <th>Товар</th>
@@ -906,7 +877,7 @@ const ShiftDetail = () => {
             </table>
           </div>
         )}
-      </div>
+      </PagePanel>
 
       <AlertModal
         open={alertModal.open}
@@ -917,7 +888,7 @@ const ShiftDetail = () => {
         onClose={closeAlert}
         onConfirm={handleConfirm}
       />
-    </div>
+    </PageShell>
   );
 };
 

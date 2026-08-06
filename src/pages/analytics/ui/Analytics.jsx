@@ -28,10 +28,16 @@ import { Line, Bar, Doughnut } from "react-chartjs-2";
 import { useSelector } from "react-redux";
 import api from "@shared/api";
 import { useUser } from "@entities/user";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import { useCash } from "@entities/cash";
 import { isStartPlan } from "@shared/lib/subscriptionPlan";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
 import "./Analytics.scss";
+import {
+  PageShell,
+  PageHeader,
+} from "@shared/ui/page-shell";
+import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 
 ChartJS.register(
   CategoryScale,
@@ -176,6 +182,26 @@ const Analytics = () => {
       ChartJS.defaults.borderColor = prevBorder;
     };
   }, [isDark]);
+
+  useEffect(() => {
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    // Mutate in place — do NOT replace defaults.animation. Chart.js
+    // Animations.configure() copies only Object.keys(defaults.animation);
+    // replacing the object drops keys like `type`/`fn`, so color animations
+    // resolve with interpolators[typeof from] (e.g. "string") → undefined
+    // and crash on destroy: "this._fn is not a function".
+    const animation = ChartJS.defaults.animation;
+    const prevDuration = animation.duration;
+    const prevEasing = animation.easing;
+    animation.duration = reduce ? 0 : 420;
+    animation.easing = "easeOutQuart";
+    return () => {
+      animation.duration = prevDuration;
+      animation.easing = prevEasing;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isStartTariff) return;
@@ -675,6 +701,7 @@ const Analytics = () => {
         {
           title: "Выручка",
           value: formatNumber(cards.revenue || "0"),
+          raw: Number(cards.revenue || 0),
           currency: "сом",
           icon: DollarSign,
           color: "#f7d617",
@@ -682,12 +709,14 @@ const Analytics = () => {
         {
           title: "Транзакции",
           value: formatNumber(cards.transactions || 0),
+          raw: Number(cards.transactions || 0),
           icon: ShoppingCart,
           color: "#f7d617",
         },
         {
           title: "Средний чек",
           value: formatNumber(cards.avg_check || "0"),
+          raw: Number(cards.avg_check || 0),
           currency: "сом",
           icon: BarChart3,
           color: "#f7d617",
@@ -695,6 +724,7 @@ const Analytics = () => {
         {
           title: "Клиенты",
           value: formatNumber(cards.clients || 0),
+          raw: Number(cards.clients || 0),
           icon: Users,
           color: "#f7d617",
         },
@@ -1598,25 +1628,23 @@ const Analytics = () => {
   };
 
   return (
-    <div className={`analytics-page${isDark ? " analytics-page--dark" : ""}`}>
-      <div className="analytics-page__header">
-        {/* <button className="analytics-page__back">
-          <ArrowLeft size={20} />
-        </button> */}
-        <div>
-          <h1 className="analytics-page__title">Аналитика</h1>
-          <p className="analytics-page__subtitle">
-            Статистика и отчеты за {monthName}
-          </p>
-        </div>
-        <button
-          className="analytics-page__filter-btn"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={20} />
-          Фильтры
-        </button>
-      </div>
+    <PageShell className={`analytics-page${isDark ? " analytics-page--dark" : ""}`}>
+      <PageHeader
+        title="Аналитика"
+        subtitle={`Статистика и отчеты за ${monthName}`}
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--secondary"
+            onClick={() => setShowFilters(!showFilters)}
+            title="Фильтры"
+            aria-label="Фильтры"
+          >
+            <Filter size={20} />
+            <span className="nur-btn__label">Фильтры</span>
+          </button>
+        }
+      />
 
       {/* Панель фильтров */}
       {showFilters && (
@@ -1991,7 +2019,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -2010,111 +2042,114 @@ const Analytics = () => {
           </div>
 
           {showRevenueModal && (
-            <div
-              className="analytics-revenue-modal__overlay"
-              role="presentation"
-              onClick={() => setShowRevenueModal(false)}
-            >
+            <ReactPortal wrapperId="analytics-revenue-modal">
               <div
-                className="analytics-revenue-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Детализация выручки"
-                onClick={(e) => e.stopPropagation()}
+                className="analytics-revenue-modal__overlay"
+                role="presentation"
+                onClick={() => setShowRevenueModal(false)}
               >
-                <div className="analytics-revenue-modal__head">
-                  <div className="analytics-revenue-modal__head-left">
-                    <span className="analytics-revenue-modal__head-icon">
-                      <DollarSign size={20} />
-                    </span>
-                    <div>
-                      <h3 className="analytics-revenue-modal__title">
-                        Выручка
-                      </h3>
-                      <p className="analytics-revenue-modal__subtitle">
-                        {formatNumber(analyticsData?.cards?.revenue || 0)} сом за
-                        период
-                      </p>
+                <div
+                  className="analytics-revenue-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Детализация выручки"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="analytics-revenue-modal__head">
+                    <div className="analytics-revenue-modal__head-left">
+                      <span className="analytics-revenue-modal__head-icon">
+                        <DollarSign size={20} />
+                      </span>
+                      <div>
+                        <h3 className="analytics-revenue-modal__title">
+                          Выручка
+                        </h3>
+                        <p className="analytics-revenue-modal__subtitle">
+                          {formatNumber(analyticsData?.cards?.revenue || 0)} сом
+                          за период
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="analytics-revenue-modal__close"
+                      onClick={() => setShowRevenueModal(false)}
+                      aria-label="Закрыть"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  <div className="analytics-revenue-modal__grid">
+                    <div className="analytics-revenue-modal__tile analytics-revenue-modal__tile--cost">
+                      <span className="analytics-revenue-modal__tile-icon">
+                        <Package size={18} />
+                      </span>
+                      <span className="analytics-revenue-modal__tile-label">
+                        Себестоимость
+                      </span>
+                      <span className="analytics-revenue-modal__tile-value">
+                        {formatNumber(analyticsData?.cards?.cogs || 0)}
+                        <em>сом</em>
+                      </span>
+                    </div>
+
+                    <div className="analytics-revenue-modal__tile analytics-revenue-modal__tile--profit">
+                      <span className="analytics-revenue-modal__tile-icon">
+                        <TrendingUp size={18} />
+                      </span>
+                      <span className="analytics-revenue-modal__tile-label">
+                        Валовая прибыль
+                      </span>
+                      <span className="analytics-revenue-modal__tile-value">
+                        {formatNumber(analyticsData?.cards?.gross_profit || 0)}
+                        <em>сом</em>
+                      </span>
+                    </div>
+
+                    <div className="analytics-revenue-modal__tile analytics-revenue-modal__tile--margin">
+                      <span className="analytics-revenue-modal__tile-icon">
+                        <BarChart3 size={18} />
+                      </span>
+                      <span className="analytics-revenue-modal__tile-label">
+                        Маржа
+                      </span>
+                      <span className="analytics-revenue-modal__tile-value">
+                        {Number(
+                          analyticsData?.cards?.margin_percent || 0,
+                        ).toLocaleString("ru-RU", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2,
+                        })}
+                        <em>%</em>
+                      </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="analytics-revenue-modal__close"
-                    onClick={() => setShowRevenueModal(false)}
-                    aria-label="Закрыть"
-                  >
-                    <X size={18} />
-                  </button>
+
+                  {analyticsData?.cards?.cogs_warning && (
+                    <div className="analytics-revenue-modal__warn">
+                      {analyticsData.cards.cogs_warning}
+                    </div>
+                  )}
                 </div>
-
-                <div className="analytics-revenue-modal__grid">
-                  <div className="analytics-revenue-modal__tile analytics-revenue-modal__tile--cost">
-                    <span className="analytics-revenue-modal__tile-icon">
-                      <Package size={18} />
-                    </span>
-                    <span className="analytics-revenue-modal__tile-label">
-                      Себестоимость
-                    </span>
-                    <span className="analytics-revenue-modal__tile-value">
-                      {formatNumber(analyticsData?.cards?.cogs || 0)}
-                      <em>сом</em>
-                    </span>
-                  </div>
-
-                  <div className="analytics-revenue-modal__tile analytics-revenue-modal__tile--profit">
-                    <span className="analytics-revenue-modal__tile-icon">
-                      <TrendingUp size={18} />
-                    </span>
-                    <span className="analytics-revenue-modal__tile-label">
-                      Валовая прибыль
-                    </span>
-                    <span className="analytics-revenue-modal__tile-value">
-                      {formatNumber(analyticsData?.cards?.gross_profit || 0)}
-                      <em>сом</em>
-                    </span>
-                  </div>
-
-                  <div className="analytics-revenue-modal__tile analytics-revenue-modal__tile--margin">
-                    <span className="analytics-revenue-modal__tile-icon">
-                      <BarChart3 size={18} />
-                    </span>
-                    <span className="analytics-revenue-modal__tile-label">
-                      Маржа
-                    </span>
-                    <span className="analytics-revenue-modal__tile-value">
-                      {Number(
-                        analyticsData?.cards?.margin_percent || 0,
-                      ).toLocaleString("ru-RU", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 2,
-                      })}
-                      <em>%</em>
-                    </span>
-                  </div>
-                </div>
-
-                {analyticsData?.cards?.cogs_warning && (
-                  <div className="analytics-revenue-modal__warn">
-                    {analyticsData.cards.cogs_warning}
-                  </div>
-                )}
               </div>
-            </div>
+            </ReactPortal>
           )}
 
           {showTxModal && (
-            <div
-              className="analytics-revenue-modal__overlay"
-              role="presentation"
-              onClick={() => setShowTxModal(false)}
-            >
+            <ReactPortal wrapperId="analytics-tx-modal">
               <div
-                className="analytics-revenue-modal analytics-tx-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Продажи по фильтру"
-                onClick={(e) => e.stopPropagation()}
+                className="analytics-revenue-modal__overlay"
+                role="presentation"
+                onClick={() => setShowTxModal(false)}
               >
+                <div
+                  className="analytics-revenue-modal analytics-tx-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Продажи по фильтру"
+                  onClick={(e) => e.stopPropagation()}
+                >
                 <div className="analytics-revenue-modal__head">
                   <div className="analytics-revenue-modal__head-left">
                     <span className="analytics-revenue-modal__head-icon">
@@ -2200,7 +2235,8 @@ const Analytics = () => {
                   )}
                 </div>
               </div>
-            </div>
+              </div>
+            </ReactPortal>
           )}
 
           <div className="analytics-page__chart-card analytics-page__chart-card--fit">
@@ -2336,17 +2372,20 @@ const Analytics = () => {
                         <td>{product.sold} шт</td>
                         <td>
                           <div className="analytics-page__bar-cell">
-                            <div
-                              className="analytics-page__bar-fill"
-                              style={{
-                                width: `${barPercentOfMax(
-                                  product.revenue,
-                                  salesData.topProducts.map((p) => p.revenue),
-                                )}%`,
-                              }}
-                            >
-                              {formatNumber(product.revenue)} сом
+                            <div className="analytics-page__bar-track">
+                              <div
+                                className="analytics-page__bar-fill"
+                                style={{
+                                  width: `${barPercentOfMax(
+                                    product.revenue,
+                                    salesData.topProducts.map((p) => p.revenue),
+                                  )}%`,
+                                }}
+                              />
                             </div>
+                            <span className="analytics-page__bar-value">
+                              {formatNumber(product.revenue)} сом
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -2390,17 +2429,20 @@ const Analytics = () => {
                         <td>{doc.quantity}</td>
                         <td>
                           <div className="analytics-page__bar-cell">
-                            <div
-                              className="analytics-page__bar-fill"
-                              style={{
-                                width: `${barPercentOfMax(
-                                  doc.amount,
-                                  salesData.documents.map((d) => d.amount),
-                                )}%`,
-                              }}
-                            >
-                              {formatCurrency(doc.amount, 0)}
+                            <div className="analytics-page__bar-track">
+                              <div
+                                className="analytics-page__bar-fill"
+                                style={{
+                                  width: `${barPercentOfMax(
+                                    doc.amount,
+                                    salesData.documents.map((d) => d.amount),
+                                  )}%`,
+                                }}
+                              />
                             </div>
+                            <span className="analytics-page__bar-value">
+                              {formatCurrency(doc.amount, 0)}
+                            </span>
                           </div>
                         </td>
                         <td>
@@ -2442,7 +2484,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -2558,17 +2604,20 @@ const Analytics = () => {
                         <td>{item.name}</td>
                         <td>
                           <div className="analytics-page__bar-cell">
-                            <div
-                              className="analytics-page__bar-fill"
-                              style={{
-                                width: `${barPercentOfMax(
-                                  item.stock,
-                                  warehouseData.lowStock.map((i) => i.stock),
-                                )}%`,
-                              }}
-                            >
-                              {formatAnalyticsQty(item.stock)}
+                            <div className="analytics-page__bar-track">
+                              <div
+                                className="analytics-page__bar-fill"
+                                style={{
+                                  width: `${barPercentOfMax(
+                                    item.stock,
+                                    warehouseData.lowStock.map((i) => i.stock),
+                                  )}%`,
+                                }}
+                              />
                             </div>
+                            <span className="analytics-page__bar-value">
+                              {formatAnalyticsQty(item.stock)}
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -2596,7 +2645,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -2791,7 +2844,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -2953,7 +3010,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -3177,7 +3238,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -3318,7 +3383,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -3395,7 +3464,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -3610,7 +3683,11 @@ const Analytics = () => {
                     <Icon size={24} style={{ color: kpi.color }} />
                   </div>
                   <div className="analytics-page__kpi-value">
-                    {kpi.value}
+                    {typeof kpi.raw === "number" && Number.isFinite(kpi.raw) ? (
+                      <AnimatedNumber value={kpi.raw} format={formatNumber} />
+                    ) : (
+                      kpi.value
+                    )}
                     {kpi.currency && (
                       <span className="analytics-page__kpi-currency">
                         {kpi.currency}
@@ -3819,7 +3896,7 @@ const Analytics = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 

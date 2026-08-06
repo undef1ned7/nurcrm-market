@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useLocation } from "react-router-dom";
 import { getCompany } from "@entities/user";
 import { getProfile, useUser } from "@entities/user";
 import {
@@ -7,7 +8,11 @@ import {
   shouldRedirectToCrm,
   clearTokens,
 } from "@shared/lib/authUtils";
-import { tryRedirectToBuildingApp, shouldSkipBuildingRedirect, clearSkipBuildingRedirectParam } from "@shared/lib/crossAppAuth";
+import {
+  tryRedirectToBuildingApp,
+  shouldSkipBuildingRedirect,
+  clearSkipBuildingRedirectParam,
+} from "@shared/lib/crossAppAuth";
 import { captureBuildingAppUrlFromSearch } from "@shared/lib/appUrls";
 import { getCompanySubscriptionStatus } from "@shared/lib/companySubscription";
 import {
@@ -17,26 +22,36 @@ import {
 import Loading from "@shared/ui/Loading/Loading";
 
 /**
- * Компонент для проверки аутентификации при загрузке приложения
- * @param {Object} props
- * @param {React.ReactNode} props.children - Дочерние компоненты
- * @param {Function} props.onProfileLoaded - Callback при загрузке профиля
+ * Компонент для проверки аутентификации при загрузке и смене маршрута.
+ * Должен жить внутри BrowserRouter (нужен useLocation).
  */
 const AuthGuard = ({ children, onProfileLoaded }) => {
   const [isCheckingToken, setIsCheckingToken] = useState(true);
   const dispatch = useDispatch();
+  const location = useLocation();
   const { accessToken } = useUser();
   const { profile, loading } = useUser();
+  const bootstrappedRef = useRef(false);
 
   const getProfileFunc = useCallback(async () => {
     await dispatch(getProfile()).unwrap();
   }, [dispatch]);
+
   useEffect(() => {
     if (loading) return;
     if (onProfileLoaded) {
       onProfileLoaded(profile);
     }
-  }, [dispatch, loading, onProfileLoaded, profile]);
+  }, [loading, onProfileLoaded, profile]);
+
+  // Быстрая проверка при каждой смене пути (закрывает / → /crm без токена)
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    const path = location.pathname;
+    if (!token && !isAllowedPathWithoutToken(path)) {
+      window.location.replace(DEFAULT_UNAUTHENTICATED_PATH);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const checkTokenValidity = async () => {
@@ -48,8 +63,6 @@ const AuthGuard = ({ children, onProfileLoaded }) => {
       const logoutFromBuilding = searchParams.get("logout") === "1";
       if (logoutFromBuilding || currentPath === "/crm/logout") {
         clearTokens();
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userData");
 
         if (logoutFromBuilding) {
           searchParams.delete("logout");
@@ -67,6 +80,7 @@ const AuthGuard = ({ children, onProfileLoaded }) => {
         }
 
         setIsCheckingToken(false);
+        bootstrappedRef.current = true;
         return;
       }
 
@@ -79,12 +93,14 @@ const AuthGuard = ({ children, onProfileLoaded }) => {
           return;
         }
         setIsCheckingToken(false);
+        bootstrappedRef.current = true;
         return;
       }
 
       if (!navigator.onLine) {
         console.warn("AuthGuard: нет сети, токен принят без проверки");
         setIsCheckingToken(false);
+        bootstrappedRef.current = true;
         return;
       }
 
@@ -111,6 +127,7 @@ const AuthGuard = ({ children, onProfileLoaded }) => {
               return;
             }
             setIsCheckingToken(false);
+            bootstrappedRef.current = true;
             return;
           }
 
@@ -147,12 +164,15 @@ const AuthGuard = ({ children, onProfileLoaded }) => {
         }
       } finally {
         setIsCheckingToken(false);
+        bootstrappedRef.current = true;
       }
     };
 
-    checkTokenValidity();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // Полная bootstrap-проверка только один раз; смена пути — лёгкий effect выше
+    if (!bootstrappedRef.current) {
+      checkTokenValidity();
+    }
+  }, [dispatch, getProfileFunc]);
 
   useEffect(() => {
     if (accessToken) {

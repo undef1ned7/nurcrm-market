@@ -1227,8 +1227,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
-import { IconButton } from "@mui/material";
-import { DarkMode as DarkModeIcon, LightMode as LightModeIcon } from "@mui/icons-material";
+import { Sun, Moon } from "lucide-react";
 import CafeReceiptPrinterSettings from "./CafeReceiptPrinterSettings";
 import CafeKitchenPrintersSettings from "./CafeKitchenPrintersSettings";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
@@ -1239,6 +1238,7 @@ import {
   normalizeMarketCashierSettings,
   updateMarketCashierSettings,
 } from "@shared/api/marketCashierSettings";
+import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
 
 /* helpers */
 const safeOrigin = () =>
@@ -1662,31 +1662,55 @@ const Settings = () => {
 
       const modalContent = document.createElement("div");
       modalContent.style.cssText = `
-        background: white;
+        background: var(--nur-surface);
+        color: var(--nur-text);
         padding: 24px;
         border-radius: 8px;
         max-width: 500px;
         width: 90%;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--nur-shadow-lg);
+        border: 1px solid var(--nur-border);
       `;
 
-      modalContent.innerHTML = `
-        <h3 style="margin:0 0 16px;font-size:18px;font-weight:600;">Токен для доступа к весам</h3>
-        <p style="margin:0 0 12px;color:#666;font-size:14px;">Скопируйте токен и сохраните его в безопасном месте:</p>
-        <div style="background:#f5f5f5;padding:12px;border-radius:4px;margin-bottom:16px;word-break:break-all;font-family:monospace;font-size:12px;">
-          ${tokenString}
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button id="copyTokenBtn" style="padding:8px 16px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;">Копировать</button>
-          <button id="closeModalBtn" style="padding:8px 16px;background:#e5e7eb;color:#374151;border:none;border-radius:4px;cursor:pointer;font-size:14px;">Закрыть</button>
-        </div>
-      `;
+      const title = document.createElement("h3");
+      title.style.cssText =
+        "margin:0 0 16px;font-size:18px;font-weight:600;color:var(--nur-text);";
+      title.textContent = "Токен для доступа к весам";
 
+      const hint = document.createElement("p");
+      hint.style.cssText = "margin:0 0 12px;color:var(--nur-muted);font-size:14px;";
+      hint.textContent =
+        "Скопируйте токен и сохраните его в безопасном месте:";
+
+      const tokenBox = document.createElement("div");
+      tokenBox.style.cssText =
+        "background:var(--nur-surface-3);color:var(--nur-text);padding:12px;border-radius:4px;margin-bottom:16px;word-break:break-all;font-family:monospace;font-size:12px;";
+      tokenBox.textContent = tokenString;
+
+      const actions = document.createElement("div");
+      actions.style.cssText =
+        "display:flex;gap:8px;justify-content:flex-end;";
+
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.textContent = "Копировать";
+      copyBtn.style.cssText =
+        "padding:8px 16px;background:var(--nur-info);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;";
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.textContent = "Закрыть";
+      closeBtn.style.cssText =
+        "padding:8px 16px;background:var(--nur-surface-3);color:var(--nur-text);border:1px solid var(--nur-border);border-radius:4px;cursor:pointer;font-size:14px;";
+
+      actions.appendChild(copyBtn);
+      actions.appendChild(closeBtn);
+      modalContent.appendChild(title);
+      modalContent.appendChild(hint);
+      modalContent.appendChild(tokenBox);
+      modalContent.appendChild(actions);
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
-
-      const copyBtn = modalContent.querySelector("#copyTokenBtn");
-      const closeBtn = modalContent.querySelector("#closeModalBtn");
 
       copyBtn.onclick = () => {
         navigator.clipboard
@@ -1719,7 +1743,7 @@ const Settings = () => {
     }
   };
 
-  const { mode, toggleMode } = useContext(ThemeModeContext);
+  const { mode, setMode } = useContext(ThemeModeContext);
 
   /* ===== Онлайн: ссылки ===== */
   const sectorName = useMemo(
@@ -1924,7 +1948,7 @@ const Settings = () => {
                 </h2>
 
                 <div className="settings__form-group">
-                  <label className="settings__label" htmlFor="companyName">
+                  <label className="nur-label" htmlFor="companyName">
                     Название компании
                   </label>
                   <div className="settings__input-wrapper">
@@ -1932,7 +1956,7 @@ const Settings = () => {
                       id="companyName"
                       name="name"
                       type="text"
-                      className="settings__input"
+                      className="nur-input"
                       placeholder="Введите название компании"
                       value={companyState.name}
                       onChange={handleCompanyChange}
@@ -1987,7 +2011,7 @@ const Settings = () => {
                     className="settings__form-group"
                     style={{ marginTop: "15px" }}
                   >
-                    <label className="settings__label" htmlFor={field.id}>
+                    <label className="nur-label" htmlFor={field.id}>
                       {field.label}
                     </label>
                     <div className="settings__input-wrapper">
@@ -1995,7 +2019,7 @@ const Settings = () => {
                         id={field.id}
                         name={field.id}
                         type="text"
-                        className="settings__input"
+                        className="nur-input"
                         placeholder={field.placeholder}
                         value={companyState[field.id] ?? ""}
                         onChange={handleCompanyChange}
@@ -2009,7 +2033,7 @@ const Settings = () => {
                   style={{ marginTop: "15px" }}
                 >
                   <label
-                    className="settings__label"
+                    className="nur-label"
                     htmlFor="scale_barcode_mode"
                   >
                     Режим штрихкода весов
@@ -2017,7 +2041,7 @@ const Settings = () => {
                   <select
                     id="scale_barcode_mode"
                     name="scale_barcode_mode"
-                    className="settings__select"
+                    className="nur-select"
                     value={companyState.scale_barcode_mode || "auto"}
                     onChange={handleCompanyChange}
                   >
@@ -2040,7 +2064,7 @@ const Settings = () => {
                     style={{ marginTop: "15px" }}
                   >
                     <label
-                      className="settings__label"
+                      className="nur-label"
                       htmlFor="cashier_password"
                     >
                       Пароль кассира для удаления из корзины
@@ -2050,7 +2074,7 @@ const Settings = () => {
                         id="cashier_password"
                         name="cashier_password"
                         type={showPassword.cashier ? "text" : "password"}
-                        className="settings__input"
+                        className="nur-input"
                         placeholder="Введите новый пароль кассира"
                         value={companyState.cashier_password ?? ""}
                         onChange={handleCompanyChange}
@@ -2073,7 +2097,7 @@ const Settings = () => {
             {profile?.role === "owner" && (
               <div className="settings__actions">
                 <button
-                  className="settings__btn settings__btn--primary"
+                  className="nur-btn nur-btn--primary"
                   type="submit"
                   disabled={saving}
                 >
@@ -2096,7 +2120,7 @@ const Settings = () => {
                 </button>
 
                 <button
-                  className="settings__btn settings__btn--secondary"
+                  className="nur-btn nur-btn--secondary"
                   type="button"
                   onClick={handleResetCompany}
                   disabled={saving}
@@ -2137,13 +2161,13 @@ const Settings = () => {
                   errors?.current_password ? (
                   <label
                     style={{ color: "red" }}
-                    className="settings__label"
+                    className="nur-label"
                     htmlFor="currentPassword"
                   >
                     {errors.current_password[0]}
                   </label>
                 ) : (
-                  <label className="settings__label" htmlFor="currentPassword">
+                  <label className="nur-label" htmlFor="currentPassword">
                     Текущий пароль
                   </label>
                 )}
@@ -2153,7 +2177,7 @@ const Settings = () => {
                     id="currentPassword"
                     name="current_password"
                     type={showPassword.current ? "text" : "password"}
-                    className="settings__input"
+                    className="nur-input"
                     placeholder="Введите текущий пароль"
                     value={formData.current_password}
                     onChange={handlePasswordInputChange}
@@ -2176,13 +2200,13 @@ const Settings = () => {
                 {!formData.new_password.trim() && errors?.new_password ? (
                   <label
                     style={{ color: "red" }}
-                    className="settings__label"
+                    className="nur-label"
                     htmlFor="newPassword"
                   >
                     {errors.new_password[0]}
                   </label>
                 ) : (
-                  <label className="settings__label" htmlFor="newPassword">
+                  <label className="nur-label" htmlFor="newPassword">
                     Новый пароль
                   </label>
                 )}
@@ -2192,7 +2216,7 @@ const Settings = () => {
                     id="newPassword"
                     name="new_password"
                     type={showPassword.new ? "text" : "password"}
-                    className="settings__input"
+                    className="nur-input"
                     placeholder="Введите новый пароль"
                     value={formData.new_password}
                     onChange={handlePasswordInputChange}
@@ -2236,13 +2260,13 @@ const Settings = () => {
                 {!formData.new_password2.trim() && errors?.new_password2 ? (
                   <label
                     style={{ color: "red" }}
-                    className="settings__label"
+                    className="nur-label"
                     htmlFor="repeatPassword"
                   >
                     {errors.new_password2[0]}
                   </label>
                 ) : (
-                  <label className="settings__label" htmlFor="repeatPassword">
+                  <label className="nur-label" htmlFor="repeatPassword">
                     Повторите новый пароль
                   </label>
                 )}
@@ -2252,7 +2276,7 @@ const Settings = () => {
                     id="repeatPassword"
                     name="new_password2"
                     type={showPassword.repeat ? "text" : "password"}
-                    className={`settings__input ${passwordsMismatch ? "error" : ""
+                    className={`nur-input ${passwordsMismatch ? "error" : ""
                       }`}
                     placeholder="Повторите новый пароль"
                     value={formData.new_password2}
@@ -2277,7 +2301,7 @@ const Settings = () => {
 
             <div className="settings__actions">
               <button
-                className="settings__btn settings__btn--primary"
+                className="nur-btn nur-btn--primary"
                 type="submit"
                 disabled={passwordsMismatch || saving}
                 title={passwordsMismatch ? "Пароли не совпадают" : undefined}
@@ -2301,7 +2325,7 @@ const Settings = () => {
               </button>
 
               <button
-                className="settings__btn settings__btn--secondary"
+                className="nur-btn nur-btn--secondary"
                 type="button"
                 onClick={handleResetPassword}
                 disabled={saving}
@@ -2331,7 +2355,7 @@ const Settings = () => {
                   без подтверждения. Владелец и админ удаляют без кода.
                 </p>
 
-                <label className="settings__label" htmlFor="delete_item_code">
+                <label className="nur-label" htmlFor="delete_item_code">
                   Код подтверждения (4–8 цифр)
                 </label>
                 <div className="settings__input-wrapper">
@@ -2340,7 +2364,7 @@ const Settings = () => {
                     name="delete_item_code"
                     type={showCashierDeleteCode ? "text" : "password"}
                     inputMode="numeric"
-                    className="settings__input"
+                    className="nur-input"
                     placeholder="Например, 1234"
                     autoComplete="off"
                     disabled={cashierSettingsLoading}
@@ -2366,7 +2390,7 @@ const Settings = () => {
                 {cashierSettings.deleteCode ? (
                   <button
                     type="button"
-                    className="settings__btn settings__btn--secondary"
+                    className="nur-btn nur-btn--secondary"
                     style={{ marginTop: 10, width: "auto" }}
                     onClick={() =>
                       setCashierSettings((prev) => ({
@@ -2402,7 +2426,7 @@ const Settings = () => {
                 </p>
 
                 <label
-                  className="settings__label"
+                  className="nur-label"
                   htmlFor="max_discount_percent"
                 >
                   Максимальная скидка, %
@@ -2414,7 +2438,7 @@ const Settings = () => {
                   min="0"
                   max="100"
                   step="0.01"
-                  className="settings__input"
+                  className="nur-input"
                   placeholder="Без ограничения"
                   disabled={cashierSettingsLoading}
                   value={cashierSettings.maxDiscountPercent}
@@ -2439,7 +2463,7 @@ const Settings = () => {
 
             <div className="settings__actions">
               <button
-                className="settings__btn settings__btn--primary"
+                className="nur-btn nur-btn--primary"
                 type="submit"
                 disabled={cashierSettingsSaving || cashierSettingsLoading}
               >
@@ -2466,7 +2490,7 @@ const Settings = () => {
 
                 <button
                   type="button"
-                  className="settings__btn settings__btn--primary"
+                  className="nur-btn nur-btn--primary"
                   onClick={handleCreateScalesToken}
                 >
                   Создать токен
@@ -2487,8 +2511,18 @@ const Settings = () => {
                 <span className="settings__emoji">🧩</span> Настройки интерфейса
               </h2>
 
-              <div className="settings__form-group">
-                <label className="settings__label settings__checkboxRow">
+              <div className="settings__prefRow">
+                <div className="settings__prefText">
+                  <span className="settings__prefLabel">
+                    Автозакрытие сайдбара
+                  </span>
+                  <p className="settings__prefHint">
+                    {sidebarAutoClose
+                      ? "Сайдбар будет автоматически закрываться при каждом переходе на новую страницу."
+                      : "Сайдбар будет оставаться открытым при переходах между страницами."}
+                  </p>
+                </div>
+                <label className="settings__switch">
                   <input
                     type="checkbox"
                     checked={sidebarAutoClose}
@@ -2500,36 +2534,63 @@ const Settings = () => {
                         String(newValue)
                       );
                     }}
-                    className="settings__checkbox"
+                    className="settings__switch-input"
                   />
-                  <span>
+                  <span className="settings__switch-track" aria-hidden="true">
+                    <span className="settings__switch-thumb" />
+                  </span>
+                  <span className="settings__switch-sr">
                     Автоматически закрывать сайдбар при переходе на другую
                     страницу
                   </span>
                 </label>
-
-                <p className="settings__mutedText settings__mutedText--indent">
-                  {sidebarAutoClose
-                    ? "Сайдбар будет автоматически закрываться при каждом переходе на новую страницу."
-                    : "Сайдбар будет оставаться открытым при переходах между страницами."}
-                </p>
               </div>
 
-              <div className="settings__form-group">
-                <h2 className="settings__smallTitle">Режим темы</h2>
-                <IconButton onClick={toggleMode} aria-label="toggle theme">
-                  {mode === "dark" ? (
-                    <LightModeIcon className="text-black" />
-                  ) : (
-                    <DarkModeIcon className="text-black" />
-                  )}
-                </IconButton>
+              <div className="settings__themeBlock">
+                <div className="settings__prefText">
+                  <span className="settings__prefLabel">Режим темы</span>
+                  <p className="settings__prefHint">
+                    Выберите светлое или тёмное оформление интерфейса. Применяется
+                    сразу.
+                  </p>
+                </div>
+
+                <div
+                  className="settings__themeToggle"
+                  role="radiogroup"
+                  aria-label="Режим темы"
+                >
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={mode === "light"}
+                    className={`settings__themeOption${
+                      mode === "light" ? " settings__themeOption--active" : ""
+                    }`}
+                    onClick={() => setMode("light")}
+                  >
+                    <Sun size={18} aria-hidden="true" />
+                    <span>Светлая</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={mode === "dark"}
+                    className={`settings__themeOption${
+                      mode === "dark" ? " settings__themeOption--active" : ""
+                    }`}
+                    onClick={() => setMode("dark")}
+                  >
+                    <Moon size={18} aria-hidden="true" />
+                    <span>Тёмная</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="settings__actions">
               <button
-                className="settings__btn settings__btn--primary"
+                className="nur-btn nur-btn--primary"
                 type="submit"
                 disabled={saving}
               >
@@ -2566,7 +2627,7 @@ const Settings = () => {
                         <div className="settings__onlineValue">
                           <div className="settings__onlineLinkBox">
                             <input
-                              className="settings__onlineInput"
+                              className="nur-input"
                               value={slugInput}
                               onChange={handleSlugChange}
                               placeholder="my-company"
@@ -2578,7 +2639,7 @@ const Settings = () => {
                             <div className="settings__onlineBtns">
                               <button
                                 type="button"
-                                className="settings__btnSmall settings__btnSmall--primary"
+                                className="nur-btn nur-btn--primary nur-btn--sm"
                                 onClick={handleSaveSlug}
                                 disabled={!canSaveSlug}
                               >
@@ -2609,14 +2670,14 @@ const Settings = () => {
                       <div className="settings__onlineLabel">URL</div>
                       <div className="settings__onlineLinkBox">
                         <input
-                          className="settings__onlineInput"
+                          className="nur-input"
                           value={onlineBookingUrl || ""}
                           readOnly
                         />
                         <div className="settings__onlineBtns">
                           <button
                             type="button"
-                            className="settings__btnSmall settings__btnSmall--secondary"
+                            className="nur-btn nur-btn--secondary nur-btn--sm"
                             onClick={() => copyText(onlineBookingUrl)}
                             disabled={!onlineBookingUrl}
                           >
@@ -2624,7 +2685,7 @@ const Settings = () => {
                           </button>
                           <button
                             type="button"
-                            className="settings__btnSmall settings__btnSmall--primary"
+                            className="nur-btn nur-btn--primary nur-btn--sm"
                             onClick={() => openUrl(onlineBookingUrl)}
                             disabled={!onlineBookingUrl}
                           >
@@ -2670,14 +2731,14 @@ const Settings = () => {
                       <div className="settings__onlineLabel">URL</div>
                       <div className="settings__onlineLinkBox">
                         <input
-                          className="settings__onlineInput"
+                          className="nur-input"
                           value={onlineMenuUrl || ""}
                           readOnly
                         />
                         <div className="settings__onlineBtns">
                           <button
                             type="button"
-                            className="settings__btnSmall settings__btnSmall--secondary"
+                            className="nur-btn nur-btn--secondary nur-btn--sm"
                             onClick={() => copyText(onlineMenuUrl)}
                             disabled={!onlineMenuUrl}
                           >
@@ -2685,7 +2746,7 @@ const Settings = () => {
                           </button>
                           <button
                             type="button"
-                            className="settings__btnSmall settings__btnSmall--primary"
+                            className="nur-btn nur-btn--primary nur-btn--sm"
                             onClick={() => openUrl(onlineMenuUrl)}
                             disabled={!onlineMenuUrl}
                           >
@@ -2765,39 +2826,11 @@ const Settings = () => {
   };
 
   return (
-    <div className="settings">
-      <div className="settings__header">
-        <div className="settings__header-content">
-          <h1 className="settings__main-title">Настройки</h1>
-          <p className="settings__subtitle">
-            Управление настройками вашей компании
-          </p>
-        </div>
-        <div className="settings__header-icon">
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M19.4 15C19.2669 15.3016 19.2272 15.6362 19.286 15.9606C19.3448 16.285 19.4995 16.5843 19.73 16.82L19.79 16.88C19.976 17.0657 20.1235 17.2863 20.2241 17.5291C20.3248 17.7719 20.3766 18.0322 20.3766 18.295C20.3766 18.5578 20.3248 18.8181 20.2241 19.0609C20.1235 19.3037 19.976 19.5243 19.79 19.71C19.6043 19.896 19.3837 20.0435 19.1409 20.1441C18.8981 20.2448 18.6378 20.2966 18.375 20.2966C18.1122 20.2966 17.8519 20.2448 17.6091 20.1441C17.3663 20.0435 17.1457 19.896 16.96 19.71L16.9 19.65C16.6643 19.4195 16.365 19.2648 16.0406 19.206C15.7162 19.1472 15.3816 19.1869 15.08 19.32C14.7842 19.4468 14.532 19.6572 14.3543 19.9255C14.1766 20.1938 14.0813 20.5082 14.08 20.83V21C14.08 21.5304 13.8693 22.0391 13.4942 22.4142C13.1191 22.7893 12.6104 23 12.08 23C11.5496 23 11.0409 22.7893 10.6658 22.4142C10.2907 22.0391 10.08 21.5304 10.08 21V20.91C10.0723 20.579 9.96512 20.2579 9.77251 19.9887C9.5799 19.7195 9.31074 19.5141 9 19.4"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-      </div>
+    <PageShell className="settings">
+      <PageHeader
+        title="Настройки"
+        subtitle="Управление настройками вашей компании"
+      />
 
       <Tabs
         activeTab={activeTab}
@@ -2806,11 +2839,13 @@ const Settings = () => {
         profile={profile}
       />
 
-      <div className="settings__content">{renderTabContent()}</div>
+      <PagePanel className="settings__panel">
+        <div className="settings__content">{renderTabContent()}</div>
+      </PagePanel>
 
       <div className="settings__footer">
         <button
-          className="settings__logout"
+          className="nur-btn nur-btn--ghost settings__logout"
           type="button"
           onClick={async () => {
             dispatch(logoutUser());
@@ -2831,7 +2866,7 @@ const Settings = () => {
         onClose={closeAlert}
         okText="Ок"
       />
-    </div>
+    </PageShell>
   );
 };
 

@@ -3,7 +3,6 @@ import { useDispatch } from "react-redux";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
-  Plus,
   Package,
   ShoppingBag,
   Scan,
@@ -37,6 +36,7 @@ import {
 import { countries } from "@shared/config/data/countries";
 import api from "@shared/api";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
+import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
 import "./AddProductPage.scss";
 
 // Импорт модулей
@@ -1166,33 +1166,27 @@ const AddProductPage = ({
         message={alertModal.message}
         onClose={() => setAlertModal({ ...alertModal, open: false })}
       />
-      <div className="add-product-page">
-        <div className="add-product-page__header">
-          <button
-            className="add-product-page__back"
-            onClick={handleReturn}
-          >
-            <ArrowLeft size={20} />
-            Вернуться к складу
-          </button>
-          <div className="add-product-page__title-section flex-col-reverse md:flex-row">
-            <div className="add-product-page__icon h-[40px] md:h-[64px] md:w-[64px] w-full">
-              <Plus size={24} className="md:w-[24px] w-[16px]" />
-            </div>
-            <div>
-              <h1 className="add-product-page__title">
-                {isEditMode ? "Редактирование товара" : "Создание товара"}
-              </h1>
-              <p className="add-product-page__subtitle">
-                {isEditMode
-                  ? "Измените информацию о товаре"
-                  : "Заполните информацию о новом товаре"}
-              </p>
-            </div>
-          </div>
-        </div>
+      <PageShell className="add-product-page">
+        <PageHeader
+          title={isEditMode ? "Редактирование товара" : "Создание товара"}
+          subtitle={
+            isEditMode
+              ? "Измените информацию о товаре"
+              : "Заполните информацию о новом товаре"
+          }
+          actions={
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary add-product-page__back"
+              onClick={handleReturn}
+            >
+              <ArrowLeft size={20} />
+              Вернуться к складу
+            </button>
+          }
+        />
 
-        <div className="add-product-page__content">
+        <PagePanel className="add-product-page__content">
           {/* Индикатор загрузки в режиме редактирования */}
           {isEditMode && loadingProduct && (
             <div style={{ textAlign: "center", padding: "40px" }}>
@@ -1924,14 +1918,16 @@ const AddProductPage = ({
                 {/* Кнопки действий */}
                 <div className="add-product-page__actions">
                   <button
-                    className="add-product-page__cancel-btn"
+                    type="button"
+                    className="nur-btn nur-btn--secondary add-product-page__cancel-btn"
                     onClick={handleReturn}
                     disabled={creating}
                   >
                     Отмена
                   </button>
                   <button
-                    className="add-product-page__submit-btn"
+                    type="button"
+                    className="nur-btn nur-btn--primary add-product-page__submit-btn"
                     onClick={handleSubmit}
                     disabled={creating}
                   >
@@ -1941,8 +1937,8 @@ const AddProductPage = ({
               </div>
             </>
           )}
-        </div>
-      </div>
+        </PagePanel>
+      </PageShell>
     </>
   );
 };
@@ -3432,14 +3428,16 @@ const MarketProductForm = ({
       {/* Кнопки действий */}
       <div className="market-product-form__actions">
         <button
-          className="market-product-form__cancel-btn"
+          type="button"
+          className="nur-btn nur-btn--secondary market-product-form__cancel-btn"
           onClick={handleReturn}
           disabled={creating}
         >
           Отмена
         </button>
         <button
-          className="market-product-form__submit-btn"
+          type="button"
+          className="nur-btn nur-btn--primary market-product-form__submit-btn"
           onClick={handleSubmit}
           disabled={creating}
         >

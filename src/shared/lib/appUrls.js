@@ -24,6 +24,16 @@ const BUILDING_APP_BY_HOST = {
 
 const DEFAULT_BUILDING_APP_URL = "https://stroy.nurcrm.kg";
 
+/** Разрешённые origin для handoff (anti open-redirect). */
+const ALLOWED_BUILDING_ORIGINS = new Set([
+  "https://stroy.nurcrm.kg",
+  "https://stroy.stage.nurcrm.kg",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+]);
+
 const BUILDING_APP_URL_STORAGE_KEY = "buildingAppUrl";
 
 const getCurrentHostname = () =>
@@ -39,6 +49,39 @@ const clearStoredBuildingAppUrl = () => {
     sessionStorage.removeItem(BUILDING_APP_URL_STORAGE_KEY);
   } catch {
     // ignore
+  }
+};
+
+const cleanBuildingAppUrlParam = (params) => {
+  params.delete(BUILDING_APP_URL_STORAGE_KEY);
+  const search = params.toString();
+  const cleanUrl =
+    window.location.pathname +
+    (search ? `?${search}` : "") +
+    window.location.hash;
+  window.history.replaceState({}, "", cleanUrl);
+};
+
+export const isAllowedBuildingAppOrigin = (originOrUrl) => {
+  try {
+    const origin = new URL(originOrUrl, "https://dummy.local").origin;
+    if (ALLOWED_BUILDING_ORIGINS.has(origin)) return true;
+
+    const fromEnv = trimTrailingSlash(import.meta.env.VITE_BUILDING_APP_URL);
+    if (fromEnv) {
+      const envOrigin = new URL(fromEnv, "https://dummy.local").origin;
+      if (origin === envOrigin) return true;
+    }
+
+    const mapped = getMappedBuildingAppUrl();
+    if (mapped) {
+      const mappedOrigin = new URL(mapped, "https://dummy.local").origin;
+      if (origin === mappedOrigin) return true;
+    }
+
+    return false;
+  } catch {
+    return false;
   }
 };
 
@@ -77,13 +120,18 @@ export const captureBuildingAppUrlFromSearch = () => {
   // Не сохраняем localhost, если мы уже на stage/prod
   if (getMappedBuildingAppUrl() && isLocalhostUrl(normalized)) {
     clearStoredBuildingAppUrl();
-    params.delete(BUILDING_APP_URL_STORAGE_KEY);
-    const search = params.toString();
-    const cleanUrl =
-      window.location.pathname +
-      (search ? `?${search}` : "") +
-      window.location.hash;
-    window.history.replaceState({}, "", cleanUrl);
+    cleanBuildingAppUrlParam(params);
+    return null;
+  }
+
+  // Open-redirect guard: только allowlisted origins
+  if (!isAllowedBuildingAppOrigin(normalized)) {
+    console.warn(
+      "captureBuildingAppUrlFromSearch: rejected untrusted buildingAppUrl",
+      normalized,
+    );
+    clearStoredBuildingAppUrl();
+    cleanBuildingAppUrlParam(params);
     return null;
   }
 
@@ -93,14 +141,7 @@ export const captureBuildingAppUrlFromSearch = () => {
     // sessionStorage may be unavailable in private mode
   }
 
-  params.delete(BUILDING_APP_URL_STORAGE_KEY);
-  const search = params.toString();
-  const cleanUrl =
-    window.location.pathname +
-    (search ? `?${search}` : "") +
-    window.location.hash;
-  window.history.replaceState({}, "", cleanUrl);
-
+  cleanBuildingAppUrlParam(params);
   return normalized;
 };
 
@@ -117,6 +158,11 @@ export const getResolvedBuildingAppUrl = () => {
       if (mapped && isLocalhostUrl(normalized)) {
         clearStoredBuildingAppUrl();
         return mapped;
+      }
+
+      if (!isAllowedBuildingAppOrigin(normalized)) {
+        clearStoredBuildingAppUrl();
+        return getBuildingAppUrl();
       }
 
       if (!isLocalhostUrl(normalized) || !mapped) {

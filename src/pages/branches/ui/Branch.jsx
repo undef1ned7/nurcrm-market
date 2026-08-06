@@ -26,9 +26,18 @@ import {
 } from "@entities/branch";
 import { clearErrors } from "@entities/branch";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import "./Branch.scss";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { useConfirm } from "@shared/hooks/useDialog";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+  PagePanel,
+  EmptyState,
+  StatusChip,
+} from "@shared/ui/page-shell";
 
 // Список популярных часовых поясов
 const TIMEZONES = [
@@ -415,32 +424,35 @@ const Branch = () => {
   };
 
   return (
-    <section className="branch">
-      <div className="branch__header">
-        <div>
-          <h2 className="branch__title">Филиалы</h2>
-          <div className="branch__subtitle">Управление филиалами компании</div>
-        </div>
-
-        <div className="branch__actions">
-          <div className="branch__search">
-            <FaSearch className="branch__search-icon" />
-            <input
-              className="branch__search-input"
-              placeholder="Поиск: название, адрес, телефон, email…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-
+    <PageShell className="branch">
+      <PageHeader
+        title="Филиалы"
+        subtitle="Управление филиалами компании"
+        actions={
           <button
-            className="branch__btn branch__btn--primary"
+            type="button"
+            className="nur-btn nur-btn--primary"
             onClick={openCreate}
+            title="Новый филиал"
+            aria-label="Новый филиал"
           >
-            <FaPlus /> Новый филиал
+            <FaPlus />
+            <span className="nur-btn__label">Новый филиал</span>
           </button>
+        }
+      />
+
+      <FilterBar className="branch__toolbar">
+        <div className="branch__search">
+          <FaSearch className="branch__search-icon" />
+          <input
+            className="nur-input branch__search-input"
+            placeholder="Поиск: название, адрес, телефон, email…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </div>
-      </div>
+      </FilterBar>
 
       {error && !loading && (
         <div className="branch__alert branch__alert--error">
@@ -448,7 +460,7 @@ const Branch = () => {
         </div>
       )}
 
-      <div className="branch__list">
+      <PagePanel className="branch__list" flush>
         {loading && (
           <div className="branch__alert branch__alert--info">Загрузка…</div>
         )}
@@ -465,10 +477,7 @@ const Branch = () => {
                     <h3 className="branch__name">
                       {branch.name || "Без названия"}
                     </h3>
-                    <span
-                      className={`branch__status branch__status--${branch.is_active ? "active" : "inactive"
-                        }`}
-                    >
+                    <StatusChip tone={branch.is_active ? "success" : "default"}>
                       {branch.is_active ? (
                         <>
                           <FaCheckCircle /> Активен
@@ -478,7 +487,7 @@ const Branch = () => {
                           <FaTimesCircle /> Неактивен
                         </>
                       )}
-                    </span>
+                    </StatusChip>
                   </div>
                   <div className="branch__meta">
                     {branch.address && (
@@ -511,15 +520,18 @@ const Branch = () => {
 
               <div className="branch__rowActions">
                 <button
-                  className="branch__btn branch__btn--secondary"
+                  type="button"
+                  className="nur-btn nur-btn--secondary nur-btn--sm"
                   onClick={() => navigate(`/crm/branch/${branch.id}`)}
                   title="Просмотр деталей"
                 >
                   <FaEye /> Просмотр
                 </button>
                 <button
-                  className={`branch__btn branch__btn--${branch.is_active ? "warning" : "success"
-                    }`}
+                  type="button"
+                  className={`nur-btn nur-btn--sm ${
+                    branch.is_active ? "nur-btn--ghost" : "nur-btn--primary"
+                  }`}
                   onClick={() => toggleActive(branch)}
                   title={branch.is_active ? "Деактивировать" : "Активировать"}
                 >
@@ -534,13 +546,15 @@ const Branch = () => {
                   )}
                 </button>
                 <button
-                  className="branch__btn branch__btn--secondary"
+                  type="button"
+                  className="nur-btn nur-btn--secondary nur-btn--sm"
                   onClick={() => openEdit(branch)}
                 >
                   <FaEdit /> Изменить
                 </button>
                 <button
-                  className="branch__btn branch__btn--danger"
+                  type="button"
+                  className="nur-btn nur-btn--danger nur-btn--sm"
                   onClick={() => handleDelete(branch.id)}
                 >
                   <FaTrash /> Удалить
@@ -550,194 +564,212 @@ const Branch = () => {
           ))}
 
         {!loading && !filtered.length && branches.length === 0 && (
-          <div className="branch__alert branch__alert--info">
-            Филиалы не найдены. Создайте первый филиал.
-          </div>
+          <EmptyState
+            title="Филиалы не найдены"
+            text="Создайте первый филиал."
+            action={
+              <button
+                type="button"
+                className="nur-btn nur-btn--primary"
+                onClick={openCreate}
+              >
+                <FaPlus /> Новый филиал
+              </button>
+            }
+          />
         )}
 
         {!loading && !filtered.length && branches.length > 0 && (
-          <div className="branch__alert branch__alert--info">
-            Ничего не найдено по запросу «{query}».
-          </div>
+          <EmptyState
+            title="Ничего не найдено"
+            text={`По запросу «${query}» совпадений нет.`}
+          />
         )}
-      </div>
+      </PagePanel>
 
       {/* Модалка: создать/редактировать */}
       {modalOpen && (
-        <div className="branch__modal-overlay" onClick={closeModal}>
-          <div className="branch__modal" onClick={(e) => e.stopPropagation()}>
-            <div className="branch__modal-header">
-              <h3 className="branch__modal-title">
-                {editingId == null ? "Новый филиал" : "Изменить филиал"}
-              </h3>
-              <button
-                className="branch__icon-btn"
-                onClick={closeModal}
-                disabled={creating || updating}
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <form className="branch__form" onSubmit={saveBranch}>
-              {(formError || createError || updateError) && (
-                <div className="branch__alert branch__alert--error">
-                  {formError ||
-                    createError?.detail ||
-                    createError?.message ||
-                    updateError?.detail ||
-                    updateError?.message ||
-                    String(createError || updateError || "")}
-                </div>
-              )}
-
-              <div className="branch__form-grid">
-                <div className="branch__field branch__field--full">
-                  <label className="branch__label">
-                    Название филиала <span className="branch__required">*</span>
-                  </label>
-                  <input
-                    className="branch__input"
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, name: e.target.value }))
-                    }
-                    required
-                    minLength={1}
-                    maxLength={128}
-                    placeholder="Например: Филиал на ул. Ленина"
-                  />
-                </div>
-
-                <div className="branch__field">
-                  <label className="branch__label">Код филиала (slug)</label>
-                  <input
-                    className="branch__input"
-                    value={form.code}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, code: e.target.value }))
-                    }
-                    maxLength={64}
-                    pattern="^[-a-zA-Z0-9_]+$"
-                    placeholder="spb, moscow, online"
-                  />
-                  <small className="branch__hint">
-                    Только латинские буквы, цифры, дефисы и подчеркивания
-                  </small>
-                </div>
-
-                <div className="branch__field">
-                  <label className="branch__label">
-                    Часовой пояс <span className="branch__required">*</span>
-                  </label>
-                  <select
-                    className="branch__input branch__select"
-                    value={form.timezone}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, timezone: e.target.value }))
-                    }
-                    required
-                  >
-                    {TIMEZONES.map((tz) => (
-                      <option key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="branch__field branch__field--full">
-                  <label className="branch__label">Адрес</label>
-                  <input
-                    className="branch__input"
-                    value={form.address}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, address: e.target.value }))
-                    }
-                    maxLength={255}
-                    placeholder="Полный адрес филиала"
-                  />
-                </div>
-
-                <div className="branch__field">
-                  <label className="branch__label">Телефон</label>
-                  <input
-                    className="branch__input"
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, phone: e.target.value }))
-                    }
-                    maxLength={32}
-                    placeholder="+996 XXX XXX XXX"
-                  />
-                </div>
-
-                <div className="branch__field">
-                  <label className="branch__label">Email</label>
-                  <input
-                    className="branch__input"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, email: e.target.value }))
-                    }
-                    maxLength={254}
-                    placeholder="branch@example.com"
-                  />
-                </div>
-
-                <div className="branch__field branch__field--full">
-                  <label className="branch__label branch__label--checkbox">
-                    <input
-                      type="checkbox"
-                      checked={form.is_active}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, is_active: e.target.checked }))
-                      }
-                      className="branch__checkbox"
-                    />
-                    <span>Филиал активен</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="branch__form-actions">
+        <ReactPortal wrapperId="branch-edit-modal">
+          <div className="branch__modal-overlay" onClick={closeModal}>
+            <div className="branch__modal" onClick={(e) => e.stopPropagation()}>
+              <div className="branch__modal-header">
+                <h3 className="branch__modal-title">
+                  {editingId == null ? "Новый филиал" : "Изменить филиал"}
+                </h3>
                 <button
-                  type="button"
-                  className="branch__btn branch__btn--secondary"
+                  className="branch__icon-btn"
                   onClick={closeModal}
                   disabled={creating || updating}
                 >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  className="branch__btn branch__btn--primary"
-                  disabled={creating || updating}
-                >
-                  {creating || updating
-                    ? "Сохранение…"
-                    : editingId == null
-                      ? "Создать"
-                      : "Сохранить"}
+                  <FaTimes />
                 </button>
               </div>
-            </form>
+
+              <form className="branch__form" onSubmit={saveBranch}>
+                {(formError || createError || updateError) && (
+                  <div className="branch__alert branch__alert--error">
+                    {formError ||
+                      createError?.detail ||
+                      createError?.message ||
+                      updateError?.detail ||
+                      updateError?.message ||
+                      String(createError || updateError || "")}
+                  </div>
+                )}
+
+                <div className="branch__form-grid">
+                  <div className="branch__field branch__field--full">
+                    <label className="nur-label">
+                      Название филиала{" "}
+                      <span className="branch__required">*</span>
+                    </label>
+                    <input
+                      className="nur-input"
+                      value={form.name}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, name: e.target.value }))
+                      }
+                      required
+                      minLength={1}
+                      maxLength={128}
+                      placeholder="Например: Филиал на ул. Ленина"
+                    />
+                  </div>
+
+                  <div className="branch__field">
+                    <label className="nur-label">Код филиала (slug)</label>
+                    <input
+                      className="nur-input"
+                      value={form.code}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, code: e.target.value }))
+                      }
+                      maxLength={64}
+                      pattern="^[-a-zA-Z0-9_]+$"
+                      placeholder="spb, moscow, online"
+                    />
+                    <small className="branch__hint">
+                      Только латинские буквы, цифры, дефисы и подчеркивания
+                    </small>
+                  </div>
+
+                  <div className="branch__field">
+                    <label className="nur-label">
+                      Часовой пояс <span className="branch__required">*</span>
+                    </label>
+                    <select
+                      className="nur-select"
+                      value={form.timezone}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, timezone: e.target.value }))
+                      }
+                      required
+                    >
+                      {TIMEZONES.map((tz) => (
+                        <option key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="branch__field branch__field--full">
+                    <label className="nur-label">Адрес</label>
+                    <input
+                      className="nur-input"
+                      value={form.address}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, address: e.target.value }))
+                      }
+                      maxLength={255}
+                      placeholder="Полный адрес филиала"
+                    />
+                  </div>
+
+                  <div className="branch__field">
+                    <label className="nur-label">Телефон</label>
+                    <input
+                      className="nur-input"
+                      type="tel"
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, phone: e.target.value }))
+                      }
+                      maxLength={32}
+                      placeholder="+996 XXX XXX XXX"
+                    />
+                  </div>
+
+                  <div className="branch__field">
+                    <label className="nur-label">Email</label>
+                    <input
+                      className="nur-input"
+                      type="email"
+                      value={form.email}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, email: e.target.value }))
+                      }
+                      maxLength={254}
+                      placeholder="branch@example.com"
+                    />
+                  </div>
+
+                  <div className="branch__field branch__field--full">
+                    <label className="nur-label branch__label--checkbox">
+                      <input
+                        type="checkbox"
+                        checked={form.is_active}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            is_active: e.target.checked,
+                          }))
+                        }
+                        className="branch__checkbox"
+                      />
+                      <span>Филиал активен</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="branch__form-actions">
+                  <button
+                    type="button"
+                    className="nur-btn nur-btn--ghost"
+                    onClick={closeModal}
+                    disabled={creating || updating}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    className="nur-btn nur-btn--primary"
+                    disabled={creating || updating}
+                  >
+                    {creating || updating
+                      ? "Сохранение…"
+                      : editingId == null
+                        ? "Создать"
+                        : "Сохранить"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </ReactPortal>
       )}
 
       {/* Модалка детального просмотра */}
       {detailModalOpen && selectedBranch && (
-        <div
-          className="branch__modal-overlay"
-          onClick={() => setDetailModalOpen(false)}
-        >
+        <ReactPortal wrapperId="branch-detail-modal">
           <div
-            className="branch__modal branch__modal--detail"
-            onClick={(e) => e.stopPropagation()}
+            className="branch__modal-overlay"
+            onClick={() => setDetailModalOpen(false)}
           >
+            <div
+              className="branch__modal branch__modal--detail"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="branch__modal-header">
               <h3 className="branch__modal-title">Детали филиала</h3>
               <button
@@ -864,14 +896,14 @@ const Branch = () => {
             <div className="branch__form-actions">
               <button
                 type="button"
-                className="branch__btn branch__btn--secondary"
+                className="nur-btn nur-btn--ghost"
                 onClick={() => setDetailModalOpen(false)}
               >
                 Закрыть
               </button>
               <button
                 type="button"
-                className="branch__btn branch__btn--primary"
+                className="nur-btn nur-btn--primary"
                 onClick={() => {
                   setDetailModalOpen(false);
                   openEdit(selectedBranch);
@@ -881,10 +913,10 @@ const Branch = () => {
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </ReactPortal>
       )}
 
-      {/* AlertModal для уведомлений */}
       <AlertModal
         open={alertModal.open}
         type={alertModal.type}
@@ -892,7 +924,7 @@ const Branch = () => {
         message={alertModal.message}
         onClose={() => setAlertModal({ ...alertModal, open: false })}
       />
-    </section>
+    </PageShell>
   );
 };
 

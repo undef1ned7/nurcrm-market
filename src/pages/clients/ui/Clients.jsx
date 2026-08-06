@@ -578,9 +578,15 @@ import { ChevronDown, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import "./Clients.scss";
 import api from "@shared/api";
 import { useUser } from "@entities/user";
-import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import Modal from "@shared/ui/Modal/Modal";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+  PagePanel,
+  StatusChip,
+} from "@shared/ui/page-shell";
 
 const HostelClients = lazy(() => import("@shared/ui/legacy-hostel/Clients/Clients"));
 
@@ -1055,9 +1061,17 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
   }
 
   // ───────────────────────── остальные вкладки
+  const createLabel =
+    activeTab === "clients"
+      ? "Новый клиент"
+      : activeTab === "suppliers"
+        ? "Новый поставщик"
+        : sectorName === "Строительная компания"
+          ? "Новый подрядчик"
+          : "Новый реализатор";
+
   return (
-    <div className="clients-page">
-      {/* Tabs */}
+    <PageShell className="clients-page">
       {!hideTabs && (
         <nav className="clients-tabs" aria-label="Секции">
           {TABS.map((t) => (
@@ -1075,89 +1089,72 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
         </nav>
       )}
 
-      {/* Header */}
-      <div className="clients-header">
-        <div className="clients-header__left">
-          <div className="clients-header__icon">
-            <div className="clients-header__icon-box">👥</div>
-          </div>
-          <div className="clients-header__title-section">
-            <h1 className="clients-header__title">{title}</h1>
-            <p className="clients-header__subtitle">
-              Список {title.toLowerCase()} и быстрый переход в карточку
-            </p>
-          </div>
-        </div>
-        {activeTab !== "debtors" && (
-          <button
-            className="clients-header__create-btn"
-            onClick={() => setIsAddOpen(true)}
-          >
-            <Plus size={16} />
-            {activeTab === "clients"
-              ? "Новый клиент"
-              : activeTab === "suppliers"
-                ? "Новый поставщик"
-                : sectorName === "Строительная компания"
-                  ? "Новый подрядчик"
-                  : "Новый реализатор"}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title={title}
+        subtitle={`Список ${title.toLowerCase()} и быстрый переход в карточку`}
+        actions={
+          activeTab !== "debtors" ? (
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={() => setIsAddOpen(true)}
+              title={createLabel}
+              aria-label={createLabel}
+            >
+              <Plus size={16} />
+              <span className="nur-btn__label">{createLabel}</span>
+            </button>
+          ) : null
+        }
+      />
 
-      {/* Search and Filters */}
-      <div className="clients-search-section">
+      <FilterBar className="clients-page__toolbar">
         <div className="clients-search">
           <Search className="clients-search__icon" size={18} />
           <input
             type="text"
-            className="clients-search__input"
+            className="nur-input clients-search__input"
             placeholder="Поиск по ФИО или телефону..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="clients-search__info">
-          <span>
-            Всего: {rows.length} • Найдено: {filtered.length}
-          </span>
+        <StatusChip>
+          Всего: {rows.length} · Найдено: {filtered.length}
+        </StatusChip>
 
-          {/* View toggle */}
-          <div className="clients-search__view-toggle">
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`clients-view-btn ${
-                viewMode === "table" ? "clients-view-btn--active" : ""
-              }`}
-            >
-              <Table2 size={16} />
-              Таблица
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setViewMode("cards")}
-              className={`clients-view-btn ${
-                viewMode === "cards" ? "clients-view-btn--active" : ""
-              }`}
-            >
-              <LayoutGrid size={16} />
-              Карточки
-            </button>
-          </div>
+        <div className="clients-search__view-toggle">
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={`nur-btn nur-btn--sm ${
+              viewMode === "table" ? "nur-btn--primary" : "nur-btn--secondary"
+            }`}
+          >
+            <Table2 size={16} />
+            Таблица
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("cards")}
+            className={`nur-btn nur-btn--sm ${
+              viewMode === "cards" ? "nur-btn--primary" : "nur-btn--secondary"
+            }`}
+          >
+            <LayoutGrid size={16} />
+            Карточки
+          </button>
         </div>
-      </div>
+      </FilterBar>
 
       {error && <div className="clients-error">{error}</div>}
 
-      {/* Table/Cards Container */}
-      <DataContainer>
+      <PagePanel flush>
         <div className="clients-table-container">
           {viewMode === "table" && (
-            <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <table className="clients-table w-full min-w-[800px]">
+            <div className="nur-table-wrap">
+              <table className="nur-table clients-table">
                 <thead>
                   <tr>
                     <th>№</th>
@@ -1219,11 +1216,25 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
           {viewMode === "cards" && (
             <div className="block">
               {loading ? (
-                <div className="clients-table__loading rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
+                <div
+                  className="clients-table__loading rounded-2xl p-6 text-center"
+                  style={{
+                    border: "1px solid var(--nur-border)",
+                    background: "var(--nur-surface)",
+                    color: "var(--nur-muted)",
+                  }}
+                >
                   Загрузка...
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="clients-table__empty rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
+                <div
+                  className="clients-table__empty rounded-2xl p-6 text-center"
+                  style={{
+                    border: "1px solid var(--nur-border)",
+                    background: "var(--nur-surface)",
+                    color: "var(--nur-muted)",
+                  }}
+                >
                   {debouncedSearch ? "Ничего не найдено" : "Нет данных"}
                 </div>
               ) : (
@@ -1279,7 +1290,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
             </div>
           )}
         </div>
-      </DataContainer>
+      </PagePanel>
 
       <Modal
         open={isAddOpen}
@@ -1459,7 +1470,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
           <div className="clientCreateModal__actions">
             <button
               type="button"
-              className="clientCreateModal__btn clientCreateModal__btn--ghost"
+              className="nur-btn nur-btn--ghost"
               onClick={handleAddCancel}
               disabled={addSaving}
             >
@@ -1467,7 +1478,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
             </button>
             <button
               type="button"
-              className="clientCreateModal__btn clientCreateModal__btn--primary"
+              className="nur-btn nur-btn--primary"
               onClick={handleAddSave}
               disabled={!canSaveAdd}
               title={!canSaveAdd ? "Заполните имя и телефон" : ""}
@@ -1477,6 +1488,6 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 }

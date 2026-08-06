@@ -8,7 +8,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #f5f5f5;
+  background: var(--nur-bg);
+  color: var(--nur-text);
   overflow: hidden;
   z-index: 1000;
 
@@ -17,12 +18,13 @@
     align-items: center;
     gap: 12px;
     padding: 12px 20px;
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--nur-surface);
+    border-bottom: 1px solid var(--nur-border);
     width: 100%;
     // max-width: 1400px;
     margin: 0 auto;
     box-sizing: border-box;
+    box-shadow: var(--nur-shadow-sm);
   }
 
   &__back-btn {
@@ -38,7 +40,7 @@
     transition: background 0.2s;
 
     &:hover {
-      background: #f5f5f5;
+      background: var(--nur-bg);
     }
   }
 
@@ -46,12 +48,12 @@
     font-size: 20px;
     font-weight: 700;
     margin: 0;
-    color: #111827;
+    color: var(--nur-text);
   }
 
   &__total {
     font-size: 14px;
-    color: #6b7280;
+    color: var(--nur-muted);
     margin: 2px 0 0 0;
   }
 
@@ -59,10 +61,10 @@
     margin: 0 0 12px;
     padding: 10px 12px;
     border-radius: 8px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
+    background: var(--nur-warning-soft);
+    border: 1px solid var(--nur-primary);
     font-size: 12px;
-    color: #92400e;
+    color: var(--nur-warning);
     line-height: 1.4;
 
     code {
@@ -76,14 +78,14 @@
     gap: 6px;
     margin-bottom: 14px;
     font-size: 13px;
-    color: #374151;
+    color: var(--nur-text-2);
   }
 
   &__split-total {
     margin: 0;
     font-size: 13px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
   }
 
   &__content {
@@ -118,7 +120,7 @@
   }
 
   &__section {
-    background: white;
+    background: var(--nur-surface);
     border-radius: 12px;
     padding: 20px;
   }
@@ -126,7 +128,7 @@
   &__section-title {
     font-size: 12px;
     font-weight: 700;
-    color: #6b7280;
+    color: var(--nur-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0 0 12px 0;
@@ -144,19 +146,19 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 14px;
-    background: white;
-    border: 2px solid #e5e7eb;
+    background: var(--nur-surface);
+    border: 2px solid var(--nur-border);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
 
     &:hover {
-      border-color: #d1d5db;
+      border-color: var(--nur-border-strong);
     }
 
     &--active {
-      border-color: #f7d617;
-      background: #fffbeb;
+      border-color: var(--nur-primary, #f7d74f);
+      background: var(--nur-warning-soft);
     }
   }
 
@@ -167,24 +169,24 @@
   &__method-label {
     font-size: 14px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     margin-bottom: 2px;
   }
 
   &__method-description {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--nur-muted);
   }
 
   &__method-check {
     width: 20px;
     height: 20px;
-    background: #f7d617;
+    background: var(--nur-primary, #f7d74f);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #111827;
+    color: var(--nur-text);
     font-weight: 700;
     font-size: 12px;
   }
@@ -197,23 +199,23 @@
     overflow-y: hidden;
     padding-bottom: 8px;
     scrollbar-width: thin;
-    scrollbar-color: #d1d5db #f5f5f5;
+    scrollbar-color: var(--nur-border-strong) var(--nur-bg);
 
     &::-webkit-scrollbar {
       height: 6px;
     }
 
     &::-webkit-scrollbar-track {
-      background: #f5f5f5;
+      background: var(--nur-bg);
       border-radius: 3px;
     }
 
     &::-webkit-scrollbar-thumb {
-      background: #d1d5db;
+      background: var(--nur-border-strong);
       border-radius: 3px;
 
       &:hover {
-        background: #9ca3af;
+        background: var(--nur-muted);
       }
     }
   }
@@ -224,8 +226,8 @@
     justify-content: center;
     align-items: center;
     padding: 12px;
-    background: white;
-    border: 2px solid #e5e7eb;
+    background: var(--nur-surface);
+    border: 2px solid var(--nur-border);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
@@ -235,14 +237,14 @@
     white-space: nowrap;
 
     &:hover {
-      border-color: #d1d5db;
+      border-color: var(--nur-border-strong);
       transform: translateY(-2px);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     &--active {
-      border-color: #f7d617;
-      background: #fffbeb;
+      border-color: var(--nur-primary, #f7d74f);
+      background: var(--nur-warning-soft);
     }
   }
 
@@ -281,7 +283,7 @@
   &__bank-name {
     font-size: 14px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     text-align: center;
   }
 
@@ -291,12 +293,12 @@
     right: 4px;
     width: 20px;
     height: 20px;
-    background: #f7d617;
+    background: var(--nur-primary, #f7d74f);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #111827;
+    color: var(--nur-text);
     font-weight: 700;
     font-size: 12px;
     z-index: 1;
@@ -307,7 +309,7 @@
     align-items: flex-start;
     gap: 12px;
     padding: 12px;
-    background: #f9fafb;
+    background: var(--nur-surface-2);
     border-radius: 8px;
   }
 
@@ -315,7 +317,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #f7d617;
+    background: var(--nur-primary, #f7d74f);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -332,54 +334,54 @@
     gap: 10px;
     font-size: 14px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     margin-bottom: 6px;
   }
 
   &__customer-change {
     font-size: 12px;
-    color: #3b82f6;
+    color: var(--nur-info);
     background: none;
     border: none;
     cursor: pointer;
     text-decoration: underline;
 
     &:hover {
-      color: #2563eb;
+      color: var(--nur-info);
     }
   }
 
   &__customer-phone {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--nur-muted);
     margin-bottom: 6px;
   }
 
   &__customer-debt {
     font-size: 12px;
-    color: #ef4444;
+    color: var(--nur-danger);
     font-weight: 600;
   }
 
   &__select-customer-btn {
     width: 100%;
     padding: 12px;
-    background: #f9fafb;
-    border: 2px dashed #d1d5db;
+    background: var(--nur-surface-2);
+    border: 2px dashed var(--nur-border-strong);
     border-radius: 8px;
     font-size: 14px;
-    color: #6b7280;
+    color: var(--nur-muted);
     cursor: pointer;
     transition: all 0.2s;
 
     &:hover {
-      background: #f5f5f5;
-      border-color: #9ca3af;
+      background: var(--nur-bg);
+      border-color: var(--nur-muted);
     }
   }
 
   &__amount-section {
-    background: white;
+    background: var(--nur-surface);
     border-radius: 12px;
     padding: 20px;
   }
@@ -394,13 +396,13 @@
     font-size: 36px;
     font-weight: 700;
     text-align: center;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--nur-border);
     border-radius: 8px;
     outline: none;
     transition: border-color 0.2s;
 
     &:focus {
-      border-color: #f7d617;
+      border-color: var(--nur-primary, #f7d74f);
     }
   }
 
@@ -411,7 +413,7 @@
   &__quick-select-label {
     font-size: 11px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--nur-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 10px;
@@ -425,18 +427,18 @@
   &__quick-select-btn {
     flex: 1;
     padding: 10px;
-    background: #f5f5f5;
-    border: 1px solid #e5e7eb;
+    background: var(--nur-bg);
+    border: 1px solid var(--nur-border);
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     cursor: pointer;
     transition: all 0.2s;
 
     &:hover {
       background: #e5e5e5;
-      border-color: #d1d5db;
+      border-color: var(--nur-border-strong);
     }
   }
 
@@ -446,24 +448,24 @@
     align-items: center;
     margin-top: 20px;
     padding: 12px;
-    background: #f0fdf4;
+    background: var(--nur-success-soft);
     border-radius: 8px;
   }
 
   &__change-label {
     font-size: 14px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--nur-muted);
   }
 
   &__change-value {
     font-size: 24px;
     font-weight: 700;
-    color: #22c55e;
+    color: var(--nur-success);
   }
 
   &__summary {
-    background: white;
+    background: var(--nur-surface);
     border-radius: 12px;
     padding: 20px;
     // margin-bottom: 20px;
@@ -474,7 +476,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--nur-bg);
 
     &:last-child {
       border-bottom: none;
@@ -483,7 +485,7 @@
     &--total {
       margin-top: 8px;
       padding-top: 16px;
-      border-top: 2px solid #e5e7eb;
+      border-top: 2px solid var(--nur-border);
       border-bottom: none;
     }
   }
@@ -491,7 +493,7 @@
   &__summary-label {
     font-size: 14px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--nur-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -499,21 +501,21 @@
   &__summary-value {
     font-size: 16px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
 
     &--discount {
-      color: #ef4444;
+      color: var(--nur-danger);
     }
 
     &--total {
       font-size: 24px;
       font-weight: 700;
-      color: #111827;
+      color: var(--nur-text);
     }
   }
 
   &__debt-section {
-    background: white;
+    background: var(--nur-surface);
     border-radius: 12px;
     padding: 20px;
   }
@@ -521,7 +523,7 @@
   &__debt-hint {
     margin: 8px 0 0;
     font-size: 13px;
-    color: #6b7280;
+    color: var(--nur-muted);
     line-height: 1.4;
   }
 
@@ -532,23 +534,23 @@
     margin: 16px 0 12px;
     font-size: 14px;
     font-weight: 600;
-    color: #374151;
+    color: var(--nur-text-2);
     cursor: pointer;
     user-select: none;
 
     input {
       width: 16px;
       height: 16px;
-      accent-color: #f7d617;
+      accent-color: var(--nur-primary, #f7d74f);
     }
   }
 
   &__deferred-prepay {
     padding: 16px;
     margin-bottom: 16px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--nur-border);
     border-radius: 8px;
-    background: #f9fafb;
+    background: var(--nur-surface-2);
   }
 
   &__deferred-prepay-field {
@@ -572,9 +574,9 @@
     gap: 8px;
     width: 100%;
     padding: 3px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--nur-border-strong);
     border-radius: 8px;
-    background: #fff;
+    background: var(--nur-surface);
     box-sizing: border-box;
   }
 
@@ -587,13 +589,13 @@
     border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--nur-muted);
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
 
     &--active {
-      background: #fff7cc;
-      color: #111827;
+      background: var(--nur-primary-light);
+      color: var(--nur-text);
       box-shadow: 0 1px 3px rgba(17, 24, 39, 0.08);
     }
   }
@@ -601,7 +603,7 @@
   &__debt-days {
     margin: 20px 0;
     padding: 16px;
-    background: #f9fafb;
+    background: var(--nur-surface-2);
     border-radius: 8px;
   }
 
@@ -609,7 +611,7 @@
     display: block;
     font-size: 14px;
     font-weight: 600;
-    color: #374151;
+    color: var(--nur-text-2);
     margin-bottom: 8px;
   }
 
@@ -624,16 +626,16 @@
     flex: 1;
     min-width: 0;
     padding: 12px 16px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--nur-border-strong);
     border-radius: 8px;
     font-size: 16px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     outline: none;
     transition: border-color 0.2s;
 
     &:focus {
-      border-color: #f7d617;
+      border-color: var(--nur-primary, #f7d74f);
     }
   }
 
@@ -643,10 +645,10 @@
     justify-content: center;
     width: 48px;
     flex-shrink: 0;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--nur-border-strong);
     border-radius: 8px;
-    background: #fff;
-    color: #374151;
+    background: var(--nur-surface);
+    color: var(--nur-text-2);
     cursor: pointer;
     transition:
       background 0.15s ease,
@@ -654,9 +656,9 @@
       color 0.15s ease;
 
     &:hover {
-      background: #fffbeb;
-      border-color: #f7d617;
-      color: #111827;
+      background: var(--nur-warning-soft);
+      border-color: var(--nur-primary, #f7d74f);
+      color: var(--nur-text);
     }
   }
 
@@ -673,11 +675,11 @@
   &__debt-days-hint {
     margin: 10px 0 0;
     font-size: 13px;
-    color: #6b7280;
+    color: var(--nur-muted);
     line-height: 1.45;
 
     strong {
-      color: #111827;
+      color: var(--nur-text);
       font-weight: 700;
     }
   }
@@ -690,7 +692,7 @@
   &__debt-label {
     font-size: 11px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--nur-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 10px;
@@ -699,7 +701,7 @@
   &__debt-value {
     font-size: 36px;
     font-weight: 700;
-    color: #111827;
+    color: var(--nur-text);
   }
 
   &__total-debt {
@@ -707,11 +709,11 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px;
-    background: #fff7ed;
+    background: var(--nur-warning-soft);
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
   }
 
   &__total-debt-amount {
@@ -728,17 +730,17 @@
   &__accept-btn {
     width: 100%;
     padding: 14px;
-    background: #f7d617;
+    background: var(--nur-primary, #f7d74f);
     border: none;
     border-radius: 8px;
     font-size: 16px;
     font-weight: 700;
-    color: #111827;
+    color: var(--nur-text);
     cursor: pointer;
     transition: background 0.2s;
 
     &:hover {
-      background: #e6c614;
+      background: var(--nur-primary-dark, #d4b800);
     }
 
     &:active {
@@ -749,17 +751,17 @@
   &__cancel-btn {
     width: 100%;
     padding: 10px;
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     cursor: pointer;
     transition: background 0.2s;
 
     &:hover {
-      background: #f9fafb;
+      background: var(--nur-surface-2);
     }
   }
 }

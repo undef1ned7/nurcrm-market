@@ -23,6 +23,7 @@ import InvoicePdfDocument from "./components/InvoicePdfDocument";
 import ReceiptPdfDocument from "./components/ReceiptPdfDocument";
 import Ko1PdfDocument from "@shared/ui/legacy-warehouse-sector/Documents/components/Ko1PdfDocument.jsx";
 import { numberToWords } from "@shared/lib/numberToWords.js";
+import { PageShell, PageHeader } from "@shared/ui/page-shell";
 import "./CreateSaleDocument.scss";
 
 const CreateSaleDocument = () => {
@@ -626,7 +627,28 @@ const CreateSaleDocument = () => {
   };
 
   return (
-    <div className="create-sale-document">
+    <PageShell className="create-sale-document">
+      <PageHeader
+        title="Создание документа продажи"
+        subtitle="Подбор товаров, клиент и сохранение"
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--secondary nur-btn--sm"
+            onClick={() => navigate("/crm/documents")}
+          >
+            <X size={16} />
+            Назад
+          </button>
+        }
+      />
+      <div className="create-sale-document__progress" aria-label="Шаги">
+        <span className="create-sale-document__progress-step create-sale-document__progress-step--active">
+          1. Товары
+        </span>
+        <span className="create-sale-document__progress-step">2. Клиент и оплата</span>
+        <span className="create-sale-document__progress-step">3. Сохранение</span>
+      </div>
       <div className="create-sale-document__container">
         {/* Левая панель с товарами */}
         <div className="create-sale-document__sidebar">
@@ -635,6 +657,7 @@ const CreateSaleDocument = () => {
               <Search size={18} className="create-sale-document__search-icon" />
               <input
                 type="text"
+                className="nur-input"
                 placeholder="Поиск товаров"
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
@@ -646,7 +669,7 @@ const CreateSaleDocument = () => {
             </div>
           </div>
 
-          <button className="create-sale-document__create-product-btn">
+          <button type="button" className="nur-btn nur-btn--primary create-sale-document__create-product-btn">
             <Plus size={16} />
             Создать товар
           </button>
@@ -720,14 +743,16 @@ const CreateSaleDocument = () => {
           <div className="create-sale-document__header">
             <div className="create-sale-document__header-left">
               <button
-                className="create-sale-document__save-btn"
+                type="button"
+                className="nur-btn nur-btn--primary create-sale-document__save-btn"
                 onClick={handleSave}
               >
                 Сохранить
               </button>
               <div className="create-sale-document__save-print-wrapper">
                 <button
-                  className="create-sale-document__save-print-btn"
+                  type="button"
+                  className="nur-btn nur-btn--secondary create-sale-document__save-print-btn"
                   onClick={() => setShowSavePrintMenu(!showSavePrintMenu)}
                 >
                   Сохранить и распечатать.
@@ -847,8 +872,8 @@ const CreateSaleDocument = () => {
                 </div>
 
                 {/* Таблица товаров */}
-                <div className="create-sale-document__table-wrapper">
-                  <table className="create-sale-document__table">
+                <div className="nur-table-wrap create-sale-document__table-wrapper">
+                  <table className="nur-table nur-table--dense create-sale-document__table">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -897,7 +922,7 @@ const CreateSaleDocument = () => {
                                       e.target.value
                                     )
                                   }
-                                  className="create-sale-document__qty-input"
+                                  className="nur-input create-sale-document__qty-input"
                                 />
                               </td>
                               <td>{formatPrice(itemPrice)}</td>
@@ -907,7 +932,7 @@ const CreateSaleDocument = () => {
                               <td>{formatPrice(itemTotal)}</td>
                               <td>
                                 <button
-                                  className="create-sale-document__remove-btn"
+                                  className="nur-btn nur-btn--ghost nur-btn--sm create-sale-document__remove-btn"
                                   onClick={() => handleRemoveProduct(item.id)}
                                 >
                                   <X size={16} />
@@ -1004,11 +1029,11 @@ const CreateSaleDocument = () => {
 
                 {/* Комментарий */}
                 <div className="create-sale-document__comment-section">
-                  <label className="create-sale-document__comment-label">
+                  <label className="nur-label create-sale-document__comment-label">
                     Комментарий
                   </label>
                   <textarea
-                    className="create-sale-document__comment-textarea"
+                    className="nur-textarea create-sale-document__comment-textarea"
                     placeholder="Введите комментарий..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -1026,7 +1051,7 @@ const CreateSaleDocument = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

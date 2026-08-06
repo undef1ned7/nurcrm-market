@@ -1,7 +1,7 @@
 /* MastersPayouts.scss */
 
 .barbermasterspayouts {
-  background: #fff;
+  background: var(--nur-surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
   color: var(--text);
   display: flex;
@@ -21,7 +21,7 @@
     }
 
     &::-webkit-scrollbar-track {
-      background: #f5f5f5;
+      background: var(--nur-surface-3);
       border-radius: 999px;
     }
 
@@ -38,7 +38,7 @@
   &__error {
     padding: 12px 14px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    background: linear-gradient(135deg, var(--nur-danger-soft) 0%, #fecaca 100%);
     font-size: 13px;
     font-weight: 400;
     color: #dc2626;
@@ -83,14 +83,14 @@
   }
 
   &__card {
-    background: #fafafa;
+    background: var(--nur-surface-2);
     border: 1px solid rgba(0, 0, 0, 0.04);
     border-radius: 14px;
     padding: 16px 18px;
     transition: all 0.15s ease;
 
     &:hover {
-      background: #f5f5f5;
+      background: var(--nur-surface-3);
     }
   }
 
@@ -122,7 +122,7 @@
     flex-wrap: wrap;
     gap: 8px 20px;
     font-size: 13px;
-    color: #6b7280;
+    color: var(--nur-muted);
   }
 
   &__cardRow {

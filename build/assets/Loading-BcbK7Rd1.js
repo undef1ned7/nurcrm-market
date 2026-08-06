@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-tniCShhs.js";var t=e(),n=({message:e=`Загрузка...`})=>(0,t.jsxs)(`div`,{className:`loading`,children:[(0,t.jsx)(`div`,{className:`loading__spinner`}),(0,t.jsx)(`p`,{className:`loading__message`,children:e})]});export{n as t};

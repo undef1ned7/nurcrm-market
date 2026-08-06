@@ -1,5 +1,4 @@
 /* eslint-disable react-refresh/only-export-components -- route lazy() bindings */
-import { Navigate } from "react-router-dom";
 import { createProtectedRoute } from "./helpers";
 import { lazy } from "react";
 
@@ -8,7 +7,7 @@ const PosPrintSettings = lazy(() =>
   import("@pages/settings").then((m) => ({ default: m.PosPrintSettings })),
 );
 const AdditionalServices = lazy(() => import("@pages/additional-services"));
-const SellRedirect = () => <Navigate to="/crm/market/cashier" replace />;
+const Sell = lazy(() => import("@pages/sell"));
 const SellDetail = lazy(() =>
   import("@pages/sell").then((m) => ({ default: m.SellDetail })),
 );
@@ -44,7 +43,7 @@ export const commonRoutes = () => [
   createProtectedRoute("sklad/add-product/:id", AddProductPage),
   createProtectedRoute("barcodes", BarcodePrintPage),
   createProtectedRoute("scales", ScalesPage),
-  createProtectedRoute("sell", SellRedirect),
+  createProtectedRoute("sell", Sell),
   createProtectedRoute("sell/:id", SellDetail),
   createProtectedRoute("brand-category", BrandCategoryPage),
   createProtectedRoute("additional-services", AdditionalServices),

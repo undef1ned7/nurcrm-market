@@ -58,6 +58,9 @@ export function createAuthResponseInterceptor(api, axiosLib) {
 
         const newAccessToken = response.data.access;
         localStorage.setItem("accessToken", newAccessToken);
+        if (response.data.refresh) {
+          localStorage.setItem("refreshToken", response.data.refresh);
+        }
 
         api.defaults.headers.common["Authorization"] =
           "Bearer " + newAccessToken;

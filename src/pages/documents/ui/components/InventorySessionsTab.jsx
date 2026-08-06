@@ -14,6 +14,12 @@ import InventoryModal from "@pages/warehouse/ui/components/InventoryModal";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
 import { fetchProductsAsync } from "@entities/product";
+import {
+  PagePanel,
+  StatusChip,
+  EmptyState,
+  LoadingState,
+} from "@shared/ui/page-shell";
 import "@pages/warehouse/ui/Warehouse.scss";
 import "./InventorySessionsTab.scss";
 
@@ -29,11 +35,12 @@ const statusLabel = (status) => {
   return status || "—";
 };
 
-const statusClass = (status) => {
+const statusTone = (status) => {
   const s = String(status || "").toLowerCase();
-  if (s === "draft") return "draft";
-  if (s === "applied") return "approved";
-  return "draft";
+  if (s === "draft") return "warning";
+  if (s === "applied") return "success";
+  if (s === "canceled" || s === "cancelled") return "danger";
+  return "default";
 };
 
 const formatDt = (value) => {
@@ -215,7 +222,7 @@ const InventorySessionsTab = () => {
         <div className="inventory-sessions__toolbar-actions">
           <button
             type="button"
-            className="inventory-sessions__refresh"
+            className="nur-btn nur-btn--secondary nur-btn--sm"
             onClick={() => void loadSessions()}
             disabled={loading}
           >
@@ -226,98 +233,111 @@ const InventorySessionsTab = () => {
       </div>
 
       {error ? (
-        <div className="inventory-sessions__banner inventory-sessions__banner--error">
+        <div
+          className="inventory-sessions__banner inventory-sessions__banner--error"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
 
-      <div className="documents__table-wrapper">
-        <table className="documents__table">
-          <thead>
-            <tr>
-              <th>Создан</th>
-              <th>Примечание</th>
-              <th>Статус</th>
-              <th>Позиций</th>
-              <th>Проведён</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      <PagePanel flush className="inventory-sessions__panel">
+        <div className="nur-table-wrap">
+          <table className="nur-table nur-table--dense">
+            <thead>
               <tr>
-                <td colSpan={6} className="documents__empty">
-                  Загрузка…
-                </td>
+                <th>Создан</th>
+                <th>Примечание</th>
+                <th>Статус</th>
+                <th>Позиций</th>
+                <th>Проведён</th>
+                <th>Действия</th>
               </tr>
-            ) : sessions.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="documents__empty">
-                  Актов инвентаризации пока нет
-                </td>
-              </tr>
-            ) : (
-              sessions.map((row) => (
-                <tr key={row.id}>
-                  <td>{formatDt(row.created_at)}</td>
-                  <td className="inventory-sessions__note">
-                    {row.note?.trim() ? row.note : "—"}
-                  </td>
-                  <td>
-                    <span
-                      className={`documents__status documents__status--${statusClass(
-                        row.status,
-                      )}`}
-                    >
-                      {statusLabel(row.status)}
-                    </span>
-                  </td>
-                  <td>{itemsCount(row)}</td>
-                  <td>{formatDt(row.applied_at)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="documents__action-btn"
-                      title="Подробнее"
-                      onClick={() => void openDetail(row.id)}
-                    >
-                      <Eye size={18} />
-                    </button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6}>
+                    <LoadingState rows={4} />
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {totalPages > 1 ? (
-        <div className="documents__pagination">
-          <button
-            type="button"
-            className="documents__pagination-btn"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={loading || !hasPrevPage}
-          >
-            Назад
-          </button>
-          <span className="documents__pagination-info">
-            Страница {page} из {totalPages}
-            {count ? ` (${count} актов)` : ""}
-          </span>
-          <button
-            type="button"
-            className="documents__pagination-btn"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={loading || !hasNextPage}
-          >
-            Вперёд
-          </button>
+              ) : sessions.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>
+                    <EmptyState
+                      icon={<ClipboardList size={22} />}
+                      title="Актов инвентаризации пока нет"
+                      text="Создайте акт через склад: отметьте товары и нажмите «Инвентаризация»."
+                    />
+                  </td>
+                </tr>
+              ) : (
+                sessions.map((row) => (
+                  <tr key={row.id}>
+                    <td>{formatDt(row.created_at)}</td>
+                    <td>
+                      <span
+                        className="inventory-sessions__note"
+                        title={row.note?.trim() || undefined}
+                      >
+                        {row.note?.trim() ? row.note : "—"}
+                      </span>
+                    </td>
+                    <td>
+                      <StatusChip tone={statusTone(row.status)}>
+                        {statusLabel(row.status)}
+                      </StatusChip>
+                    </td>
+                    <td>{itemsCount(row)}</td>
+                    <td>{formatDt(row.applied_at)}</td>
+                    <td>
+                      <div className="documents__actions">
+                        <button
+                          type="button"
+                          className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+                          title="Подробнее"
+                          aria-label="Подробнее"
+                          onClick={() => void openDetail(row.id)}
+                        >
+                          <Eye size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      ) : null}
+
+        {totalPages > 1 ? (
+          <div className="documents__pagination inventory-sessions__pagination">
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={loading || !hasPrevPage}
+            >
+              Назад
+            </button>
+            <span className="documents__pagination-info">
+              Страница {page} из {totalPages}
+              {count ? ` (${count} актов)` : ""}
+            </span>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={loading || !hasNextPage}
+            >
+              Вперёд
+            </button>
+          </div>
+        ) : null}
+      </PagePanel>
 
       {detailId ? (
-        <ReactPortal modalId="market-inventory-session-detail">
+        <ReactPortal wrapperId="market-inventory-session-detail">
           <div
             className="warehouse-inventory-overlay"
             onClick={() =>
@@ -359,7 +379,10 @@ const InventorySessionsTab = () => {
                 {detailLoading ? (
                   <p>Загрузка…</p>
                 ) : detailError ? (
-                  <p className="inventory-sessions__banner inventory-sessions__banner--error">
+                  <p
+                    className="inventory-sessions__banner inventory-sessions__banner--error"
+                    role="alert"
+                  >
                     {detailError}
                   </p>
                 ) : detail ? (
@@ -386,7 +409,10 @@ const InventorySessionsTab = () => {
                             "—";
                           return (
                             <div
-                              key={line.id || `${line.product_id}-${line.quantity_fact}`}
+                              key={
+                                line.id ||
+                                `${line.product_id}-${line.quantity_fact}`
+                              }
                               className="warehouse-inventory-modal__row"
                             >
                               <div className="warehouse-inventory-modal__product">
@@ -427,7 +453,7 @@ const InventorySessionsTab = () => {
                         <div className="inventory-sessions__detail-actions">
                           <button
                             type="button"
-                            className="warehouse-inventory-modal__secondary-btn"
+                            className="nur-btn nur-btn--danger"
                             onClick={() => void handleCancelDraft()}
                             disabled={applyBusy || cancelBusy}
                           >
@@ -436,7 +462,7 @@ const InventorySessionsTab = () => {
                           </button>
                           <button
                             type="button"
-                            className="warehouse-inventory-modal__primary-btn"
+                            className="nur-btn nur-btn--primary"
                             onClick={() => void handleApply()}
                             disabled={applyBusy || cancelBusy}
                           >
@@ -455,7 +481,7 @@ const InventorySessionsTab = () => {
       ) : null}
 
       {createProducts?.length ? (
-        <ReactPortal modalId="market-inventory-create-from-warehouse">
+        <ReactPortal wrapperId="market-inventory-create-from-warehouse">
           <InventoryModal
             products={createProducts}
             onClose={() => setCreateProducts(null)}

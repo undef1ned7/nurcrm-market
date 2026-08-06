@@ -11,7 +11,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--nur-scrim, rgba(15, 23, 42, 0.55));
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   overflow: auto;
@@ -22,15 +22,16 @@
 .loading__spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #f7d617;
+  border: 4px solid var(--nur-border, #e9ecf1);
+  border-top: 4px solid var(--nur-primary, #f7d74f);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .loading__message {
-  font-size: 18px;
-  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+  color: #e5e7eb;
   margin: 0;
 }
 

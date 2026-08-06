@@ -5,6 +5,12 @@ import SocialModal from "./SocialModal";
 import "./AdditionalServices.scss";
 import { useMenuPermissions } from "@widgets/sidebar/ui/hooks/useMenuPermissions";
 import { getAdditionalServicesForPage } from "@widgets/sidebar/ui/config/additionalServicesConfig";
+import {
+  PageShell,
+  PageHeader,
+  PagePanel,
+  EmptyState,
+} from "@shared/ui/page-shell";
 
 const AdditionalServices = () => {
   const navigate = useNavigate();
@@ -53,27 +59,19 @@ const AdditionalServices = () => {
       social.isConnected &&
       Boolean(social.to);
     return (
-      <div key={social.id} className="additional-services__social-card">
-        <div className="additional-services__social-icon">
+      <article key={social.id} className="additional-services__card">
+        <div className="additional-services__card-icon">
           {IconComponent ? <IconComponent /> : null}
         </div>
-        <h3 className="additional-services__social-title">{social.title}</h3>
-        <p className="additional-services__social-description">
+        <h3 className="additional-services__card-title">{social.title}</h3>
+        <p className="additional-services__card-description">
           {social.description}
         </p>
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            marginTop: "12px",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="additional-services__card-actions">
           {canNavigate ? (
             <button
               type="button"
-              className="additional-services__button additional-services__button--primary"
+              className="nur-btn nur-btn--primary nur-btn--sm"
               onClick={() => navigate(social.to)}
             >
               Перейти
@@ -81,49 +79,55 @@ const AdditionalServices = () => {
           ) : null}
           <button
             type="button"
-            className="additional-services__button additional-services__button--secondary"
+            className="nur-btn nur-btn--secondary nur-btn--sm"
             onClick={() => handleSocialClick(social.id)}
           >
             Подключить
           </button>
         </div>
-      </div>
+      </article>
     );
   };
 
+  const renderSection = (title, items) => (
+    <section className="additional-services__section">
+      <h2 className="additional-services__section-title">{title}</h2>
+      {items.length ? (
+        <div className="additional-services__grid">
+          {items.map(renderServiceCard)}
+        </div>
+      ) : (
+        <EmptyState
+          title="Пока нет услуг"
+          text="В этом разделе пока нет доступных услуг."
+        />
+      )}
+    </section>
+  );
+
   return (
-    <div className="additional-services">
-      <div className="additional-services__header">
-        <h1>Дополнительные услуги</h1>
-        <p>
-          Расширьте возможности вашей CRM-системы с помощью наших дополнительных
-          услуг. Выберите интересующую вас социальную сеть для подключения.
-        </p>
-      </div>
+    <PageShell className="additional-services">
+      <PageHeader
+        title="Дополнительные услуги"
+        subtitle="Расширьте возможности CRM — подключите интеграции и расширения."
+      />
 
-      <div className="additional-services__wrapper">
-        <h2 style={{ marginBottom: "12px" }}>Интеграции</h2>
-        <div className="additional-services__content">
-          {integrations.map(renderServiceCard)}
-        </div>
-
-        <h2 style={{ margin: "24px 0 12px" }}>Расширения</h2>
-        <div className="additional-services__content">
-          {extensions.map(renderServiceCard)}
-        </div>
+      <PagePanel>
+        {renderSection("Интеграции", integrations)}
+        {renderSection("Расширения", extensions)}
 
         <p className="additional-services__message">
           Мы свяжемся с вами в ближайшее время для обсуждения деталей
           подключения.
         </p>
-      </div>
+      </PagePanel>
 
       <SocialModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        selectedSocial={selectedSocial} // сюда прилетит 'warehouse' при клике по "Склад"
+        selectedSocial={selectedSocial}
       />
-    </div>
+    </PageShell>
   );
 };
 

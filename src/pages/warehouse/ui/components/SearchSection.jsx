@@ -1,5 +1,6 @@
 import React from "react";
 import { Search, Filter, LayoutGrid, Table2 } from "lucide-react";
+import { FilterBar } from "@shared/ui/page-shell";
 import { VIEW_MODES } from "../constants";
 import "./SearchSection.scss";
 
@@ -19,74 +20,83 @@ const SearchSection = ({
   searchPlaceholder = "Поиск по названию товара...",
 }) => {
   return (
-    <div className="warehouse-search-section">
+    <FilterBar className="warehouse-search-section">
       <div className="warehouse-search">
         <Search className="warehouse-search__icon" size={18} />
         <input
           type="text"
-          className="warehouse-search__input"
+          className="nur-input warehouse-search__input"
           placeholder={searchPlaceholder}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
 
-      <div className="warehouse-search__info flex flex-wrap items-center gap-2">
-        <span>
+      <div className="warehouse-search__info">
+        <span className="nur-chip warehouse-search__count">
           Всего: {count ?? 0} • Найдено: {foundCount}
         </span>
+
         {scanLookupLoading && (
-          <span className="warehouse-search__scan-loading" role="status" aria-live="polite">
+          <span
+            className="warehouse-search__scan-loading nur-chip nur-chip--warning"
+            role="status"
+            aria-live="polite"
+          >
             <span className="warehouse-search__scan-spinner" aria-hidden />
             Поиск товара по штрихкоду...
           </span>
         )}
 
-        <div className="ml-auto flex items-center gap-2 warehouse-view-buttons">
+        <div className="warehouse-search__actions">
           {showViewModeToggle && (
-            <>
+            <div
+              className="warehouse-view-toggle"
+              role="group"
+              aria-label="Режим отображения"
+            >
               <button
                 type="button"
+                aria-pressed={viewMode === VIEW_MODES.TABLE}
                 onClick={() => onViewModeChange(VIEW_MODES.TABLE)}
-                className={`warehouse-view-btn inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition
-                  ${
-                    viewMode === VIEW_MODES.TABLE
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
+                className={`warehouse-view-toggle__btn${
+                  viewMode === VIEW_MODES.TABLE
+                    ? " warehouse-view-toggle__btn--active"
+                    : ""
+                }`}
               >
-                <Table2 size={16} />
+                <Table2 size={16} aria-hidden />
                 Таблица
               </button>
-
               <button
                 type="button"
+                aria-pressed={viewMode === VIEW_MODES.CARDS}
                 onClick={() => onViewModeChange(VIEW_MODES.CARDS)}
-                className={`warehouse-view-btn inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition
-                  ${
-                    viewMode === VIEW_MODES.CARDS
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
+                className={`warehouse-view-toggle__btn${
+                  viewMode === VIEW_MODES.CARDS
+                    ? " warehouse-view-toggle__btn--active"
+                    : ""
+                }`}
               >
-                <LayoutGrid size={16} />
+                <LayoutGrid size={16} aria-hidden />
                 Карточки
               </button>
-            </>
+            </div>
           )}
 
           {onOpenFilters && (
             <button
-              className="warehouse-search__filter-btn md:block flex justify-center w-full"
+              type="button"
+              className="nur-btn nur-btn--sm nur-btn--secondary warehouse-search__filter-btn"
               onClick={onOpenFilters}
             >
-              <Filter size={16} />
+              <Filter size={16} aria-hidden />
               Фильтры
             </button>
           )}
         </div>
       </div>
-    </div>
+    </FilterBar>
   );
 };
 

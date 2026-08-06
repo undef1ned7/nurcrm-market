@@ -19,7 +19,7 @@ const Pagination = ({
     <div className="warehouse-pagination">
       <button
         type="button"
-        className="warehouse-pagination__btn"
+        className="nur-btn nur-btn--secondary nur-btn--sm"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1 || loading || !hasPrevPage}
       >
@@ -31,7 +31,7 @@ const Pagination = ({
       </span>
       <button
         type="button"
-        className="warehouse-pagination__btn"
+        className="nur-btn nur-btn--secondary nur-btn--sm"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={loading || !hasNextPage || (totalPages && currentPage >= totalPages)}
       >
@@ -42,4 +42,3 @@ const Pagination = ({
 };
 
 export default Pagination;
-

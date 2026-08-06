@@ -20,7 +20,7 @@ import ReconciliationPdfDocument from "@shared/ui/legacy-warehouse-sector/Docume
 import EditCounterpartyModal from "./components/EditCounterpartyModal";
 import CounterpartyLegalInfo from "./components/CounterpartyLegalInfo";
 import "./CounterpartyDetail.scss";
-import "../../Warehouse/Money/MoneyDocumentsPage.scss";
+import "./PayDebtModal.scss";
 
 const fmtMoney = (v) =>
   (Number(v) || 0).toLocaleString(undefined, { minimumFractionDigits: 0 }) +

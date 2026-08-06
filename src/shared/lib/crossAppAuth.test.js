@@ -6,9 +6,25 @@ import {
   resolveBuildingAppPath,
 } from "./crossAppAuth";
 
-vi.mock("./appUrls", () => ({
-  getBuildingAppPath: (path) => `https://stroy.nurcrm.kg${path}`,
-}));
+vi.mock("./appUrls", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getBuildingAppPath: (path) => `https://stroy.nurcrm.kg${path}`,
+    isAllowedBuildingAppOrigin: (originOrUrl) => {
+      try {
+        const origin = new URL(originOrUrl, "https://dummy.local").origin;
+        return (
+          origin === "https://stroy.nurcrm.kg" ||
+          origin.startsWith("http://localhost") ||
+          origin.startsWith("http://127.0.0.1")
+        );
+      } catch {
+        return false;
+      }
+    },
+  };
+});
 
 describe("crossAppAuth", () => {
   const future = () => {
@@ -26,7 +42,13 @@ describe("crossAppAuth", () => {
   let hrefValue = "http://localhost/";
 
   beforeEach(() => {
-    localStorage.clear();
+    const store = new Map();
+    vi.stubGlobal("localStorage", {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(String(k), String(v)),
+      removeItem: (k) => store.delete(k),
+      clear: () => store.clear(),
+    });
     hrefValue = "http://localhost/";
     vi.stubGlobal("location", {
       get href() {
@@ -57,7 +79,7 @@ describe("crossAppAuth", () => {
     expect(resolveBuildingAppPath("/login")).toBe("/building/projects");
   });
 
-  it("buildAuthRedirectUrl includes sector", () => {
+  it("buildAuthRedirectUrl puts tokens in hash, not query", () => {
     const url = buildAuthRedirectUrl(
       "https://stroy.nurcrm.kg/building/projects",
       {
@@ -67,9 +89,22 @@ describe("crossAppAuth", () => {
       },
     );
     const parsed = new URL(url);
-    expect(parsed.searchParams.get("accessToken")).toBe("a1");
-    expect(parsed.searchParams.get("refreshToken")).toBe("r1");
+    expect(parsed.searchParams.get("accessToken")).toBeNull();
+    expect(parsed.searchParams.get("refreshToken")).toBeNull();
     expect(parsed.searchParams.get("sector")).toBe("building");
+    const hash = new URLSearchParams(parsed.hash.replace(/^#/, ""));
+    expect(hash.get("accessToken")).toBe("a1");
+    expect(hash.get("refreshToken")).toBe("r1");
+    expect(hash.get("sector")).toBe("building");
+  });
+
+  it("buildAuthRedirectUrl rejects untrusted origins", () => {
+    expect(() =>
+      buildAuthRedirectUrl("https://evil.example/steal", {
+        access: "a1",
+        refresh: "r1",
+      }),
+    ).toThrow(/allowlist/);
   });
 
   it("canHandoffToBuildingApp requires sector, subscription and token", () => {
@@ -123,6 +158,7 @@ describe("crossAppAuth", () => {
         end_date: future(),
       }),
     ).toBe("redirected");
+    expect(hrefValue).toContain("#");
     expect(hrefValue).toContain("accessToken=token");
     expect(hrefValue).toContain("sector=building");
   });

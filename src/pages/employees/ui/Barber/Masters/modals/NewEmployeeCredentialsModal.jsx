@@ -1,4 +1,5 @@
 import { FaCheck, FaCopy, FaTimes } from "react-icons/fa";
+import BarberMastersPortal from "./BarberMastersPortal";
 
 const NewEmployeeCredentialsModal = ({
   openLogin,
@@ -10,6 +11,7 @@ const NewEmployeeCredentialsModal = ({
   if (!openLogin) return null;
 
   return (
+    <BarberMastersPortal wrapperId="barbermasters-newemployeecredentialsmodal">
     <div className="barbermasters__overlay" onClick={() => setOpenLogin(false)}>
       <div className="barbermasters__modal" onClick={(e) => e.stopPropagation()}>
         <div className="barbermasters__modalHeader">
@@ -51,6 +53,7 @@ const NewEmployeeCredentialsModal = ({
         </div>
       </div>
     </div>
+    </BarberMastersPortal>
   );
 };
 

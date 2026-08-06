@@ -10,48 +10,40 @@ export const PayDebtModal = ({
   if (!open) return null;
 
   return (
-    <div className="catalog__overlay" onClick={onClose}>
+    <div className="debts-page__overlay" onClick={onClose}>
       <div
-        className="catalog__modal"
+        className="debts-page__modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="debt-pay-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="catalog__modalTitle" id="debt-pay-title">
+        <div className="debts-page__modal-title" id="debt-pay-title">
           Оплатить (уменьшить долг)
         </div>
 
         {payErr && (
-          <div
-            style={{
-              background: "#fff1f2",
-              border: "1px solid #fecdd3",
-              color: "#b91c1c",
-              borderRadius: 10,
-              padding: "8px 10px",
-              marginBottom: 10,
-              fontSize: 13,
-            }}
-          >
+          <div className="debts-page__alert debts-page__alert--danger">
             {payErr}
           </div>
         )}
 
         <form onSubmit={onSubmit}>
+          <label className="nur-label" htmlFor="debt-pay-amt">Сумма оплаты</label>
           <input
-            className="catalog__input"
-            placeholder="Сумма оплаты (только цифры)"
+            id="debt-pay-amt"
+            className="nur-input debts-page__modal-input"
+            placeholder="Только цифры"
             inputMode="numeric"
             pattern="\d*"
             value={payAmt}
             onChange={(e) => setPayAmt(e.target.value.replace(/\D/g, ""))}
             autoFocus
           />
-          <div className="catalog__modalActions" style={{ gap: 10 }}>
+          <div className="debts-page__modal-actions">
             <button
               type="button"
-              className="catalog__btn"
+              className="nur-btn nur-btn--ghost"
               onClick={onClose}
               disabled={savingPay}
             >
@@ -59,7 +51,7 @@ export const PayDebtModal = ({
             </button>
             <button
               type="submit"
-              className="catalog__btn catalog__btn--primary"
+              className="nur-btn nur-btn--primary"
               disabled={savingPay}
             >
               {savingPay ? "Провожу…" : "Оплатить"}

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import ReactPortal from "../Portal/ReactPortal";
-import { Button } from "@mui/material";
 import {
   Notifications as NotificationsIcon,
   ReportProblem as ReportProblemIcon,
@@ -40,9 +39,20 @@ const GlobalAlertModal = ({ isError, message, isOpen, onConfirm }) => {
   return (
     <ReactPortal wrapperId="global-alert-modal">
       <div className="system-dialog-overlay">
-        <div ref={modalRef} className="system-dialog" role="dialog" aria-modal="true">
+        <div
+          ref={modalRef}
+          className="system-dialog"
+          role="dialog"
+          aria-modal="true"
+        >
           <div className="system-dialog__body">
-            <div className="system-dialog__icon-wrap">
+            <div
+              className={`system-dialog__icon-wrap ${
+                isError
+                  ? "system-dialog__icon-wrap--danger"
+                  : "system-dialog__icon-wrap--info"
+              }`}
+            >
               {isError ? (
                 <ReportProblemIcon color="error" />
               ) : (
@@ -55,13 +65,13 @@ const GlobalAlertModal = ({ isError, message, isOpen, onConfirm }) => {
             <p className="system-dialog__message">{message}</p>
           </div>
           <div className="system-dialog__actions">
-            <Button
-              color={isError ? "error" : "warning"}
-              variant="contained"
+            <button
+              type="button"
+              className={`nur-btn ${isError ? "nur-btn--danger" : "nur-btn--primary"}`}
               onClick={() => onConfirm?.()}
             >
               Ок
-            </Button>
+            </button>
           </div>
         </div>
       </div>

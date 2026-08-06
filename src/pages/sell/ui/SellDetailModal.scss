@@ -10,7 +10,7 @@
     max-height: 80vh;
     max-height: 80dvh;
     overflow-y: auto;
-    background: #fff;
+    background: var(--nur-surface);
     padding: 20px 12px;
     border-radius: 8px;
     z-index: 10051;
@@ -26,13 +26,13 @@
       margin: 0;
       font-size: 16px;
       font-weight: 600;
-      color: #000;
+      color: var(--nur-text);
     }
   }
 
   .add-modal__close-icon {
     cursor: pointer;
-    color: #999;
+    color: var(--nur-muted);
     flex-shrink: 0;
   }
 }
@@ -96,8 +96,8 @@
         border: none;
         border-radius: 6px;
         padding: 10px 0;
-        background-color: #ffd400;
-        color: #000;
+        background-color: var(--nur-primary, #f7d74f);
+        color: var(--nur-text);
         cursor: pointer;
         font-weight: 600;
       }

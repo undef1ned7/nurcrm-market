@@ -24,12 +24,14 @@ import {
   Layers,
   Package,
   RefreshCw,
+  X,
 } from "lucide-react";
 
 import api from "@shared/api";
 import { productSearchHaystackLower } from "@shared/lib/tools/productBarcode";
 import "./ClientDetails.scss";
-import "./ClientDetails.redesign.scss";
+import "./ClientModals.scss";
+import { PageShell } from "@shared/ui/page-shell";
 
 import { useUser } from "@entities/user";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
@@ -47,6 +49,7 @@ import DebtModal from "./components/DebtModal";
 import ClientEditModal from "./components/ClientEditModal";
 import DealFormModal from "./components/DealFormModal";
 import ReconciliationModal from "./components/ReconciliationModal";
+import ClientModalPortal from "./components/ClientModalPortal";
 
 export default function MarketClientDetails() {
   const { id } = useParams();
@@ -464,6 +467,9 @@ export default function MarketClientDetails() {
     if (detailsView === "debt") {
       return {
         title: sectorName === "Строительная компания" ? "Сумма договора" : "Долг",
+        subtitle: "Список операций по выбранной категории",
+        icon: <TrendingDown />,
+        tone: "danger",
         total:
           sectorName === "Строительная компания"
             ? Number(totals.sale || 0)
@@ -471,10 +477,19 @@ export default function MarketClientDetails() {
       };
     }
     if (detailsView === "prepayment") {
-      return { title: sectorName === "Строительная компания" ? "Предоплата" : "Аванс", total: Number(totals.prepayment || 0) };
+      return {
+        title: sectorName === "Строительная компания" ? "Предоплата" : "Аванс",
+        subtitle: "Список операций по выбранной категории",
+        icon: <Wallet />,
+        tone: "success",
+        total: Number(totals.prepayment || 0),
+      };
     }
     return {
       title: sectorName === "Строительная компания" ? "Остаток долга" : "Продажа",
+      subtitle: "Список операций по выбранной категории",
+      icon: <TrendingUp />,
+      tone: "default",
       total:
         sectorName === "Строительная компания"
           ? Number(totals.debt || 0)
@@ -614,6 +629,43 @@ export default function MarketClientDetails() {
   const statusText = kindTranslate[client?.status] || client?.status || "—";
   const isBuildingSector = sectorName === "Строительная компания";
 
+  const profileSnapshot = useMemo(() => {
+    const lastDealDate =
+      deals
+        .map((d) => toIsoDate10(d.date || d.created_at || d.updated_at))
+        .filter(Boolean)
+        .sort()
+        .at(-1) || "—";
+
+    const debtValue = isBuildingSector
+      ? Number(totals.sale || 0)
+      : Number(totals.debt || 0);
+
+    return [
+      {
+        label: "Сделок",
+        value: String(deals.length),
+        hint: "Всего операций",
+      },
+      {
+        label: isBuildingSector ? "Договор" : "Долг",
+        value: `${debtValue.toFixed(2)}`,
+        unit: "сом",
+        hint: isBuildingSector ? "Сумма договора" : "Остаток долга",
+      },
+      {
+        label: "Последняя",
+        value: lastDealDate,
+        hint: "Дата последней операции",
+      },
+    ];
+  }, [
+    deals,
+    isBuildingSector,
+    totals.debt,
+    totals.sale,
+  ]);
+
   const kpis = [
     {
       key: "debt",
@@ -654,6 +706,7 @@ export default function MarketClientDetails() {
   ];
 
   return (
+    <PageShell className="client-details-shell">
     <div className="cdx" data-theme={mode}>
       {/* ===== Topbar ===== */}
       <div className="cdx__topbar">
@@ -753,7 +806,7 @@ export default function MarketClientDetails() {
               <UserIcon /> Информация о клиенте
             </h2>
           </div>
-          <div className="cdx__card-body">
+          <div className="cdx__card-body cdx__card-body--profile">
             <div className="cdx__profile">
               <div className="cdx__profile-avatar" aria-hidden="true">
                 {clientInitials}
@@ -768,7 +821,25 @@ export default function MarketClientDetails() {
                     {clientTypeLabel}
                   </span>
                 </div>
+                {client?.address ? (
+                  <div className="cdx__profile-meta" title={client.address}>
+                    {client.address}
+                  </div>
+                ) : null}
               </div>
+            </div>
+
+            <div className="cdx__profile-snapshot" aria-label="Сводка по клиенту">
+              {profileSnapshot.map((item) => (
+                <div key={item.label} className="cdx__profile-snapshot-item">
+                  <div className="cdx__profile-snapshot-label">{item.label}</div>
+                  <div className="cdx__profile-snapshot-value">
+                    {item.value}
+                    {item.unit ? <span>{item.unit}</span> : null}
+                  </div>
+                  <div className="cdx__profile-snapshot-hint">{item.hint}</div>
+                </div>
+              ))}
             </div>
 
             <div className="cdx__contacts">
@@ -1373,43 +1444,101 @@ export default function MarketClientDetails() {
       />
 
       {detailsView && (
-        <div
-          className="cdx__modal-overlay"
-          onClick={() => setDetailsView(null)}
-        >
-          <div className="cdx__modal" onClick={(e) => e.stopPropagation()}>
-            <div className="cdx__modal-head">
-              <h3 className="cdx__modal-title">{detailsMeta.title}</h3>
-              <button
-                type="button"
-                className="cdx__modal-close"
-                onClick={() => setDetailsView(null)}
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
-            </div>
-            <div className="cdx__modal-total">
-              Итого: <b>{detailsMeta.total.toFixed(2)} сом</b>
-            </div>
-            <div className="cdx__modal-list">
-              {detailRows.length === 0 && (
-                <div className="cdx__modal-empty">
-                  Нет данных по выбранной категории
-                </div>
-              )}
-              {detailRows.map((row) => (
-                <div key={row.id} className="cdx__modal-row">
-                  <div className="cdx__modal-what">{row.title}</div>
-                  <div className="cdx__modal-when">{row.date}</div>
-                  <div className="cdx__modal-howmuch">
-                    {row.amount.toFixed(2)} сом
+        <ClientModalPortal wrapperId="client-details-kpi-modal">
+          <div
+            className="cmx__overlay"
+            data-theme={mode}
+            onClick={() => setDetailsView(null)}
+          >
+            <div
+              className="cmx__dialog cmx__dialog--sm cmx__dialog--kpi"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="client-kpi-modal-title"
+            >
+              <div className="cmx__header">
+                <div className="cmx__heading">
+                  <span className="cmx__heading-icon">{detailsMeta.icon}</span>
+                  <div className="cmx__heading-text">
+                    <h3 className="cmx__title" id="client-kpi-modal-title">
+                      {detailsMeta.title}
+                    </h3>
+                    <p className="cmx__subtitle">{detailsMeta.subtitle}</p>
                   </div>
                 </div>
-              ))}
+                <button
+                  type="button"
+                  className="cmx__close"
+                  onClick={() => setDetailsView(null)}
+                  aria-label="Закрыть"
+                >
+                  <X />
+                </button>
+              </div>
+
+              <div className="cmx__body">
+                <div
+                  className={[
+                    "cmx__kpi-total",
+                    detailsMeta.tone === "danger" && "cmx__kpi-total--danger",
+                    detailsMeta.tone === "success" && "cmx__kpi-total--success",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <span className="cmx__kpi-total-label">Итого</span>
+                  <span className="cmx__kpi-total-value">
+                    {detailsMeta.total.toFixed(2)}
+                    <span>сом</span>
+                  </span>
+                </div>
+
+                <div className="cmx__section-title">Операции</div>
+
+                {detailRows.length === 0 ? (
+                  <div className="cmx__kpi-empty">
+                    Нет данных по выбранной категории
+                  </div>
+                ) : (
+                  <ul className="cmx__kpi-list">
+                    {detailRows.map((row) => (
+                      <li key={row.id} className="cmx__kpi-row">
+                        <span className="cmx__kpi-avatar" aria-hidden="true">
+                          {String(row.title || "?")
+                            .trim()
+                            .charAt(0)
+                            .toUpperCase() || "?"}
+                        </span>
+                        <div className="cmx__kpi-row-main">
+                          <span className="cmx__kpi-row-title">{row.title}</span>
+                          <span className="cmx__kpi-row-date">{row.date}</span>
+                        </div>
+                        <span className="cmx__kpi-row-amount">
+                          {row.amount.toFixed(2)}
+                          <span>сом</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="cmx__footer">
+                <div className="cmx__footer-left" />
+                <div className="cmx__footer-right">
+                  <button
+                    type="button"
+                    className="cmx__btn cmx__btn--ghost"
+                    onClick={() => setDetailsView(null)}
+                  >
+                    Закрыть
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </ClientModalPortal>
       )}
 
       <AlertModal
@@ -1420,5 +1549,6 @@ export default function MarketClientDetails() {
         onClose={() => setAlert((a) => ({ ...a, open: false }))}
       />
     </div>
+    </PageShell>
   );
 }

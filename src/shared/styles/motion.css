@@ -1,0 +1,366 @@
+/**
+ * NUR CRM motion system
+ * Prefer transform + opacity. No new animation libraries.
+ */
+
+/* ── Keyframes ───────────────────────────────────────── */
+@keyframes nur-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nur-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--nur-motion-distance, 8px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nur-fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--nur-motion-distance-sm, 4px)));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nur-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes nur-slide-in-left {
+  from {
+    opacity: 0.6;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes nur-shake-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes nur-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nur-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes nur-check-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Route / page enter ──────────────────────────────── */
+.nur-route-enter {
+  animation: nur-fade-up var(--nur-duration-slow) var(--nur-ease-enter) both;
+}
+
+.nur-page > .nur-page__header,
+.nur-page > .nur-page__toolbar,
+.nur-page > .nur-page__panel,
+.nur-page > .nur-empty,
+.nur-page > .nur-loading-state,
+.nur-page > .nur-alert {
+  animation: nur-fade-up var(--nur-duration-slow) var(--nur-ease-enter) both;
+}
+
+.nur-page > .nur-page__header {
+  animation-delay: 0ms;
+}
+.nur-page > .nur-page__toolbar {
+  animation-delay: 40ms;
+}
+.nur-page > .nur-page__panel:nth-of-type(1),
+.nur-page > .nur-empty,
+.nur-page > .nur-loading-state,
+.nur-page > .nur-alert {
+  animation-delay: 70ms;
+}
+.nur-page > .nur-page__panel:nth-of-type(2) {
+  animation-delay: 100ms;
+}
+.nur-page > .nur-page__panel:nth-of-type(n + 3) {
+  animation-delay: 120ms;
+}
+
+/* Fullscreen POS / sell: skip enter animations */
+.nur-route-enter--instant,
+.nur-route-enter--instant .nur-page > .nur-page__header,
+.nur-route-enter--instant .nur-page > .nur-page__toolbar,
+.nur-route-enter--instant .nur-page > .nur-page__panel {
+  animation: none !important;
+}
+
+/* ── Utility classes ─────────────────────────────────── */
+.nur-anim-fade {
+  animation: nur-fade-in var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+.nur-anim-fade-up {
+  animation: nur-fade-up var(--nur-duration-slow) var(--nur-ease-enter) both;
+}
+
+.nur-anim-scale-in {
+  animation: nur-scale-in var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+.nur-anim-shake {
+  animation: nur-shake-x 320ms var(--nur-ease-emphasized) both;
+}
+
+.nur-anim-toast-in {
+  animation: nur-toast-in var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+.nur-anim-toast-out {
+  animation: nur-toast-out var(--nur-duration-fast) var(--nur-ease-exit) both;
+}
+
+.nur-anim-check {
+  animation: nur-check-pop 280ms var(--nur-ease-emphasized) both;
+}
+
+/* Stagger helpers for lists (apply to children) */
+.nur-stagger > * {
+  animation: nur-fade-up var(--nur-duration) var(--nur-ease-enter) both;
+}
+.nur-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.nur-stagger > *:nth-child(2) {
+  animation-delay: 30ms;
+}
+.nur-stagger > *:nth-child(3) {
+  animation-delay: 55ms;
+}
+.nur-stagger > *:nth-child(4) {
+  animation-delay: 75ms;
+}
+.nur-stagger > *:nth-child(5) {
+  animation-delay: 90ms;
+}
+.nur-stagger > *:nth-child(6) {
+  animation-delay: 105ms;
+}
+.nur-stagger > *:nth-child(7) {
+  animation-delay: 115ms;
+}
+.nur-stagger > *:nth-child(8) {
+  animation-delay: 125ms;
+}
+.nur-stagger > *:nth-child(n + 9) {
+  animation-delay: 130ms;
+}
+
+/* Interactive card lift — only for clickable surfaces */
+.nur-card-interactive {
+  transition: transform var(--nur-duration-fast) var(--nur-ease-standard),
+    box-shadow var(--nur-duration) var(--nur-ease-standard),
+    border-color var(--nur-duration-fast) var(--nur-ease-standard);
+}
+
+.nur-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--nur-shadow);
+}
+
+.nur-card-interactive:active {
+  transform: translateY(0);
+}
+
+/* Accordion chevron */
+.nur-chevron {
+  transition: transform var(--nur-duration) var(--nur-ease-emphasized);
+  transform-origin: center;
+}
+
+.nur-chevron.is-open,
+[aria-expanded="true"] .nur-chevron {
+  transform: rotate(180deg);
+}
+
+/* Row enter / selected feedback */
+.nur-table tbody tr {
+  transition: background var(--nur-duration-fast) var(--nur-ease-standard);
+}
+
+.nur-row-enter {
+  animation: nur-fade-up var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+.nur-row-exit {
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity var(--nur-duration) var(--nur-ease-exit),
+    transform var(--nur-duration) var(--nur-ease-exit);
+}
+
+/* Error field appear */
+.nur-error {
+  animation: nur-fade-up var(--nur-duration-fast) var(--nur-ease-enter) both;
+}
+
+/* Modal / overlay motion */
+.nur-modal-overlay,
+.common-modal-overlay,
+.system-dialog-overlay {
+  animation: nur-fade-in var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+.nur-modal,
+.common-modal-dialog,
+.system-dialog {
+  animation: nur-scale-in var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+/* Dropdown / popover */
+.nur-menu__panel,
+.nur-dropdown,
+[data-nur-dropdown] {
+  animation: nur-fade-down var(--nur-duration-fast) var(--nur-ease-enter) both;
+  transform-origin: top center;
+}
+
+/* Empty / error / loading panels */
+.nur-empty,
+.nur-loading-state,
+.nur-alert {
+  animation: nur-fade-up var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+/* Tabs indicator feel */
+.nur-tabs__tab {
+  transition: background var(--nur-duration-fast) var(--nur-ease-standard),
+    color var(--nur-duration-fast) var(--nur-ease-standard),
+    box-shadow var(--nur-duration-fast) var(--nur-ease-standard),
+    transform var(--nur-duration-fast) var(--nur-ease-standard);
+}
+
+.nur-tabs__tab:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Chip appear */
+.nur-chip {
+  transition: background var(--nur-duration-fast) var(--nur-ease-standard),
+    border-color var(--nur-duration-fast) var(--nur-ease-standard),
+    color var(--nur-duration-fast) var(--nur-ease-standard),
+    transform var(--nur-duration-fast) var(--nur-ease-standard);
+}
+
+/* Skeleton → content soft swap helper */
+.nur-content-swap {
+  animation: nur-fade-in var(--nur-duration) var(--nur-ease-enter) both;
+}
+
+/* ── Reduced motion ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .nur-route-enter,
+  .nur-page > .nur-page__header,
+  .nur-page > .nur-page__toolbar,
+  .nur-page > .nur-page__panel,
+  .nur-page > .nur-empty,
+  .nur-page > .nur-loading-state,
+  .nur-page > .nur-alert,
+  .nur-stagger > *,
+  .nur-anim-fade,
+  .nur-anim-fade-up,
+  .nur-anim-scale-in,
+  .nur-anim-shake,
+  .nur-anim-toast-in,
+  .nur-anim-toast-out,
+  .nur-anim-check,
+  .nur-row-enter,
+  .nur-error,
+  .nur-field-error,
+  .nur-empty,
+  .nur-loading-state,
+  .nur-alert,
+  .nur-modal-overlay,
+  .common-modal-overlay,
+  .system-dialog-overlay,
+  .alert-modal__backdrop,
+  .alert-modal__dialog,
+  .nur-modal,
+  .common-modal-dialog,
+  .system-dialog,
+  .nur-menu__panel,
+  .nur-dropdown,
+  [data-nur-dropdown],
+  .nur-content-swap {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .nur-card-interactive:hover,
+  .nur-card-interactive:active,
+  .nur-btn:active:not(:disabled),
+  .nur-tabs__tab:active:not(:disabled) {
+    transform: none !important;
+  }
+}

@@ -13,6 +13,14 @@ import { useUser } from "@entities/user";
 import useResize from "@shared/hooks/useResize";
 import { useAlert } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+  PagePanel,
+  StatusChip,
+} from "@shared/ui/page-shell";
 
 /* Base path */
 const BASE = "/crm/kassa";
@@ -40,16 +48,12 @@ const CafeKassa = () => {
 };
 
 /* Шапка страницы кассы */
-const HeaderTabs = ({ rightAction }) => (
-  <div className="kassa-header">
-    <div className="kassa-header__left">
-      <div className="kassa-header__icon-box">💰</div>
-      <div className="kassa-header__title-section">
-        <h1 className="kassa-header__title">Касса</h1>
-      </div>
-    </div>
-    <div className="kassa-header__right">{rightAction}</div>
-  </div>
+const HeaderTabs = ({ rightAction, subtitle }) => (
+  <PageHeader
+    title="Касса"
+    subtitle={subtitle || "Управление кассами и денежными потоками"}
+    actions={rightAction}
+  />
 );
 
 /* ──────────────────────────────── Список касс */
@@ -132,11 +136,12 @@ const CashboxList = () => {
   };
 
   return (
-    <div className="kassa-page">
+    <PageShell className="kassa-page">
       <HeaderTabs
         rightAction={
           <button
-            className="kassa-header__create-btn"
+            type="button"
+            className="nur-btn nur-btn--primary"
             onClick={() => setCreateOpen(true)}
           >
             <Plus size={16} />
@@ -147,25 +152,26 @@ const CashboxList = () => {
         }
       />
 
-      <div className="kassa-search-section">
+      <FilterBar className="kassa-page__toolbar">
         <div className="kassa-search">
           <Search className="kassa-search__icon" size={18} />
           <input
             type="text"
-            className="kassa-search__input"
+            className="nur-input kassa-search__input"
             placeholder="Поиск по названию или отделу…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <div className="kassa-search__meta">
-          <span className="kassa-search__info">Всего: {filtered.length}</span>
-          {!isMobile && (<div className="kassa-search__view-toggle">
+        <StatusChip>Всего: {filtered.length}</StatusChip>
+        {!isMobile && (
+          <div className="kassa-search__view-toggle">
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`kassa-view-btn ${viewMode === "table" ? "kassa-view-btn--active" : ""
-                }`}
+              className={`nur-btn nur-btn--sm ${
+                viewMode === "table" ? "nur-btn--primary" : "nur-btn--secondary"
+              }`}
               title="Таблица"
             >
               <Table2 size={16} />
@@ -174,23 +180,24 @@ const CashboxList = () => {
             <button
               type="button"
               onClick={() => setViewMode("cards")}
-              className={`kassa-view-btn ${viewMode === "cards" ? "kassa-view-btn--active" : ""
-                }`}
+              className={`nur-btn nur-btn--sm ${
+                viewMode === "cards" ? "nur-btn--primary" : "nur-btn--secondary"
+              }`}
               title="Карточки"
             >
               <LayoutGrid size={16} />
               Карточки
             </button>
-          </div>)}
-        </div>
-      </div>
+          </div>
+        )}
+      </FilterBar>
 
       {err && <div className="kassa__alert kassa__alert--error">{err}</div>}
 
-      <div className="kassa-table-container">
+      <PagePanel flush className="kassa-table-container">
         {viewMode === "table" && (
-          <div className="kassa-table-scroll">
-            <table className="kassa-table">
+          <div className="nur-table-wrap kassa-table-scroll">
+            <table className="nur-table kassa-table">
               <thead>
                 <tr>
                   <th>#</th>
@@ -222,7 +229,7 @@ const CashboxList = () => {
                       <td>{money(r.analytics?.expense_total || 0)}</td>
                       <td>
                         <button
-                          className="kassa__btn kassa__btn--secondary"
+                          className="nur-btn nur-btn--secondary nur-btn--sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`${BASE}/${r.id}`);
@@ -282,7 +289,7 @@ const CashboxList = () => {
                     <div className="kassa-card__actions">
                       <button
                         type="button"
-                        className="kassa__btn kassa__btn--secondary kassa-card__btn"
+                        className="nur-btn nur-btn--secondary nur-btn--sm kassa-card__btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`${BASE}/${r.id}`);
@@ -297,64 +304,69 @@ const CashboxList = () => {
             )}
           </div>
         )}
-      </div>
+      </PagePanel>
 
       {createOpen && (
-        <div className="kassa-modal">
+        <ReactPortal wrapperId="kassa-create-modal">
           <div
             className="kassa-modal__overlay"
+            role="presentation"
             onClick={() => setCreateOpen(false)}
-          />
-          <div
-            className="kassa-modal__card"
-            onClick={(e) => e.stopPropagation()}
           >
-            <div className="kassa-modal__header">
-              <h3 className="kassa-modal__title">Создать кассу</h3>
-              <button
-                className="kassa-modal__close"
-                onClick={() => setCreateOpen(false)}
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
-            </div>
-            <div className="kassa-modal__section">
-              <label className="kassa-modal__label">Название кассы *</label>
-              <input
-                className="kassa-modal__input"
-                type="text"
-                placeholder="Например: касса №1"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            {/* {console.log(checked)} */}
-            <div className="kassa-modal__section" style={{ display: "flex" }}>
-              <label className="kassa-modal__label">Прочие расходы *</label>
-              <input
-                className="kassa-modal__input"
-                type="checkbox"
-                placeholder="Например: касса №1"
-                style={{ width: "max-content" }}
-                value={checked}
-                onChange={(_e) => setChecked(!checked)}
-                required
-              />
-            </div>
-            <div className="kassa-modal__footer">
-              <button
-                className="kassa__btn kassa__btn--primary"
-                onClick={onCreate}
-              >
-                Сохранить
-              </button>
+            <div
+              className="kassa-modal__card"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Создать кассу"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="kassa-modal__header">
+                <h3 className="kassa-modal__title">Создать кассу</h3>
+                <button
+                  className="kassa-modal__close"
+                  onClick={() => setCreateOpen(false)}
+                  aria-label="Закрыть"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="kassa-modal__section">
+                <label className="nur-label kassa-modal__label">
+                  Название кассы *
+                </label>
+                <input
+                  className="nur-input kassa-modal__input"
+                  type="text"
+                  placeholder="Например: касса №1"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="kassa-modal__section" style={{ display: "flex" }}>
+                <label className="nur-label kassa-modal__label">
+                  Прочие расходы *
+                </label>
+                <input
+                  className="nur-input kassa-modal__input"
+                  type="checkbox"
+                  placeholder="Например: касса №1"
+                  style={{ width: "max-content" }}
+                  value={checked}
+                  onChange={(_e) => setChecked(!checked)}
+                  required
+                />
+              </div>
+              <div className="kassa-modal__footer">
+                <button className="nur-btn nur-btn--primary" onClick={onCreate}>
+                  Сохранить
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ReactPortal>
       )}
-    </div>
+    </PageShell>
   );
 };
 
@@ -490,56 +502,52 @@ const CashboxDetail = ({ id: idProp }) => {
   }, [ops, tab]);
 
   return (
-    <div className="kassa-page">
-      <div className="kassa-header">
-        <div className="kassa-header__left">
-          <div className="kassa-header__icon-box">📦</div>
-          <div className="kassa-header__title-section">
-            <h2 className="kassa-header__title">
-              {box?.department_name || box?.name || "Касса"}
-            </h2>
-            <p className="kassa-header__subtitle">Операции по кассе</p>
-          </div>
-        </div>
-        <nav className="kassa-header__nav-tabs">
-          <Link className="kassa-header__nav-tab" to={BASE}>
-            ← Назад
-          </Link>
-          <Link className="kassa-header__nav-tab" to={`${BASE}/pay`}>
-            Оплата
-          </Link>
-          <Link className="kassa-header__nav-tab" to={`${BASE}/reports`}>
-            Отчёты
-          </Link>
-        </nav>
-      </div>
+    <PageShell className="kassa-page">
+      <PageHeader
+        title={box?.department_name || box?.name || "Касса"}
+        subtitle="Операции по кассе"
+        actions={
+          <nav className="kassa-header__nav-tabs">
+            <Link className="nur-btn nur-btn--ghost nur-btn--sm" to={BASE}>
+              ← Назад
+            </Link>
+            <Link className="nur-btn nur-btn--secondary nur-btn--sm" to={`${BASE}/pay`}>
+              Оплата
+            </Link>
+            <Link className="nur-btn nur-btn--secondary nur-btn--sm" to={`${BASE}/reports`}>
+              Отчёты
+            </Link>
+          </nav>
+        }
+      />
 
-      <div className="kassa-search-section">
+      <FilterBar className="kassa-page__toolbar">
         <div className="kassa-chip-group">
           <button
-            className={`kassa-chip ${tab === "expense" ? "kassa-chip--active" : ""
-              }`}
+            type="button"
+            className={`nur-chip ${tab === "expense" ? "nur-chip--primary" : ""}`}
             onClick={() => handleTabChange("expense")}
           >
             Расход
           </button>
           <button
-            className={`kassa-chip ${tab === "income" ? "kassa-chip--active" : ""
-              }`}
+            type="button"
+            className={`nur-chip ${tab === "income" ? "nur-chip--primary" : ""}`}
             onClick={() => handleTabChange("income")}
           >
             Приход
           </button>
           <button
-            className={`kassa-chip ${tab === "all" ? "kassa-chip--active" : ""
-              }`}
+            type="button"
+            className={`nur-chip ${tab === "all" ? "nur-chip--primary" : ""}`}
             onClick={() => handleTabChange("all")}
           >
             Все
           </button>
         </div>
         <button
-          className="kassa-header__create-btn"
+          type="button"
+          className="nur-btn nur-btn--primary nur-btn--sm"
           onClick={() =>
             alert(
               "Добавление операции делается через API. Здесь доступен только просмотр."
@@ -549,10 +557,11 @@ const CashboxDetail = ({ id: idProp }) => {
           <Plus size={16} />
           Добавить операцию
         </button>
-      </div>
+      </FilterBar>
 
-      <div className="kassa-table-container">
-        <table className="kassa-table">
+      <PagePanel flush className="kassa-table-container">
+        <div className="nur-table-wrap">
+        <table className="nur-table kassa-table">
           <thead>
             <tr>
               <th>Тип</th>
@@ -592,8 +601,9 @@ const CashboxDetail = ({ id: idProp }) => {
             )}
           </tbody>
         </table>
-      </div>
-    </div>
+        </div>
+      </PagePanel>
+    </PageShell>
   );
 };
 

@@ -1,12 +1,12 @@
 .funnels-page {
   display: flex;
   gap: 24px;
-  font-family: 'Roboto', sans-serif;
-  color: #1c2526;
+  font-family: inherit;
+  color: var(--nur-text);
 
   &__sidebar {
     width: 220px;
-    background: #fff;
+    background: var(--nur-surface);
     padding: 16px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -19,7 +19,7 @@
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #1c2526;
+    color: var(--nur-text);
   }
 
   &__item {
@@ -30,17 +30,17 @@
     cursor: pointer;
     border-radius: 8px;
     font-size: 14px;
-    color: #333;
+    color: var(--nur-text-2);
     transition: background-color 0.3s, font-weight 0.3s;
 
     &:hover {
-      background: #f5f5f5;
+      background: var(--nur-bg);
     }
 
     &--active {
-      background: #ffd600;
+      background: var(--nur-primary);
       font-weight: 600;
-      color: #1c2526;
+      color: var(--nur-primary-ink);
     }
   }
 
@@ -48,22 +48,22 @@
     margin-top: auto;
     padding: 10px;
     font-size: 14px;
-    background: #f2f2f2;
+    background: var(--nur-surface-3);
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    color: #1c2526;
+    color: var(--nur-text);
     font-weight: 500;
     transition: background-color 0.3s;
 
     &:hover {
-      background: #e0e0e0;
+      background: var(--nur-surface-3);
     }
   }
 
   &__content {
     flex: 1;
-    background: #fff;
+    background: var(--nur-surface);
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -79,7 +79,7 @@
   &__stage {
     flex: 1;
     min-width: 160px;
-    background: #f8f8f8;
+    background: var(--nur-surface-2);
     border-radius: 10px;
     padding: 12px;
     display: flex;
@@ -96,8 +96,8 @@
     color: #fff;
 
     &--yellow {
-      background: #ffd600;
-      color: #1c2526;
+      background: var(--nur-primary);
+      color: var(--nur-primary-ink);
     }
     &--orange {
       background: #f4b740;
@@ -118,7 +118,7 @@
   &__author,
   &__time {
     font-size: 13px;
-    color: #333;
+    color: var(--nur-text-2);
   }
 
   &__modal {
@@ -142,7 +142,7 @@
 
   &__modal-content {
     position: relative;
-    background: #fff;
+    background: var(--nur-surface);
     border-radius: 12px;
     padding: 24px;
     width: 420px;
@@ -154,7 +154,7 @@
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 16px;
-    color: #1c2526;
+    color: var(--nur-text);
   }
 
   &__form {
@@ -169,14 +169,14 @@
     padding: 10px;
     font-size: 14px;
     border-radius: 8px;
-    border: 1px solid #ccc;
-    background: #f9f9f9;
+    border: 1px solid var(--nur-border-strong);
+    background: var(--nur-surface-2);
     resize: none;
     transition: border-color 0.3s, background-color 0.3s;
 
     &:focus {
-      border-color: #ffd600;
-      background: #fff;
+      border-color: var(--nur-primary);
+      background: var(--nur-surface);
       outline: none;
     }
   }
@@ -190,7 +190,7 @@
     align-items: center;
     font-size: 14px;
     gap: 8px;
-    color: #333;
+    color: var(--nur-text-2);
 
     input {
       width: 16px;
@@ -215,20 +215,20 @@
     transition: background-color 0.3s;
 
     &--yellow {
-      background: #ffd600;
-      color: #1c2526;
+      background: var(--nur-primary);
+      color: var(--nur-primary-ink);
 
       &:hover {
-        background: #e6c200;
+        background: var(--nur-primary-hover);
       }
     }
 
     &--gray {
-      background: #f2f2f2;
-      color: #333;
+      background: var(--nur-surface-3);
+      color: var(--nur-text-2);
 
       &:hover {
-        background: #e0e0e0;
+        background: var(--nur-surface-3);
       }
     }
   }

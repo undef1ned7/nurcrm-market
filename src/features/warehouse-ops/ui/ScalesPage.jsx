@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import api from "@shared/api";
 import { sendProductsToScales } from "@entities/user";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
+import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
 import "./ScalesPage.scss";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 
@@ -118,7 +119,7 @@ const ShtrihMTab = ({
 
         <button
           type="button"
-          className="scales-page__send-btn"
+          className="nur-btn nur-btn--primary scales-page__send-btn"
           onClick={handleSendAllToScales}
           disabled={loading || isSending || count === 0}
         >
@@ -237,7 +238,7 @@ const RongtaTab = ({ weightProducts, loading, onSuccess, onError }) => {
         <div className="scales-page__field">
           <div className="scales-page__field-label">Формат файла</div>
           <select
-            className="scales-page__select"
+            className="nur-select scales-page__select"
             value={format}
             onChange={(e) => setFormat(e.target.value)}
           >
@@ -261,7 +262,7 @@ const RongtaTab = ({ weightProducts, loading, onSuccess, onError }) => {
 
         <button
           type="button"
-          className="scales-page__send-btn"
+          className="nur-btn nur-btn--primary scales-page__send-btn"
           onClick={handleExport}
           disabled={loading || isExporting || count === 0}
         >
@@ -388,7 +389,7 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }) => {
             Раскладка штрихкода
           </div>
           <select
-            className="scales-page__select"
+            className="nur-select scales-page__select"
             value={layout}
             onChange={(e) => setLayout(e.target.value)}
             disabled={loading}
@@ -404,7 +405,7 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }) => {
         <div className="scales-page__field">
           <div className="scales-page__field-label">Режим значения</div>
           <select
-            className="scales-page__select"
+            className="nur-select scales-page__select"
             value={mode}
             onChange={(e) => setMode(e.target.value)}
             disabled={loading}
@@ -419,7 +420,7 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }) => {
 
         <button
           type="button"
-          className="scales-page__send-btn"
+          className="nur-btn nur-btn--primary scales-page__send-btn"
           onClick={handleSave}
           disabled={loading || saving}
         >
@@ -529,15 +530,13 @@ const ScalesPage = () => {
   }, []);
 
   return (
-    <div className="scales-page">
-      <div className="scales-page__header">
-        <h1 className="scales-page__title">Весы</h1>
-        <p className="scales-page__subtitle">
-          Отправка весовых товаров с вашего склада на торговые весы
-        </p>
-      </div>
+    <PageShell className="scales-page">
+      <PageHeader
+        title="Весы"
+        subtitle="Отправка весовых товаров с вашего склада на торговые весы"
+      />
 
-      <div className="scales-page__content">
+      <PagePanel className="scales-page__content">
         <div className="scales-page__tabs">
           {TABS.map((tab) => (
             <button
@@ -575,7 +574,7 @@ const ScalesPage = () => {
             onError={handleError}
           />
         )}
-      </div>
+      </PagePanel>
 
       <AlertModal
         open={showSuccessAlert}
@@ -600,7 +599,7 @@ const ScalesPage = () => {
           setAlertMessage("");
         }}
       />
-    </div>
+    </PageShell>
   );
 };
 

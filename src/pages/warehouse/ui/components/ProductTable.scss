@@ -1,5 +1,4 @@
 // Стили для ProductTable компонента
-// Основные стили находятся в Warehouse.scss
 
 .warehouse-drag-handle {
   border: none;
@@ -9,17 +8,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: var(--nur-muted);
   cursor: grab;
   border-radius: 8px;
 }
 
 .warehouse-drag-handle:hover {
-  color: #0f172a;
-  background: rgba(15, 23, 42, 0.06);
+  color: var(--nur-text);
+  background: var(--nur-primary-soft);
 }
 
 .warehouse-drag-handle:active {
   cursor: grabbing;
 }
-

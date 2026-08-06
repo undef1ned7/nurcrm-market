@@ -5,15 +5,15 @@
   flex-direction: column;
   position: fixed;
   inset: 0;
-  background: #f5f5f5;
+  background: var(--nur-bg);
 
   &__header {
     display: flex;
     align-items: center;
     gap: 16px;
     padding: 20px 24px;
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--nur-surface);
+    border-bottom: 1px solid var(--nur-border);
   }
 
   &__back-btn {
@@ -29,7 +29,7 @@
     transition: background 0.2s;
 
     &:hover:not(:disabled) {
-      background: #f3f4f6;
+      background: var(--nur-bg);
     }
 
     &:disabled {
@@ -41,7 +41,7 @@
   &__title {
     font-size: 24px;
     font-weight: 700;
-    color: #111827;
+    color: var(--nur-text);
     margin: 0;
   }
 
@@ -56,7 +56,7 @@
   &__card {
     width: 100%;
     max-width: 500px;
-    background: white;
+    background: var(--nur-surface);
     border-radius: 16px;
     padding: 40px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -74,13 +74,13 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: #fee2e2;
+    background: var(--nur-danger-soft);
   }
 
   &__card-title {
     font-size: 22px;
     font-weight: 700;
-    color: #111827;
+    color: var(--nur-text);
     margin: 0;
     text-align: center;
   }
@@ -91,7 +91,7 @@
     flex-direction: column;
     gap: 16px;
     padding: 20px;
-    background: #f9fafb;
+    background: var(--nur-surface-2);
     border-radius: 8px;
   }
 
@@ -103,13 +103,13 @@
 
   &__info-label {
     font-size: 14px;
-    color: #6b7280;
+    color: var(--nur-muted);
   }
 
   &__info-value {
     font-size: 16px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
   }
 
   &__input-wrapper {
@@ -122,31 +122,32 @@
   &__label {
     font-size: 14px;
     font-weight: 600;
-    color: #374151;
+    color: var(--nur-text-2);
   }
 
   &__input {
     width: 100%;
     padding: 12px 16px;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--nur-border);
     border-radius: 8px;
     font-size: 16px;
     font-weight: 600;
-    color: #111827;
+    color: var(--nur-text);
     transition: border-color 0.2s;
 
     &:focus {
       outline: none;
-      border-color: #ef4444;
+      border-color: var(--nur-danger);
     }
 
     &:disabled {
-      background: #f3f4f6;
+      background: var(--nur-bg);
       cursor: not-allowed;
     }
 
     &::placeholder {
-      color: #9ca3af;
+      color: var(--nur-placeholder);
+      opacity: 1;
     }
   }
 
@@ -158,13 +159,13 @@
     gap: 12px;
     padding: 20px;
     border-radius: 8px;
-    background: #f9fafb;
+    background: var(--nur-surface-2);
   }
 
   &__diff-label {
     font-size: 14px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--nur-muted);
   }
 
   &__diff-value {
@@ -179,26 +180,26 @@
     justify-content: center;
 
     &--zero {
-      color: #10b981;
-      background: #d1fae5;
+      color: var(--nur-success);
+      background: var(--nur-success-soft);
     }
 
     &--positive {
-      color: #10b981;
-      background: #d1fae5;
+      color: var(--nur-success);
+      background: var(--nur-success-soft);
     }
 
     &--negative {
-      color: #ef4444;
-      background: #fee2e2;
+      color: var(--nur-danger);
+      background: var(--nur-danger-soft);
     }
   }
 
   &__submit-btn {
     width: 100%;
     padding: 14px 24px;
-    background: #ef4444;
-    color: white;
+    background: var(--nur-danger);
+    color: var(--nur-surface);
     border: none;
     border-radius: 8px;
     font-size: 16px;
@@ -207,7 +208,7 @@
     transition: background 0.2s;
 
     &:hover:not(:disabled) {
-      background: #dc2626;
+      background: var(--nur-danger);
     }
 
     &:disabled {
@@ -222,7 +223,7 @@
     justify-content: center;
     height: 100vh;
     font-size: 18px;
-    color: #ef4444;
+    color: var(--nur-danger);
   }
 }
 

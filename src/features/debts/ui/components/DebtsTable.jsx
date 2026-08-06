@@ -1,9 +1,19 @@
+import { EmptyState, StatusChip } from "@shared/ui/page-shell";
 import {
   money,
   getDebtStatus,
   fmtDateTime,
   toYMD,
 } from "../helpers";
+
+const STATUS_TONE = {
+  overdue: "danger",
+  "due-today": "warning",
+  "due-tomorrow": "warning",
+  "due-soon": "warning",
+  normal: "success",
+  "no-date": "default",
+};
 
 export const DebtsTable = ({
   loading,
@@ -16,8 +26,8 @@ export const DebtsTable = ({
   onOpenEdit,
 }) => {
   return (
-    <div style={{ overflow: "auto" }}>
-      <table className="catalog__table">
+    <div className="nur-table-wrap debts-page__table-wrap">
+      <table className="nur-table debts-page__table">
         <thead>
           <tr>
             <th>Имя</th>
@@ -32,7 +42,7 @@ export const DebtsTable = ({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={7} style={{ padding: 16, color: "#6b7280" }}>
+              <td colSpan={7} className="debts-page__muted-cell">
                 Загрузка…
               </td>
             </tr>
@@ -42,16 +52,12 @@ export const DebtsTable = ({
               return (
                 <tr
                   key={x.id}
-                  style={{
-                    backgroundColor:
-                      debtStatus.status === "overdue"
-                        ? "#fef2f2"
-                        : debtStatus.status === "due-today"
-                        ? "#fff7ed"
-                        : debtStatus.status === "due-tomorrow"
-                        ? "#fffbeb"
-                        : "transparent",
-                  }}
+                  className={
+                    debtStatus.status !== "normal" &&
+                    debtStatus.status !== "no-date"
+                      ? `debts-page__row--${debtStatus.status}`
+                      : undefined
+                  }
                 >
                   <td data-label="Имя">{x.name}</td>
                   <td data-label="Телефон">{x.phone}</td>
@@ -66,34 +72,24 @@ export const DebtsTable = ({
                     {x.due_date ? toYMD(new Date(x.due_date)) : "—"}
                   </td>
                   <td data-label="Статус">
-                    <span
-                      style={{
-                        color: debtStatus.color,
-                        fontWeight: "bold",
-                        fontSize: "12px",
-                      }}
-                    >
+                    <StatusChip tone={STATUS_TONE[debtStatus.status] || "default"}>
                       {debtStatus.text}
-                    </span>
+                    </StatusChip>
                   </td>
                   <td data-label="Создан">{fmtDateTime(x.created_at)}</td>
                   <td data-label="Действия">
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div className="debts-page__row-actions">
                       <button
-                        className="catalog__btn catalog__btn--secondary"
+                        type="button"
+                        className="nur-btn nur-btn--primary nur-btn--sm"
                         onClick={() => onOpenPay(x.id)}
                         title="Оплатить (уменьшить сумму)"
                       >
                         Оплатить
                       </button>
                       <button
-                        className="catalog__btn catalog__btn--secondary"
+                        type="button"
+                        className="nur-btn nur-btn--secondary nur-btn--sm"
                         onClick={() => onOpenEdit(x)}
                         title="Изменить"
                       >
@@ -103,13 +99,15 @@ export const DebtsTable = ({
                       {confirmId === x.id ? (
                         <>
                           <button
-                            className="catalog__btn catalog__btn--danger"
+                            type="button"
+                            className="nur-btn nur-btn--danger nur-btn--sm"
                             onClick={() => onDelete(x.id)}
                           >
                             Да, удалить
                           </button>
                           <button
-                            className="catalog__btn"
+                            type="button"
+                            className="nur-btn nur-btn--ghost nur-btn--sm"
                             onClick={onCancelDelete}
                           >
                             Нет
@@ -117,7 +115,8 @@ export const DebtsTable = ({
                         </>
                       ) : (
                         <button
-                          className="catalog__btn"
+                          type="button"
+                          className="nur-btn nur-btn--ghost nur-btn--sm"
                           onClick={() => onAskDelete(x.id)}
                         >
                           Удалить
@@ -130,8 +129,11 @@ export const DebtsTable = ({
             })
           ) : (
             <tr>
-              <td colSpan={7} style={{ padding: 16, color: "#6b7280" }}>
-                Ничего не найдено
+              <td colSpan={7}>
+                <EmptyState
+                  title="Ничего не найдено"
+                  text="Измените фильтры или добавьте новый долг."
+                />
               </td>
             </tr>
           )}

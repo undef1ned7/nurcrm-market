@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
-import { X, ChevronUp, ChevronDown, Download } from "lucide-react";
+import { X, ChevronUp, ChevronDown, Download, Printer } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { pdf } from "@react-pdf/renderer";
 import { getInvoiceJson } from "@entities/sale";
 import InvoicePdfDocument from "@pages/documents/ui/components/InvoicePdfDocument";
 import "./SuccessPaymentModal.scss";
 
+const toMoney = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const SuccessPaymentModal = ({
   open,
   onClose,
-  onPrint: _onPrint,
-  printing: _printing = false,
+  onPrint,
+  printing = false,
   total,
   cashAmount = 0,
   cashlessAmount = 0,
@@ -25,7 +30,13 @@ const SuccessPaymentModal = ({
   const [isReceivedExpanded, setIsReceivedExpanded] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
-  // Обработка нажатия Enter для закрытия модального окна
+  const safeTotal = toMoney(total);
+  const safeCash = toMoney(cashAmount);
+  const safeCashless = toMoney(cashlessAmount);
+  const safeDeferred = toMoney(deferredAmount);
+  const safeReceived = toMoney(amountReceived);
+  const safeChange = toMoney(change);
+
   useEffect(() => {
     const handleKeyPress = (e) => {
       if (open && e.key === "Enter") {
@@ -44,7 +55,6 @@ const SuccessPaymentModal = ({
     }
   }, [open, onClose, blockEnterCloseUntil]);
 
-  // Вспомогательная функция для скачивания blob
   const downloadBlob = (blob, filename) => {
     if (typeof window === "undefined" || !window.URL || !window.document) {
       throw new Error("Браузерное окружение недоступно");
@@ -59,7 +69,6 @@ const SuccessPaymentModal = ({
     setTimeout(() => window.URL.revokeObjectURL(url), 1000);
   };
 
-  // Функция для скачивания накладной
   const handleDownloadInvoice = async () => {
     if (!saleId) {
       alert("ID продажи не найден");
@@ -68,7 +77,6 @@ const SuccessPaymentModal = ({
 
     setDownloadingInvoice(true);
     try {
-      // Получаем JSON данные накладной
       const result = await dispatch(getInvoiceJson(saleId));
       if (getInvoiceJson.fulfilled.match(result)) {
         const invoiceData = result.payload;
@@ -77,9 +85,8 @@ const SuccessPaymentModal = ({
           throw new Error("Нет данных для генерации PDF");
         }
 
-        // Генерируем PDF из JSON используя InvoicePdfDocument
         const blob = await pdf(
-          <InvoicePdfDocument data={invoiceData} />
+          <InvoicePdfDocument data={invoiceData} />,
         ).toBlob();
 
         const fileName = `invoice_${
@@ -94,7 +101,7 @@ const SuccessPaymentModal = ({
       alert(
         err?.message ||
           err?.detail ||
-          "Не удалось скачать накладную. Попробуйте позже."
+          "Не удалось скачать накладную. Попробуйте позже.",
       );
     } finally {
       setDownloadingInvoice(false);
@@ -123,7 +130,7 @@ const SuccessPaymentModal = ({
             <span className="success-payment-modal__summary-label">Итог</span>
             <div className="success-payment-modal__summary-value-wrapper">
               <span className="success-payment-modal__summary-value">
-                {total.toFixed(2)}сом
+                {safeTotal.toFixed(2)}сом
               </span>
               {isTotalExpanded ? (
                 <ChevronUp size={18} className="success-payment-modal__icon" />
@@ -143,7 +150,7 @@ const SuccessPaymentModal = ({
                   Наличные
                 </span>
                 <span className="success-payment-modal__summary-value">
-                  {cashAmount.toFixed(2)}сом
+                  {safeCash.toFixed(2)}сом
                 </span>
               </div>
 
@@ -152,7 +159,7 @@ const SuccessPaymentModal = ({
                   Безналичные
                 </span>
                 <span className="success-payment-modal__summary-value">
-                  {cashlessAmount.toFixed(2)}сом
+                  {safeCashless.toFixed(2)}сом
                 </span>
               </div>
 
@@ -161,7 +168,7 @@ const SuccessPaymentModal = ({
                   Отсрочка
                 </span>
                 <span className="success-payment-modal__summary-value">
-                  {deferredAmount.toFixed(2)}сом
+                  {safeDeferred.toFixed(2)}сом
                 </span>
               </div>
             </div>
@@ -178,7 +185,7 @@ const SuccessPaymentModal = ({
             </span>
             <div className="success-payment-modal__received-value-wrapper">
               <span className="success-payment-modal__received-value">
-                {amountReceived.toFixed(2)}сом
+                {safeReceived.toFixed(2)}сом
               </span>
               {isReceivedExpanded ? (
                 <ChevronUp size={18} className="success-payment-modal__icon" />
@@ -198,38 +205,40 @@ const SuccessPaymentModal = ({
                   Наличные
                 </span>
                 <span className="success-payment-modal__summary-value">
-                  {amountReceived.toFixed(2)}сом
+                  {safeReceived.toFixed(2)}сом
                 </span>
               </div>
             </div>
           )}
         </div>
 
-        {change > 0 && (
+        {safeChange > 0 && (
           <div className="success-payment-modal__change">
             <div className="success-payment-modal__change-label">СДАЧА:</div>
             <div className="success-payment-modal__change-value">
-              {change.toFixed(2)} сом
+              {safeChange.toFixed(2)} сом
             </div>
           </div>
         )}
 
         <div className="success-payment-modal__actions">
-          {/* {onPrint && (
+          {typeof onPrint === "function" && (
             <button
               className="success-payment-modal__print-btn"
               onClick={onPrint}
               disabled={printing}
+              type="button"
             >
               <Printer size={18} />
               {printing ? "Печать..." : "ПЕЧАТЬ ЧЕКА"}
             </button>
-          )} */}
+          )}
           {saleId && (
             <button
               className="success-payment-modal__download-btn"
               onClick={handleDownloadInvoice}
               disabled={downloadingInvoice}
+              type="button"
             >
               <Download size={18} />
               {downloadingInvoice ? "Скачивание..." : "СКАЧАТЬ НАКЛАДНУЮ"}

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { submitAdditionalServicesRequest } from "@shared/api/additionalServices";
 import { ADDITIONAL_SERVICES_CONFIG } from "@widgets/sidebar/ui/config/additionalServicesConfig";
 import { SERVICE_IDS } from "@shared/config/additionalServiceIds";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import "./SocialModal.scss";
 
 const SocialModal = ({ isOpen, onClose, selectedSocial }) => {
@@ -103,62 +104,78 @@ const SocialModal = ({ isOpen, onClose, selectedSocial }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="social-modal-overlay" onClick={onClose}>
+    <ReactPortal wrapperId="additional-services-modal">
       <div
-        className="social-modal-content"
-        onClick={(e) => e.stopPropagation()}
+        className="social-modal-overlay"
+        role="presentation"
+        onClick={onClose}
       >
-        <button className="social-modal-close" onClick={onClose}>
-          &times;
-        </button>
-
-        <div className="social-modal-header">
-          <div className="social-modal-icon">{socialInfo.icon}</div>
-          <h2>Заявка на подключение: {socialInfo.title}</h2>
-        </div>
-
-        <div className="social-modal-body">
-          <p className="social-modal-description">{socialInfo.description}</p>
-
-          {submitDisabledReason && (
-            <div className="social-modal-hint">{submitDisabledReason}</div>
-          )}
-
-          {submitStatus && (
-            <div
-              className={`social-modal-status social-modal-status--${submitStatus.type}`}
-            >
-              {submitStatus.message}
-            </div>
-          )}
-        </div>
-
-        <div className="social-modal-actions">
+        <div
+          className="social-modal-content"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Заявка на подключение: ${socialInfo.title}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
-            className="social-modal-button social-modal-button--cancel"
+            type="button"
+            className="social-modal-close"
             onClick={onClose}
-            disabled={isSubmitting}
+            aria-label="Закрыть"
           >
-            Отмена
+            &times;
           </button>
-          <button
-            className="social-modal-button social-modal-button--submit"
-            onClick={handleSubmit}
-            disabled={submitDisabled}
-            title={submitDisabledReason || ""}
-          >
-            {isSubmitting ? (
-              <>
-                <span className="social-modal-spinner"></span>
-                Отправка...
-              </>
-            ) : (
-              "Отправить заявку"
+
+          <div className="social-modal-header">
+            <div className="social-modal-icon">{socialInfo.icon}</div>
+            <h2>Заявка на подключение: {socialInfo.title}</h2>
+          </div>
+
+          <div className="social-modal-body">
+            <p className="social-modal-description">{socialInfo.description}</p>
+
+            {submitDisabledReason && (
+              <div className="social-modal-hint">{submitDisabledReason}</div>
             )}
-          </button>
+
+            {submitStatus && (
+              <div
+                className={`social-modal-status social-modal-status--${submitStatus.type}`}
+              >
+                {submitStatus.message}
+              </div>
+            )}
+          </div>
+
+          <div className="social-modal-actions">
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={handleSubmit}
+              disabled={submitDisabled}
+              title={submitDisabledReason || ""}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="social-modal-spinner"></span>
+                  Отправка...
+                </>
+              ) : (
+                "Отправить заявку"
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </ReactPortal>
   );
 };
 

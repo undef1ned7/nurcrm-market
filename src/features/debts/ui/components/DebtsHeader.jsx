@@ -1,3 +1,5 @@
+import { PageHeader, FilterBar } from "@shared/ui/page-shell";
+
 export const DebtsHeader = ({
   q,
   setQ,
@@ -8,10 +10,24 @@ export const DebtsHeader = ({
   onAddClick,
 }) => {
   return (
-    <div className="catalog__controls">
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    <>
+      <PageHeader
+        title="Долги"
+        subtitle="Учёт долгов клиентов и сроки возврата"
+        actions={
+          <button
+            type="button"
+            className="nur-btn nur-btn--primary"
+            onClick={onAddClick}
+          >
+            Добавить долг
+          </button>
+        }
+      />
+
+      <FilterBar className="debts-page__toolbar">
         <input
-          className="catalog__search"
+          className="nur-input debts-page__search"
           placeholder="Поиск по имени/телефону…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -19,26 +35,19 @@ export const DebtsHeader = ({
         />
         <input
           type="date"
-          className="catalog__search"
+          className="nur-input debts-page__date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
           title="Дата от (по дате создания)"
         />
         <input
           type="date"
-          className="catalog__search"
+          className="nur-input debts-page__date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
           title="Дата до (по дате создания)"
         />
-      </div>
-
-      <button
-        className="catalog__btn catalog__btn--primary"
-        onClick={onAddClick}
-      >
-        + Добавить долг
-      </button>
-    </div>
+      </FilterBar>
+    </>
   );
 };

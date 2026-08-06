@@ -11,7 +11,7 @@
 
 .delete-code-modal {
   width: min(420px, 100%);
-  background: #fff;
+  background: var(--nur-surface);
   border-radius: 16px;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
   overflow: hidden;
@@ -22,7 +22,7 @@
     justify-content: space-between;
     gap: 16px;
     padding: 18px 20px 12px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--nur-border);
   }
 
   &__titleWrap {
@@ -38,7 +38,7 @@
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: #fef3c7;
+    background: var(--nur-primary-light);
     color: #b45309;
   }
 
@@ -46,7 +46,7 @@
     margin: 0;
     font-size: 18px;
     font-weight: 700;
-    color: #111827;
+    color: var(--nur-text);
   }
 
   &__close {
@@ -55,14 +55,14 @@
     border: none;
     border-radius: 10px;
     background: transparent;
-    color: #6b7280;
+    color: var(--nur-muted);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
-      background: #f3f4f6;
+      background: var(--nur-bg);
     }
   }
 
@@ -76,13 +76,13 @@
   &__hint {
     margin: 0;
     font-size: 14px;
-    color: #4b5563;
+    color: var(--nur-text-2);
   }
 
   &__input {
     height: 48px;
     padding: 0 14px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--nur-border-strong);
     border-radius: 10px;
     font-size: 20px;
     font-weight: 600;
@@ -91,14 +91,14 @@
 
     &:focus {
       outline: none;
-      border-color: #f7d617;
+      border-color: var(--nur-primary, #f7d74f);
     }
   }
 
   &__error {
     margin: 0;
     font-size: 13px;
-    color: #dc2626;
+    color: var(--nur-danger);
   }
 
   &__actions {
@@ -118,15 +118,15 @@
   }
 
   &__cancel-btn {
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #374151;
+    border: 1px solid var(--nur-border-strong);
+    background: var(--nur-surface);
+    color: var(--nur-text-2);
   }
 
   &__confirm-btn {
     border: none;
-    background: #f7d617;
-    color: #111827;
+    background: var(--nur-primary, #f7d74f);
+    color: var(--nur-primary-ink);
 
     &:disabled {
       opacity: 0.6;

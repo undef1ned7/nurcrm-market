@@ -36,13 +36,14 @@
     outline: none;
     border: 1px solid #00000033;
     border-radius: 8px;
-    background-color: #ffffff;
+    background-color: var(--nur-surface);
     font-family: Montserrat, sans-serif;
     font-size: 12px;
     box-sizing: border-box;
 
     &::placeholder {
-      color: #91929e;
+      color: var(--nur-placeholder);
+      opacity: 1;
     }
   }
 
@@ -51,7 +52,7 @@
     padding: 8px 27px;
     border-radius: 8px;
     border: 1px solid #00000033;
-    color: #91929e;
+    color: var(--nur-muted);
     font-family: Montserrat, sans-serif;
     font-weight: 600;
     font-size: 14px;
@@ -60,7 +61,7 @@
   }
 
   .start__total-pay {
-    background-color: #f7d617;
+    background-color: var(--nur-primary, #f7d74f);
     border: 2px solid #00000033;
     font-family: Montserrat, sans-serif;
     font-weight: 600;
@@ -69,7 +70,7 @@
     padding: 15px;
     border-radius: 8px;
     cursor: pointer;
-    color: #000;
+    color: var(--nur-text);
   }
 
   @media screen and (max-width: 576px) {

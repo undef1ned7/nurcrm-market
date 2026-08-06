@@ -176,8 +176,14 @@ const CounterpartyTable = ({
 
   if (loading && counterparties.length === 0) {
     return (
-      <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="warehouse-table w-full min-w-[1100px]">
+      <div
+        className="overflow-auto rounded-2xl shadow-sm"
+        style={{
+          border: "1px solid var(--nur-border)",
+          background: "var(--nur-surface)",
+        }}
+      >
+        <table className="nur-table warehouse-table w-full min-w-[1100px]">
           <tbody>
             <tr>
               <td colSpan={colCount} className="warehouse-table__loading">
@@ -192,8 +198,14 @@ const CounterpartyTable = ({
 
   if (counterparties.length === 0 && !loading) {
     return (
-      <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="warehouse-table w-full min-w-[1100px]">
+      <div
+        className="overflow-auto rounded-2xl shadow-sm"
+        style={{
+          border: "1px solid var(--nur-border)",
+          background: "var(--nur-surface)",
+        }}
+      >
+        <table className="nur-table warehouse-table w-full min-w-[1100px]">
           <tbody>
             <tr>
               <td colSpan={colCount} className="warehouse-table__empty">
@@ -207,13 +219,24 @@ const CounterpartyTable = ({
   }
 
   return (
-    <div className="overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm relative">
+    <div
+      className="overflow-auto rounded-2xl shadow-sm relative"
+      style={{
+        border: "1px solid var(--nur-border)",
+        background: "var(--nur-surface)",
+      }}
+    >
       {loading && counterparties.length > 0 && (
-        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
-          <div className="text-sm text-slate-600">Загрузка...</div>
+        <div
+          className="absolute inset-0 backdrop-blur-sm z-10 flex items-center justify-center"
+          style={{ background: "color-mix(in srgb, var(--nur-surface) 50%, transparent)" }}
+        >
+          <div className="text-sm" style={{ color: "var(--nur-muted)" }}>
+            Загрузка...
+          </div>
         </div>
       )}
-      <table className="warehouse-table w-full min-w-[1100px]">
+      <table className="nur-table warehouse-table w-full min-w-[1100px]">
         <thead>
           <tr>
             <th rowSpan={2}>№</th>

@@ -18,12 +18,18 @@ import NewEmployeeCredentialsModal from "./modals/NewEmployeeCredentialsModal";
 import DeleteRoleModal from "./modals/DeleteRoleModal";
 import DeleteEmployeeModal from "./modals/DeleteEmployeeModal";
 import EmployeeAccessModal from "./modals/EmployeeAccessModal";
+import BarberMastersPortal from "./modals/BarberMastersPortal";
 import { convertEmployeeAccessesToLabels } from "./employeeAccessLabels";
 import {
   employPayrollDetailPath,
   isSaleEmployeePayrollSector,
 } from "./saleEmployeePayroll";
 import "./Masters.scss";
+import {
+  PageShell,
+  PageHeader,
+  FilterBar,
+} from "@shared/ui/page-shell";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { getNewEmployeeAccessDefaults } from "@shared/lib/newEmployeeDefaultAccess";
 import {
@@ -1132,86 +1138,41 @@ const Masters = () => {
   };
 
   /* ===================== Render ===================== */
+  const employeesSubtitle = loading
+    ? "Загрузка…"
+    : tab === "roles"
+      ? `${rolesForList.length} ролей${
+          rolesForList.length > PAGE_SIZE
+            ? ` · стр. ${pageSafeRole}/${totalPagesRole}`
+            : ""
+        }`
+      : `${filteredEmployees.length} сотрудников${
+          filteredEmployees.length > PAGE_SIZE
+            ? ` · стр. ${pageSafeEmp}/${totalPagesEmp}`
+            : ""
+        }`;
+
   return (
-    <div className="barbermasters">
-      <div className="barbermasters__header">
-        <div className="barbermasters__titleWrap">
-          <h2 className="barbermasters__title">Сотрудники</h2>
-          <span className="barbermasters__subtitle">
-            {loading
-              ? "Загрузка…"
-              : tab === "roles"
-                ? `${rolesForList.length} ролей${
-                    rolesForList.length > PAGE_SIZE
-                      ? ` · стр. ${pageSafeRole}/${totalPagesRole}`
-                      : ""
-                  }`
-                : `${filteredEmployees.length} сотрудников${
-                    filteredEmployees.length > PAGE_SIZE
-                      ? ` · стр. ${pageSafeEmp}/${totalPagesEmp}`
-                      : ""
-                  }`}
-          </span>
-        </div>
-
-        <div className="barbermasters__actions">
-          <div className="barbermasters__tabs">
+    <PageShell className="barbermasters">
+      <PageHeader
+        title="Сотрудники"
+        subtitle={employeesSubtitle}
+        actions={
+          tab === "roles" ? (
             <button
               type="button"
-              className={`barbermasters__btn barbermasters__btn--secondary ${
-                tab === "roles" ? "is-active" : ""
-              }`}
-              onClick={() => setTab("roles")}
-            >
-              Роли
-            </button>
-            <button
-              type="button"
-              className={`barbermasters__btn barbermasters__btn--secondary ${
-                tab === "masters" ? "is-active" : ""
-              }`}
-              onClick={() => setTab("masters")}
-            >
-              Сотрудники
-            </button>
-          </div>
-
-          {tab === "masters" && (
-            <RoleSelect
-              options={roleFilterOptions}
-              value={filterRole}
-              onChange={setFilterRole}
-              placeholder="Все роли"
-              hideCurrentLabelInMenu
-              className="barbermasters__roleFilter"
-            />
-          )}
-
-          <div className="barbermasters__search">
-            <FaSearch className="barbermasters__searchIcon" />
-            <input
-              className="barbermasters__searchInput"
-              placeholder={
-                tab === "roles" ? "Поиск ролей…" : "Поиск по сотрудникам"
-              }
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              aria-label="Поиск"
-            />
-          </div>
-
-          {tab === "roles" ? (
-            <button
-              type="button"
-              className="barbermasters__btn barbermasters__btn--primary"
+              className="nur-btn nur-btn--primary"
               onClick={() => setRoleCreateOpen(true)}
+              title="Добавить роль"
+              aria-label="Добавить роль"
             >
               <FaPlus />
+              <span className="nur-btn__label">Добавить роль</span>
             </button>
           ) : (
             <button
               type="button"
-              className="barbermasters__btn barbermasters__btn--primary"
+              className="nur-btn nur-btn--primary"
               onClick={openEmpCreate}
               disabled={!canAddEmployeeByStartPlan}
               title={
@@ -1219,12 +1180,61 @@ const Masters = () => {
                   ? MARKET_START_EMPLOYEE_LIMIT_MESSAGE
                   : "Добавить сотрудника"
               }
+              aria-label="Добавить сотрудника"
             >
               <FaPlus />
+              <span className="nur-btn__label">Добавить</span>
             </button>
-          )}
+          )
+        }
+      />
+
+      <FilterBar className="barbermasters__toolbar">
+        <div className="barbermasters__tabs">
+          <button
+            type="button"
+            className={`nur-btn nur-btn--sm ${
+              tab === "roles" ? "nur-btn--primary" : "nur-btn--secondary"
+            }`}
+            onClick={() => setTab("roles")}
+          >
+            Роли
+          </button>
+          <button
+            type="button"
+            className={`nur-btn nur-btn--sm ${
+              tab === "masters" ? "nur-btn--primary" : "nur-btn--secondary"
+            }`}
+            onClick={() => setTab("masters")}
+          >
+            Сотрудники
+          </button>
         </div>
-      </div>
+
+        {tab === "masters" && (
+          <RoleSelect
+            options={roleFilterOptions}
+            value={filterRole}
+            onChange={setFilterRole}
+            placeholder="Все роли"
+            hideCurrentLabelInMenu
+            className="barbermasters__roleFilter"
+          />
+        )}
+
+        <div className="barbermasters__search">
+          <FaSearch className="barbermasters__searchIcon" />
+          <input
+            className="nur-input barbermasters__searchInput"
+            placeholder={
+              tab === "roles" ? "Поиск ролей…" : "Поиск по сотрудникам"
+            }
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Поиск"
+          />
+        </div>
+      </FilterBar>
 
       {!!error && <div className="barbermasters__alert">{error}</div>}
       {!!pageNotice && <div className="barbermasters__alert">{pageNotice}</div>}
@@ -1255,7 +1265,7 @@ const Masters = () => {
 
                 <div className="barbermasters__cardActions">
                   <button
-                    className="barbermasters__btn barbermasters__btn--secondary"
+                    className="nur-btn nur-btn--secondary"
                     onClick={() => openRoleEdit(r)}
                     disabled={r._sys}
                     title={
@@ -1270,7 +1280,7 @@ const Masters = () => {
                     </span>
                   </button>
                   <button
-                    className="barbermasters__btn barbermasters__btn--danger"
+                    className="nur-btn nur-btn--danger"
                     onClick={() => setRoleToDelete(r)}
                     disabled={r._sys || roleDeletingIds.has(r.id)}
                     title={r._sys ? "Системные роли нельзя удалять" : "Удалить"}
@@ -1368,7 +1378,7 @@ const Masters = () => {
 
                   <div className="barbermasters__cardActions">
                     <button
-                      className="barbermasters__btn barbermasters__btn--secondary"
+                      className="nur-btn nur-btn--secondary"
                       onClick={() => openEmpEdit(u)}
                       title="Редактировать сотрудника"
                     >
@@ -1378,7 +1388,7 @@ const Masters = () => {
                       (u.role === "agent" ||
                         roleLabel?.toLowerCase().includes("агент")) && (
                         <button
-                          className="barbermasters__btn barbermasters__btn--secondary"
+                          className="nur-btn nur-btn--secondary"
                           onClick={() =>
                             navigate(`/crm/production/agents/${u.id}/analytics`)
                           }
@@ -1393,7 +1403,7 @@ const Masters = () => {
                       (u.role === "agent" ||
                         roleLabel?.toLowerCase().includes("агент")) && (
                         <button
-                          className="barbermasters__btn barbermasters__btn--secondary"
+                          className="nur-btn nur-btn--secondary"
                           onClick={() =>
                             navigate(
                               `/crm/warehouse/analytics?agent_id=${u.id}`,
@@ -1411,7 +1421,7 @@ const Masters = () => {
                       (profile?.role === "owner" ||
                         profile?.role === "admin") && (
                         <button
-                          className="barbermasters__btn barbermasters__btn--secondary"
+                          className="nur-btn nur-btn--secondary"
                           onClick={() => openWarehouseAgentModal(u)}
                           title="Назначить агентом склада (модуль агентов)"
                         >
@@ -1421,7 +1431,7 @@ const Masters = () => {
                         </button>
                       )}
                     <button
-                      className="barbermasters__btn barbermasters__btn--secondary"
+                      className="nur-btn nur-btn--secondary"
                       onClick={() => openAccessModal(u)}
                       title="Управление доступами"
                       disabled={u.role === "owner"}
@@ -1430,7 +1440,7 @@ const Masters = () => {
                       <span className="barbermasters__btnText">Доступы</span>
                     </button>
                     <button
-                      className="barbermasters__btn barbermasters__btn--danger"
+                      className="nur-btn nur-btn--danger"
                       onClick={() => setEmpToDelete(u)}
                       disabled={empDeletingIds.has(u.id)}
                       title="Удалить сотрудника"
@@ -1549,19 +1559,28 @@ const Masters = () => {
       />
 
       {warehouseAgentModalOpen && warehouseAgentEmployee && (
-        <div className="barbermasters__overlay" role="dialog" aria-modal="true">
-          <div className="barbermasters__modal">
-            <header className="barbermasters__modalHeader">
-              <h3 className="barbermasters__modalTitle">Агент склада</h3>
-              <button
-                type="button"
-                className="barbermasters__iconBtn"
-                onClick={closeWarehouseAgentModal}
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
-            </header>
+        <BarberMastersPortal wrapperId="barbermasters-warehouse-agent">
+          <div
+            className="barbermasters__overlay"
+            role="dialog"
+            aria-modal="true"
+            onClick={closeWarehouseAgentModal}
+          >
+            <div
+              className="barbermasters__modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <header className="barbermasters__modalHeader">
+                <h3 className="barbermasters__modalTitle">Агент склада</h3>
+                <button
+                  type="button"
+                  className="barbermasters__iconBtn"
+                  onClick={closeWarehouseAgentModal}
+                  aria-label="Закрыть"
+                >
+                  ×
+                </button>
+              </header>
             <form
               className="barbermasters__form"
               onSubmit={submitWarehouseAgent}
@@ -1765,7 +1784,7 @@ const Masters = () => {
               <div className="barbermasters__modalFooter pl-5 pb-5 flex gap-3">
                 <button
                   type="submit"
-                  className="barbermasters__btn barbermasters__btn--primary"
+                  className="nur-btn nur-btn--primary"
                   disabled={warehouseAgentSaving}
                 >
                   {warehouseAgentSaving
@@ -1776,7 +1795,7 @@ const Masters = () => {
                 </button>
                 <button
                   type="button"
-                  className="barbermasters__btn barbermasters__btn--secondary"
+                  className="nur-btn nur-btn--secondary"
                   onClick={closeWarehouseAgentModal}
                   disabled={warehouseAgentSaving}
                 >
@@ -1786,10 +1805,11 @@ const Masters = () => {
             </form>
           </div>
         </div>
+        </BarberMastersPortal>
       )}
 
       {openLogin && null}
-    </div>
+    </PageShell>
   );
 };
 

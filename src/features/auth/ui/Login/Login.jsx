@@ -285,7 +285,7 @@ const Login = () => {
                 Email
               </label>
               <input
-                className="login__input text-black"
+                className="login__input"
                 type="email"
                 id="email"
                 name="email"
@@ -305,7 +305,7 @@ const Login = () => {
               </label>
               <div className="login__password">
                 <input
-                  className="login__input login__input--password text-black"
+                  className="login__input login__input--password"
                   type={showPass ? "text" : "password"}
                   id="password"
                   name="password"
@@ -319,7 +319,7 @@ const Login = () => {
                 />
                 <button
                   type="button" // ← ВАЖНО: не submit
-                  className="login__toggle text-black"
+                  className="login__toggle"
                   onClick={() => setShowPass((s) => !s)}
                   aria-label={showPass ? "Скрыть пароль" : "Показать пароль"}
                 >

@@ -15,6 +15,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 // import "./Sklad.scss";
 
 import { useDebounce } from "@shared/hooks/useDebounce";
+import api from "@shared/api";
 import { fetchClientsAsync } from "@entities/client";
 import {
   historySellObjects,
@@ -490,20 +491,24 @@ const Sell = () => {
 
   const bulkDeleteSales = async (ids, { cancelPaidMessage, successMessage, reloadPage }) => {
     const doRequest = async (allowPaid) => {
-      const res = await fetch("https://app.nurcrm.kg/api/main/sales/bulk-delete/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          ids,
-          allow_paid: allowPaid,
-        }),
-      });
-      return res;
+      try {
+        const res = await api.post(
+          "/main/sales/bulk-delete/",
+          { ids, allow_paid: allowPaid },
+          { validateStatus: () => true },
+        );
+        return {
+          ok: res.status >= 200 && res.status < 300,
+          status: res.status,
+          json: async () => res.data,
+        };
+      } catch (err) {
+        return {
+          ok: false,
+          status: err?.response?.status || 0,
+          json: async () => err?.response?.data || {},
+        };
+      }
     };
 
     let res = await doRequest(false);
