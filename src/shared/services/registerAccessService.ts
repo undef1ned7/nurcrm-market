@@ -1,0 +1,155 @@
+import {
+  verifyRegisterAccess,
+  changeRegisterAccessPassword,
+} from "@shared/api/registerAccess";
+
+const STORAGE_HASH_KEY = "nur_register_access_hash";
+const SESSION_UNLOCK_KEY = "nur_register_access_unlocked";
+
+const USE_BACKEND = import.meta.env.VITE_REGISTER_ACCESS_BACKEND === "true";
+
+/** Пароль только из env — без дефолта в бандле. */
+const DEFAULT_PASSWORD = String(
+  import.meta.env.VITE_REGISTER_ACCESS_PASSWORD || "",
+).trim();
+
+async function hashPassword(password: any) {
+  const data = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function readStoredHash() {
+  try {
+    return localStorage.getItem(STORAGE_HASH_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredHash(hash: any) {
+  try {
+    localStorage.setItem(STORAGE_HASH_KEY, hash);
+  } catch {
+    // ignore quota / private mode errors
+  }
+}
+
+async function ensureLocalPasswordInitialized() {
+  if (readStoredHash()) return;
+  if (!DEFAULT_PASSWORD) {
+    throw new Error(
+      "VITE_REGISTER_ACCESS_PASSWORD не задан. Укажите пароль в .env или включите VITE_REGISTER_ACCESS_BACKEND=true",
+    );
+  }
+  const hash = await hashPassword(DEFAULT_PASSWORD);
+  writeStoredHash(hash);
+}
+
+async function verifyLocalPassword(password: any) {
+  await ensureLocalPasswordInitialized();
+  const inputHash = await hashPassword(password);
+  return inputHash === readStoredHash();
+}
+
+async function changeLocalPassword(currentPassword: any, newPassword: any) {
+  const isValid = await verifyLocalPassword(currentPassword);
+  if (!isValid) {
+    return { ok: false, error: "Неверный текущий пароль" };
+  }
+
+  const newHash = await hashPassword(newPassword);
+  writeStoredHash(newHash);
+  return { ok: true };
+}
+
+export function isSessionUnlocked() {
+  try {
+    return sessionStorage.getItem(SESSION_UNLOCK_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setSessionUnlocked(unlocked: any) {
+  try {
+    if (unlocked) {
+      sessionStorage.setItem(SESSION_UNLOCK_KEY, "1");
+    } else {
+      sessionStorage.removeItem(SESSION_UNLOCK_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export function isBackendMode() {
+  return USE_BACKEND;
+}
+
+export async function verifyAccessPassword(password: any) {
+  if (USE_BACKEND) {
+    try {
+      await verifyRegisterAccess(password);
+      return { ok: true };
+    } catch (error: any) {
+      const detail =
+        error?.detail ||
+        error?.message ||
+        (typeof error === "string" ? error : "Неверный пароль");
+      return { ok: false, error: String(detail) };
+    }
+  }
+
+  try {
+    const isValid = await verifyLocalPassword(password);
+    return isValid ? { ok: true } : { ok: false, error: "Неверный пароль" };
+  } catch (error: any) {
+    return {
+      ok: false,
+      error:
+        error?.message ||
+        "Регистрация недоступна: не настроен пароль доступа",
+    };
+  }
+}
+
+export async function unlockRegistration(password: any) {
+  try {
+    const result = await verifyAccessPassword(password);
+    if (result.ok) {
+      setSessionUnlocked(true);
+    }
+    return result;
+  } catch (error: any) {
+    return {
+      ok: false,
+      error: error?.message || "Регистрация недоступна: не настроен пароль доступа",
+    };
+  }
+}
+
+export async function changeAccessPassword(currentPassword: any, newPassword: any) {
+  if (USE_BACKEND) {
+    try {
+      await changeRegisterAccessPassword(currentPassword, newPassword);
+      return { ok: true };
+    } catch (error: any) {
+      const detail =
+        error?.current_password?.[0] ||
+        error?.new_password?.[0] ||
+        error?.detail ||
+        error?.message ||
+        "Не удалось сменить пароль";
+      return { ok: false, error: String(detail) };
+    }
+  }
+
+  return changeLocalPassword(currentPassword, newPassword);
+}
+
+export function lockRegistration() {
+  setSessionUnlocked(false);
+}

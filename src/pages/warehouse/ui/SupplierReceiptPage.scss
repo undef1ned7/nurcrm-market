@@ -370,17 +370,19 @@
     inset: 0;
     background: var(--nur-scrim, rgba(15, 23, 42, 0.55));
     display: flex;
-    align-items: center;
+    align-items: safe center;
     justify-content: center;
     z-index: 1200;
     padding: 16px;
     box-sizing: border-box;
+    overflow-y: auto;
   }
 
   &__modal-card {
     width: min(460px, 100%);
-    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 32px);
     overflow: auto;
+    margin: auto;
     background: var(--nur-surface, #fff);
     color: var(--nur-text, var(--text, #0f172a));
     border-radius: 16px;
@@ -395,19 +397,22 @@
 
   &__modal-card--full {
     width: min(1200px, 100%);
-    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 32px);
     padding: 0;
     overflow: auto;
   }
 
   &__modal-card--products {
+    display: flex;
+    flex-direction: column;
     width: min(920px, 100%);
-    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 32px);
+    overflow: hidden;
   }
 
   &__modal-card--detail {
     width: min(720px, 100%);
-    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 32px);
   }
 
   &__modal-card--payment {
@@ -648,7 +653,9 @@
   }
 
   &__modal-products-list {
-    max-height: 460px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: min(460px, calc(100dvh - 280px));
     overflow-y: auto;
     padding: 4px;
     border: 1px solid var(--border);
