@@ -21,6 +21,8 @@ src/
 Aliases: `@app`, `@pages`, `@widgets`, `@features`, `@entities`, `@shared`.  
 Layer rules: see [src/ARCHITECTURE.md](src/ARCHITECTURE.md). ESLint `boundaries/dependencies` enforces them.
 
+**Для cloud/local агентов:** полная карта проекта — [docs/PROJECT.md](docs/PROJECT.md).
+
 ## Setup
 
 ```bash

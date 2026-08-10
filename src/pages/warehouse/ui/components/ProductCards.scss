@@ -2,10 +2,13 @@
 
 .warehouse-drag-handle--card {
   margin-top: 2px;
+  flex: none;
 }
 
 .warehouse-cards {
   padding: var(--nur-space-4, 16px);
+  min-width: 0;
+  width: 100%;
 }
 
 .warehouse-cards__toolbar {
@@ -41,19 +44,17 @@
 
 .warehouse-cards__grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: var(--nur-space-4, 16px);
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (min-width: 1280px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  min-width: 0;
+  width: 100%;
 }
 
 .warehouse-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nur-space-3, 12px);
+  min-width: 0;
   cursor: pointer;
   padding: var(--nur-space-4, 16px);
   background: var(--nur-surface);
@@ -69,26 +70,89 @@
   }
 }
 
+.warehouse-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--nur-space-3, 12px);
+  min-width: 0;
+}
+
+.warehouse-card__check {
+  flex: none;
+  padding-top: 4px;
+}
+
+.warehouse-card__image {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--nur-border);
+  object-fit: cover;
+  background: var(--nur-surface-2);
+  /* Override .warehouse-table__product-image bleed (aspect-ratio 16/9) */
+  aspect-ratio: 1 / 1;
+  max-width: 48px;
+}
+
+.warehouse-card__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.warehouse-card__num {
+  font-size: 12px;
+  color: var(--nur-muted);
+}
+
+.warehouse-card__name {
+  margin-top: 2px;
+  font-size: var(--nur-font-body, 14px);
+  font-weight: 600;
+  color: var(--nur-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-card__meta {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  color: var(--nur-text-2);
+
+  span {
+    min-width: 0;
+  }
+
+  strong {
+    font-weight: 600;
+    color: var(--nur-text);
+  }
+}
+
 .warehouse-card__stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: var(--nur-space-4, 16px);
+  margin-top: 0;
 }
 
 .warehouse-card__stat {
+  min-width: 0;
   padding: 8px;
   background: var(--nur-surface-2);
   border-radius: var(--nur-radius-sm, 10px);
-
-  &--full {
-    grid-column: 1 / -1;
-  }
 }
 
 .warehouse-card__stat-label {
   font-size: var(--nur-font-caption, 12px);
   color: var(--nur-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .warehouse-card__stat-value {
@@ -96,6 +160,9 @@
   font-size: var(--nur-font-body, 14px);
   font-weight: 600;
   color: var(--nur-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   &--out {
     color: var(--nur-danger);

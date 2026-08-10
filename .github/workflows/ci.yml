@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, dev]
   pull_request:
-    branches: [master, main]
+    branches: [master, main, dev]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -31,6 +31,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Test
         run: npm test
