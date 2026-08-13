@@ -153,7 +153,10 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                     <th>%</th>
                     <th>Дней</th>
                     <th>Оклад за период</th>
-                    <th>Продажи сотрудника</th>
+                    <th>Кассир</th>
+                    <th>Консультант</th>
+                    <th>Комиссия</th>
+                    <th>База %</th>
                     <th>Бонус %</th>
                     <th>Итого</th>
                   </tr>
@@ -171,6 +174,23 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                         <td>{formatNumber(row.period_days || 0)}</td>
                         <td>{formatCurrency(row.base_prorated || 0, 2)}</td>
                         <td>
+                          {formatCurrency(
+                            row.cashier_sales_period ??
+                              row.employee_sales_period ??
+                              0,
+                            2,
+                          )}
+                        </td>
+                        <td>
+                          {formatCurrency(row.consultant_sales_period || 0, 2)}
+                        </td>
+                        <td>
+                          {formatCurrency(
+                            row.consultant_commission_period || 0,
+                            2,
+                          )}
+                        </td>
+                        <td>
                           {formatCurrency(row.employee_sales_period || 0, 2)}
                         </td>
                         <td>{formatCurrency(row.percent_bonus || 0, 2)}</td>
@@ -180,7 +200,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                   ) : (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={12}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
                         Нет данных

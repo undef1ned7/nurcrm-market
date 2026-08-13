@@ -107,6 +107,7 @@ export function useCashierCart(b: any) {
     product: any,
     salePackageId: any = null,
     quantityOverride: any = null,
+    options: { focusQuantity?: boolean } = {},
   ) => {
     // Для весовых товаров при остатке < 1 добавляем весь остаток.
     // Если остаток 0/минус/некорректный — подставляем 1.
@@ -120,6 +121,7 @@ export function useCashierCart(b: any) {
     const qtyToAdd = normalizeQuantity(
       quantityOverride != null ? quantityOverride : defaultQty,
     );
+    const focusQuantity = options?.focusQuantity !== false;
 
     try {
       // Проверяем наличие открытой смены перед добавлением товара
@@ -130,6 +132,11 @@ export function useCashierCart(b: any) {
           "Для работы с кассой необходимо начать смену",
         );
         return;
+      }
+
+      if (typeof b.confirmAdultProduct === "function") {
+        const allowed = await b.confirmAdultProduct(product);
+        if (!allowed) return;
       }
 
       let saleId;
@@ -173,11 +180,15 @@ export function useCashierCart(b: any) {
               : {}),
           }),
         ).unwrap();
-        requestCartQuantityFocus({
-          itemId: existingCartLine.itemId,
-          productId: product.id,
-          salePackage: salePackageId ?? null,
-        });
+        if (focusQuantity) {
+          requestCartQuantityFocus({
+            itemId: existingCartLine.itemId,
+            productId: product.id,
+            salePackage: salePackageId ?? null,
+          });
+        } else {
+          requestCartQuantityFocus(null);
+        }
       } else {
         // Добавляем новый товар
         const res = await dispatch(
@@ -188,10 +199,14 @@ export function useCashierCart(b: any) {
             ...(salePackageId ? { salePackageId } : {}),
           }),
         ).unwrap();
-        requestCartQuantityFocus({
-          productId: product.id,
-          salePackage: salePackageId ?? null,
-        });
+        if (focusQuantity) {
+          requestCartQuantityFocus({
+            productId: product.id,
+            salePackage: salePackageId ?? null,
+          });
+        } else {
+          requestCartQuantityFocus(null);
+        }
         // Некоторые бэки возвращают не строку корзины, а sale без items.
         // Тогда принудительно обновляем активную продажу, иначе новая позиция не появится в UI.
         const payload = res;
@@ -217,8 +232,8 @@ export function useCashierCart(b: any) {
     }
   };
 
-  const addToCart = async (product: any) => {
-    return addToCartWithPackage(product, null);
+  const addToCart = async (product: any, options?: { focusQuantity?: boolean }) => {
+    return addToCartWithPackage(product, null, null, options);
   };
 
   // Фолбэк сканирования по доп. штрих-кодам вызывает addToCart через ref:
@@ -233,6 +248,11 @@ export function useCashierCart(b: any) {
       multiCartRef.current?.getActiveSaleId?.() ||
       getSaleIdFromUrl();
     if (!saleId || !match?.id) return;
+
+    if (typeof b.confirmAdultProduct === "function") {
+      const allowed = await b.confirmAdultProduct(match);
+      if (!allowed) return;
+    }
 
     setBarcodeAmbiguityLoading(true);
     try {

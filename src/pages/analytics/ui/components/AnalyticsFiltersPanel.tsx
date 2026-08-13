@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { fetchSaleConsultants, type SaleConsultant } from "@entities/sale";
 import { formatDateForAPI } from "../analytics.utils";
 
 export function AnalyticsFiltersPanel({ vm }: any) {
@@ -16,6 +18,29 @@ export function AnalyticsFiltersPanel({ vm }: any) {
     currentUser,
     mainCashboxTitle,
   } = vm;
+  const [consultants, setConsultants] = useState<SaleConsultant[]>([]);
+
+  useEffect(() => {
+    if (!showFilters) return undefined;
+    let cancelled = false;
+    fetchSaleConsultants()
+      .then((list) => {
+        if (!cancelled) setConsultants(list);
+      })
+      .catch(() => {
+        if (!cancelled) setConsultants([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showFilters]);
+
+  const showPeopleFilters =
+    activeTab === "sales" ||
+    activeTab === "cashiers" ||
+    activeTab === "users" ||
+    activeTab === "finance";
+
   return (
     <>
       {showFilters && (
@@ -57,6 +82,41 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                 />
               </div>
             </div>
+
+            {showPeopleFilters && (
+              <>
+                <div className="analytics-page__filter-group">
+                  <label>Кассир</label>
+                  <select
+                    value={filters.cashier}
+                    onChange={(e) => updateFilter("cashier", e.target.value)}
+                  >
+                    <option value="">Все</option>
+                    {consultants.map((item) => (
+                      <option key={`cashier-${item.id}`} value={item.id}>
+                        {item.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="analytics-page__filter-group">
+                  <label>Консультант</label>
+                  <select
+                    value={filters.consultant}
+                    onChange={(e) =>
+                      updateFilter("consultant", e.target.value)
+                    }
+                  >
+                    <option value="">Все</option>
+                    {consultants.map((item) => (
+                      <option key={`consultant-${item.id}`} value={item.id}>
+                        {item.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             {/* Фильтры для Sales и Cashiers */}
             {(activeTab === "sales" ||

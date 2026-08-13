@@ -4,6 +4,7 @@ import {
   markAllNotificationsRead,
   getNotificationDetail,
   markNotificationRead,
+  deleteNotification,
 } from "@entities/notification/api/notification";
 import { consultingNotificationLeadId } from "@shared/lib/consultingLeadSources";
 
@@ -92,6 +93,18 @@ export const markAllNotificationsReadAsync = createAsyncThunk(
       return thunkAPI.rejectWithValue(err);
     }
   }
+);
+
+export const deleteNotificationAsync = createAsyncThunk(
+  "notification/deleteOne",
+  async (id: any, thunkAPI) => {
+    try {
+      await deleteNotification(id);
+      return id;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue({ id, err });
+    }
+  },
 );
 
 export const fetchNotificationDetailAsync = createAsyncThunk(

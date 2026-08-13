@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw, X } from "lucide-react";
+import { Plus, RefreshCw, Undo2, Wand2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "@shared/api";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
+import { SupplierReturnsList } from "@features/supplier-returns";
 import {
   PageShell,
   PageHeader,
@@ -12,6 +13,7 @@ import {
   EmptyState,
   StatGrid,
   StatCard,
+  SectionTabs,
 } from "@shared/ui/page-shell";
 import Pagination from "./components/Pagination";
 import { useAlert } from "@shared/hooks/useDialog";
@@ -24,10 +26,14 @@ const DEFAULT_LIMIT = 20;
 
 const listFrom = (res: any) => res?.data?.results || res?.data || [];
 
+const parseTabFromSearchParams = (searchParams: any) =>
+  searchParams.get("tab") === "returns" ? "returns" : "history";
+
 const parseFiltersFromSearchParams = (searchParams: any) => ({
   supplier_id: searchParams.get("supplier_id") || "",
   date_from: searchParams.get("date_from") || "",
   date_to: searchParams.get("date_to") || "",
+  search: searchParams.get("search") || "",
 });
 
 const parsePageFromSearchParams = (searchParams: any) => {
@@ -41,18 +47,22 @@ const parseLimitFromSearchParams = (searchParams: any) => {
 };
 
 const buildProcurementSearchParams = ({
+  tab = "history",
   page = 1,
   limit = DEFAULT_LIMIT,
   supplier_id = "",
   date_from = "",
   date_to = "",
+  search = "",
 }: any) => {
   const params = new URLSearchParams();
+  if (tab && tab !== "history") params.set("tab", String(tab));
   params.set("page", String(page));
   params.set("limit", String(limit));
   if (supplier_id) params.set("supplier_id", supplier_id);
   if (date_from) params.set("date_from", date_from);
   if (date_to) params.set("date_to", date_to);
+  if (search) params.set("search", search);
   return params;
 };
 
@@ -135,12 +145,22 @@ export default function SupplierReceiptsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const alert = useAlert();
 
+  const tab = useMemo(() => parseTabFromSearchParams(searchParams), [searchParams]);
   const page = useMemo(() => parsePageFromSearchParams(searchParams), [searchParams]);
   const limit = useMemo(() => parseLimitFromSearchParams(searchParams), [searchParams]);
   const appliedFilters = useMemo(
     () => parseFiltersFromSearchParams(searchParams),
     [searchParams],
   );
+
+  const goCreateReturn = (opts?: { supplierId?: string; receiptId?: string }) => {
+    const params = new URLSearchParams();
+    if (opts?.supplierId) params.set("supplier_id", opts.supplierId);
+    if (opts?.receiptId) params.set("receipt_id", opts.receiptId);
+    navigate(
+      `/crm/market/procurement/return${params.toString() ? `?${params}` : ""}`,
+    );
+  };
 
   const [loading, setLoading] = useState<any>(false);
   const [suppliersLoading, setSuppliersLoading] = useState<any>(false);
@@ -195,6 +215,7 @@ export default function SupplierReceiptsListPage() {
       supplier_id: "",
       date_from: "",
       date_to: "",
+      search: "",
     }),
     [],
   );
@@ -207,6 +228,7 @@ export default function SupplierReceiptsListPage() {
       setSearchParams(
         (prev: any) => {
           const current = {
+            tab: parseTabFromSearchParams(prev),
             page: parsePageFromSearchParams(prev),
             limit: parseLimitFromSearchParams(prev),
             ...parseFiltersFromSearchParams(prev),
@@ -233,7 +255,10 @@ export default function SupplierReceiptsListPage() {
   const hasAnyFilter = useMemo(
     () =>
       Boolean(
-        appliedFilters.supplier_id || appliedFilters.date_from || appliedFilters.date_to,
+        appliedFilters.supplier_id ||
+          appliedFilters.date_from ||
+          appliedFilters.date_to ||
+          appliedFilters.search,
       ),
     [appliedFilters],
   );
@@ -280,6 +305,7 @@ export default function SupplierReceiptsListPage() {
       if (appliedFilters.supplier_id) (params as any).supplier_id = appliedFilters.supplier_id;
       if (appliedFilters.date_from) (params as any).date_from = appliedFilters.date_from;
       if (appliedFilters.date_to) (params as any).date_to = appliedFilters.date_to;
+      if (appliedFilters.search) (params as any).search = appliedFilters.search;
 
       const res = await api.get("/main/suppliers/receipts/", { params });
       const { list, count, next, previous, totalAmount: metaTotal } =
@@ -300,7 +326,15 @@ export default function SupplierReceiptsListPage() {
     } finally {
       setLoading(false);
     }
-  }, [appliedFilters.date_from, appliedFilters.date_to, appliedFilters.supplier_id, alert, limit, page]);
+  }, [
+    appliedFilters.date_from,
+    appliedFilters.date_to,
+    appliedFilters.search,
+    appliedFilters.supplier_id,
+    alert,
+    limit,
+    page,
+  ]);
 
   const handleCreateSupplier = async () => {
     const full_name = String(createSupplierName || "").trim();
@@ -342,8 +376,13 @@ export default function SupplierReceiptsListPage() {
   }, []);
 
   useEffect(() => {
+    if (tab !== "history") {
+      setDetailReceipt(null);
+      setDetailLoading(false);
+      return;
+    }
     void loadReceipts();
-  }, [loadReceipts]);
+  }, [loadReceipts, tab]);
 
   const totalPages = useMemo(
     () => (listCount && limit ? Math.max(1, Math.ceil(listCount / limit)) : 1),
@@ -365,6 +404,7 @@ export default function SupplierReceiptsListPage() {
       supplier_id: filtersDraft.supplier_id,
       date_from: filtersDraft.date_from,
       date_to: filtersDraft.date_to,
+      search: filtersDraft.search,
     });
   };
 
@@ -375,6 +415,7 @@ export default function SupplierReceiptsListPage() {
       supplier_id: "",
       date_from: "",
       date_to: "",
+      search: "",
     });
   };
 
@@ -382,22 +423,55 @@ export default function SupplierReceiptsListPage() {
     <PageShell className="warehouse-page market-receipt-page">
       <PageHeader
         title="Закупки"
-        subtitle="Список оприходований поставщиков"
+        subtitle="История приходов и возвраты поставщикам"
         actions={
-          <button
-            type="button"
-            className="nur-btn nur-btn--primary"
-            onClick={() => navigate("/crm/market/procurement/receipt")}
-            title="Прием товара"
-            aria-label="Прием товара"
-          >
-            <Plus size={16} />
-            <span className="nur-btn__label">Прием товара</span>
-          </button>
+          <>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => navigate("/crm/market/procurement/recommendations")}
+              title="Рекомендуемый заказ"
+              aria-label="Рекомендуемый заказ"
+            >
+              <Wand2 size={16} />
+              <span className="nur-btn__label">Рекомендуемый заказ</span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => goCreateReturn()}
+              title="Возврат поставщику"
+              aria-label="Возврат поставщику"
+            >
+              <Undo2 size={16} />
+              <span className="nur-btn__label">Возврат поставщику</span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={() => navigate("/crm/market/procurement/receipt")}
+              title="Прием товара"
+              aria-label="Прием товара"
+            >
+              <Plus size={16} />
+              <span className="nur-btn__label">Прием товара</span>
+            </button>
+          </>
         }
       />
 
-      {!dateRangeInvalid && (
+      <SectionTabs
+        value={tab}
+        onChange={(nextTab: string) =>
+          replaceListSearchParams({ tab: nextTab, page: 1 })
+        }
+        items={[
+          { value: "history", label: "История закупок" },
+          { value: "returns", label: "Возвраты поставщикам" },
+        ]}
+      />
+
+      {tab === "history" && !dateRangeInvalid && (
         <StatGrid>
           <StatCard label="Всего закупок" value={listCount} />
           <StatCard
@@ -409,6 +483,9 @@ export default function SupplierReceiptsListPage() {
 
       <DataContainer>
         <PagePanel className="market-receipt-page__card">
+          {tab === "returns" ? <SupplierReturnsList /> : null}
+          {tab === "history" ? (
+            <>
           <FilterBar className="market-receipt-page__toolbar">
             <div className="market-receipt-page__field">
               <label className="nur-label">Поставщик</label>
@@ -452,6 +529,17 @@ export default function SupplierReceiptsListPage() {
                 onChange={(e: any) =>
                   setFiltersDraft((prev: any) => ({ ...prev, date_to: e.target.value }))
                 }
+              />
+            </div>
+            <div className="market-receipt-page__field">
+              <label className="nur-label">Поиск</label>
+              <input
+                className="nur-input"
+                value={filtersDraft.search}
+                onChange={(e: any) =>
+                  setFiltersDraft((prev: any) => ({ ...prev, search: e.target.value }))
+                }
+                placeholder="Поставщик или товар"
               />
             </div>
           </FilterBar>
@@ -506,13 +594,17 @@ export default function SupplierReceiptsListPage() {
                     <th>Дата</th>
                     <th>Позиций</th>
                     <th>Сумма</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {receipts.map((row: any, rowIdx: any) => {
                     const rowKey = row.id ?? row.uuid ?? `receipt-row-${rowIdx}`;
                     const items = Array.isArray(row.items) ? row.items : [];
+                    const itemsCount = Number(row.items_count ?? row.itemsCount ?? items.length) || items.length;
                     const total = receiptRowTotal(row);
+                    const receiptId = String(row.id ?? row.uuid ?? "");
+                    const supplierId = String(row.supplier_id ?? row.supplierId ?? "");
                     return (
                       <tr
                         key={rowKey}
@@ -530,8 +622,23 @@ export default function SupplierReceiptsListPage() {
                         <td>{row.supplier_name || "—"}</td>
                         <td>{row.created_by_name || "—"}</td>
                         <td>{fmtDateTime(row.created_at)}</td>
-                        <td>{items.length}</td>
+                        <td>{itemsCount}</td>
                         <td>{fmtNum(total)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="nur-btn nur-btn--ghost nur-btn--sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              goCreateReturn({
+                                supplierId,
+                                receiptId,
+                              });
+                            }}
+                          >
+                            Вернуть
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -552,6 +659,8 @@ export default function SupplierReceiptsListPage() {
               onPageChange={handlePageChange}
             />
           )}
+            </>
+          ) : null}
         </PagePanel>
       </DataContainer>
       {detailReceipt && (
@@ -634,6 +743,21 @@ export default function SupplierReceiptsListPage() {
               );
             })()}
             <div className="market-receipt-page__actions">
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary"
+                onClick={() => {
+                  const receiptId = String(detailReceipt.id ?? detailReceipt.uuid ?? "");
+                  const supplierId = String(
+                    detailReceipt.supplier_id ?? detailReceipt.supplierId ?? "",
+                  );
+                  closeReceiptDetail();
+                  goCreateReturn({ supplierId, receiptId });
+                }}
+              >
+                <Undo2 size={16} />
+                Вернуть поставщику
+              </button>
               <button
                 type="button"
                 className="nur-btn nur-btn--secondary"

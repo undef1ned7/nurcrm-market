@@ -2,6 +2,7 @@ import api from "@shared/api";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import {
   createProductAsync,
+  rememberAdultProduct,
   updateProductAsync,
 } from "@entities/product";
 import { createDeal } from "@entities/sale";
@@ -113,6 +114,14 @@ export const useAddProductSubmitFlow = ({
         // Режим создания
         product = await dispatch(createProductAsync(payload)).unwrap();
       }
+      const savedProductId = isEditMode
+        ? productId
+        : product?.id || product?.data?.id;
+      rememberAdultProduct(
+        savedProductId,
+        itemType === "product" && Boolean(marketData.isAdult),
+        company?.id,
+      );
       // Вычисляем totalAmount
       let totalAmount = 0;
       const purchasePrice =

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { pdf } from "@react-pdf/renderer";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import type { ProcurementReceiptDraft } from "@features/procurement-recommendations";
 import api from "@shared/api";
 import InvoicePdfDocument from "@pages/documents/ui/components/InvoicePdfDocument";
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
@@ -25,17 +26,42 @@ import {
   toNum,
 } from "../supplierReceiptUtils";
 
+const readProcurementDraft = (state: unknown): ProcurementReceiptDraft | null => {
+  const draft = (state as { procurementDraft?: ProcurementReceiptDraft } | null)
+    ?.procurementDraft;
+  if (!draft || typeof draft !== "object") return null;
+  const supplierId = String(draft.supplierId || "").trim();
+  if (!supplierId || !Array.isArray(draft.items) || draft.items.length === 0) {
+    return null;
+  }
+  return {
+    supplierId,
+    items: draft.items
+      .map((item) => ({
+        productId: String(item?.productId || "").trim(),
+        qty: Number(item?.qty) || 0,
+        purchasePrice: item?.purchasePrice ?? null,
+      }))
+      .filter((item) => item.productId && item.qty > 0),
+  };
+};
+
 export function useSupplierReceipt() {
   const dispatch = useDispatch() as any as any;
   const navigate = useNavigate();
+  const location = useLocation();
   const alert = useAlert();
   const confirm = useConfirm();
   const { list: cashBoxes } = useCash();
   const { company } = useUser();
+  const pendingDraftRef = useRef(readProcurementDraft(location.state));
+  const appliedDraftRef = useRef(false);
 
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
-  const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState(
+    () => pendingDraftRef.current?.supplierId || "",
+  );
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
   const [createSupplierName, setCreateSupplierName] = useState("");
   const [createSupplierPhone, setCreateSupplierPhone] = useState("");
@@ -214,7 +240,15 @@ export function useSupplierReceipt() {
   }, [cashBoxes, selectCashBox]);
 
   useEffect(() => {
-    setQtyByProductId({});
+    const draft = pendingDraftRef.current;
+    const keepDraftQty =
+      Boolean(draft) &&
+      String(draft?.supplierId || "") === String(selectedSupplierId) &&
+      !appliedDraftRef.current;
+
+    if (!keepDraftQty) {
+      setQtyByProductId({});
+    }
     setPriceByProductId({});
     setPaymentType("full");
     setPrepayment("");
@@ -228,6 +262,27 @@ export function useSupplierReceipt() {
     // refetch only when supplier actually changes
      
   }, [selectedSupplierId]);
+
+  useEffect(() => {
+    const draft = pendingDraftRef.current;
+    if (!draft || appliedDraftRef.current) return;
+    if (String(draft.supplierId) !== String(selectedSupplierId)) return;
+    if (!products.length) return;
+
+    const qty: Record<string, string> = {};
+    const price: Record<string, string> = {};
+    draft.items.forEach((item) => {
+      qty[item.productId] = String(item.qty);
+      if (item.purchasePrice != null) {
+        price[item.productId] = formatPriceInput(item.purchasePrice);
+      }
+    });
+    setQtyByProductId((prev: any) => ({ ...prev, ...qty }));
+    setPriceByProductId((prev: any) => ({ ...prev, ...price }));
+    appliedDraftRef.current = true;
+    pendingDraftRef.current = null;
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, navigate, products, selectedSupplierId]);
 
   useEffect(() => {
     if (!productsModalOpen) return;

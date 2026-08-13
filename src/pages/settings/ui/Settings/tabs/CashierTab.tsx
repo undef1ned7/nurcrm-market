@@ -1,3 +1,14 @@
+import { useState } from "react";
+import {
+  getCustomerDisplaySlidesText,
+  getCustomerDisplayWelcome,
+  isCustomerDisplayEnabled,
+  openCustomerDisplayWindow,
+  setCustomerDisplayEnabled,
+  setCustomerDisplaySlides,
+  setCustomerDisplayWelcome,
+} from "@features/customer-display";
+
 /** Settings tab: Касса */
 export function CashierTab(props) {
   const {
@@ -10,6 +21,11 @@ export function CashierTab(props) {
     setShowCashierDeleteCode,
     showCashierDeleteCode,
   } = props;
+  const [displayEnabled, setDisplayEnabled] = useState(isCustomerDisplayEnabled);
+  const [welcomeText, setWelcomeText] = useState(() =>
+    getCustomerDisplayWelcome(),
+  );
+  const [slidesText, setSlidesText] = useState(getCustomerDisplaySlidesText);
 
       return (
         <form
@@ -89,6 +105,62 @@ export function CashierTab(props) {
 
           <div className="settings__section">
             <h2 className="settings__section-title">
+              <span className="settings__emoji">📅</span> Продажа в долг
+            </h2>
+            <p className="settings__mutedText">
+              v1 — как раньше: срок одной датой. v2 — предоплата и график
+              платежей по дням или месяцам.
+            </p>
+            <div className="settings__prefRow">
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary"
+                disabled={cashierSettingsLoading}
+                style={{
+                  width: "auto",
+                  opacity:
+                    cashierSettings.debtScheduleVersion === "v2" ? 1 : 0.65,
+                  outline:
+                    cashierSettings.debtScheduleVersion === "v2"
+                      ? "2px solid var(--nur-primary, #f7d74f)"
+                      : undefined,
+                }}
+                onClick={() =>
+                  setCashierSettings((prev) => ({
+                    ...prev,
+                    debtScheduleVersion: "v2",
+                  }))
+                }
+              >
+                v2 — график платежей
+              </button>
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary"
+                disabled={cashierSettingsLoading}
+                style={{
+                  width: "auto",
+                  opacity:
+                    cashierSettings.debtScheduleVersion === "v1" ? 1 : 0.65,
+                  outline:
+                    cashierSettings.debtScheduleVersion === "v1"
+                      ? "2px solid var(--nur-primary, #f7d74f)"
+                      : undefined,
+                }}
+                onClick={() =>
+                  setCashierSettings((prev) => ({
+                    ...prev,
+                    debtScheduleVersion: "v1",
+                  }))
+                }
+              >
+                v1 — классическая
+              </button>
+            </div>
+          </div>
+
+          <div className="settings__section">
+            <h2 className="settings__section-title">
               <span className="settings__emoji">％</span> Максимальная скидка
             </h2>
 
@@ -124,6 +196,71 @@ export function CashierTab(props) {
                 }
               />
             </div>
+          </div>
+
+          <div className="settings__section">
+            <h2 className="settings__section-title">
+              <span className="settings__emoji">🖥️</span> Второй экран покупателя
+            </h2>
+            <p className="settings__mutedText">
+              Откройте отдельное окно и перетащите его на второй монитор
+              моноблока. Корзина синхронизируется в реальном времени.
+            </p>
+            <div className="settings__prefRow">
+              <div className="settings__prefText">
+                <span className="settings__prefLabel">Включить второй экран</span>
+                <p className="settings__prefHint">
+                  Настройка хранится на этом устройстве кассы.
+                </p>
+              </div>
+              <label className="settings__switch">
+                <input
+                  type="checkbox"
+                  className="settings__switch-input"
+                  checked={displayEnabled}
+                  onChange={(e) => {
+                    setDisplayEnabled(e.target.checked);
+                    setCustomerDisplayEnabled(e.target.checked);
+                  }}
+                />
+                <span className="settings__switch-track" aria-hidden="true">
+                  <span className="settings__switch-thumb" />
+                </span>
+              </label>
+            </div>
+            <div className="settings__form-group nur-field">
+              <label className="nur-label" htmlFor="customer-display-welcome">
+                Текст приветствия
+              </label>
+              <input
+                id="customer-display-welcome"
+                className="nur-input"
+                value={welcomeText}
+                onChange={(e) => setWelcomeText(e.target.value)}
+                onBlur={() => setCustomerDisplayWelcome(welcomeText)}
+              />
+            </div>
+            <div className="settings__form-group nur-field">
+              <label className="nur-label" htmlFor="customer-display-slides">
+                Слайды акций (URL, каждый с новой строки)
+              </label>
+              <textarea
+                id="customer-display-slides"
+                className="nur-input"
+                rows={3}
+                value={slidesText}
+                onChange={(e) => setSlidesText(e.target.value)}
+                onBlur={() => setCustomerDisplaySlides(slidesText)}
+              />
+            </div>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              disabled={!displayEnabled}
+              onClick={() => openCustomerDisplayWindow()}
+            >
+              Открыть окно второго экрана
+            </button>
           </div>
 
           {cashierSettingsError ? (

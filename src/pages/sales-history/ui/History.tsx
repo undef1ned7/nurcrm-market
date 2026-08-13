@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import api from "@shared/api";
 import {
+  consultantCommissionLabel,
+  consultantDisplayFromSale,
+  fetchSaleConsultants,
+  type SaleConsultant,
+} from "@entities/sale";
+import {
   PageShell,
   PageHeader,
   PagePanel,
@@ -45,6 +51,8 @@ export default function MarketHistory() {
   const [status, setStatus] = useState(""); // "" = все
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [consultant, setConsultant] = useState("");
+  const [consultants, setConsultants] = useState<SaleConsultant[]>([]);
 
   // модалка деталей
   const [openId, setOpenId] = useState<any>(null);
@@ -63,6 +71,7 @@ export default function MarketHistory() {
           if (status) q.set("status", status);
           if (start) q.set("start", start);
           if (end) q.set("end", end);
+          if (consultant) q.set("consultant", consultant);
           resp = await api.get(
             `/main/pos/sales/${q.toString() ? `?${q.toString()}` : ""}`
           );
@@ -80,6 +89,8 @@ export default function MarketHistory() {
           total: Number(r.total) || 0,
           createdAt: pickDate(r),
           user: r.user_display || "—",
+          consultant: consultantDisplayFromSale(r),
+          commission: consultantCommissionLabel(r),
         }));
 
         if (url) {
@@ -96,12 +107,26 @@ export default function MarketHistory() {
         setLoading(false);
       }
     },
-    [status, start, end]
+    [status, start, end, consultant]
   );
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSaleConsultants()
+      .then((list) => {
+        if (!cancelled) setConsultants(list);
+      })
+      .catch(() => {
+        if (!cancelled) setConsultants([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onOpen = (id) => setOpenId(id);
   const onClose = () => setOpenId(null);
@@ -155,6 +180,22 @@ export default function MarketHistory() {
           />
         </label>
 
+        <label className="nur-field history__filter">
+          <span className="nur-label">Консультант</span>
+          <select
+            className="nur-select"
+            value={consultant}
+            onChange={(e: any) => setConsultant(e.target.value)}
+          >
+            <option value="">Все</option>
+            {consultants.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.full_name}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <button
           type="button"
           className="nur-btn nur-btn--secondary"
@@ -173,7 +214,9 @@ export default function MarketHistory() {
             <thead>
               <tr>
                 <th>Дата</th>
-                <th>Пользователь</th>
+                <th>Кассир</th>
+                <th>Консультант</th>
+                <th>% / комиссия</th>
                 <th>Статус</th>
                 <th>Итого</th>
                 <th></th>
@@ -182,7 +225,7 @@ export default function MarketHistory() {
             <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={7}>
                     <LoadingState rows={4} />
                   </td>
                 </tr>
@@ -195,6 +238,8 @@ export default function MarketHistory() {
                         : "—"}
                     </td>
                     <td>{r.user}</td>
+                    <td>{r.consultant}</td>
+                    <td>{r.commission}</td>
                     <td>
                       <StatusChip tone={statusTone(r.status)}>
                         {statusLabel(r.status)}
@@ -214,7 +259,7 @@ export default function MarketHistory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={7}>
                     <EmptyState
                       title="Чеков пока нет"
                       text="Продажи появятся здесь после оформления в кассе."
@@ -225,7 +270,7 @@ export default function MarketHistory() {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={3}>
+                <td colSpan={5}>
                   <strong>Всего чеков:</strong> {count}
                 </td>
                 <td colSpan={2}>
@@ -289,6 +334,8 @@ function SaleModal({ id, onClose }: any) {
         id: data.id,
         createdAt: data.created_at || null,
         user: data.user_display || "—",
+        consultant: consultantDisplayFromSale(data),
+        commission: consultantCommissionLabel(data, { showZero: true }),
         total: Number(data.total) || 0,
         items,
       });
@@ -344,7 +391,13 @@ function SaleModal({ id, onClose }: any) {
                     : "—"}
                 </div>
                 <div>
-                  <strong>Пользователь:</strong> {sale.user}
+                  <strong>Кассир:</strong> {sale.user}
+                </div>
+                <div>
+                  <strong>Консультант:</strong> {sale.consultant}
+                </div>
+                <div>
+                  <strong>Комиссия:</strong> {sale.commission}
                 </div>
                 <div>
                   <strong>Итого:</strong> {fmtMoneyLocal(sale.total)}

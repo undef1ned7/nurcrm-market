@@ -312,16 +312,44 @@ export const historySellObjectDetail = createAsyncThunk<any, void | any>(
 export const productCheckout = createAsyncThunk<any, void | any>(
   "products/productCheckout",
   async (
-    { id, bool, clientId, payment_method, cash_received, payments },
+    {
+      id,
+      bool,
+      clientId,
+      payment_method,
+      cash_received,
+      payments,
+      consultant_id,
+      consultant_commission_enabled,
+      consultant_commission_percent,
+      schedule_version,
+      debt_schedule,
+    },
     { rejectWithValue },
   ) => {
     try {
       const hasPayments = Array.isArray(payments) && payments.length > 0;
+      const hasConsultant = Boolean(consultant_id);
       const payload = {
         print_receipt: bool,
         ...(clientId && { client_id: clientId }),
         ...(hasPayments ? { payments } : payment_method ? { payment_method } : {}),
         ...(cash_received != null && cash_received !== "" ? { cash_received } : {}),
+        ...(hasConsultant
+          ? {
+              consultant_id,
+              consultant_commission_enabled: Boolean(
+                consultant_commission_enabled,
+              ),
+              consultant_commission_percent:
+                consultant_commission_percent != null &&
+                consultant_commission_percent !== ""
+                  ? String(consultant_commission_percent)
+                  : "0.00",
+            }
+          : {}),
+        ...(schedule_version ? { schedule_version } : {}),
+        ...(debt_schedule ? { debt_schedule } : {}),
       };
       const { data } = await api.post(
         `main/pos/sales/${id}/checkout/`,
@@ -467,10 +495,15 @@ export const createDeal = createAsyncThunk<any, void | any>(
       statusRu,
       amount,
       debtDays,
-      debtMonths, // legacy: если debtDays не передан, конвертируем месяцы в дни (×30)
+      debtMonths,
       prepayment,
-      first_due_date, // <=== ДОБАВИЛИ
-    }, // prepayment и срок долга могут приходить вместе
+      first_due_date,
+      intervalDays,
+      intervalMonths,
+      installments,
+      scheduleVersion,
+      saleId,
+    },
     { rejectWithValue },
   ) => {
     try {
@@ -486,26 +519,24 @@ export const createDeal = createAsyncThunk<any, void | any>(
       };
 
       if (kind === "debt") {
-        let debtDaysNum = NaN;
-        if (
-          debtDays !== undefined &&
-          debtDays !== null &&
-          debtDays !== ""
-        ) {
-          debtDaysNum = Number(debtDays);
-        } else if (
+        const hasDays =
+          debtDays !== undefined && debtDays !== null && debtDays !== "";
+        const hasMonths =
           debtMonths !== undefined &&
           debtMonths !== null &&
-          debtMonths !== ""
-        ) {
+          debtMonths !== "";
+
+        if (hasDays) {
+          const debtDaysNum = Number(debtDays);
+          payload.debt_days = Number.isFinite(debtDaysNum)
+            ? Math.max(1, Math.round(debtDaysNum))
+            : 1;
+        } else if (hasMonths) {
           const monthsNum = Number(debtMonths);
-          if (Number.isFinite(monthsNum)) {
-            debtDaysNum = Math.round(monthsNum * 30);
-          }
+          payload.debt_months = Number.isFinite(monthsNum)
+            ? Math.max(1, Math.round(monthsNum))
+            : 1;
         }
-        payload.debt_days = Number.isFinite(debtDaysNum)
-          ? Math.max(0, Math.round(debtDaysNum))
-          : 0;
 
         if (
           prepayment !== undefined &&
@@ -520,6 +551,32 @@ export const createDeal = createAsyncThunk<any, void | any>(
 
         if (first_due_date) {
           payload.first_due_date = first_due_date;
+        }
+
+        if (intervalDays != null && intervalDays !== "") {
+          const intervalNum = Number(intervalDays);
+          if (Number.isFinite(intervalNum) && intervalNum >= 1) {
+            payload.interval_days = Math.max(1, Math.round(intervalNum));
+          }
+        }
+
+        if (intervalMonths != null && intervalMonths !== "") {
+          const intervalNum = Number(intervalMonths);
+          if (Number.isFinite(intervalNum) && intervalNum >= 1) {
+            payload.interval_months = Math.max(1, Math.round(intervalNum));
+          }
+        }
+
+        if (saleId != null && saleId !== "") {
+          payload.sale_id = saleId;
+        }
+
+        if (Array.isArray(installments) && installments.length > 0) {
+          payload.installments = installments;
+        }
+
+        if (scheduleVersion) {
+          payload.schedule_version = scheduleVersion;
         }
 
         payload.auto_schedule = true;

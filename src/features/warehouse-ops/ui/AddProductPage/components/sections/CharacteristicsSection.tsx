@@ -1,6 +1,8 @@
+import { FormBlock } from "../../formLayout";
+
 const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
   <>
-      {/* Характеристики товара */}
+      <FormBlock id="characteristics">
       <div className="market-product-form__section">
         <h3 className="market-product-form__section-title">
           Характеристики товара
@@ -46,8 +48,9 @@ const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
           </div>
         </div>
       </div>
+      </FormBlock>
 
-      {/* Описание */}
+      <FormBlock id="description">
       <div className="market-product-form__section">
         <h3 className="market-product-form__section-title">Описание</h3>
         <textarea
@@ -59,6 +62,7 @@ const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
           }
         />
       </div>
+      </FormBlock>
   </>
 );
 

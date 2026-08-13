@@ -223,7 +223,11 @@ const MarketEmployEmployeeDetail = () => {
       const branch = profile?.active_branch || profile?.branch;
       if (branch) params.branch = String(branch);
       const { data } = await api.get("/main/analytics/market/", { params });
-      const rows = Array.isArray(data?.rows) ? data.rows : [];
+      const rows = Array.isArray(data?.rows)
+        ? data.rows
+        : Array.isArray(data?.tables?.rows)
+          ? data.tables.rows
+          : [];
       setSalaryRows(rows.filter((r: any) => String(r.user_id) === String(employeeId)));
     } catch (e: any) {
       setSalaryError(validateResErrors(e, "Не удалось загрузить аналитику зарплаты"));
@@ -693,12 +697,42 @@ const MarketEmployEmployeeDetail = () => {
                           </span>
                         </div>
                         <div className="marketEmployDetail__breakdownItem">
-                          <span className="marketEmployDetail__breakdownLabel">Продажи сотрудника</span>
+                          <span className="marketEmployDetail__breakdownLabel">Продажи как кассир</span>
+                          <span className="marketEmployDetail__breakdownValue">
+                            {fmtMoney(
+                              salarySummary.cashier_sales_period ??
+                                salarySummary.employee_sales_period,
+                            )}
+                          </span>
+                          <span className="marketEmployDetail__breakdownHint">
+                            чеки, где сотрудник пробил оплату
+                          </span>
+                        </div>
+                        <div className="marketEmployDetail__breakdownItem">
+                          <span className="marketEmployDetail__breakdownLabel">Продажи как консультант</span>
+                          <span className="marketEmployDetail__breakdownValue">
+                            {fmtMoney(salarySummary.consultant_sales_period)}
+                          </span>
+                          <span className="marketEmployDetail__breakdownHint">
+                            чеки, где сотрудник указан консультантом
+                          </span>
+                        </div>
+                        <div className="marketEmployDetail__breakdownItem">
+                          <span className="marketEmployDetail__breakdownLabel">Комиссия консультанта</span>
+                          <span className="marketEmployDetail__breakdownValue">
+                            {fmtMoney(salarySummary.consultant_commission_period)}
+                          </span>
+                          <span className="marketEmployDetail__breakdownHint">
+                            сумма комиссий за период (минус возвраты)
+                          </span>
+                        </div>
+                        <div className="marketEmployDetail__breakdownItem">
+                          <span className="marketEmployDetail__breakdownLabel">База для % кассира</span>
                           <span className="marketEmployDetail__breakdownValue">
                             {fmtMoney(salarySummary.employee_sales_period)}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            оплаченные чеки за период
+                            чеки без комиссии консультанта
                           </span>
                         </div>
                         <div className="marketEmployDetail__breakdownItem marketEmployDetail__breakdownItem--accent">
@@ -709,7 +743,7 @@ const MarketEmployEmployeeDetail = () => {
                             {fmtMoney(salarySummary.percent_bonus)}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            % от суммы продаж
+                            % кассира + комиссия консультанта
                           </span>
                         </div>
                       </div>
@@ -725,7 +759,10 @@ const MarketEmployEmployeeDetail = () => {
                                 <th>%</th>
                                 <th>Дней</th>
                                 <th>Оклад за период</th>
-                                <th>Продажи</th>
+                                <th>Кассир</th>
+                                <th>Консультант</th>
+                                <th>Комиссия</th>
+                                <th>База %</th>
                                 <th>Бонус</th>
                                 <th>Итого</th>
                               </tr>
@@ -738,6 +775,13 @@ const MarketEmployEmployeeDetail = () => {
                                   <td>{fmtMoney(r.sales_percent)}</td>
                                   <td>{r.period_days || 0}</td>
                                   <td>{fmtMoney(r.base_prorated)}</td>
+                                  <td>
+                                    {fmtMoney(
+                                      r.cashier_sales_period ?? r.employee_sales_period,
+                                    )}
+                                  </td>
+                                  <td>{fmtMoney(r.consultant_sales_period)}</td>
+                                  <td>{fmtMoney(r.consultant_commission_period)}</td>
                                   <td>{fmtMoney(r.employee_sales_period)}</td>
                                   <td>{fmtMoney(r.percent_bonus)}</td>
                                   <td>{fmtMoney(r.total)}</td>

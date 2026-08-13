@@ -1,3 +1,5 @@
+import { FormBlock } from "../../formLayout";
+
 const ServicePricingSection = ({ newItemData, marketData, handleChange, handleMarketDataChange }) => (
   <div className="market-product-form__section">
     <h3 className="market-product-form__section-title">Цены</h3>
@@ -19,6 +21,7 @@ const ServicePricingSection = ({ newItemData, marketData, handleChange, handleMa
           <span className="market-product-form__currency">COM</span>
         </div>
       </div>
+      <FormBlock id="discount">
       <div className="market-product-form__form-group">
         <label className="market-product-form__label">Скидка</label>
         <div className="market-product-form__price-input">
@@ -33,6 +36,7 @@ const ServicePricingSection = ({ newItemData, marketData, handleChange, handleMa
           <span className="market-product-form__currency">%</span>
         </div>
       </div>
+      </FormBlock>
     </div>
   </div>
 );

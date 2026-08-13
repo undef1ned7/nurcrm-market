@@ -15,7 +15,26 @@ import {
   enrichMarketReceiptPayload,
 } from "@pages/sell/ui/services/printService";
 import api from "@shared/api";
+import { useMarketCashierSettings } from "@features/create-sale";
 import { PAYMENT_BANKS } from "../paymentPage.banks";
+import {
+  buildCheckoutConsultantPayload,
+  buildDebtSchedule,
+  DEFAULT_DAY_INTERVAL,
+  DEFAULT_MONTH_INTERVAL,
+  defaultFirstDueDate,
+  defaultIntervalForUnit,
+  defaultScheduleCount,
+  maxInstallmentsForUnit,
+  maxIntervalForUnit,
+  MAX_DAY_INTERVAL,
+  MAX_MONTH_INTERVAL,
+  normalizeScheduleInterval,
+  toDealInstallments,
+  todayIsoDate,
+  validateConsultantDraft,
+  type DebtScheduleUnit,
+} from "@entities/sale";
 import {
   addCalendarDaysToIso,
   calcDaysUntilIsoDate,
@@ -27,6 +46,8 @@ import {
   printReceiptSmart,
 } from "../paymentPage.utils";
 import type { PaymentPageProps } from "../paymentPage.types";
+import { useCustomerDisplayPublisher } from "@features/customer-display";
+import { usePaymentConsultant } from "./usePaymentConsultant";
 
 export function usePaymentPage({
   cart,
@@ -36,10 +57,20 @@ export function usePaymentPage({
   onComplete,
   customers = [],
   saleId,
+  consultantDraft,
+  onConsultantDraftChange,
 }: PaymentPageProps) {
   const dispatch = useDispatch() as any;
   const { list: cashBoxes } = useCash();
-  const { company } = useUser();
+  const { company, profile } = useUser();
+  const { debtScheduleVersion } = useMarketCashierSettings();
+  const isDebtScheduleV2 = debtScheduleVersion === "v2";
+  const consultant = usePaymentConsultant({
+    total,
+    branchId: profile?.active_branch || profile?.branch || company?.active_branch,
+    consultantDraft,
+    onConsultantDraftChange,
+  });
 
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [amountReceived, setAmountReceived] = useState(
@@ -52,9 +83,16 @@ export function usePaymentPage({
       return false;
     }
   });
-  const [debtDays, setDebtDays] = useState<any>(30);
+  const [scheduleUnit, setScheduleUnit] = useState<DebtScheduleUnit>("month");
+  const [scheduleCount, setScheduleCount] = useState<number | "">(
+    defaultScheduleCount("month"),
+  );
+  const [dayInterval, setDayInterval] = useState<number | "">(
+    DEFAULT_MONTH_INTERVAL,
+  );
+  const [debtDays, setDebtDays] = useState<number | "">(30);
   const [deferredDueDate, setDeferredDueDate] = useState(() =>
-    addCalendarDaysToIso(30),
+    defaultFirstDueDate("month"),
   );
   const [deferredPrepaymentEnabled, setDeferredPrepaymentEnabled] =
     useState(false);
@@ -65,6 +103,12 @@ export function usePaymentPage({
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(customer);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  useCustomerDisplayPublisher({
+    phase: showSuccessModal ? "thanks" : "payment",
+    cart,
+    total,
+    cartId: saleId,
+  });
   const [selectCashBox, setSelectCashBox] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [splitOnlineBank, setSplitOnlineBank] = useState("");
@@ -122,15 +166,137 @@ export function usePaymentPage({
     [total],
   );
 
-  const setDebtDaysFromDate = useCallback((isoDate: any) => {
+  const debtSchedule = useMemo(
+    () =>
+      buildDebtSchedule({
+        remainingAmount: deferredSaleDebtRemaining,
+        unit: scheduleUnit,
+        count: typeof scheduleCount === "number" ? scheduleCount : 0,
+        firstDueDate: deferredDueDate,
+        intervalDays:
+          typeof dayInterval === "number"
+            ? dayInterval
+            : DEFAULT_DAY_INTERVAL,
+        intervalMonths:
+          typeof dayInterval === "number"
+            ? dayInterval
+            : DEFAULT_MONTH_INTERVAL,
+      }),
+    [
+      dayInterval,
+      deferredDueDate,
+      deferredSaleDebtRemaining,
+      scheduleCount,
+      scheduleUnit,
+    ],
+  );
+
+  const handleScheduleUnitChange = useCallback((unit: DebtScheduleUnit) => {
+    setScheduleUnit(unit);
+    setScheduleCount(defaultScheduleCount(unit));
+    setDayInterval(defaultIntervalForUnit(unit));
+    setDeferredDueDate(defaultFirstDueDate(unit));
+  }, []);
+
+  const handleScheduleCountChange = useCallback(
+    (value: string) => {
+      if (value === "") {
+        setScheduleCount("");
+        return;
+      }
+      const numValue = parseInt(value, 10);
+      if (Number.isNaN(numValue)) return;
+      const max = maxInstallmentsForUnit(scheduleUnit);
+      setScheduleCount(Math.min(max, Math.max(1, numValue)));
+    },
+    [scheduleUnit],
+  );
+
+  const handleScheduleCountBlur = useCallback(
+    (value: string) => {
+      const numValue = parseInt(value, 10);
+      const max = maxInstallmentsForUnit(scheduleUnit);
+      if (Number.isNaN(numValue) || numValue < 1) {
+        setScheduleCount(defaultScheduleCount(scheduleUnit));
+        return;
+      }
+      setScheduleCount(Math.min(max, numValue));
+    },
+    [scheduleUnit],
+  );
+
+  const handleSchedulePreset = useCallback((count: number) => {
+    setScheduleCount(count);
+  }, []);
+
+  const handleDayIntervalChange = useCallback(
+    (value: string) => {
+      if (value === "") {
+        setDayInterval("");
+        return;
+      }
+      const numValue = parseInt(value, 10);
+      if (Number.isNaN(numValue)) return;
+      setDayInterval(normalizeScheduleInterval(scheduleUnit, numValue));
+    },
+    [scheduleUnit],
+  );
+
+  const handleDayIntervalBlur = useCallback(
+    (value: string) => {
+      const numValue = parseInt(value, 10);
+      if (Number.isNaN(numValue) || numValue < 1) {
+        setDayInterval(defaultIntervalForUnit(scheduleUnit));
+        return;
+      }
+      setDayInterval(normalizeScheduleInterval(scheduleUnit, numValue));
+    },
+    [scheduleUnit],
+  );
+
+  const handleDayIntervalPreset = useCallback(
+    (interval: number) => {
+      setDayInterval(normalizeScheduleInterval(scheduleUnit, interval));
+    },
+    [scheduleUnit],
+  );
+
+  const setDebtDaysFromDate = useCallback((isoDate: string) => {
+    if (!isoDate) return;
     setDeferredDueDate(isoDate);
     setDebtDays(calcDaysUntilIsoDate(isoDate));
   }, []);
 
-  const setDebtDaysAndSyncDate = useCallback((days: any) => {
+  const setDebtDaysAndSyncDate = useCallback((days: number) => {
     const safeDays = Math.max(1, Number(days) || 1);
     setDebtDays(safeDays);
     setDeferredDueDate(addCalendarDaysToIso(safeDays));
+  }, []);
+
+  const handleDebtDaysChange = useCallback((value: string) => {
+    if (value === "") {
+      setDebtDays("");
+      return;
+    }
+    const numValue = parseInt(value, 10);
+    if (!Number.isNaN(numValue)) {
+      setDebtDaysAndSyncDate(numValue);
+    }
+  }, [setDebtDaysAndSyncDate]);
+
+  const handleDebtDaysBlur = useCallback(
+    (value: string) => {
+      const numValue = parseInt(value, 10);
+      if (Number.isNaN(numValue) || numValue < 1) {
+        setDebtDaysAndSyncDate(30);
+      }
+    },
+    [setDebtDaysAndSyncDate],
+  );
+
+  const setFirstDueDate = useCallback((isoDate: string) => {
+    if (!isoDate) return;
+    setDeferredDueDate(isoDate);
   }, []);
 
   const openDeferredDueDatePicker = useCallback(() => {
@@ -206,30 +372,6 @@ export function usePaymentPage({
     }
   }, []);
 
-  const handleDebtDaysChange = useCallback(
-    (value: any) => {
-      if (value === "") {
-        setDebtDays("");
-        return;
-      }
-      const numValue = parseInt(value, 10);
-      if (!Number.isNaN(numValue)) {
-        setDebtDaysAndSyncDate(numValue);
-      }
-    },
-    [setDebtDaysAndSyncDate],
-  );
-
-  const handleDebtDaysBlur = useCallback(
-    (value) => {
-      const numValue = parseInt(value, 10);
-      if (Number.isNaN(numValue) || numValue < 1) {
-        setDebtDaysAndSyncDate(30);
-      }
-    },
-    [setDebtDaysAndSyncDate],
-  );
-
   const readAmountReceived = useCallback(() => {
     const raw =
       amountReceivedInputRef.current?.value ??
@@ -298,11 +440,17 @@ export function usePaymentPage({
             showAlert("warning", "Предоплата", "Укажите сумму предоплаты");
             return;
           }
-          if (deferredPrepaymentValue > total) {
+          if (
+            isDebtScheduleV2
+              ? deferredPrepaymentValue >= total
+              : deferredPrepaymentValue > total
+          ) {
             showAlert(
               "warning",
               "Предоплата",
-              "Сумма предоплаты не может быть больше суммы заказа",
+              isDebtScheduleV2
+                ? "Предоплата должна быть меньше суммы заказа — остаток уходит в долг"
+                : "Сумма предоплаты не может быть больше суммы заказа",
             );
             return;
           }
@@ -318,17 +466,92 @@ export function usePaymentPage({
             return;
           }
         }
-        const daysNum =
-          typeof debtDays === "number"
-            ? debtDays
-            : parseInt(String(debtDays), 10);
-        if (!Number.isFinite(daysNum) || daysNum < 1) {
-          showAlert(
-            "warning",
-            "Срок рассрочки",
-            "Укажите срок рассрочки не менее 1 дня",
-          );
-          return;
+        if (isDebtScheduleV2) {
+          if (deferredSaleDebtRemaining <= 0) {
+            showAlert(
+              "warning",
+              "Сумма долга",
+              "После предоплаты должен остаться долг больше нуля",
+            );
+            return;
+          }
+          const countNum =
+            typeof scheduleCount === "number"
+              ? scheduleCount
+              : parseInt(String(scheduleCount), 10);
+          if (!Number.isFinite(countNum) || countNum < 1) {
+            showAlert(
+              "warning",
+              "График погашения",
+              scheduleUnit === "month"
+                ? "Укажите число месяцев не менее 1"
+                : "Укажите число платежей не менее 1",
+            );
+            return;
+          }
+          if (countNum > maxInstallmentsForUnit(scheduleUnit)) {
+            showAlert(
+              "warning",
+              "График погашения",
+              scheduleUnit === "month"
+                ? `Максимум ${maxInstallmentsForUnit("month")} месяцев`
+                : `Максимум ${maxInstallmentsForUnit("day")} платежей`,
+            );
+            return;
+          }
+          const intervalNum =
+            typeof dayInterval === "number"
+              ? dayInterval
+              : parseInt(String(dayInterval), 10);
+          if (!Number.isFinite(intervalNum) || intervalNum < 1) {
+            showAlert(
+              "warning",
+              "Интервал",
+              scheduleUnit === "month"
+                ? "Укажите интервал не менее 1 месяца"
+                : "Укажите интервал не менее 1 дня",
+            );
+            return;
+          }
+          if (intervalNum > maxIntervalForUnit(scheduleUnit)) {
+            showAlert(
+              "warning",
+              "Интервал",
+              scheduleUnit === "month"
+                ? `Максимум ${MAX_MONTH_INTERVAL} месяцев между платежами`
+                : `Максимум ${MAX_DAY_INTERVAL} дней между платежами`,
+            );
+            return;
+          }
+          if (!deferredDueDate || deferredDueDate < todayIsoDate()) {
+            showAlert(
+              "warning",
+              "Дата первого платежа",
+              "Дата первого платежа не может быть раньше сегодня",
+            );
+            return;
+          }
+          if (!debtSchedule) {
+            showAlert(
+              "warning",
+              "График погашения",
+              "Не удалось построить график. Проверьте срок и дату первого платежа",
+            );
+            return;
+          }
+        } else {
+          const daysNum =
+            typeof debtDays === "number"
+              ? debtDays
+              : parseInt(String(debtDays), 10);
+          if (!Number.isFinite(daysNum) || daysNum < 1) {
+            showAlert(
+              "warning",
+              "Срок рассрочки",
+              "Укажите срок рассрочки не менее 1 дня",
+            );
+            return;
+          }
         }
       }
 
@@ -373,6 +596,12 @@ export function usePaymentPage({
           );
           return;
         }
+      }
+
+      const consultantError = validateConsultantDraft(consultant.draft);
+      if (consultantError) {
+        showAlert("warning", "Консультант", consultantError);
+        return;
       }
 
       let paymentMethodApi = "cash";
@@ -422,21 +651,45 @@ export function usePaymentPage({
               : paymentMethod === "cash"
                 ? readAmountReceived() || total
                 : null,
+          ...buildCheckoutConsultantPayload(consultant.draft),
+          ...(isDebtScheduleV2 &&
+          paymentMethod === "deferred" &&
+          debtSchedule
+            ? {
+                schedule_version: "v2",
+                debt_schedule: {
+                  unit: debtSchedule.unit,
+                  count: debtSchedule.count,
+                  interval_days:
+                    debtSchedule.unit === "day"
+                      ? debtSchedule.intervalDays
+                      : undefined,
+                  interval_months:
+                    debtSchedule.unit === "month"
+                      ? debtSchedule.intervalMonths
+                      : undefined,
+                  first_due_date: debtSchedule.firstDueDate,
+                  installments: toDealInstallments(debtSchedule),
+                },
+              }
+            : {}),
         }),
       );
 
       if (result.type === "products/productCheckout/fulfilled") {
         if (paymentMethod === "deferred" && selectedCustomer?.id) {
           try {
+            const schedule = isDebtScheduleV2 ? debtSchedule : null;
             const daysAdd =
               typeof debtDays === "number" && debtDays >= 1
                 ? debtDays
                 : calcDaysUntilIsoDate(deferredDueDate);
-            const dueDateString =
-              deferredDueDate || addCalendarDaysToIso(daysAdd);
-            const isPrepaymentDeal =
+            const dueDateString = isDebtScheduleV2
+              ? schedule?.lastDueDate || deferredDueDate || todayIsoDate()
+              : deferredDueDate || addCalendarDaysToIso(daysAdd);
+            const hasPrepayment =
               deferredPrepaymentValue > 0 && deferredPrepaymentValue < total;
-            const debtRecordAmount = isPrepaymentDeal
+            const debtRecordAmount = hasPrepayment
               ? deferredSaleDebtRemaining
               : total;
 
@@ -471,22 +724,54 @@ export function usePaymentPage({
             }
 
             await dispatch(
-              createDeal({
-                clientId: selectedCustomer.id,
-                title: `${isPrepaymentDeal ? "Предоплата" : "Долг"} ${
-                  selectedCustomer.full_name ||
-                  selectedCustomer.name ||
-                  "Клиент"
-                }`,
-                statusRu: isPrepaymentDeal ? "Предоплата" : "Долги",
-                amount: total,
-                prepayment:
-                  deferredPrepaymentValue > 0
-                    ? deferredPrepaymentValue
-                    : undefined,
-                debtDays: daysAdd,
-                first_due_date: dueDateString,
-              }),
+              createDeal(
+                isDebtScheduleV2
+                  ? {
+                      clientId: selectedCustomer.id,
+                      title: `${hasPrepayment ? "Предоплата" : "Долг"} ${
+                        selectedCustomer.full_name ||
+                        selectedCustomer.name ||
+                        "Клиент"
+                      }`,
+                      statusRu: "Долги",
+                      amount: total,
+                      prepayment: hasPrepayment
+                        ? deferredPrepaymentValue
+                        : undefined,
+                      debtDays:
+                        schedule?.unit === "day" ? schedule.count : undefined,
+                      debtMonths:
+                        schedule?.unit === "month" ? schedule.count : undefined,
+                      first_due_date:
+                        schedule?.firstDueDate || deferredDueDate,
+                      intervalDays:
+                        schedule?.unit === "day"
+                          ? schedule.intervalDays
+                          : undefined,
+                      intervalMonths:
+                        schedule?.unit === "month"
+                          ? schedule.intervalMonths
+                          : undefined,
+                      installments: toDealInstallments(schedule),
+                      scheduleVersion: "v2",
+                    }
+                  : {
+                      clientId: selectedCustomer.id,
+                      title: `${hasPrepayment ? "Предоплата" : "Долг"} ${
+                        selectedCustomer.full_name ||
+                        selectedCustomer.name ||
+                        "Клиент"
+                      }`,
+                      statusRu: hasPrepayment ? "Предоплата" : "Долги",
+                      amount: total,
+                      prepayment: hasPrepayment
+                        ? deferredPrepaymentValue
+                        : undefined,
+                      debtDays: daysAdd,
+                      first_due_date: dueDateString,
+                      scheduleVersion: "v1",
+                    },
+              ),
             ).unwrap();
           } catch (debtError) {
             console.warn("Ошибка при создании долга:", debtError);
@@ -691,7 +976,10 @@ export function usePaymentPage({
   }, [
     buildReceiptPrintPayload,
     company?.subscription_plan?.name,
+    consultant.draft,
+    dayInterval,
     debtDays,
+    debtSchedule,
     deferredDueDate,
     deferredPrepaymentBank,
     deferredPrepaymentEnabled,
@@ -699,11 +987,14 @@ export function usePaymentPage({
     deferredPrepaymentValue,
     deferredSaleDebtRemaining,
     dispatch,
+    isDebtScheduleV2,
     paymentMethod,
     readAmountReceived,
     saleId,
     selectCashBox,
     selectedBank,
+    scheduleCount,
+    scheduleUnit,
     selectedCustomer,
     showAlert,
     splitOnlineAmount,
@@ -896,13 +1187,27 @@ export function usePaymentPage({
     handleDeferredPrepaymentMethodChange,
     deferredPrepaymentBank,
     setDeferredPrepaymentBank,
+    debtScheduleVersion,
+    isDebtScheduleV2,
     debtDays,
+    onDebtDaysChange: handleDebtDaysChange,
+    onDebtDaysBlur: handleDebtDaysBlur,
+    onDebtDaysDateChange: setDebtDaysFromDate,
+    scheduleUnit,
+    onScheduleUnitChange: handleScheduleUnitChange,
+    scheduleCount,
+    onScheduleCountChange: handleScheduleCountChange,
+    onScheduleCountBlur: handleScheduleCountBlur,
+    onSchedulePreset: handleSchedulePreset,
+    dayInterval,
+    onDayIntervalChange: handleDayIntervalChange,
+    onDayIntervalBlur: handleDayIntervalBlur,
+    onDayIntervalPreset: handleDayIntervalPreset,
+    debtSchedule,
     deferredDueDate,
     deferredDueDateInputRef,
-    handleDebtDaysChange,
-    handleDebtDaysBlur,
     openDeferredDueDatePicker,
-    setDebtDaysFromDate,
+    onFirstDueDateChange: setFirstDueDate,
     amountReceived,
     setAmountReceived,
     amountReceivedInputRef,
@@ -923,6 +1228,7 @@ export function usePaymentPage({
     receiptData,
     alertModal,
     closeAlert,
+    consultant,
   };
 }
 

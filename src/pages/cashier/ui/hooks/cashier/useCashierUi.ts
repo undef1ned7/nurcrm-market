@@ -103,6 +103,8 @@ export function useCashierUi(b) {
       setShowReceiptsModal(true);
     } else if (action === "deletions") {
       setShowDeletionsLogModal(true);
+    } else if (action === "quick-slots") {
+      b.setShowQuickSlotsModal?.(true);
     }
   };
 

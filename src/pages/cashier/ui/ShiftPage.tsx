@@ -5,6 +5,10 @@ import {
   fetchShiftsAsync,
   fetchShiftByIdAsync,
   closeShiftAsync,
+  fetchAllShiftSales,
+  formatShiftMoney,
+  resolveShiftPaymentBreakdown,
+  ShiftPaymentBreakdown,
 } from "@entities/shift";
 import { useShifts } from "@entities/shift";
 import api from "@shared/api";
@@ -37,7 +41,11 @@ const ShiftPage = ({ onBack }: any) => {
     message: "",
   });
   const [showCloseShiftModal, setShowCloseShiftModal] = useState(false);
+  const [closeModalDone, setCloseModalDone] = useState(false);
   const [closingCash, setClosingCash] = useState("");
+  const [closeSalesFallback, setCloseSalesFallback] = useState<any[]>([]);
+  const [closeBreakdownLoading, setCloseBreakdownLoading] = useState(false);
+  const [closedSummary, setClosedSummary] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10); // Размер страницы с бэкенда
 
@@ -47,6 +55,10 @@ const ShiftPage = ({ onBack }: any) => {
     [shifts, currentShift]
   );
   const openShiftId = openShift?.id;
+  const closePaymentBreakdown = React.useMemo(
+    () => resolveShiftPaymentBreakdown(openShift, closeSalesFallback),
+    [openShift, closeSalesFallback],
+  );
 
   useEffect(() => {
     // Загружаем список смен, если его еще нет
@@ -306,10 +318,40 @@ const ShiftPage = ({ onBack }: any) => {
 
   const handleCloseShift = () => {
     if (!openShift?.id) return;
-    // Показываем модальное окно для ввода суммы
     setClosingCash("");
+    setCloseModalDone(false);
+    setClosedSummary(null);
     setShowCloseShiftModal(true);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSales = async () => {
+      if (!showCloseShiftModal || !openShiftId) return;
+      if (
+        Array.isArray(openShift?.payment_breakdown) &&
+        openShift.payment_breakdown.length
+      ) {
+        setCloseSalesFallback([]);
+        setCloseBreakdownLoading(false);
+        return;
+      }
+      setCloseBreakdownLoading(true);
+      try {
+        const sales = await fetchAllShiftSales(openShiftId);
+        if (!cancelled) setCloseSalesFallback(sales);
+      } catch (error: any) {
+        console.error("Не удалось загрузить продажи смены:", error);
+        if (!cancelled) setCloseSalesFallback([]);
+      } finally {
+        if (!cancelled) setCloseBreakdownLoading(false);
+      }
+    };
+    void loadSales();
+    return () => {
+      cancelled = true;
+    };
+  }, [showCloseShiftModal, openShiftId, openShift?.payment_breakdown]);
 
   const confirmCloseShift = async () => {
     if (!openShift?.id) return;
@@ -327,28 +369,22 @@ const ShiftPage = ({ onBack }: any) => {
       return;
     }
 
-    setShowCloseShiftModal(false);
-
     try {
-      await dispatch(
+      const closedShift = await dispatch(
         closeShiftAsync({
           shiftId: openShift.id,
           closingCash: cashAmount,
         })
       ).unwrap();
-      setAlertModal({
-        open: true,
-        type: "success",
-        title: "Успех",
-        message: "Смена успешно закрыта",
-        onConfirm: null,
+      setClosedSummary({
+        closingCash: cashAmount,
+        breakdown: resolveShiftPaymentBreakdown(
+          closedShift || openShift,
+          closeSalesFallback,
+        ),
       });
-      // Обновляем список смен
+      setCloseModalDone(true);
       dispatch(fetchShiftsAsync(undefined as any));
-      // Закрываем страницу смены
-      setTimeout(() => {
-        onBack();
-      }, 1500);
     } catch (error: any) {
       setAlertModal({
         open: true,
@@ -731,62 +767,101 @@ const ShiftPage = ({ onBack }: any) => {
       {showCloseShiftModal && (
         <div
           className="shift-page__close-modal-overlay"
-          onClick={() => setShowCloseShiftModal(false)}
+          onClick={() => {
+            if (!closeModalDone) setShowCloseShiftModal(false);
+          }}
         >
           <div
             className="shift-page__close-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="shift-page__close-modal-header">
-              <h2 className="shift-page__close-modal-title">Закрыть смену</h2>
-              <button
-                className="shift-page__close-modal-close"
-                onClick={() => setShowCloseShiftModal(false)}
-              >
-                <X size={24} />
-              </button>
+              <h2 className="shift-page__close-modal-title">
+                {closeModalDone ? "Смена закрыта" : "Закрыть смену"}
+              </h2>
+              {!closeModalDone && (
+                <button
+                  className="shift-page__close-modal-close"
+                  onClick={() => setShowCloseShiftModal(false)}
+                >
+                  <X size={24} />
+                </button>
+              )}
             </div>
             <div className="shift-page__close-modal-content">
-              <div className="shift-page__close-modal-info">
-                <div className="shift-page__close-modal-info-item">
-                  <span>Ожидаемая сумма:</span>
-                  <span>
-                    {openShift?.expected_cash
-                      ? parseFloat(openShift.expected_cash).toFixed(2)
-                      : "0.00"}{" "}
-                    сом
-                  </span>
-                </div>
-              </div>
-              <div className="shift-page__close-modal-input-wrapper">
-                <label className="shift-page__close-modal-label">
-                  Фактическая сумма на кассе (сом)
-                </label>
-                <input
-                  type="number"
-                  className="shift-page__close-modal-input"
-                  value={closingCash}
-                  onChange={(e) => setClosingCash(e.target.value)}
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  autoFocus
-                />
-              </div>
+              {closeModalDone ? (
+                <>
+                  <div className="shift-page__close-modal-info">
+                    <div className="shift-page__close-modal-info-item">
+                      <span>Касса закрыта на:</span>
+                      <span>
+                        {formatShiftMoney(closedSummary?.closingCash)}
+                      </span>
+                    </div>
+                  </div>
+                  <ShiftPaymentBreakdown
+                    rows={closedSummary?.breakdown || closePaymentBreakdown}
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="shift-page__close-modal-info">
+                    <div className="shift-page__close-modal-info-item">
+                      <span>Ожидаемая сумма:</span>
+                      <span>
+                        {openShift?.expected_cash
+                          ? parseFloat(openShift.expected_cash).toFixed(2)
+                          : "0.00"}{" "}
+                        сом
+                      </span>
+                    </div>
+                  </div>
+                  <ShiftPaymentBreakdown
+                    rows={closePaymentBreakdown}
+                    loading={closeBreakdownLoading}
+                  />
+                  <div className="shift-page__close-modal-input-wrapper">
+                    <label className="shift-page__close-modal-label">
+                      Фактическая сумма на кассе (сом)
+                    </label>
+                    <input
+                      type="number"
+                      className="shift-page__close-modal-input"
+                      value={closingCash}
+                      onChange={(e) => setClosingCash(e.target.value)}
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      autoFocus
+                    />
+                  </div>
+                </>
+              )}
             </div>
             <div className="shift-page__close-modal-actions">
-              <button
-                className="shift-page__close-modal-cancel"
-                onClick={() => setShowCloseShiftModal(false)}
-              >
-                Отмена
-              </button>
-              <button
-                className="shift-page__close-modal-confirm"
-                onClick={confirmCloseShift}
-              >
-                Закрыть смену
-              </button>
+              {closeModalDone ? (
+                <button
+                  className="shift-page__close-modal-confirm"
+                  onClick={onBack}
+                >
+                  Готово
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="shift-page__close-modal-cancel"
+                    onClick={() => setShowCloseShiftModal(false)}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    className="shift-page__close-modal-confirm"
+                    onClick={confirmCloseShift}
+                  >
+                    Закрыть смену
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

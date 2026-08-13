@@ -1,5 +1,9 @@
 import CountryField from "../CountryField";
 import PricingSection from "../PricingSection";
+import {
+  FormBlock,
+  useOptionalProductFormLayout,
+} from "../../formLayout";
 
 const ProductWarehouseSection = ({
   marketData,
@@ -27,13 +31,22 @@ const ProductWarehouseSection = ({
   setAmount,
   debtMonths,
   setDebtMonths,
-}) => (
+}) => {
+  const layout = useOptionalProductFormLayout();
+  const showWarehouseCard =
+    !layout ||
+    layout.isVisible("supplier") ||
+    layout.isVisible("debt") ||
+    layout.isVisible("minStock");
+
+  return (
   <>
-          {/* Страна */}
+          <FormBlock id="country">
           <CountryField
             country={marketData.country}
             onChange={(name) => handleMarketDataChange("country", name)}
           />
+          </FormBlock>
 
           {/* Цены для товара */}
           <PricingSection
@@ -47,9 +60,10 @@ const ProductWarehouseSection = ({
             handlePriceChange={handlePriceChange}
           />
 
-          {/* Склад для товара */}
+          {showWarehouseCard ? (
           <div className="market-product-form__section">
             <h3 className="market-product-form__section-title">Склад</h3>
+            <FormBlock id="supplier">
             <div className="market-product-form__form-group">
               <label className="market-product-form__label">
                 Выберите поставщика
@@ -204,8 +218,9 @@ const ProductWarehouseSection = ({
                 </form>
               )}
             </div>
+            </FormBlock>
 
-            {/* Чекбокс для добавления долга */}
+            <FormBlock id="debt">
             <label className="add-product-page__checkbox-label">
               <input
                 type="checkbox"
@@ -307,7 +322,9 @@ const ProductWarehouseSection = ({
                 )}
               </div>
             )}
+            </FormBlock>
 
+            <FormBlock id="minStock">
             <div className="market-product-form__form-group">
               <label className="market-product-form__label">
                 Минимальный остаток
@@ -319,11 +336,13 @@ const ProductWarehouseSection = ({
                 onChange={(e) =>
                   handleMarketDataChange("minStock", e.target.value)
                 }
-              />
+                />
             </div>
+            </FormBlock>
           </div>
+          ) : null}
 
-          {/* Срок годности */}
+          <FormBlock id="expiry">
           <div className="market-product-form__section">
             <h3 className="market-product-form__section-title">
               Срок годности
@@ -340,7 +359,9 @@ const ProductWarehouseSection = ({
               />
             </div>
           </div>
+          </FormBlock>
   </>
-);
+  );
+};
 
 export default ProductWarehouseSection;

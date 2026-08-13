@@ -4,6 +4,7 @@ import {
   markAllNotificationsReadAsync,
   fetchNotificationDetailAsync,
   markNotificationReadAsync,
+  deleteNotificationAsync,
 } from "./notificationCreators";
 import { consultingNotificationLeadId } from "@shared/lib/consultingLeadSources";
 
@@ -147,6 +148,16 @@ const notificationSlice = createSlice({
 
       .addCase(fetchNotificationDetailAsync.fulfilled, (state, action) => {
         state.detail = action.payload;
+      })
+
+      .addCase(deleteNotificationAsync.fulfilled, (state, action) => {
+        const id = action.payload;
+        const item = state.list.find((x: any) => idOf(x) === id);
+        if (item && isUnread(item)) {
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+        state.list = state.list.filter((x: any) => idOf(x) !== id);
+        state.count = Math.max(0, state.count - 1);
       });
   },
 });

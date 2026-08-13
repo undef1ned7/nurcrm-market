@@ -1,11 +1,17 @@
 import { ArrowLeft, Package, Scan } from "lucide-react";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
+import { useUser } from "@entities/user";
 import AddProductBarcode from "./AddProductBarcode";
 import { useAddProductPage } from "./AddProductPage/hooks/useAddProductPage";
 import MarketProductForm from "./AddProductPage/components/MarketProductForm";
 import ManualEntryForm from "./AddProductPage/components/ManualEntryForm";
+import {
+  LayoutHeaderActions,
+  ProductFormLayoutProvider,
+} from "./AddProductPage/formLayout";
 import "./AddProductPage.scss";
+import "./AddProductPage/formLayout/ProductFormLayout.scss";
 
 const AddProductPage = ({
   embedded = false,
@@ -23,8 +29,23 @@ const AddProductPage = ({
     onEmbeddedSaved,
     forceProductOnly,
   });
+  const { profile } = useUser();
+  const role = String(profile?.role || "").toLowerCase();
+  const canCustomizeForm = role === "owner" || role === "admin";
 
   return (
+    <ProductFormLayoutProvider
+      companyId={p.company?.id}
+      canCustomize={canCustomizeForm}
+      values={{
+        itemType: p.itemType,
+        newItemData: p.newItemData,
+        marketData: p.marketData,
+        images: p.images,
+        showDebtForm: p.showDebtForm,
+      }}
+      onSaveError={(message) => p.showAlert(message, "error", "Ошибка")}
+    >
     <>
       <AlertModal
         open={p.alertModal.open}
@@ -43,14 +64,17 @@ const AddProductPage = ({
               : "Заполните информацию о новом товаре"
           }
           actions={
-            <button
-              type="button"
-              className="nur-btn nur-btn--secondary add-product-page__back"
-              onClick={p.handleReturn}
-            >
-              <ArrowLeft size={20} />
-              Вернуться к складу
-            </button>
+            <div className="add-product-page__layout-actions">
+              <LayoutHeaderActions />
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary add-product-page__back"
+                onClick={p.handleReturn}
+              >
+                <ArrowLeft size={20} />
+                Вернуться к складу
+              </button>
+            </div>
           }
         />
 
@@ -127,6 +151,13 @@ const AddProductPage = ({
               setNewItemData={p.setNewItemData}
               marketData={p.marketData}
               handleMarketDataChange={p.handleMarketDataChange}
+              onAdultEnabled={() =>
+                p.showAlert(
+                  "Этот товар предназначен для совершеннолетних",
+                  "info",
+                  "Товар 18+",
+                )
+              }
               handlePromotionStockChange={p.handlePromotionStockChange}
               handleChange={p.handleChange}
               brands={p.brands || []}
@@ -238,6 +269,7 @@ const AddProductPage = ({
         </PagePanel>
       </PageShell>
     </>
+    </ProductFormLayoutProvider>
   );
 };
 

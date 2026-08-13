@@ -20,6 +20,7 @@ export type AnalyticsFilters = Record<string, unknown> & {
   cashbox?: string;
   shift?: string;
   cashier?: string;
+  consultant?: string;
   payment_method?: string;
   min_total?: string | number;
   max_total?: string | number;

@@ -1,17 +1,29 @@
-import { useEffect, useRef, useCallback } from "react";
-import { X, CheckCheck, BellOff, Bell, Loader2 } from "lucide-react";
+import { useEffect, useRef, useCallback, useMemo, useState } from "react";
+import { X, CheckCheck, BellOff, Bell, Loader2, Trash2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@app/store";
 import { useNavigate } from "react-router-dom";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
+import { useUser } from "@entities/user";
 import classes from "./NotificationModal.module.scss";
 import {
+  buildTariffLocalNotification,
+  deleteNotificationAsync,
   fetchNotificationsAsync,
   markAllNotificationsReadAsync,
   markNotificationReadAsync,
+  matchesNotificationTab,
+  type NotificationTab,
 } from "@entities/notification";
 import { resolveConsultingNotificationUrl } from "@shared/lib/consultingLeadSources";
 
 const PAGE_SIZE = 20;
+
+const TABS: { id: NotificationTab; label: string }[] = [
+  { id: "all", label: "Все" },
+  { id: "tariff", label: "Тариф" },
+  { id: "system", label: "Системные" },
+  { id: "news", label: "Новости" },
+];
 
 const fmtDateTime = (s: any) => {
   if (!s) return "";
@@ -21,6 +33,8 @@ const fmtDateTime = (s: any) => {
 
 const idOf = (n: any) => n?.id ?? n?.uuid ?? n?.pk;
 const isUnread = (n: any) => !(n?.is_read ?? n?.read ?? false);
+const isLocal = (n: any) =>
+  Boolean(n?.meta?.local) || String(idOf(n) || "").startsWith("local-");
 
 const levelTone = (n: any) => {
   const lvl = String(
@@ -37,6 +51,9 @@ const NotificationModal = ({ onClose }: any) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const listRef = useRef(null);
+  const { company } = useUser();
+  const [tab, setTab] = useState<NotificationTab>("all");
+  const [deleteUnsupported, setDeleteUnsupported] = useState(false);
 
   const {
     list = [],
@@ -47,12 +64,16 @@ const NotificationModal = ({ onClose }: any) => {
     markingAllRead = false,
   } = useAppSelector((state) => state.notification);
 
+  const localTariff = useMemo(
+    () => buildTariffLocalNotification(company?.end_date),
+    [company?.end_date],
+  );
+
   useEffect(() => {
-    if (list.length === 0 && !loading) {
-      dispatch(fetchNotificationsAsync({ limit: PAGE_SIZE, offset: 0 }) as any);
-    }
-     
-  }, []);
+    dispatch(
+      fetchNotificationsAsync({ limit: PAGE_SIZE, offset: 0 } as any) as any,
+    );
+  }, [dispatch]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -62,6 +83,14 @@ const NotificationModal = ({ onClose }: any) => {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const visibleList = useMemo(() => {
+    const merged = [...list];
+    if (localTariff && !merged.some((n) => idOf(n) === localTariff.id)) {
+      merged.unshift(localTariff);
+    }
+    return merged.filter((n) => matchesNotificationTab(n, tab));
+  }, [list, localTariff, tab]);
+
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;
     dispatch(
@@ -69,7 +98,7 @@ const NotificationModal = ({ onClose }: any) => {
         limit: PAGE_SIZE,
         offset: list.length,
         append: true,
-      }),
+      } as any) as any,
     );
   }, [dispatch, hasMore, loadingMore, list.length]);
 
@@ -85,8 +114,11 @@ const NotificationModal = ({ onClose }: any) => {
 
   const handleClick = useCallback(
     (n) => {
-      if (isUnread(n)) dispatch(markNotificationReadAsync(idOf(n) as any));
-      const url = resolveConsultingNotificationUrl(n);
+      if (!isLocal(n) && isUnread(n)) {
+        dispatch(markNotificationReadAsync(idOf(n) as any));
+      }
+      const url =
+        n?.cta_url || n?.url || resolveConsultingNotificationUrl(n);
       if (url) {
         onClose?.();
         if (/^https?:\/\//i.test(url)) window.location.assign(url);
@@ -100,7 +132,21 @@ const NotificationModal = ({ onClose }: any) => {
     if (unreadCount > 0) dispatch(markAllNotificationsReadAsync({} as any) as any);
   }, [dispatch, unreadCount]);
 
-  const isEmpty = !loading && list.length === 0;
+  const handleDelete = useCallback(
+    async (event, n) => {
+      event.stopPropagation();
+      const id = idOf(n);
+      if (!id || isLocal(n) || deleteUnsupported) return;
+      try {
+        await dispatch(deleteNotificationAsync(id) as any).unwrap();
+      } catch {
+        setDeleteUnsupported(true);
+      }
+    },
+    [deleteUnsupported, dispatch],
+  );
+
+  const isEmpty = !loading && visibleList.length === 0;
 
   return (
     <ReactPortal wrapperId="notification-center-portal">
@@ -144,6 +190,21 @@ const NotificationModal = ({ onClose }: any) => {
             </button>
           </header>
 
+          <div className={classes.tabs} role="tablist" aria-label="Категории">
+            {TABS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === item.id}
+                className={`${classes.tab} ${tab === item.id ? classes.tabActive : ""}`}
+                onClick={() => setTab(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
           <div
             className={classes.body}
             ref={listRef}
@@ -166,7 +227,7 @@ const NotificationModal = ({ onClose }: any) => {
               </div>
             ) : (
               <ul className={classes.list}>
-                {list.map((n) => {
+                {visibleList.map((n) => {
                   const unread = isUnread(n);
                   const tone = levelTone(n);
                   const title =
@@ -183,11 +244,11 @@ const NotificationModal = ({ onClose }: any) => {
                     n?.initiator_name ||
                     n?.initiator ||
                     "";
+                  const ctaLabel = n?.cta_label || n?.action_label;
 
                   return (
                     <li key={idOf(n)}>
-                      <button
-                        type="button"
+                      <div
                         className={[
                           classes.item,
                           classes[`item--${tone}`],
@@ -195,31 +256,49 @@ const NotificationModal = ({ onClose }: any) => {
                         ]
                           .filter(Boolean)
                           .join(" ")}
-                        onClick={() => handleClick(n)}
                       >
-                        <div className={classes.itemBody}>
-                          <div className={classes.itemTop}>
-                            <span className={classes.itemTitle}>{title}</span>
-                            {unread ? (
-                              <span
-                                className={classes.dot}
-                                aria-label="Непрочитано"
-                              />
+                        <button
+                          type="button"
+                          className={classes.itemMain}
+                          onClick={() => handleClick(n)}
+                        >
+                          <div className={classes.itemBody}>
+                            <div className={classes.itemTop}>
+                              <span className={classes.itemTitle}>{title}</span>
+                              {unread ? (
+                                <span
+                                  className={classes.dot}
+                                  aria-label="Непрочитано"
+                                />
+                              ) : null}
+                            </div>
+                            {message ? (
+                              <span className={classes.itemMessage}>
+                                {message}
+                              </span>
+                            ) : null}
+                            <span className={classes.itemMeta}>
+                              {actor ? `${actor} · ` : ""}
+                              {fmtDateTime(
+                                n?.created_at || n?.created || n?.date,
+                              )}
+                            </span>
+                            {ctaLabel ? (
+                              <span className={classes.cta}>{ctaLabel}</span>
                             ) : null}
                           </div>
-                          {message ? (
-                            <span className={classes.itemMessage}>
-                              {message}
-                            </span>
-                          ) : null}
-                          <span className={classes.itemMeta}>
-                            {actor ? `${actor} · ` : ""}
-                            {fmtDateTime(
-                              n?.created_at || n?.created || n?.date,
-                            )}
-                          </span>
-                        </div>
-                      </button>
+                        </button>
+                        {!isLocal(n) && !deleteUnsupported ? (
+                          <button
+                            type="button"
+                            className={classes.deleteBtn}
+                            aria-label="Удалить уведомление"
+                            onClick={(event) => handleDelete(event, n)}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}
@@ -243,7 +322,7 @@ const NotificationModal = ({ onClose }: any) => {
                 disabled={markingAllRead}
               >
                 <CheckCheck size={16} />
-                {markingAllRead ? "Отмечаем…" : "Прочитать все"}
+                {markingAllRead ? "Отмечаем…" : "Отметить все как прочитанные"}
               </button>
             </footer>
           ) : null}

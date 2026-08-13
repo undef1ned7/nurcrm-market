@@ -105,6 +105,11 @@
     }
   }
 
+  &__payments {
+    padding-top: var(--nur-space-2);
+    border-top: 1px solid var(--nur-border);
+  }
+
   &__total {
     background: var(--nur-primary);
     color: var(--nur-primary-ink);

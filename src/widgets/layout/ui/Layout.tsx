@@ -58,6 +58,8 @@ const Layout = () => {
   const isHidden = useMemo(() => {
     return (
       location.pathname.startsWith("/crm/market/cashier") ||
+      location.pathname.startsWith("/crm/market/customer-display") ||
+      location.pathname.startsWith("/crm/sklad/mass-scan") ||
       location.pathname.startsWith("/crm/sell/start") ||
       location.pathname.startsWith("/crm/production/sell/start")
     );

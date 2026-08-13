@@ -20,6 +20,7 @@ export const useMarketProductState = ({
     hotkeyGroup: "",
     unit: "шт",
     isWeightProduct: false,
+    isAdult: false,
     isFractionalService: false,
     plu: "",
     height: "0",

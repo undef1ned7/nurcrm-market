@@ -1,7 +1,18 @@
 // API-клиент настроек кассы сферы «Магазин».
-// Контракт описан в docs/market/cashier-settings.md.
+// Контракт описан в docs/backend/cashier-settings.md.
 // Настройки задаёт владелец/админ компании, кассир получает их только на чтение.
 import api from "@shared/api";
+
+type DebtScheduleVersion = "v1" | "v2";
+
+function parseDebtScheduleVersion(raw: unknown): DebtScheduleVersion {
+  const value = String(raw ?? "")
+    .trim()
+    .toLowerCase();
+  if (value === "v1" || value === "1") return "v1";
+  if (value === "v2" || value === "2") return "v2";
+  return "v2";
+}
 
 export const MARKET_CASHIER_SETTINGS_URL = "/main/pos/cashier-settings/";
 export const MARKET_CASHIER_VERIFY_DELETE_CODE_URL = `${MARKET_CASHIER_SETTINGS_URL}verify-delete-code/`;
@@ -27,14 +38,23 @@ export const normalizeMarketCashierSettings = (data: any) => {
     deleteCodeRequired: Boolean(required),
     deleteCode: code || "",
     maxDiscountPercent: parsePercent(data?.max_discount_percent),
+    debtScheduleVersion: parseDebtScheduleVersion(
+      data?.debt_schedule_version ?? data?.deferred_schedule_version,
+    ),
   };
 };
 
-/** Значения по умолчанию: код не нужен, ограничения скидки нет. */
-export const DEFAULT_MARKET_CASHIER_SETTINGS = {
+/** Значения по умолчанию: код не нужен, ограничения скидки нет, отсрочка v2. */
+export const DEFAULT_MARKET_CASHIER_SETTINGS: {
+  deleteCodeRequired: boolean;
+  deleteCode: string;
+  maxDiscountPercent: number | null;
+  debtScheduleVersion: DebtScheduleVersion;
+} = {
   deleteCodeRequired: false,
   deleteCode: "",
   maxDiscountPercent: null,
+  debtScheduleVersion: "v2",
 };
 
 /** GET — текущие настройки кассы компании. */

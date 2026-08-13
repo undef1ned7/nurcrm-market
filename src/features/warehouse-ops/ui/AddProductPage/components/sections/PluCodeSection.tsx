@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { HelpCircle } from "lucide-react";
+import { FormBlock } from "../../formLayout";
 
 const PluCodeSection = ({ itemType, marketData, handleMarketDataChange }) => {
   const [showPluTooltip, setShowPluTooltip] = useState(false);
@@ -12,6 +13,7 @@ const PluCodeSection = ({ itemType, marketData, handleMarketDataChange }) => {
     return null;
   }
   return (
+        <FormBlock id="plu">
         <div className="market-product-form__section">
           <div className="market-product-form__form-group">
             <label className="market-product-form__label">
@@ -49,6 +51,7 @@ const PluCodeSection = ({ itemType, marketData, handleMarketDataChange }) => {
             </div>
           </div>
         </div>
+        </FormBlock>
   );
 };
 

@@ -1,4 +1,6 @@
 import { Search, Star } from "lucide-react";
+import { isAdultProduct } from "@entities/product";
+import { loadQuickSlots, slotForProduct } from "@features/quick-sale-slots";
 import { Button } from "@mui/material";
 import CashierCartsBar from "./CashierCartsBar";
 import { getDefaultPackage } from "@shared/lib/tools/marketPackPieceSale";
@@ -46,7 +48,9 @@ export function CashierProductsPanel({ vm }: Props) {
     previous,
     next,
     count,
+    companyId,
   } = vm;
+  const quickSlots = loadQuickSlots(companyId);
 
   return (
     <>
@@ -253,20 +257,31 @@ export function CashierProductsPanel({ vm }: Props) {
                               {formatQuantity(cartItem.quantity || product.cartQty || 0)}
                             </div>
                           )}
+                          {slotForProduct(quickSlots, product.id) ? (
+                            <div className="cashier-page__product-badge cashier-page__product-badge--hotkey">
+                              F3+{slotForProduct(quickSlots, product.id)}
+                            </div>
+                          ) : null}
                           <div className="cashier-page__product-name">
+                            {isAdultProduct(product, companyId) ? (
+                              <span className="cashier-page__product-adult">
+                                18+
+                              </span>
+                            ) : null}
                             {product.name || "—"}
                           </div>
                           <div className="cashier-page__product-price">
                             {formatPrice(product.price || 0)} сом
                           </div>
 
-                          <div className="cashier-page__product-stock flex items-center gap-2">
-                            {product.quantity || 0} {product.unit || "шт"}
+                          <div className="cashier-page__product-stock">
+                            <span>
+                              {product.quantity || 0} {product.unit || "шт"}
+                            </span>
                             {piecePackage && (
                               <button
                                 type="button"
-                                className="cashier-page__cart-item-btn cursor-pointer"
-                                // style={{ marginTop: 8 }}
+                                className="cashier-page__product-piece-btn"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();

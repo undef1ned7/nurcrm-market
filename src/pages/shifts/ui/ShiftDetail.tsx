@@ -21,6 +21,8 @@ import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import {
   fetchShiftByIdAsync,
   fetchShiftSalesAsync,
+  resolveShiftPaymentBreakdown,
+  ShiftPaymentBreakdown,
 } from "@entities/shift";
 import {
   PageShell,
@@ -68,6 +70,10 @@ const ShiftDetail = () => {
   });
 
   const shift = currentShift;
+  const paymentBreakdown = resolveShiftPaymentBreakdown(
+    shift,
+    filters.status || filters.payment_method || filters.q ? [] : salesHistory,
+  );
 
   useEffect(() => {
     if (id) {
@@ -431,6 +437,9 @@ const ShiftDetail = () => {
                   {parseFloat(shift.noncash_sales_total || 0).toFixed(2)} сом
                 </div>
               </div>
+            </div>
+            <div className="shift-detail-page__payments">
+              <ShiftPaymentBreakdown rows={paymentBreakdown} />
             </div>
           </div>
         </div>

@@ -48,14 +48,16 @@
   &__content {
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 40px 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   &__card {
     width: 100%;
-    max-width: 500px;
+    max-width: 520px;
     background: var(--nur-surface);
     border-radius: 16px;
     padding: 40px;
@@ -75,6 +77,18 @@
     height: 80px;
     border-radius: 50%;
     background: var(--nur-danger-soft);
+
+    &--success {
+      background: var(--nur-success-soft);
+      color: var(--nur-success);
+    }
+  }
+
+  &__payments {
+    width: 100%;
+    padding: 16px 20px;
+    background: var(--nur-surface-2);
+    border-radius: 8px;
   }
 
   &__card-title {
@@ -214,6 +228,15 @@
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    &--done {
+      background: var(--nur-primary);
+      color: var(--nur-primary-ink);
+
+      &:hover:not(:disabled) {
+        background: var(--nur-primary-dark, var(--nur-primary));
+      }
     }
   }
 

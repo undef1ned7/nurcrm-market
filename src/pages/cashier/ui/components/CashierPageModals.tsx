@@ -10,6 +10,7 @@ import MenuModal from "./MenuModal";
 import ReceiptsModal from "./ReceiptsModal";
 import DeleteCodeModal from "./DeleteCodeModal";
 import PieceSaleModal from "./PieceSaleModal";
+import { QuickSlotsModal } from "@features/quick-sale-slots";
 import { stripTrailingZerosAfterDecimal } from "../cashierPage.utils";
 import type { CashierPageVm } from "../hooks/useCashierPage";
 
@@ -36,6 +37,9 @@ export function CashierPageModals({ vm }: Props) {
     handlePieceSaleConfirmPieces,
     showHotkeyProductsModal,
     setShowHotkeyProductsModal,
+    showQuickSlotsModal,
+    setShowQuickSlotsModal,
+    companyId,
     hotkeyProductsGroup,
     hotkeyFilteredProducts,
     hotkeyProductsLoading,
@@ -73,6 +77,13 @@ export function CashierPageModals({ vm }: Props) {
 
   return (
     <>
+            {showQuickSlotsModal && (
+              <QuickSlotsModal
+                companyId={companyId}
+                onClose={() => setShowQuickSlotsModal(false)}
+              />
+            )}
+
             {showMenuModal && (
               <MenuModal
                 onClose={() => setShowMenuModal(false)}
@@ -196,9 +207,17 @@ export function CashierPageModals({ vm }: Props) {
               type={alertModal.type}
               title={alertModal.title}
               message={alertModal.message}
-              okText="ОК"
-              onClose={closeAlert}
-              onConfirm={closeAlert}
+              okText={alertModal.okText || "ОК"}
+              onClose={() => {
+                const handleClose = alertModal.onClose;
+                closeAlert();
+                handleClose?.();
+              }}
+              onConfirm={() => {
+                const handleConfirm = alertModal.onConfirm || alertModal.onClose;
+                closeAlert();
+                handleConfirm?.();
+              }}
             />
     </>
   );

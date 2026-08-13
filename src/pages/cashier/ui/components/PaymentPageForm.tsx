@@ -1,83 +1,25 @@
-import { Calendar, User } from "lucide-react";
+import { User } from "lucide-react";
+import type {
+  DebtSchedule,
+  DebtScheduleUnit,
+  DebtScheduleVersion,
+} from "@entities/sale";
 import { PaymentPageSummary } from "./PaymentPageSummary";
 import { PAYMENT_BANKS } from "../paymentPage.banks";
 import {
   PAYMENT_METHODS,
   KYRGYZSTAN_BILLS,
-  calcDaysUntilIsoDate,
-  debtDaysLabel,
   formatMoneyRu,
-  getTodayIsoDate,
 } from "../paymentPage.utils";
 import type {
-  PaymentBank,
+  PaymentConsultantVm,
   PaymentCustomer,
   PaymentMethodId,
   PaymentSale,
 } from "../paymentPage.types";
-
-type BankGridProps = {
-  banks: PaymentBank[];
-  selectedId: string;
-  onSelect: (id: string) => void;
-  keyPrefix?: string;
-  activeClassName?: string;
-  /** cashless: svg in div; deferred: raw svg; split: string logos only (else name) */
-  logoMode?: "cashless" | "deferred" | "split";
-};
-
-function PaymentBankGrid({
-  banks,
-  selectedId,
-  onSelect,
-  keyPrefix = "",
-  activeClassName = "payment-page__bank--active",
-  logoMode = "cashless",
-}: BankGridProps) {
-  return (
-    <div className="payment-page__banks">
-      {banks.map((bank) => {
-        let logoContent;
-        if (typeof bank.logo === "string") {
-          logoContent = (
-            <img
-              src={bank.logo}
-              alt={bank.name}
-              className="payment-page__bank-logo"
-            />
-          );
-        } else if (bank.logo && logoMode === "cashless") {
-          logoContent = (
-            <div className="payment-page__bank-svg">{bank.logo}</div>
-          );
-        } else if (bank.logo && logoMode === "deferred") {
-          logoContent = bank.logo;
-        } else {
-          logoContent = (
-            <div className="payment-page__bank-name">{bank.name}</div>
-          );
-        }
-
-        return (
-          <button
-            key={`${keyPrefix}${bank.id}`}
-            type="button"
-            className={`payment-page__bank ${
-              selectedId === bank.id ? activeClassName : ""
-            }`}
-            onClick={() => onSelect(bank.id)}
-            title={bank.name}
-          >
-            <div className="payment-page__bank-content">{logoContent}</div>
-            {selectedId === bank.id && (
-              <div className="payment-page__bank-check">✓</div>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+import { PaymentPageConsultant } from "./PaymentPageConsultant";
+import { PaymentPageBankGrid } from "./PaymentPageBankGrid";
+import { PaymentPageDebtSection } from "./PaymentPageDebtSection";
 
 type Props = {
   paymentMethod: PaymentMethodId | string;
@@ -105,13 +47,26 @@ type Props = {
   onDeferredPrepaymentMethodChange: (method: string) => void;
   deferredPrepaymentBank: string;
   onSelectDeferredPrepaymentBank: (id: string) => void;
-  debtDays: number | string;
-  deferredDueDate: string;
-  deferredDueDateInputRef: React.RefObject<HTMLInputElement | null>;
+  debtScheduleVersion: DebtScheduleVersion;
+  debtDays: number | "";
   onDebtDaysChange: (value: string) => void;
   onDebtDaysBlur: (value: string) => void;
+  onDebtDaysDateChange: (isoDate: string) => void;
+  scheduleUnit: DebtScheduleUnit;
+  onScheduleUnitChange: (unit: DebtScheduleUnit) => void;
+  scheduleCount: number | "";
+  onScheduleCountChange: (value: string) => void;
+  onScheduleCountBlur: (value: string) => void;
+  onSchedulePreset: (count: number) => void;
+  dayInterval: number | "";
+  onDayIntervalChange: (value: string) => void;
+  onDayIntervalBlur: (value: string) => void;
+  onDayIntervalPreset: (interval: number) => void;
+  debtSchedule: DebtSchedule | null;
+  deferredDueDate: string;
+  deferredDueDateInputRef: React.RefObject<HTMLInputElement | null>;
   onOpenDeferredDueDatePicker: () => void;
-  onDeferredDueDateChange: (isoDate: string) => void;
+  onFirstDueDateChange: (isoDate: string) => void;
   totalDebt: number;
   amountReceived: string;
   amountReceivedInputRef: React.RefObject<HTMLInputElement | null>;
@@ -123,6 +78,7 @@ type Props = {
   onWithoutCheckChange: (checked: boolean) => void;
   onAcceptPayment: () => void;
   onCancel: () => void;
+  consultant: PaymentConsultantVm;
 };
 
 export function PaymentPageForm({
@@ -151,13 +107,26 @@ export function PaymentPageForm({
   onDeferredPrepaymentMethodChange,
   deferredPrepaymentBank,
   onSelectDeferredPrepaymentBank,
+  debtScheduleVersion,
   debtDays,
-  deferredDueDate,
-  deferredDueDateInputRef,
   onDebtDaysChange,
   onDebtDaysBlur,
+  onDebtDaysDateChange,
+  scheduleUnit,
+  onScheduleUnitChange,
+  scheduleCount,
+  onScheduleCountChange,
+  onScheduleCountBlur,
+  onSchedulePreset,
+  dayInterval,
+  onDayIntervalChange,
+  onDayIntervalBlur,
+  onDayIntervalPreset,
+  debtSchedule,
+  deferredDueDate,
+  deferredDueDateInputRef,
   onOpenDeferredDueDatePicker,
-  onDeferredDueDateChange,
+  onFirstDueDateChange,
   totalDebt,
   amountReceived,
   amountReceivedInputRef,
@@ -169,6 +138,7 @@ export function PaymentPageForm({
   onWithoutCheckChange,
   onAcceptPayment,
   onCancel,
+  consultant,
 }: Props) {
   return (
     <div className="payment-page__content">
@@ -238,6 +208,21 @@ export function PaymentPageForm({
             </button>
           )}
         </div>
+
+        <PaymentPageConsultant
+          specify={consultant.draft.specify}
+          onSpecifyChange={consultant.handleSpecifyChange}
+          consultantId={consultant.draft.consultantId}
+          consultantName={consultant.draft.consultantName}
+          onConsultantChange={consultant.handleConsultantChange}
+          consultants={consultant.consultants}
+          consultantsLoading={consultant.consultantsLoading}
+          commissionEnabled={consultant.draft.commissionEnabled}
+          onCommissionEnabledChange={consultant.handleCommissionEnabledChange}
+          percent={consultant.draft.percent}
+          onPercentChange={consultant.handlePercentChange}
+          previewAmount={consultant.previewAmount}
+        />
       </div>
 
       <div className="payment-page__right">
@@ -246,7 +231,7 @@ export function PaymentPageForm({
         {paymentMethod === "cashless" && (
           <div className="payment-page__section">
             <h3 className="payment-page__section-title">ВЫБОР БАНКА</h3>
-            <PaymentBankGrid
+            <PaymentPageBankGrid
               banks={PAYMENT_BANKS}
               selectedId={selectedBank}
               onSelect={onSelectBank}
@@ -258,7 +243,7 @@ export function PaymentPageForm({
         {paymentMethod === "split" && (
           <div className="payment-page__section payment-page__split">
             <h3 className="payment-page__section-title">ОНЛАЙН-ОПЛАТА</h3>
-            <PaymentBankGrid
+            <PaymentPageBankGrid
               banks={PAYMENT_BANKS}
               selectedId={splitOnlineBank}
               onSelect={onSelectSplitOnlineBank}
@@ -300,163 +285,40 @@ export function PaymentPageForm({
         )}
 
         {paymentMethod === "deferred" ? (
-          <div className="payment-page__debt-section">
-            <div className="payment-page__debt-amount">
-              <div className="payment-page__debt-label">
-                {deferredPrepaymentValue > 0 ? "ОСТАТОК В ДОЛГ" : "СУММА ДОЛГА"}
-              </div>
-              <div className="payment-page__debt-value">
-                {deferredSaleDebtRemaining.toFixed(2)}
-              </div>
-              {deferredPrepaymentValue > 0 && (
-                <p className="payment-page__debt-hint">
-                  Сумма заказа {total.toFixed(2)} сом · предоплата{" "}
-                  {deferredPrepaymentValue.toFixed(2)} сом
-                </p>
-              )}
-            </div>
-
-            <label className="payment-page__deferred-prepay-toggle">
-              <input
-                type="checkbox"
-                checked={deferredPrepaymentEnabled}
-                onChange={(e) => {
-                  onDeferredPrepaymentEnabledChange(e.target.checked);
-                }}
-              />
-              <span>Предоплата при отсрочке</span>
-            </label>
-
-            {deferredPrepaymentEnabled && (
-              <div className="payment-page__deferred-prepay">
-                <div className="payment-page__deferred-prepay-field">
-                  <label className="payment-page__debt-days-label">
-                    Сумма предоплаты (сом)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={total}
-                    step="0.01"
-                    className="payment-page__debt-days-input"
-                    value={deferredPrepaymentAmount}
-                    onChange={(e) =>
-                      onDeferredPrepaymentAmountChange(e.target.value)
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="payment-page__deferred-prepay-field">
-                  <span className="payment-page__debt-days-label">
-                    Способ предоплаты
-                  </span>
-                  <div className="payment-page__deferred-prepay-method-row">
-                    <button
-                      type="button"
-                      className={`payment-page__deferred-prepay-method${
-                        deferredPrepaymentMethod === "cash"
-                          ? " payment-page__deferred-prepay-method--active"
-                          : ""
-                      }`}
-                      onClick={() => onDeferredPrepaymentMethodChange("cash")}
-                    >
-                      Наличные
-                    </button>
-                    <button
-                      type="button"
-                      className={`payment-page__deferred-prepay-method${
-                        deferredPrepaymentMethod === "cashless"
-                          ? " payment-page__deferred-prepay-method--active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        onDeferredPrepaymentMethodChange("cashless")
-                      }
-                    >
-                      Безналичные
-                    </button>
-                  </div>
-                </div>
-                {deferredPrepaymentMethod === "cashless" && (
-                  <div className="payment-page__deferred-prepay-field">
-                    <p className="payment-page__debt-days-label">
-                      Банк предоплаты
-                    </p>
-                    <PaymentBankGrid
-                      banks={PAYMENT_BANKS}
-                      selectedId={deferredPrepaymentBank}
-                      onSelect={onSelectDeferredPrepaymentBank}
-                      activeClassName="payment-page__bank--selected"
-                      logoMode="deferred"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="payment-page__debt-days">
-              <label
-                className="payment-page__debt-days-label"
-                htmlFor="deferred-debt-days"
-              >
-                Срок рассрочки (дней):
-              </label>
-              <div className="payment-page__debt-days-row">
-                <input
-                  id="deferred-debt-days"
-                  type="text"
-                  className="payment-page__debt-days-input"
-                  value={debtDays}
-                  onChange={(e) => onDebtDaysChange(e.target.value)}
-                  onBlur={(e) => onDebtDaysBlur(e.target.value)}
-                  min="1"
-                  step="1"
-                  inputMode="numeric"
-                  autoComplete="off"
-                />
-                <button
-                  type="button"
-                  className="payment-page__debt-days-calendar-btn"
-                  onClick={onOpenDeferredDueDatePicker}
-                  title="Выбрать дату погашения"
-                  aria-label="Выбрать дату погашения в календаре"
-                >
-                  <Calendar size={20} strokeWidth={2} />
-                </button>
-                <input
-                  ref={deferredDueDateInputRef as any}
-                  type="date"
-                  className="payment-page__debt-date-input"
-                  value={deferredDueDate}
-                  min={getTodayIsoDate()}
-                  onChange={(e) => onDeferredDueDateChange(e.target.value)}
-                  tabIndex={-1}
-                  aria-hidden
-                />
-              </div>
-              <p className="payment-page__debt-days-hint">
-                Дата погашения:{" "}
-                <strong>
-                  {deferredDueDate
-                    ? new Date(
-                        `${deferredDueDate}T12:00:00`,
-                      ).toLocaleDateString("ru-RU")
-                    : "—"}
-                </strong>
-                {" · "}
-                {typeof debtDays === "number"
-                  ? debtDays
-                  : calcDaysUntilIsoDate(deferredDueDate)}{" "}
-                {debtDaysLabel(debtDays, deferredDueDate)} от сегодня
-              </p>
-            </div>
-            <div className="payment-page__total-debt">
-              <span>ОБЩИЙ ДОЛГ КЛИЕНТА</span>
-              <span className="payment-page__total-debt-amount">
-                {formatMoneyRu(totalDebt)} сом
-              </span>
-            </div>
-          </div>
+          <PaymentPageDebtSection
+            total={total}
+            totalDebt={totalDebt}
+            deferredPrepaymentValue={deferredPrepaymentValue}
+            deferredSaleDebtRemaining={deferredSaleDebtRemaining}
+            deferredPrepaymentEnabled={deferredPrepaymentEnabled}
+            onDeferredPrepaymentEnabledChange={onDeferredPrepaymentEnabledChange}
+            deferredPrepaymentAmount={deferredPrepaymentAmount}
+            onDeferredPrepaymentAmountChange={onDeferredPrepaymentAmountChange}
+            deferredPrepaymentMethod={deferredPrepaymentMethod}
+            onDeferredPrepaymentMethodChange={onDeferredPrepaymentMethodChange}
+            deferredPrepaymentBank={deferredPrepaymentBank}
+            onSelectDeferredPrepaymentBank={onSelectDeferredPrepaymentBank}
+            version={debtScheduleVersion}
+            debtDays={debtDays}
+            onDebtDaysChange={onDebtDaysChange}
+            onDebtDaysBlur={onDebtDaysBlur}
+            onDebtDaysDateChange={onDebtDaysDateChange}
+            scheduleUnit={scheduleUnit}
+            onScheduleUnitChange={onScheduleUnitChange}
+            scheduleCount={scheduleCount}
+            onScheduleCountChange={onScheduleCountChange}
+            onScheduleCountBlur={onScheduleCountBlur}
+            onSchedulePreset={onSchedulePreset}
+            dayInterval={dayInterval}
+            onDayIntervalChange={onDayIntervalChange}
+            onDayIntervalBlur={onDayIntervalBlur}
+            onDayIntervalPreset={onDayIntervalPreset}
+            debtSchedule={debtSchedule}
+            deferredDueDate={deferredDueDate}
+            deferredDueDateInputRef={deferredDueDateInputRef}
+            onOpenDeferredDueDatePicker={onOpenDeferredDueDatePicker}
+            onFirstDueDateChange={onFirstDueDateChange}
+          />
         ) : paymentMethod === "split" ? null : (
           <div className="payment-page__amount-section">
             <h3 className="payment-page__section-title">

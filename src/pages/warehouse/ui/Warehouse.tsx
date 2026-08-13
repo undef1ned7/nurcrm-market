@@ -7,7 +7,7 @@ import FilterModal from "./components/FilterModal";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import BarcodeAmbiguityModal from "@shared/ui/BarcodeAmbiguityModal/BarcodeAmbiguityModal";
 import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, Plus, ScanBarcode } from "lucide-react";
 import SearchSection from "./components/SearchSection";
 import BulkActionsBar from "./components/BulkActionsBar";
 import BulkEditModal from "./components/BulkEditModal";
@@ -31,6 +31,10 @@ import { STORAGE_KEY, VIEW_MODES } from "./constants";
 import { formatDeleteMessage } from "./utils";
 import { lookupMarketWarehouseProductByBarcode } from "@entities/product/lib/marketWarehouseBarcodeScan";
 import { getBarcodeAmbiguity } from "@shared/lib/tools/barcodeAmbiguity";
+import {
+  applySaleUnitParams,
+  filterProductsBySaleUnit,
+} from "@shared/lib/tools/marketWarehouseFilters";
 
 const WAREHOUSE_SELECTED_IDS_KEY = "marketWarehouseSelectedProductIds";
 const WAREHOUSE_SELECTED_SNAPSHOTS_KEY = "marketWarehouseSelectedProductSnapshots";
@@ -154,6 +158,11 @@ const Warehouse = () => {
   const { products, loading, count, next, previous } =
     useWarehouseData(requestParams);
 
+  const visibleProducts = useMemo(
+    () => filterProductsBySaleUnit(products, filters.sale_unit),
+    [products, filters.sale_unit],
+  );
+
 
 
   useEffect(() => {
@@ -210,7 +219,7 @@ const Warehouse = () => {
     handleSelectAll,
     clearSelection,
     setSelectedRows,
-  } = useProductSelection(products, WAREHOUSE_SELECTED_IDS_KEY);
+  } = useProductSelection(visibleProducts, WAREHOUSE_SELECTED_IDS_KEY);
 
   const [selectedSnapshots, setSelectedSnapshots] = useState(
     loadSnapshotsFromStorage,
@@ -223,7 +232,7 @@ const Warehouse = () => {
   useEffect(() => {
     setSelectedSnapshots((prev: any) => {
       const next = { ...prev };
-      (products || []).forEach((p: any) => {
+      (visibleProducts || []).forEach((p: any) => {
         const sid = String(p.id);
         if (selectedRows.has(sid)) {
           next[sid] = pickProductSnapshot(p);
@@ -242,7 +251,7 @@ const Warehouse = () => {
       }
       return next;
     });
-  }, [products, selectedRows]);
+  }, [visibleProducts, selectedRows]);
 
   // Сохранение режима просмотра
   useEffect(() => {
@@ -348,6 +357,20 @@ const Warehouse = () => {
     setFilters({});
     resetToFirstPage();
   }, [resetToFirstPage]);
+
+  const handleSaleUnitChange = useCallback(
+    (saleUnit: any) => {
+      setFilters((prev: any) => {
+        const next = { ...prev };
+        delete next.sale_unit;
+        delete next.is_weight;
+        applySaleUnitParams(next, saleUnit);
+        return next;
+      });
+      resetToFirstPage();
+    },
+    [resetToFirstPage],
+  );
 
   const handleCreateProduct = useCallback(() => {
     navigate("/crm/sklad/add-product");
@@ -474,6 +497,16 @@ const Warehouse = () => {
             </button>
             <button
               type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => navigate("/crm/sklad/mass-scan")}
+              title="Массовое сканирование"
+              aria-label="Массовое сканирование"
+            >
+              <ScanBarcode size={16} />
+              <span className="nur-btn__label">Массовое сканирование</span>
+            </button>
+            <button
+              type="button"
               className="nur-btn nur-btn--primary"
               onClick={handleCreateProduct}
               title="Создать товар"
@@ -494,7 +527,9 @@ const Warehouse = () => {
         onViewModeChange={handleViewModeChange}
         onOpenFilters={() => setShowFilterModal(true)}
         count={count}
-        foundCount={products.length}
+        foundCount={visibleProducts.length}
+        saleUnit={filters.sale_unit || ""}
+        onSaleUnitChange={handleSaleUnitChange}
       />
 
       <BulkActionsBar
@@ -509,7 +544,7 @@ const Warehouse = () => {
         <PagePanel flush className="warehouse-table-container w-full">
           {viewMode === VIEW_MODES.TABLE ? (
             <ProductTable
-              products={products}
+              products={visibleProducts}
               loading={loading}
               selectedRows={selectedRows}
               isAllSelected={isAllSelected}
@@ -520,7 +555,7 @@ const Warehouse = () => {
             />
           ) : (
             <ProductCards
-              products={products}
+              products={visibleProducts}
               loading={loading}
               selectedRows={selectedRows}
               isAllSelected={isAllSelected}

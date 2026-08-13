@@ -36,6 +36,7 @@ export default function MarketClientDetails() {
   const vm = useClientDetailsViewModel({
     client: data.client,
     deals: data.deals,
+    kpis: data.kpis,
     detailsView: data.detailsView,
     sectorName: company?.sector?.name,
     onOpenDetailsView: (view) => data.setDetailsView(view),
@@ -69,7 +70,7 @@ export default function MarketClientDetails() {
           onEditClient={data.openClientForm}
         />
 
-        <ClientKpiRow kpis={vm.kpis} />
+        <ClientKpiRow kpis={vm.kpis} loading={data.kpisLoading} />
 
         <ClientProfileSection
           client={data.client}
@@ -136,9 +137,11 @@ export default function MarketClientDetails() {
             id={data.selectedRowId}
             clientType={data.client?.type}
             onClose={() => data.setShowDebtModal(false)}
-            onChanged={() =>
-              data.client?.id && void data.loadDeals(data.client.id)
-            }
+            onChanged={() => {
+              if (!data.client?.id) return;
+              void data.loadDeals(data.client.id);
+              void data.loadKpis(data.client.id);
+            }}
           />
         )}
 

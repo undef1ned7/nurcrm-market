@@ -121,6 +121,31 @@
   }
 }
 
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px 0;
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  min-height: 34px;
+  border: 1px solid var(--nur-border, #e9ecf1);
+  border-radius: 999px;
+  background: var(--nur-surface, #fff);
+  color: var(--nur-text-2, #475569);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabActive {
+  background: var(--nur-primary, #f7d74f);
+  border-color: var(--nur-primary-dark, #d4b800);
+  color: var(--nur-primary-ink, #1a1505);
+}
+
 .body {
   flex: 1;
   min-height: 0;
@@ -202,13 +227,14 @@
 .item {
   width: 100%;
   display: flex;
+  align-items: stretch;
   text-align: left;
   appearance: none;
   border: 1px solid var(--nur-border, #e9ecf1);
   border-left-width: 3px;
   border-radius: 14px;
   background: var(--nur-surface, #fff);
-  padding: 12px 14px;
+  padding: 0;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -247,12 +273,48 @@
   }
 }
 
+.itemMain {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
 .itemBody {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
   flex: 1;
+}
+
+.cta {
+  margin-top: 6px;
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--nur-primary, #f7d74f);
+  color: var(--nur-primary-ink, #1a1505);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.deleteBtn {
+  width: 40px;
+  border: none;
+  background: transparent;
+  color: var(--nur-muted, #94a3b8);
+  cursor: pointer;
+  border-left: 1px solid var(--nur-border, #e9ecf1);
+
+  &:hover {
+    color: #b91c1c;
+    background: #fef2f2;
+  }
 }
 
 .itemTop {

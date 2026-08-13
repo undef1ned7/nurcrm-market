@@ -15,6 +15,7 @@ import {
   KitCompositionSection,
   MarketFormActions,
 } from "./sections";
+import { AddFieldsSheet, CustomizeBar, FormBlock } from "../formLayout";
 import { useAppDispatch } from "@app/store";
 import {
   filterKitCompositionCandidates,
@@ -38,6 +39,7 @@ const MarketProductForm = ({
   setNewItemData,
   marketData,
   handleMarketDataChange,
+  onAdultEnabled,
   handlePromotionStockChange,
   handleChange,
   brands,
@@ -316,6 +318,8 @@ const MarketProductForm = ({
 
   return (
     <div className="market-product-form">
+      <CustomizeBar variant="entry" />
+
       {!forceProductOnly && (
         <ProductTypeSelector
           itemType={itemType}
@@ -372,9 +376,11 @@ const MarketProductForm = ({
         handleUpdatePackaging={handleUpdatePackaging}
         handleRemovePackaging={handleRemovePackaging}
         fieldErrors={fieldErrors}
+        onAdultEnabled={onAdultEnabled}
       />
 
       {itemType === "product" && (
+        <FormBlock id="promotion">
         <div className="market-product-form__section">
           <h3 className="market-product-form__section-title">Акция</h3>
           <PromotionRulesEditor
@@ -388,6 +394,7 @@ const MarketProductForm = ({
             errorText={fieldErrors.promotion_rules}
           />
         </div>
+        </FormBlock>
       )}
 
       <PluCodeSection
@@ -469,6 +476,9 @@ const MarketProductForm = ({
           setShowKitRecalculateTooltip={setShowKitRecalculateTooltip}
         />
       )}
+
+      <CustomizeBar variant="edit" />
+      <AddFieldsSheet />
 
       <MarketFormActions
         handleReturn={handleReturn}

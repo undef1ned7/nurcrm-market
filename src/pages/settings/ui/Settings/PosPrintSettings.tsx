@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  DEFAULT_DRAWER_CMD,
+  getDrawerSettings,
+  kickCashDrawer,
   printRussianRawUsb,
+  saveDrawerSettings,
   setEscposCharsPerLine,
   setEscposCodepage,
   setEscposDotsPerLine,
@@ -36,9 +40,13 @@ export default function PosPrintSettings() {
   const [font, setFont] = useState("B"); // A | B
   const [lineHeight, setLineHeight] = useState(22);
   const [codepage, setCodepage] = useState(17);
+  const [drawerEnabled, setDrawerEnabled] = useState(false);
+  const [drawerWhen, setDrawerWhen] = useState<"before" | "after">("after");
+  const [drawerCmd, setDrawerCmd] = useState(DEFAULT_DRAWER_CMD);
 
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [testingDrawer, setTestingDrawer] = useState(false);
   const [msg, setMsg] = useState<any>(null); // {type, text}
 
   useEffect(() => {
@@ -55,6 +63,11 @@ export default function PosPrintSettings() {
     setCharsPerLine(cpl);
     setLineHeight(lh);
     setCodepage(cp);
+
+    const drawer = getDrawerSettings();
+    setDrawerEnabled(drawer.enabled);
+    setDrawerWhen(drawer.when);
+    setDrawerCmd(drawer.command);
   }, []);
 
   const presets = useMemo(
@@ -105,13 +118,57 @@ export default function PosPrintSettings() {
       setEscposFont(f);
       if (Number.isFinite(cp) && cp >= 0 && cp <= 255) setEscposCodepage(cp);
 
+      saveDrawerSettings({
+        enabled: drawerEnabled,
+        when: drawerWhen,
+        command: drawerCmd,
+      });
+
       setMsg({ type: "success", text: "Сохранено (escpos_* в localStorage)" });
-    } catch (_e: any) {
-      setMsg({ type: "error", text: "Не удалось сохранить настройки" });
+    } catch (e: any) {
+      setMsg({
+        type: "error",
+        text: e?.message || "Не удалось сохранить настройки",
+      });
     } finally {
       setSaving(false);
     }
-  }, [dotsPerLine, charsPerLine, lineHeight, font, codepage]);
+  }, [
+    dotsPerLine,
+    charsPerLine,
+    lineHeight,
+    font,
+    codepage,
+    drawerEnabled,
+    drawerWhen,
+    drawerCmd,
+  ]);
+
+  const testDrawer = useCallback(async () => {
+    setMsg(null);
+    setTestingDrawer(true);
+    try {
+      saveDrawerSettings({
+        enabled: drawerEnabled,
+        when: drawerWhen,
+        command: drawerCmd,
+      });
+      await kickCashDrawer(undefined, { interactive: true });
+      setMsg({
+        type: "success",
+        text: "Команда открытия ящика отправлена на принтер",
+      });
+    } catch (e: any) {
+      setMsg({
+        type: "error",
+        text:
+          e?.message ||
+          "Не удалось открыть ящик. Проверьте WebUSB и WinUSB (Zadig).",
+      });
+    } finally {
+      setTestingDrawer(false);
+    }
+  }, [drawerEnabled, drawerWhen, drawerCmd]);
 
   const testUsb = useCallback(async () => {
     setMsg(null);
@@ -303,6 +360,95 @@ export default function PosPrintSettings() {
               disabled={testing}
             >
               {testing ? "Отправка..." : "Тест USB‑печати"}
+            </button>
+          </div>
+        </div>
+      </PagePanel>
+
+      <PagePanel>
+        <div className="settings__section settings__tab-content--print" style={{ marginBottom: 0 }}>
+          <h2 className="settings__section-title">
+            <span className="settings__emoji" aria-hidden>
+              💵
+            </span>{" "}
+            Денежный ящик
+          </h2>
+          <p className="settings__mutedText">
+            Импульс 5V идёт через чековый принтер (ESC/POS). На Windows после
+            русификации драйвера выберите WinUSB в Zadig и RAW/USB Print
+            Spooler. Ошибка открытия ящика не отменяет уже проведённую продажу.
+          </p>
+
+          <div className="settings__prefRow">
+            <div className="settings__prefText">
+              <span className="settings__prefLabel">
+                Открывать денежный ящик при печати чека
+              </span>
+              <p className="settings__prefHint">
+                По умолчанию выключено. Включайте после проверки кнопкой ниже.
+              </p>
+            </div>
+            <label className="settings__switch">
+              <input
+                type="checkbox"
+                className="settings__switch-input"
+                checked={drawerEnabled}
+                onChange={(e) => setDrawerEnabled(e.target.checked)}
+              />
+              <span className="settings__switch-track" aria-hidden="true">
+                <span className="settings__switch-thumb" />
+              </span>
+            </label>
+          </div>
+
+          <div className="settings__form-group">
+            <div className="nur-label">Тайминг импульса</div>
+            <div className="settings__segmented">
+              <button
+                type="button"
+                className={`settings__segBtn ${drawerWhen === "before" ? "settings__segBtn--active" : ""}`}
+                onClick={() => setDrawerWhen("before")}
+              >
+                До печати чека
+              </button>
+              <button
+                type="button"
+                className={`settings__segBtn ${drawerWhen === "after" ? "settings__segBtn--active" : ""}`}
+                onClick={() => setDrawerWhen("after")}
+              >
+                После печати чека
+              </button>
+            </div>
+          </div>
+
+          <div className="settings__form-group nur-field">
+            <label className="nur-label" htmlFor="pos-drawer-cmd">
+              ESC/POS команда (байты через запятую)
+            </label>
+            <input
+              id="pos-drawer-cmd"
+              className="nur-input"
+              type="text"
+              value={drawerCmd}
+              onChange={(e) => setDrawerCmd(e.target.value)}
+              placeholder={DEFAULT_DRAWER_CMD}
+              spellCheck={false}
+            />
+            <div className="settings__fieldHint">
+              Стандарт: <code>{DEFAULT_DRAWER_CMD}</code> ({`ESC p m t1 t2`} /
+              0x1B 0x70 0x00 0x19 0xFA). Можно указать hex, например{" "}
+              <code>0x1B, 0x70, 0x00, 0x19, 0xFA</code>.
+            </div>
+          </div>
+
+          <div className="settings__actions">
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={testDrawer}
+              disabled={testingDrawer}
+            >
+              {testingDrawer ? "Отправка..." : "Проверить открывание ящика"}
             </button>
           </div>
         </div>

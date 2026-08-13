@@ -1,3 +1,5 @@
+import { FormBlock, useOptionalProductFormLayout } from "../formLayout";
+
 const PackagingSection = ({
   itemType,
   marketData,
@@ -9,26 +11,36 @@ const PackagingSection = ({
   handleUpdatePackaging,
   handleRemovePackaging,
   fieldErrors = {},
+  onAdultEnabled,
 }: any) => {
+  const layout = useOptionalProductFormLayout();
+  const showUnit = !layout || layout.isVisible("unit");
   return (
     <div className="market-product-form__section">
-      <div className="market-product-form__unit-row justify-between !items-end">
-        <div className="market-product-form__form-group w-full !mb-0">
-          <label className="market-product-form__label">
-            Единица измерения
-          </label>
-          <p className="market-product-form__hint mb-2">
-            Цена закупки и цена продажи указываются за 1{" "}
-            {marketData.unit || "единицу учета"}.
-          </p>
-          <div className="flex items-center gap-2 w-full">
-            <input
-              type="text"
-              className="market-product-form__input"
-              value={marketData.unit}
-              onChange={(e) => handleMarketDataChange("unit", e.target.value)}
-            />
+      <div className="market-product-form__unit-block">
+        {showUnit ? (
+          <>
+            <label className="market-product-form__label">
+              Единица измерения
+            </label>
+            <p className="market-product-form__hint">
+              Цена закупки и цена продажи указываются за 1{" "}
+              {marketData.unit || "единицу учета"}.
+            </p>
+          </>
+        ) : null}
+        <div className="market-product-form__unit-controls">
+          <FormBlock id="unit" inline>
+          <input
+            type="text"
+            className="market-product-form__input market-product-form__unit-input"
+            value={marketData.unit}
+            onChange={(e) => handleMarketDataChange("unit", e.target.value)}
+          />
+          </FormBlock>
+          <div className="market-product-form__flags">
             {itemType === "product" && (
+              <FormBlock id="pieceSale" inline>
               <label className="market-product-form__toggle">
                 <input
                   type="checkbox"
@@ -37,49 +49,80 @@ const PackagingSection = ({
                 />
                 <span>Поштучная продажа</span>
               </label>
+              </FormBlock>
             )}
-            {(itemType !== "product" || marketData.enablePieceSale) && (
-              <button
-                type="button"
-                className="market-product-form__add-packaging-btn"
-                onClick={handleAddPackaging}
-              >
-                Добавить упаковку
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Чекбокс показывается только для товара и услуги, не для комплекта */}
-        {itemType !== "kit" && (
-          <div className="market-product-form__toggle-group">
-            <label className="market-product-form__toggle">
-              <input
-                type="checkbox"
-                checked={
-                  itemType === "product"
-                    ? marketData.isWeightProduct
-                    : marketData.isFractionalService
-                }
-                onChange={(e) =>
-                  handleMarketDataChange(
+            {itemType !== "kit" && (
+              <FormBlock id="weight" inline>
+              <label className="market-product-form__toggle">
+                <input
+                  type="checkbox"
+                  checked={
                     itemType === "product"
-                      ? "isWeightProduct"
-                      : "isFractionalService",
-                    e.target.checked,
-                  )
-                }
-              />
-              <span>
-                {itemType === "product" ? "Весовой товар" : "Дробная услуга"}
-              </span>
-            </label>
+                      ? marketData.isWeightProduct
+                      : marketData.isFractionalService
+                  }
+                  onChange={(e) =>
+                    handleMarketDataChange(
+                      itemType === "product"
+                        ? "isWeightProduct"
+                        : "isFractionalService",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <span>
+                  {itemType === "product" ? "Весовой товар" : "Дробная услуга"}
+                </span>
+              </label>
+              </FormBlock>
+            )}
+            {itemType === "product" && (
+              <FormBlock id="adult" inline>
+              <label
+                className={`market-product-form__toggle${
+                  marketData.isAdult
+                    ? " market-product-form__toggle--adult"
+                    : ""
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(marketData.isAdult)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    handleMarketDataChange("isAdult", checked);
+                    if (checked) onAdultEnabled?.();
+                  }}
+                />
+                <span>Товар 18+</span>
+              </label>
+              </FormBlock>
+            )}
           </div>
-        )}
+          {(itemType !== "product" || marketData.enablePieceSale) && (
+            <FormBlock id="packaging" inline>
+            <button
+              type="button"
+              className="market-product-form__add-packaging-btn"
+              onClick={handleAddPackaging}
+            >
+              Добавить упаковку
+            </button>
+            </FormBlock>
+          )}
+        </div>
+        {itemType === "product" && marketData.isAdult ? (
+          <p className="market-product-form__adult-hint">
+            Этот товар предназначен для совершеннолетних. На кассе появится
+            уведомление, на втором экране — вопрос «Вам есть 18?».
+          </p>
+        ) : null}
       </div>
       {(itemType !== "product" || marketData.enablePieceSale) &&
-        marketData.packagings &&
-        marketData.packagings.length > 0 && (
+        ((marketData.packagings && marketData.packagings.length > 0) ||
+          fieldErrors.packagings) && (
+      <FormBlock id="packaging">
+      {marketData.packagings && marketData.packagings.length > 0 && (
           <div className="market-product-form__packaging-list">
             {marketData.packagings.map((packaging) => (
               <div
@@ -163,11 +206,12 @@ const PackagingSection = ({
               </div>
             ))}
           </div>
-        )}
-      {(itemType !== "product" || marketData.enablePieceSale) &&
-        fieldErrors.packagings && (
+      )}
+      {fieldErrors.packagings && (
           <p className="add-product-page__error">{fieldErrors.packagings}</p>
         )}
+      </FormBlock>
+      )}
       <div className="market-product-form__form-group mt-4">
         <label className="market-product-form__label">Количество *</label>
         <div className="market-product-form__price-input">

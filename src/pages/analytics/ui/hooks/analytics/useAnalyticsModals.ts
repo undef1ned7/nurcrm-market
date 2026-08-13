@@ -27,6 +27,7 @@ export function useAnalyticsModals({ period, filters }: any) {
       if (filters.payment_method) params.payment_method = filters.payment_method;
       if (filters.cashbox) params.cashbox = filters.cashbox;
       if (filters.cashier) params.cashier = filters.cashier;
+      if (filters.consultant) params.consultant = filters.consultant;
       if (filters.min_total !== "") params.min_total = filters.min_total;
       if (filters.max_total !== "") params.max_total = filters.max_total;
 
