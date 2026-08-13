@@ -59,7 +59,7 @@ type Props = {
   onDayIntervalPreset: (interval: number) => void;
   debtSchedule: DebtSchedule | null;
   deferredDueDate: string;
-  deferredDueDateInputRef: RefObject<HTMLInputElement | null>;
+  deferredDueDateInputRef: RefObject<HTMLInputElement>;
   onOpenDeferredDueDatePicker: () => void;
   onFirstDueDateChange: (isoDate: string) => void;
 };
