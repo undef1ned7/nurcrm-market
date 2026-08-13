@@ -110,7 +110,9 @@ export function useCashierBarcode(b: any) {
         showCustomServiceModal ||
         showDiscountModal ||
         deleteCodePrompt ||
-        barcodeAmbiguity
+        barcodeAmbiguity ||
+        b.alertModal?.open ||
+        b.ageCheckActive
       ) {
         return;
       }
@@ -244,6 +246,15 @@ export function useCashierBarcode(b: any) {
           showAlert("error", "Ошибка", "Не удалось создать продажу");
           barcodeProcessingRef.current = false;
           return;
+        }
+
+        const scannedProduct = await findProductByAnyBarcode(barcode);
+        if (
+          scannedProduct &&
+          typeof b.confirmAdultProduct === "function"
+        ) {
+          const allowed = await b.confirmAdultProduct(scannedProduct);
+          if (!allowed) return;
         }
 
         const res = await dispatch(

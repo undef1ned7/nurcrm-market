@@ -21,8 +21,9 @@ import {
   openUsbDevice,
   ensureUsbReadyAuto,
 } from "./usb";
+import { getDrawerSettings, parseEscPosCommand } from "./drawer";
 
-async function printReceiptFromPdfUSB(pdfBlob: any, options: any = {}) {
+async function ensureUsbPrinter(options: any = {}) {
   if (!("usb" in navigator)) throw new Error("WebUSB не поддерживается");
   await ensureUsbReadyAuto();
   let dev: any = usbState.dev;
@@ -35,6 +36,57 @@ async function printReceiptFromPdfUSB(pdfBlob: any, options: any = {}) {
   }
   const { outEP } = await openUsbDevice(dev);
   saveVidPidToLS(dev);
+  return { dev, outEP };
+}
+
+async function sendEscPosBytes(bytes: Uint8Array, options: any = {}) {
+  const { dev, outEP } = await ensureUsbPrinter(options);
+  for (const chunk of chunkBytes(bytes)) {
+    await (dev as any).transferOut(outEP, chunk);
+  }
+}
+
+export async function kickCashDrawer(
+  bytes?: number[],
+  options: any = {},
+): Promise<void> {
+  const cmd =
+    Array.isArray(bytes) && bytes.length > 0
+      ? bytes
+      : getDrawerSettings().bytes;
+  const validated = parseEscPosCommand(cmd.join(","));
+  await sendEscPosBytes(new Uint8Array(validated), options);
+}
+
+async function withCashDrawerKick<T>(
+  printFn: () => Promise<T>,
+  options: any = {},
+): Promise<T> {
+  const settings = getDrawerSettings();
+  if (!settings.enabled) return printFn();
+
+  const kickQuietly = async () => {
+    try {
+      await kickCashDrawer(settings.bytes, {
+        interactive: options?.interactive,
+      });
+    } catch (error) {
+      console.warn("[PrintService] Не удалось открыть денежный ящик:", error);
+    }
+  };
+
+  if (settings.when === "before") {
+    await kickQuietly();
+    return printFn();
+  }
+
+  const result = await printFn();
+  await kickQuietly();
+  return result;
+}
+
+async function printReceiptFromPdfUSB(pdfBlob: any, options: any = {}) {
+  const { dev, outEP } = await ensureUsbPrinter(options);
 
   // печатаем на ширину принтера
   const isMarket = options?.receiptStyle === "market";
@@ -49,18 +101,7 @@ async function printReceiptFromPdfUSB(pdfBlob: any, options: any = {}) {
 }
 
 async function printReceiptJSONViaUSB(payload: any, options: any = {}) {
-  if (!("usb" in navigator)) throw new Error("WebUSB не поддерживается");
-  await ensureUsbReadyAuto();
-  let dev: any = usbState.dev;
-  if (!dev) {
-    if (options?.interactive === false) {
-      throw new Error("Принтер не подключен");
-    }
-    dev = await requestUsbDevice();
-    saveVidPidToLS(dev);
-  }
-  const { outEP } = await openUsbDevice(dev);
-  saveVidPidToLS(dev);
+  const { dev, outEP } = await ensureUsbPrinter(options);
 
   const isMarket = options?.receiptStyle === "market";
   const cfg = getEscposRuntimeConfig({ marketDefault: isMarket });
@@ -79,18 +120,7 @@ async function printReceiptJSONViaUSB(payload: any, options: any = {}) {
 
 /* ---------- Минимальная печать PC866 (XP-N160II) ---------- */
 export async function printRussianRawUsb(text: any = "Привет, мир!", options: any = {}) {
-  if (!("usb" in navigator)) throw new Error("WebUSB не поддерживается");
-  await ensureUsbReadyAuto();
-  let dev: any = usbState.dev;
-  if (!dev) {
-    if (options?.interactive === false) {
-      throw new Error("Принтер не подключен");
-    }
-    dev = await requestUsbDevice();
-    saveVidPidToLS(dev);
-  }
-  const { outEP } = await openUsbDevice(dev);
-  saveVidPidToLS(dev);
+  const { dev, outEP } = await ensureUsbPrinter(options);
 
   const cfg = getEscposRuntimeConfig();
   // ESC/POS: init, international USA (см. ESC R в buildReceiptFromJSON), codepage, text, cut
@@ -157,6 +187,16 @@ export function enrichMarketReceiptPayload(payload: any, meta: any = {}) {
 
   if (paidCard > 0) next.paid_card = paidCard;
 
+  const consultantName = String(
+    next.consultant_display ||
+      next.consultant_name ||
+      (next.consultant && typeof next.consultant === "object"
+        ? next.consultant.name || next.consultant.full_name || ""
+        : "") ||
+      "",
+  ).trim();
+  if (consultantName) next.consultant_name = consultantName;
+
   return next;
 }
 
@@ -171,6 +211,13 @@ function resolveMarketPrintOptions(options: any = {}) {
 
 export async function handleCheckoutResponseForPrinting(res: any, options: any = {}) {
   const printOptions = resolveMarketPrintOptions(options);
+  return withCashDrawerKick(
+    () => printCheckoutPayload(res, printOptions),
+    printOptions,
+  );
+}
+
+async function printCheckoutPayload(res: any, printOptions: any = {}) {
   const printable = unwrapPrintablePayload(res);
 
   if (typeof printable === "string") {

@@ -1,4 +1,8 @@
-import { ArrowLeft, Menu } from "lucide-react";
+import { ArrowLeft, Menu, Monitor } from "lucide-react";
+import {
+  isCustomerDisplayEnabled,
+  openCustomerDisplayWindow,
+} from "@features/customer-display";
 import type { CashierPageVm } from "../hooks/useCashierPage";
 
 type Props = {
@@ -16,6 +20,7 @@ export function CashierPageHeader({ vm }: Props) {
     handleCloseShift,
     handleStartShift,
     setShowMenuModal,
+    f3AwaitingDigit,
   } = vm;
 
   return (
@@ -39,6 +44,21 @@ export function CashierPageHeader({ vm }: Props) {
               </div>
             </div>
             <div className="cashier-page__header-right">
+              {f3AwaitingDigit ? (
+                <div className="cashier-page__f3-hint" role="status">
+                  F3: нажмите 0–9
+                </div>
+              ) : null}
+              {isCustomerDisplayEnabled() ? (
+                <button
+                  type="button"
+                  className="cashier-page__display-btn"
+                  onClick={() => openCustomerDisplayWindow()}
+                >
+                  <Monitor size={16} />
+                  Второй экран
+                </button>
+              ) : null}
               <div
                 className="cashier-page__mode-toggle"
                 role="group"

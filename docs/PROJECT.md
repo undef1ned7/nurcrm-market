@@ -2,7 +2,7 @@
 
 Карта проекта для автономной работы: что это, где код, как запускать, куда класть изменения, какие ограничения не нарушать.
 
-**Читать первым:** этот файл → `src/ARCHITECTURE.md` → нужный ТЗ в `docs/market/`.
+**Читать первым:** этот файл → `src/ARCHITECTURE.md` → нужный ТЗ в `docs/market/` (фронт) или `docs/backend/` (контракты API).
 
 ---
 
@@ -183,8 +183,9 @@ src/main.tsx
 | `/crm/market/analytics` | Аналитика магазина |
 | `/crm/market/documents` | Документы продаж |
 | `/crm/market/documents/create` | Создание документа продажи |
-| `/crm/market/procurement` | Список приходов / закупки |
+| `/crm/market/procurement` | Закупки: история приходов + возвраты |
 | `/crm/market/procurement/receipt` | Приход от поставщика |
+| `/crm/market/procurement/return` | Возврат поставщику |
 | `/crm/market/suppliers` | Поставщики (Clients с forcedTab) |
 | `/crm/market/categories` | Категории |
 | `/crm/market/bar` | Bar (market) |
@@ -268,6 +269,7 @@ Market-specific: `sectors/marketMenu.ts` + фильтр `commonMenu` в `menuCon
 | `/main/notifications/` | Уведомления |
 | `/main/analytics/market/` | Аналитика маркета |
 | `/main/pos/cashier-settings/` | Настройки кассы (код удаления, max скидка) |
+| `/main/products/form-layout/` | Раскладка формы создания товара (скрытые поля) |
 | `/warehouse/` | Склады, бренды, категории, продукты склада, документы |
 
 Warehouse API разбит на домены:  
@@ -363,19 +365,36 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 
 ---
 
-## 13. Документация домена (`docs/market/`)
+## 13. Документация домена
+
+### Фронт / агенты — `docs/market/`
 
 | Файл | Содержание |
 |------|------------|
 | `tz-aug-2026-detailed.md` | **Актуальное** ТЗ авг 2026: 5 модулей (массовый приход, уведомления, 2-й экран, F3 hotkeys, денежный ящик) |
 | `tz-aug-2026-fe-be-split.md` | Краткий FE/BE сплит (черновик; приоритет у detailed) |
 | `tz-perf-fixes-aug-2026.md` | Perf: lazy PDF, узкие селекторы, долги N+1, page_size, chunks |
+
+### Бэкенд — `docs/backend/`
+
+Индекс: `docs/backend/README.md`. Сюда вынесены все контракты API.
+
+| Файл | Содержание |
+|------|------------|
+| `tz-aug-2026-backend.md` | Контракт API по ТЗ авг 2026 |
+| `procurement-history-returns-backend.md` | История закупок + возврат поставщикам |
+| `procurement-recommendations-backend.md` | Рекомендуемый заказ |
+| `adult-products-backend.md` | Товар 18+: поле `is_adult` |
 | `cashier-settings.md` | Код удаления из корзины + max скидка |
 | `alternate-barcodes.md` | Доп. штрихкоды товара |
 | `analytics.md` | Фильтр аналитики по datetime (BE timezone) |
 | `scales-weight-products.md` | Весовые товары / весы |
 | `bulk_update_products.md` | Массовое изменение brand/category/supplier |
 | `receipt-price-edit-discount.md` | Ручная цена ≠ discount в чеке |
+| `shift-payment-breakdown-backend.md` | Закрытие смены: `payment_breakdown` |
+| `debt-installment-schedule-backend.md` | Продажа в долг: v1 классика / v2 график платежей |
+| `client-kpis-backend.md` | KPI карточки клиента: долг / аванс / продажи |
+| `product-form-layout-backend.md` | Раскладка формы товара: GET/PATCH `hidden[]` |
 
 Старые пути вроде `src/Components/...` в доменных доках — **legacy из NurFront**; в этом репо актуальные пути FSD (`src/pages/...`, `src/features/...`).
 
@@ -431,11 +450,14 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 | Новый CRM route | `app/router/routes/marketRoutes` или `commonRoutes` + lazy page |
 | Auth | `features/auth`, `entities/user`, `shared/api/authInterceptors` |
 | Уведомления | `entities/notification`, `widgets/notification-modal` |
-| Долги | `features/debts` |
+| Клиенты / KPI | `pages/clients/ClientDetails` + `docs/backend/client-kpis-backend.md` + `docs/flutter/client-debt-and-kpis.md` |
+| Долги | `features/debts`, касса default v2: `pages/cashier` + `docs/backend/debt-installment-schedule-backend.md` |
 | Аналитика | `pages/analytics`, `entities/analytics` |
 | Права доступа | profile permissions + `permission` в menu config + Auth/Protected |
 | Perf | `docs/market/tz-perf-fixes-aug-2026.md` |
 | ТЗ авг 2026 | `docs/market/tz-aug-2026-detailed.md` |
+| Закрытие смены / способы оплаты | `pages/cashier/CloseShiftPage`, `entities/shift/lib/paymentBreakdown`, `docs/backend/shift-payment-breakdown-backend.md` |
+| Закупки / возврат поставщику | `pages/warehouse/SupplierReceiptsListPage`, `features/supplier-returns`, `docs/backend/procurement-history-returns-backend.md` |
 
 ---
 
@@ -448,6 +470,7 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 | Склад / sklad | Товары и остатки `/crm/sklad` |
 | Смена / shift | Рабочая смена кассира |
 | Приход / receipt / procurement | Документ поступления от поставщика |
+| Возврат поставщику / supplier return | Документ списания товара обратно поставщику |
 | Alternate barcode | Доп. штрихкод товара |
 | Sector | Тип бизнеса компании (market, cafe, …); этот app — market |
 | Building app | Отдельное приложение стройки; cross-app auth через URL/tokens |

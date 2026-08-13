@@ -3,26 +3,33 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, ShoppingCart } from "lucide-react";
 import { useUser } from "@entities/user";
 import NotificationModal from "@widgets/notification-modal/ui/NotificationModal";
-import { fetchNotificationsAsync } from "@entities/notification";
+import {
+  fetchNotificationsAsync,
+  formatUnreadBadge,
+} from "@entities/notification";
 import { useNotificationsSocket } from "@entities/notification/lib/useNotificationsSocket";
 import { usePageChrome } from "@shared/ui/page-shell";
 import "./Header.scss";
-import { useAppDispatch } from "@app/store";
+import { useAppDispatch, useAppSelector } from "@app/store";
 
 const pageTitles = {
   "/login": "Вход",
   "/crm/set": "Настройки",
   "/crm/pos-print-settings": "Печать чеков",
   "/crm/market/cashier": "Касса",
+  "/crm/market/customer-display": "Экран покупателя",
   "/crm/market/analytics": "Аналитика",
   "/crm/market/history": "История",
   "/crm/market/documents": "Документы",
   "/crm/market/documents/create": "Новый документ",
   "/crm/market/procurement": "Закупки",
+  "/crm/market/procurement/recommendations": "Рекомендуемый заказ",
   "/crm/market/procurement/receipt": "Приёмка",
+  "/crm/market/procurement/return": "Возврат поставщику",
   "/crm/market/suppliers": "Поставщики",
   "/crm/market/categories": "Категории",
   "/crm/sklad": "Склад",
+  "/crm/sklad/mass-scan": "Массовое сканирование",
   "/crm/sklad/add-product": "Товар",
   "/crm/clients": "Клиенты",
   "/crm/sell": "Продажи",
@@ -51,7 +58,10 @@ const pageDescriptions = {
   "/crm/market/history": "История продаж",
   "/crm/employ": "Сотрудники и роли",
   "/crm/kassa": "Кассовые операции",
-  "/crm/market/procurement": "Список оприходований поставщиков",
+  "/crm/market/procurement": "История закупок и возвраты поставщикам",
+  "/crm/market/procurement/recommendations":
+    "Рекомендации по закупке у поставщика",
+  "/crm/market/procurement/return": "Списание товара обратно поставщику",
 };
 
 function resolvePageMeta(pathname: any) {
@@ -95,6 +105,10 @@ const Header = () => {
   const title = meta?.title ?? routeMeta.title;
   const description = meta?.subtitle ?? routeMeta.description;
   const { profile: userProfile } = useUser();
+  const unreadCount = useAppSelector(
+    (state) => Number(state.notification?.unreadCount) || 0,
+  );
+  const unreadBadge = formatUnreadBadge(unreadCount);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useNotificationsSocket();
@@ -143,10 +157,19 @@ const Header = () => {
           className="header__notify-btn"
           type="button"
           title="Уведомления"
-          aria-label="Уведомления"
+          aria-label={
+            unreadBadge
+              ? `Уведомления, непрочитанных: ${unreadBadge}`
+              : "Уведомления"
+          }
           onClick={() => setShowNotifications(true)}
         >
           <Bell size={18} />
+          {unreadBadge ? (
+            <span className="header__notify-badge" aria-hidden="true">
+              {unreadBadge}
+            </span>
+          ) : null}
         </button>
         <button
           type="button"

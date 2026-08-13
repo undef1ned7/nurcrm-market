@@ -94,7 +94,7 @@ export function useCashierCartSync(b: any) {
     currentSale, saleLoading, startSaleLoading, cartOrderRef,
     qtyInputFocusRef, priceInputFocusRef, pendingPricePatchRef, pendingDiscountPatchRef,
     setCartPrices, setCartDiscounts, setCartDiscountModes, setCart,
-    pendingQtyFocusRef, cartQtyInputRefs, getCartLineSaleId, debouncedQtyApiByLine,
+    pendingQtyFocusRef, qtyFocusGenRef, cartQtyInputRefs, getCartLineSaleId, debouncedQtyApiByLine,
     cancelDebouncedQtyApiByLine, refreshSale,
     cancelPendingDiscountLineInput, canMarketDeleteCartItem, showAlert, ensureDeleteCode,
     refreshSaleFromStore, multiCart, count, setShowPaymentPage, getSelectedSaleId,
@@ -413,8 +413,10 @@ export function useCashierCartSync(b: any) {
     const input = cartQtyInputRefs.current.get(String(targetItem.id));
     if (!input) return;
 
+    const gen = pending.gen;
     pendingQtyFocusRef.current = null;
     requestAnimationFrame(() => {
+      if (qtyFocusGenRef?.current !== gen) return;
       input.focus();
       input.select();
     });

@@ -1,5 +1,9 @@
 import { useMemo, type ReactNode } from "react";
 import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import {
+  EMPTY_CLIENT_KPIS,
+  type ClientKpis,
+} from "@entities/client";
 
 import { toIsoDate10, typeLabel } from "../clientDetails.helpers";
 import type {
@@ -13,6 +17,7 @@ import type {
 type UseClientDetailsViewModelArgs = {
   client: ClientRecord | null;
   deals: DealRecord[];
+  kpis: ClientKpis;
   detailsView: DetailsView;
   sectorName?: string;
   onOpenDetailsView: (view: Exclude<DetailsView, null>) => void;
@@ -52,6 +57,7 @@ export type DetailsMeta = {
 export function useClientDetailsViewModel({
   client,
   deals,
+  kpis: kpiTotals = EMPTY_CLIENT_KPIS,
   detailsView,
   sectorName,
   onOpenDetailsView,
@@ -62,21 +68,24 @@ export function useClientDetailsViewModel({
   const statusText = kindTranslate[String(client?.status || "")] || client?.status || "—";
   const isBuildingSector = sectorName === "Строительная компания";
 
-  const totals = useMemo<DealTotals>(() => {
-    const agg = { debt: 0, prepayment: 0, sale: 0 };
-    for (const d of deals) {
-      const kind = d.kind || "sale";
-      if (kind === "debt") {
-        agg.debt += Number(d.remaining_debt || 0);
-        agg.prepayment += Number(d.prepayment || 0);
-      } else if (kind === "prepayment") {
-        agg.prepayment += Number(d.amount || 0);
-      } else {
-        agg.sale += Number(d.amount || 0);
-      }
-    }
-    return { ...agg, amount: agg.sale };
-  }, [deals]);
+  const totals = useMemo<DealTotals>(
+    () => ({
+      debt: kpiTotals.debt.amount,
+      prepayment: kpiTotals.prepayment.amount,
+      sale: kpiTotals.sale.amount,
+      amount: kpiTotals.sale.amount,
+    }),
+    [kpiTotals],
+  );
+
+  const dealKindCounts = useMemo(
+    () => ({
+      debt: kpiTotals.debt.count,
+      prepayment: kpiTotals.prepayment.count,
+      sale: kpiTotals.sale.count,
+    }),
+    [kpiTotals],
+  );
 
   const detailRows = useMemo<DetailRow[]>(() => {
     if (!detailsView) return [];
@@ -145,17 +154,6 @@ export function useClientDetailsViewModel({
         : Number(totals.sale || 0),
     };
   }, [detailsView, isBuildingSector, totals.debt, totals.prepayment, totals.sale]);
-
-  const dealKindCounts = useMemo(() => {
-    const acc = { debt: 0, prepayment: 0, sale: 0 };
-    for (const d of deals) {
-      const kind = d.kind || "sale";
-      if (kind === "debt") acc.debt += 1;
-      else if (kind === "prepayment") acc.prepayment += 1;
-      else acc.sale += 1;
-    }
-    return acc;
-  }, [deals]);
 
   const clientInitials = useMemo(() => {
     const parts = String(clientName || "")

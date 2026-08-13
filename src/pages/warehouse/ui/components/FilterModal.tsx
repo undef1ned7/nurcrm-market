@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
 import {
   MARKET_WAREHOUSE_PRESETS,
+  MARKET_WAREHOUSE_SALE_UNITS,
   buildMarketWarehouseListParams,
   modalStateFromAppliedFilters,
 } from "@shared/lib/tools/marketWarehouseFilters";
@@ -123,6 +124,54 @@ const FilterModal = ({
               {applyError}
             </p>
           ) : null}
+
+          <div className="warehouse-filter-modal__section">
+            <label className="warehouse-filter-modal__label">
+              Единица продажи
+            </label>
+            <div
+              className="warehouse-view-toggle warehouse-sale-unit-toggle"
+              role="radiogroup"
+              aria-label="Единица продажи"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!filters.saleUnit}
+                className={`warehouse-view-toggle__btn${
+                  !filters.saleUnit ? " warehouse-view-toggle__btn--active" : ""
+                }`}
+                onClick={() =>
+                  setFilters((prev: any) => ({ ...prev, saleUnit: "" }))
+                }
+              >
+                Все
+              </button>
+              {MARKET_WAREHOUSE_SALE_UNITS.map(({ value, label, hint }) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={filters.saleUnit === value}
+                  title={hint}
+                  className={`warehouse-view-toggle__btn${
+                    filters.saleUnit === value
+                      ? " warehouse-view-toggle__btn--active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setFilters((prev: any) => ({ ...prev, saleUnit: value }))
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="warehouse-filter-modal__hint">
+              Поштучно — товары, которые продаются и упаковкой, и по штукам
+              (достают из упаковки).
+            </p>
+          </div>
 
           {/* Типы товаров */}
           <div className="warehouse-filter-modal__section">

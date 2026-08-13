@@ -4,7 +4,7 @@ import api from "@shared/api";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { fetchClientsAsync } from "@entities/client";
 import { getCashBoxes } from "@entities/cash";
-import { fetchProductsAsync } from "@entities/product";
+import { fetchProductsAsync, isAdultProduct } from "@entities/product";
 import * as utils from "../utils";
 import { useAppDispatch } from "@app/store";
 
@@ -31,6 +31,7 @@ export const useAddProductBootstrap = ({
   marketData,
   count,
   weightProductsCount,
+  companyId,
 }: any) => {
   const dispatch = useAppDispatch();
   const location = useLocation();
@@ -100,6 +101,7 @@ export const useAddProductBootstrap = ({
             hotkeyGroup: product.hotkey_group || "",
             unit: product.unit || "шт",
             isWeightProduct: product.is_weight || false,
+            isAdult: isAdultProduct(product, companyId),
             isFractionalService: product.is_weight || false,
             plu: product.plu ? String(product.plu) : "",
             height: utils.stripTrailingZeros(product.characteristics?.height_cm) || "0",
@@ -219,6 +221,7 @@ export const useAddProductBootstrap = ({
         hotkeyGroup: product.hotkey_group || "",
         unit: product.unit || "шт",
         isWeightProduct: product.is_weight || false,
+        isAdult: isAdultProduct(product, companyId),
         isFractionalService: product.is_weight || false,
         plu: product.plu ? String(product.plu) : "",
         height: utils.stripTrailingZeros(product.characteristics?.height_cm) || "0",

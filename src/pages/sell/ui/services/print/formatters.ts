@@ -201,6 +201,14 @@ function buildReceiptFromJSON(payload: any, opts: any = {}) {
   const inn = String(payload.inn ?? "").trim();
   const address = String(payload.address ?? "").trim();
   const cashier = String(payload.cashier_name ?? "").trim();
+  const consultant = String(
+    payload.consultant_name ||
+      payload.consultant_display ||
+      (payload.consultant && typeof payload.consultant === "object"
+        ? payload.consultant.name || payload.consultant.full_name || ""
+        : "") ||
+      "",
+  ).trim();
 
   const docNo = String(
     ekassaFields ? (f(ekassaFields, "1042") ?? payload.doc_no ?? "") : (payload.doc_no ?? ""),
@@ -335,6 +343,9 @@ function buildReceiptFromJSON(payload: any, opts: any = {}) {
     chunks.push(enc(`${dt}\n`));
   }
   if (hasText(cashier)) chunks.push(enc(lr("Кассир", cashier, width) + "\n"));
+  if (hasText(consultant)) {
+    chunks.push(enc(lr("Консультант", consultant, width) + "\n"));
+  }
   if (hasText(shift)) chunks.push(enc(lr("Смена", shift, width) + "\n"));
   chunks.push(enc(divider + "\n"));
   if (ekassaFields) {

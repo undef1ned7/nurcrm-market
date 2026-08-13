@@ -41,6 +41,7 @@
 | `company` | FK → Company, `unique=True` | Компания-владелец настроек |
 | `delete_item_code` | `CharField(max_length=8, blank=True, default="")` | Код на удаление из корзины. Пустая строка = код не требуется |
 | `max_discount_percent` | `DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)` | Максимальная скидка в %, `null` = без ограничения |
+| `debt_schedule_version` | `CharField(max_length=8, default="v1")` | Версия отсрочки на кассе. **Нет значения / не указали → `v1`.** `"v2"` — график платежей. См. [debt-installment-schedule-backend.md](./debt-installment-schedule-backend.md) |
 | `updated_at` | datetime | Авто |
 | `updated_by` | FK → User, null | Кто последний менял |
 
@@ -83,6 +84,7 @@
   "delete_item_code": "1234",
   "delete_item_code_required": true,
   "max_discount_percent": "10.00",
+  "debt_schedule_version": "v2",
   "updated_at": "2026-07-31T12:04:11+06:00",
   "updated_by": "Иванов И."
 }
@@ -93,7 +95,8 @@
 ```json
 {
   "delete_item_code_required": true,
-  "max_discount_percent": "10.00"
+  "max_discount_percent": "10.00",
+  "debt_schedule_version": "v2"
 }
 ```
 
@@ -102,7 +105,8 @@
 ```json
 {
   "delete_item_code_required": false,
-  "max_discount_percent": null
+  "max_discount_percent": null,
+  "debt_schedule_version": "v1"
 }
 ```
 
@@ -113,6 +117,7 @@
 | `delete_item_code` | string \| null | owner/admin | Текущий код. Не отдавать остальным ролям. Можно не отдавать вообще, если хранится хеш |
 | `delete_item_code_required` | bool | всем | `true`, если код задан и непустой. Основной флаг для кассы |
 | `max_discount_percent` | string(decimal) \| null | всем | Максимальная скидка в %, `null` = без ограничения |
+| `debt_schedule_version` | `"v1"` \| `"v2"` | всем | Какой UI/контракт отсрочки использовать на кассе. Нет поля на бэке = **v1**. Фронт маркета: нет поля = **v2**, явно `"v1"` = классика |
 
 Фронт также понимает алиас `delete_item_code_set` вместо `delete_item_code_required` (см. `normalizeMarketCashierSettings`), но каноничным считаем `delete_item_code_required`.
 
@@ -125,7 +130,8 @@
 ```json
 {
   "delete_item_code": "1234",
-  "max_discount_percent": "10"
+  "max_discount_percent": "10",
+  "debt_schedule_version": "v2"
 }
 ```
 
@@ -144,6 +150,7 @@
 |---|---|---|
 | `delete_item_code` | только цифры, длина 4–8; `null`/`""` допустимы | `400 {"delete_item_code": ["Код должен состоять из 4–8 цифр"]}` |
 | `max_discount_percent` | число `0 ≤ x ≤ 100`, до 2 знаков; `null` допустим | `400 {"max_discount_percent": ["Значение должно быть от 0 до 100"]}` |
+| `debt_schedule_version` | только `"v1"` или `"v2"`; нет поля в PATCH = не менять; в модели / при создании записи default **`v1`** | `400 {"debt_schedule_version": ["Допустимы v1 или v2"]}` |
 
 **Ответ 200** — тот же объект, что и в `GET` (фронт синхронизирует форму по ответу).
 

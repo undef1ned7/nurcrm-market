@@ -184,6 +184,7 @@ export const useAddProductPage = ({
     marketData,
     count,
     weightProductsCount,
+    companyId: company?.id,
   });
 
   const handleChange = (e) => {

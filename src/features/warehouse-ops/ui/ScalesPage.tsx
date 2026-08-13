@@ -12,7 +12,7 @@ const isWeightProduct = (p) =>
 
 /**
  * Собирает весовые товары: бэкенд фильтрует по is_weight=true
- * (см. docs/market/scales-weight-products.md), клиентский фильтр —
+ * (см. docs/backend/scales-weight-products.md), клиентский фильтр —
  * подстраховка на случай, если параметр проигнорирован.
  */
 const fetchAllWeightProducts = async () => {

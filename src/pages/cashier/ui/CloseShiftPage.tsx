@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch } from "react-redux";
-import { ArrowLeft, Wallet, AlertCircle } from "lucide-react";
+import { ArrowLeft, Wallet, AlertCircle, CheckCircle } from "lucide-react";
 import {
   closeShiftAsync,
+  fetchAllShiftSales,
   fetchShiftByIdAsync,
+  formatShiftMoney,
+  resolveShiftPaymentBreakdown,
+  ShiftPaymentBreakdown,
 } from "@entities/shift";
 import { useShifts } from "@entities/shift";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import "./CloseShiftPage.scss";
-import sleep from "@shared/lib/tools/sleep";
 
 const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
   const dispatch = useDispatch() as any;
   const { shifts, currentShift } = useShifts();
 
-  // Получаем актуальные данные смены из Redux
   const shift = React.useMemo(() => {
     if (currentShift?.id === initialShift?.id) {
       return currentShift;
@@ -25,6 +27,9 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
   const [closingCash, setClosingCash] = useState("");
   const [loading, setLoading] = useState(false);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
+  const [salesFallback, setSalesFallback] = useState<any[]>([]);
+  const [closedSummary, setClosedSummary] = useState<any>(null);
   const [alertModal, setAlertModal] = useState({
     open: false,
     type: "error",
@@ -45,15 +50,42 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
     setAlertModal((prev) => ({ ...prev, open: false }));
   };
 
-  // Обновляем данные смены при монтировании и при изменении shifts
   useEffect(() => {
     if (shift?.id) {
       dispatch(fetchShiftByIdAsync(shift.id));
     }
   }, [dispatch, shift?.id]);
 
-  // Примечание: отдельный повторный fetch после закрытия не нужен,
-  // т.к. closeShiftAsync возвращает обновлённую смену и кладёт её в Redux.
+  useEffect(() => {
+    let cancelled = false;
+    const loadSales = async () => {
+      if (!shift?.id) return;
+      if (Array.isArray(shift?.payment_breakdown) && shift.payment_breakdown.length) {
+        setSalesFallback([]);
+        setBreakdownLoading(false);
+        return;
+      }
+      setBreakdownLoading(true);
+      try {
+        const sales = await fetchAllShiftSales(shift.id);
+        if (!cancelled) setSalesFallback(sales);
+      } catch (error: any) {
+        console.error("Не удалось загрузить продажи смены:", error);
+        if (!cancelled) setSalesFallback([]);
+      } finally {
+        if (!cancelled) setBreakdownLoading(false);
+      }
+    };
+    void loadSales();
+    return () => {
+      cancelled = true;
+    };
+  }, [shift?.id, shift?.payment_breakdown]);
+
+  const paymentBreakdown = useMemo(
+    () => resolveShiftPaymentBreakdown(shift, salesFallback),
+    [shift, salesFallback],
+  );
 
   if (!shift) {
     return (
@@ -72,7 +104,6 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
   const cashDiff = closingCashNum - expectedCash;
 
   const handleCloseShift = async () => {
-    // Валидация
     if (isNaN(closingCashNum) || closingCashNum < 0) {
       showAlert("error", "Ошибка", "Пожалуйста, введите корректную сумму");
       return;
@@ -80,21 +111,22 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
     try {
       setLoading(true);
-      await dispatch(
+      const closedShift = await dispatch(
         closeShiftAsync({
           shiftId: shift.id,
           closingCash: closingCashNum,
-        })
+        }),
       ).unwrap();
 
-      // Обновляем список смен
-      // Небольшая задержка, чтобы сервер успел обработать запрос
-      await sleep(300);
-      // await dispatch(fetchShiftByIdAsync(shift.id));
-
-      showAlert("success", "Успех", "Смена успешно закрыта");
-      await sleep(1500);
-      onBack();
+      setClosedSummary({
+        closingCash: closingCashNum,
+        expectedCash,
+        cashDiff,
+        breakdown: resolveShiftPaymentBreakdown(
+          closedShift || shift,
+          salesFallback,
+        ),
+      });
     } catch (error: any) {
       console.error("Ошибка при закрытии смены:", error);
       showAlert(
@@ -103,12 +135,19 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
         error?.data?.detail ||
           error?.data?.closing_cash?.[0] ||
           error?.message ||
-          "Не удалось закрыть смену"
+          "Не удалось закрыть смену",
       );
     } finally {
       setLoading(false);
     }
   };
+
+  const diffClass =
+    cashDiff === 0
+      ? "close-shift-page__diff-value--zero"
+      : cashDiff > 0
+        ? "close-shift-page__diff-value--positive"
+        : "close-shift-page__diff-value--negative";
 
   return (
     <div className="close-shift-page">
@@ -120,117 +159,155 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
         >
           <ArrowLeft size={20} />
         </button>
-        <h1 className="close-shift-page__title">Закрытие смены</h1>
+        <h1 className="close-shift-page__title">
+          {closedSummary ? "Смена закрыта" : "Закрытие смены"}
+        </h1>
       </div>
 
       <div className="close-shift-page__content">
         <div className="close-shift-page__card">
-          <div className="close-shift-page__icon">
-            <Wallet size={48} style={{ color: "#ef4444" }} />
-          </div>
-          <h2 className="close-shift-page__card-title">Завершение смены</h2>
-
-          <div className="close-shift-page__info-section">
-            <div className="close-shift-page__info-item">
-              <span className="close-shift-page__info-label">
-                Начальная сумма:
-              </span>
-              <span className="close-shift-page__info-value">
-                {openingCash.toFixed(2)} сом
-              </span>
-            </div>
-
-            <div className="close-shift-page__info-item">
-              <span className="close-shift-page__info-label">
-                Продажи всего:
-              </span>
-              <span className="close-shift-page__info-value">
-                {salesTotal.toFixed(2)} сом
-              </span>
-            </div>
-
-            <div className="close-shift-page__info-item">
-              <span className="close-shift-page__info-label">Наличными:</span>
-              <span className="close-shift-page__info-value">
-                {cashSalesTotal.toFixed(2)} сом
-              </span>
-            </div>
-
-            <div className="close-shift-page__info-item">
-              <span className="close-shift-page__info-label">
-                Безналичными:
-              </span>
-              <span className="close-shift-page__info-value">
-                {noncashSalesTotal.toFixed(2)} сом
-              </span>
-            </div>
-
-            <div className="close-shift-page__info-item">
-              <span className="close-shift-page__info-label">
-                Ожидаемая сумма:
-              </span>
-              <span className="close-shift-page__info-value">
-                {expectedCash.toFixed(2)} сом
-              </span>
-            </div>
-          </div>
-
-          <div className="close-shift-page__input-wrapper">
-            <label className="close-shift-page__label">
-              Фактическая сумма на кассе (сом) *
-            </label>
-            <input
-              type="number"
-              className="close-shift-page__input"
-              value={closingCash}
-              onChange={(e: any) => setClosingCash(e.target.value)}
-              placeholder="0.00"
-              step="0.01"
-              min="0"
-              autoFocus
-              disabled={loading}
-            />
-          </div>
-
-          {closingCash && !isNaN(closingCashNum) && (
-            <div className="close-shift-page__diff-section">
-              <div className="close-shift-page__diff-label">Расхождение:</div>
-              <div
-                className={`close-shift-page__diff-value ${
-                  cashDiff === 0
-                    ? "close-shift-page__diff-value--zero"
-                    : cashDiff > 0
-                    ? "close-shift-page__diff-value--positive"
-                    : "close-shift-page__diff-value--negative"
-                }`}
-              >
-                {cashDiff === 0 ? (
-                  <>
-                    <AlertCircle size={20} />
-                    <span>✓ {Math.abs(cashDiff).toFixed(2)} сом</span>
-                  </>
-                ) : cashDiff > 0 ? (
-                  <>
-                    <AlertCircle size={20} />
-                    <span>+{cashDiff.toFixed(2)} сом</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle size={20} />
-                    <span>{cashDiff.toFixed(2)} сом</span>
-                  </>
-                )}
+          {closedSummary ? (
+            <>
+              <div className="close-shift-page__icon close-shift-page__icon--success">
+                <CheckCircle size={48} />
               </div>
-            </div>
-          )}
+              <h2 className="close-shift-page__card-title">Смена закрыта</h2>
 
-          <button
-            className="close-shift-page__submit-btn"
-            onClick={handleCloseShift}
-            disabled={loading || !closingCash}
-          >
-            {loading ? "Закрытие..." : "Закрыть смену"}
-          </button>
+              <div className="close-shift-page__info-section">
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">
+                    Касса закрыта на:
+                  </span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(closedSummary.closingCash)}
+                  </span>
+                </div>
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">
+                    Ожидаемая сумма:
+                  </span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(closedSummary.expectedCash)}
+                  </span>
+                </div>
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">Расхождение:</span>
+                  <span className="close-shift-page__info-value">
+                    {closedSummary.cashDiff > 0 ? "+" : ""}
+                    {formatShiftMoney(closedSummary.cashDiff)}
+                  </span>
+                </div>
+              </div>
+
+              <ShiftPaymentBreakdown rows={closedSummary.breakdown} />
+
+              <button
+                type="button"
+                className="close-shift-page__submit-btn close-shift-page__submit-btn--done"
+                onClick={onBack}
+              >
+                Готово
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="close-shift-page__icon">
+                <Wallet size={48} style={{ color: "#ef4444" }} />
+              </div>
+              <h2 className="close-shift-page__card-title">Завершение смены</h2>
+
+              <div className="close-shift-page__info-section">
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">
+                    Начальная сумма:
+                  </span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(openingCash)}
+                  </span>
+                </div>
+
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">
+                    Продажи всего:
+                  </span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(salesTotal)}
+                  </span>
+                </div>
+
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">Наличными:</span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(cashSalesTotal)}
+                  </span>
+                </div>
+
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">
+                    Безналичными:
+                  </span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(noncashSalesTotal)}
+                  </span>
+                </div>
+
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">
+                    Ожидаемая сумма:
+                  </span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(expectedCash)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="close-shift-page__payments">
+                <ShiftPaymentBreakdown
+                  rows={paymentBreakdown}
+                  loading={breakdownLoading}
+                />
+              </div>
+
+              <div className="close-shift-page__input-wrapper">
+                <label className="close-shift-page__label">
+                  Фактическая сумма на кассе (сом) *
+                </label>
+                <input
+                  type="number"
+                  className="close-shift-page__input"
+                  value={closingCash}
+                  onChange={(e: any) => setClosingCash(e.target.value)}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  autoFocus
+                  disabled={loading}
+                />
+              </div>
+
+              {closingCash && !isNaN(closingCashNum) && (
+                <div className="close-shift-page__diff-section">
+                  <div className="close-shift-page__diff-label">Расхождение:</div>
+                  <div className={`close-shift-page__diff-value ${diffClass}`}>
+                    <AlertCircle size={20} />
+                    <span>
+                      {cashDiff === 0
+                        ? `✓ ${formatShiftMoney(0)}`
+                        : `${cashDiff > 0 ? "+" : ""}${formatShiftMoney(cashDiff)}`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                className="close-shift-page__submit-btn"
+                onClick={handleCloseShift}
+                disabled={loading || !closingCash}
+              >
+                {loading ? "Закрытие..." : "Закрыть смену"}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

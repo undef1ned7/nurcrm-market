@@ -171,6 +171,7 @@ const Settings = () => {
   const [cashierSettings, setCashierSettings] = useState({
     deleteCode: "",
     maxDiscountPercent: "",
+    debtScheduleVersion: "v2" as "v1" | "v2",
   });
   const [cashierSettingsLoading, setCashierSettingsLoading] = useState(false);
   const [cashierSettingsSaving, setCashierSettingsSaving] = useState(false);
@@ -194,6 +195,7 @@ const Settings = () => {
             normalized.maxDiscountPercent == null
               ? ""
               : String(normalized.maxDiscountPercent),
+          debtScheduleVersion: normalized.debtScheduleVersion || "v2",
         });
       } catch (err: any) {
         if (cancelled) return;
@@ -238,6 +240,7 @@ const Settings = () => {
       const data = await updateMarketCashierSettings({
         delete_item_code: code || null,
         max_discount_percent: percent === null ? null : String(percent),
+        debt_schedule_version: cashierSettings.debtScheduleVersion || "v2",
       });
       const normalized = normalizeMarketCashierSettings(data);
       setCashierSettings({
@@ -248,6 +251,7 @@ const Settings = () => {
               ? ""
               : String(percent)
             : String(normalized.maxDiscountPercent),
+        debtScheduleVersion: normalized.debtScheduleVersion || "v2",
       });
       setCashierSettingsError("");
       showAlert("success", "Настройки кассы сохранены");

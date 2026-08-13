@@ -1,3 +1,4 @@
+import { FormBlock } from "../formLayout";
 
 const PricingSection = ({
   marketData,
@@ -35,6 +36,7 @@ const PricingSection = ({
             </p>
           )}
         </div>
+        <FormBlock id="markup">
         <div className="market-product-form__form-group">
           <label className="market-product-form__label">Наценка</label>
           <div className="market-product-form__price-input">
@@ -47,6 +49,7 @@ const PricingSection = ({
             <span className="market-product-form__currency">%</span>
           </div>
         </div>
+        </FormBlock>
         <div className="market-product-form__form-group">
           <label className="market-product-form__label">
             Цена продажи (за 1 {marketData.unit || "ед."})
@@ -67,6 +70,7 @@ const PricingSection = ({
             <p className="add-product-page__error">{fieldErrors.price}</p>
           )}
         </div>
+        <FormBlock id="wholesale">
         <div className="market-product-form__form-group">
           <label className="market-product-form__label">
             Оптовая цена (за 1 {marketData.unit || "ед."})
@@ -84,6 +88,8 @@ const PricingSection = ({
             <span className="market-product-form__currency">COM</span>
           </div>
         </div>
+        </FormBlock>
+        <FormBlock id="discount">
         <div className="market-product-form__form-group">
           <label className="market-product-form__label">Скидка</label>
           <div className="market-product-form__price-input">
@@ -98,6 +104,7 @@ const PricingSection = ({
             <span className="market-product-form__currency">%</span>
           </div>
         </div>
+        </FormBlock>
       </div>
     </div>
   );

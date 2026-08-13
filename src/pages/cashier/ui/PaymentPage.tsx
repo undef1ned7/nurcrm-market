@@ -47,13 +47,26 @@ const PaymentPage = ({
         }
         deferredPrepaymentBank={vm.deferredPrepaymentBank}
         onSelectDeferredPrepaymentBank={vm.setDeferredPrepaymentBank}
+        debtScheduleVersion={vm.debtScheduleVersion}
         debtDays={vm.debtDays}
+        onDebtDaysChange={vm.onDebtDaysChange}
+        onDebtDaysBlur={vm.onDebtDaysBlur}
+        onDebtDaysDateChange={vm.onDebtDaysDateChange}
+        scheduleUnit={vm.scheduleUnit}
+        onScheduleUnitChange={vm.onScheduleUnitChange}
+        scheduleCount={vm.scheduleCount}
+        onScheduleCountChange={vm.onScheduleCountChange}
+        onScheduleCountBlur={vm.onScheduleCountBlur}
+        onSchedulePreset={vm.onSchedulePreset}
+        dayInterval={vm.dayInterval}
+        onDayIntervalChange={vm.onDayIntervalChange}
+        onDayIntervalBlur={vm.onDayIntervalBlur}
+        onDayIntervalPreset={vm.onDayIntervalPreset}
+        debtSchedule={vm.debtSchedule}
         deferredDueDate={vm.deferredDueDate}
         deferredDueDateInputRef={vm.deferredDueDateInputRef}
-        onDebtDaysChange={vm.handleDebtDaysChange}
-        onDebtDaysBlur={vm.handleDebtDaysBlur}
         onOpenDeferredDueDatePicker={vm.openDeferredDueDatePicker}
-        onDeferredDueDateChange={vm.setDebtDaysFromDate}
+        onFirstDueDateChange={vm.onFirstDueDateChange}
         totalDebt={vm.totalDebt}
         amountReceived={vm.amountReceived}
         amountReceivedInputRef={vm.amountReceivedInputRef}
@@ -65,6 +78,7 @@ const PaymentPage = ({
         onWithoutCheckChange={vm.handleWithoutCheckChange}
         onAcceptPayment={vm.handleAcceptPayment}
         onCancel={onBack}
+        consultant={vm.consultant}
       />
 
       <PaymentPageModals

@@ -30,6 +30,7 @@ const DEFAULT_FILTERS: any = {
   cashbox: "",
   shift: "",
   cashier: "",
+  consultant: "",
   payment_method: "",
   min_total: "",
   max_total: "",

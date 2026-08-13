@@ -31,6 +31,7 @@ export const useProductFormState = (_isEditMode = false) => {
     article: "",
     unit: DEFAULT_VALUES.UNIT,
     isWeightProduct: false,
+    isAdult: false,
     isFractionalService: false,
     plu: "",
     height: DEFAULT_VALUES.HEIGHT,

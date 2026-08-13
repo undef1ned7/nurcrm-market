@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Printer } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { getReceiptJson } from "@entities/sale";
+import { getReceiptJson, receiptConsultantName } from "@entities/sale";
 import {
   handleCheckoutResponseForPrinting,
   checkPrinterConnection,
@@ -86,6 +86,9 @@ const ReceiptPreviewModal = ({ receiptId, receiptData: initialReceiptData, onClo
           discount_total: parseFloat(String(dataToPrint.totals?.discount_total || 0)),
           company: dataToPrint.company?.name || "",
           payment: dataToPrint.payment || {},
+          consultant_name:
+            receiptConsultantName(dataToPrint) ||
+            receiptConsultantName(dataToPrint?.sale),
         };
         await handleCheckoutResponseForPrinting(printData, {
           receiptStyle: "market",
@@ -204,6 +207,9 @@ const ReceiptPreviewModal = ({ receiptId, receiptData: initialReceiptData, onClo
   const items = Array.isArray(receiptData?.items)
     ? receiptData.items.map(resolveMarketPreviewItem)
     : [];
+  const consultantName =
+    receiptConsultantName(receiptData) ||
+    receiptConsultantName(receiptData?.sale);
 
   const subtotal = parseFloat(String(receiptData?.totals?.subtotal || 0));
   const discount = parseFloat(String(receiptData?.totals?.discount_total || 0));
@@ -256,6 +262,12 @@ const ReceiptPreviewModal = ({ receiptId, receiptData: initialReceiptData, onClo
                   <span>{receiptData.cashier.name}</span>
                 </div>
               )}
+              {consultantName ? (
+                <div className="receipt-preview-modal__info-row">
+                  <span>Консультант:</span>
+                  <span>{consultantName}</span>
+                </div>
+              ) : null}
               {receiptData?.client?.full_name && (
                 <div className="receipt-preview-modal__info-row">
                   <span>Покупатель:</span>

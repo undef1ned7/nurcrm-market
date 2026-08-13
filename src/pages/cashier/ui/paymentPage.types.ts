@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ConsultantDraft, SaleConsultant } from "@entities/sale";
 
 export type PaymentMethodId = "cash" | "cashless" | "deferred" | "split";
 
@@ -48,6 +49,17 @@ export type PaymentSale = {
   [key: string]: unknown;
 } | null;
 
+export type PaymentConsultantVm = {
+  draft: ConsultantDraft;
+  consultants: SaleConsultant[];
+  consultantsLoading: boolean;
+  previewAmount: number;
+  handleSpecifyChange: (value: boolean) => void;
+  handleConsultantChange: (id: string, name: string) => void;
+  handleCommissionEnabledChange: (value: boolean) => void;
+  handlePercentChange: (value: string) => void;
+};
+
 export type PaymentPageProps = {
   cart?: unknown[];
   total: number;
@@ -58,4 +70,6 @@ export type PaymentPageProps = {
   customers?: unknown[];
   saleId?: string | number;
   sale?: PaymentSale;
+  consultantDraft?: ConsultantDraft;
+  onConsultantDraftChange?: (draft: ConsultantDraft) => void;
 };

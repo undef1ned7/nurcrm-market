@@ -34,6 +34,93 @@ export const hasMarketWarehouseStock = (item: any) => {
 export const isKitCompositionCandidate = (item: any) =>
   isMarketWarehouseProductKind(item) && hasMarketWarehouseStock(item);
 
+/**
+ * Единица продажи на складе.
+ * Поштучно — товар с розничной упаковкой: продаётся и пачкой, и штуками из неё.
+ */
+export const MARKET_WAREHOUSE_SALE_UNIT = {
+  weight: "weight",
+  piece: "piece",
+  piece_sale: "piece_sale",
+} as const;
+
+export const MARKET_WAREHOUSE_SALE_UNITS = [
+  { value: MARKET_WAREHOUSE_SALE_UNIT.weight, label: "Весовые" },
+  { value: MARKET_WAREHOUSE_SALE_UNIT.piece, label: "Штучные" },
+  {
+    value: MARKET_WAREHOUSE_SALE_UNIT.piece_sale,
+    label: "Поштучно",
+    hint: "Продаются и упаковкой, и по штукам (достают из упаковки)",
+  },
+];
+
+export const isMarketWarehouseWeightProduct = (item: any) => {
+  if (item?.is_weight === true || item?.isWeight === true) return true;
+  const scaleType = String(item?.scale_type ?? item?.scaleType ?? "")
+    .trim()
+    .toLowerCase();
+  return scaleType === "weight";
+};
+
+/** Товар с поштучной продажей из упаковки (не услуга и не комплект). */
+export const isMarketWarehousePieceSaleProduct = (item: any) => {
+  if (!isMarketWarehouseProductKind(item)) return false;
+  const pkgs = item?.packages;
+  if (!Array.isArray(pkgs) || pkgs.length === 0) return false;
+  return pkgs.some((pkg: any) => Number(pkg?.quantity_in_package) > 1);
+};
+
+export const classifyMarketWarehouseSaleUnit = (item: any) => {
+  if (isMarketWarehousePieceSaleProduct(item)) {
+    return MARKET_WAREHOUSE_SALE_UNIT.piece_sale;
+  }
+  if (isMarketWarehouseWeightProduct(item)) {
+    return MARKET_WAREHOUSE_SALE_UNIT.weight;
+  }
+  return MARKET_WAREHOUSE_SALE_UNIT.piece;
+};
+
+export const matchesMarketWarehouseSaleUnit = (item: any, saleUnit: any) => {
+  const unit = String(saleUnit || "").trim();
+  if (!unit) return true;
+  return classifyMarketWarehouseSaleUnit(item) === unit;
+};
+
+export const filterProductsBySaleUnit = (products: any, saleUnit: any) => {
+  const list = Array.isArray(products) ? products : [];
+  const unit = String(saleUnit || "").trim();
+  if (!unit) return list;
+  return list.filter((item: any) => matchesMarketWarehouseSaleUnit(item, unit));
+};
+
+const isTruthyQueryFlag = (value: any) =>
+  value === true || value === "true" || value === 1 || value === "1";
+
+export const normalizeSaleUnitValue = (value: any) => {
+  const key = String(value || "").trim();
+  if (
+    key === MARKET_WAREHOUSE_SALE_UNIT.weight ||
+    key === MARKET_WAREHOUSE_SALE_UNIT.piece ||
+    key === MARKET_WAREHOUSE_SALE_UNIT.piece_sale
+  ) {
+    return key;
+  }
+  return "";
+};
+
+/** Пишет sale_unit / is_weight в params списка товаров. */
+export const applySaleUnitParams = (params: any, saleUnit: any) => {
+  const unit = normalizeSaleUnitValue(saleUnit);
+  if (!unit) return params;
+  params.sale_unit = unit;
+  if (unit === MARKET_WAREHOUSE_SALE_UNIT.weight) {
+    params.is_weight = true;
+  } else if (unit === MARKET_WAREHOUSE_SALE_UNIT.piece) {
+    params.is_weight = false;
+  }
+  return params;
+};
+
 export const MARKET_WAREHOUSE_PRESETS = [
   { value: "discounted", label: "Товары со скидкой" },
   { value: "shelf_life_expires_7d", label: "Срок годности истекает в течение 7 дней" },
@@ -169,6 +256,8 @@ export const buildMarketWarehouseListParams = (modalState: any) => {
     params.kind = kinds;
   }
 
+  applySaleUnitParams(params, modalState?.saleUnit);
+
   const preset = normalizePresetValue(modalState?.preset);
   if (preset) params.preset = preset;
 
@@ -233,8 +322,16 @@ export const modalStateFromAppliedFilters = (applied : any = {}) => {
     ? kindRaw.join(",")
     : String(kindRaw || "");
 
+  const appliedSaleUnit = normalizeSaleUnitValue(applied.sale_unit);
+  const saleUnit =
+    appliedSaleUnit ||
+    (isTruthyQueryFlag(applied.is_weight)
+      ? MARKET_WAREHOUSE_SALE_UNIT.weight
+      : "");
+
   return {
     itemTypes: itemTypesFromKindParam(kindStr),
+    saleUnit,
     preset: normalizePresetValue(applied.preset),
     category: applied.category || "",
     brand: applied.brand || "",

@@ -40,6 +40,7 @@ export type CashierProduct = {
   id?: string | number;
   name?: string;
   is_favorite?: boolean;
+  is_adult?: boolean;
   packages?: ProductPackage[];
   images?: unknown[];
   [key: string]: unknown;
@@ -74,6 +75,9 @@ export type AlertModalState = {
   type: string;
   title: string;
   message: string;
+  okText?: string;
+  onConfirm?: () => void;
+  onClose?: () => void;
 };
 
 export type CartDiscountMode = "amount" | "percent";

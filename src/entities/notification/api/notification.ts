@@ -36,3 +36,12 @@ export const markNotificationRead = async (id: string) => {
     return Promise.reject(error.response?.data || error);
   }
 };
+
+export const deleteNotification = async (id: string) => {
+  try {
+    const response = await api.delete(`/main/notifications/${id}/`);
+    return response.data;
+  } catch (error: any) {
+    return Promise.reject(error.response || error);
+  }
+};

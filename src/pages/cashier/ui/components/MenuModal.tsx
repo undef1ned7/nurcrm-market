@@ -1,4 +1,4 @@
-import { X, DollarSign, Receipt, History } from "lucide-react";
+import { X, DollarSign, Receipt, History, Keyboard } from "lucide-react";
 import "./MenuModal.scss";
 
 const MenuModal = ({ onClose, onAction }) => {
@@ -17,6 +17,11 @@ const MenuModal = ({ onClose, onAction }) => {
       id: "deletions",
       icon: History,
       label: "Журнал удалений",
+    },
+    {
+      id: "quick-slots",
+      icon: Keyboard,
+      label: "Быстрые товары F3",
     },
   ];
 

@@ -44,6 +44,7 @@ const fetchAnalytics = React.useCallback(
         if (filters.cashbox) (params as any).cashbox = filters.cashbox;
         if (filters.shift) (params as any).shift = filters.shift;
         if (filters.cashier) (params as any).cashier = filters.cashier;
+        if (filters.consultant) (params as any).consultant = filters.consultant;
         if (filters.payment_method)
           (params as any).payment_method = filters.payment_method;
         if (filters.min_total) (params as any).min_total = filters.min_total;
@@ -71,6 +72,11 @@ const fetchAnalytics = React.useCallback(
         if (filters.cashier) (params as any).cashier = filters.cashier;
       }
 
+      if (tab === "users" || tab === "finance") {
+        if (filters.cashier) (params as any).cashier = filters.cashier;
+        if (filters.consultant) (params as any).consultant = filters.consultant;
+      }
+
       const response = await api.get("/main/analytics/market/", {
         params,
         timeout: MARKET_ANALYTICS_TIMEOUT_MS,
@@ -87,6 +93,10 @@ const fetchAnalytics = React.useCallback(
             (salaryParams as any).branch = filters.branch;
             if (filters.include_global) (salaryParams as any).include_global = "1";
           }
+          if (filters.cashier) (salaryParams as any).cashier = filters.cashier;
+          if (filters.consultant) {
+            (salaryParams as any).consultant = filters.consultant;
+          }
           const salaryResponse = await api.get("/main/analytics/market/", {
             params: salaryParams,
             timeout: MARKET_ANALYTICS_TIMEOUT_MS,
@@ -94,7 +104,9 @@ const fetchAnalytics = React.useCallback(
           setSalaryAnalyticsRows(
             Array.isArray(salaryResponse?.data?.rows)
               ? salaryResponse.data.rows
-              : [],
+              : Array.isArray(salaryResponse?.data?.tables?.rows)
+                ? salaryResponse.data.tables.rows
+                : [],
           );
         } catch (salaryErr: any) {
           console.error("Ошибка при загрузке salary-аналитики:", salaryErr);

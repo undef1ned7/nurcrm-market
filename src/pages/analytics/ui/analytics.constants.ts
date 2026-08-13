@@ -12,6 +12,7 @@ export const DEFAULT_FILTERS = {
   cashbox: "",
   shift: "",
   cashier: "",
+  consultant: "",
   payment_method: "",
   min_total: "",
   max_total: "",

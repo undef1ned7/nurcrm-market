@@ -95,7 +95,7 @@ export const updateProductApi = async (productId: any, productData: any) => {
 
 /**
  * Массовое изменение бренда / категории / поставщика у выбранных товаров.
- * См. docs/market/bulk_update_products.md
+ * См. docs/backend/bulk_update_products.md
  * payload: { ids: [uuid], brand?, category?, client?, require_all? }
  */
 export const bulkUpdateProductsApi = async (payload: any) => {

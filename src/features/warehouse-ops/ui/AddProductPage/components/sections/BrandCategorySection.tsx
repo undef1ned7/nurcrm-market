@@ -1,4 +1,8 @@
 import SearchSelect from "@shared/ui/SearchSelect/SearchSelect";
+import {
+  FormBlock,
+  useOptionalProductFormLayout,
+} from "../../formLayout";
 
 const BrandCategorySection = ({
   newItemData,
@@ -17,9 +21,16 @@ const BrandCategorySection = ({
   setNewBrand,
   onSubmitBrand,
   isBrandNameTaken,
-}) => (
+}) => {
+  const layout = useOptionalProductFormLayout();
+  const showCategory = !layout || layout.isVisible("category");
+  const showBrand = !layout || layout.isVisible("brand");
+  if (!showCategory && !showBrand) return null;
+
+  return (
       <div className="market-product-form__section">
         <div className="market-product-form__two-columns">
+          <FormBlock id="category">
           <div className="market-product-form__form-group">
             <label className="market-product-form__label">Категория</label>
             <div className="add-product-page__supplier-row">
@@ -85,7 +96,9 @@ const BrandCategorySection = ({
               </form>
             )}
           </div>
+          </FormBlock>
 
+          <FormBlock id="brand">
           <div className="market-product-form__form-group">
             <label className="market-product-form__label">Бренд</label>
             <div className="add-product-page__supplier-row">
@@ -151,8 +164,10 @@ const BrandCategorySection = ({
               </form>
             )}
           </div>
+          </FormBlock>
         </div>
       </div>
-);
+  );
+};
 
 export default BrandCategorySection;

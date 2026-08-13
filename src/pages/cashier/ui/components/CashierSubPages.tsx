@@ -1,6 +1,7 @@
 import { fetchProductsAsync } from "@entities/product";
 import { fetchShiftsAsync } from "@entities/shift";
 import { resetPosSale } from "@entities/sale";
+import { EMPTY_CONSULTANT_DRAFT } from "@entities/sale";
 import { MARKET_CASHIER_SALE_ID_PARAM } from "@features/create-sale/model/useMarketCashierMultiCart";
 import type { ReactElement } from "react";
 import CloseShiftPage from "../CloseShiftPage";
@@ -31,6 +32,8 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
     setCart,
     cartOrderRef,
     setSelectedCustomer,
+    consultantBySaleId,
+    setConsultantBySaleId,
     setDiscountValue,
     cart,
     total,
@@ -76,6 +79,7 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
           setCart([]);
           cartOrderRef.current = [];
           setSelectedCustomer(null);
+          setConsultantBySaleId({});
           setDiscountValue("");
         }}
         shift={openShift}
@@ -84,11 +88,19 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
   }
 
   if (showPaymentPage) {
+    const saleKey = currentSale?.id != null ? String(currentSale.id) : "";
     return (
       <PaymentPage
         cart={cart}
         total={total}
         customer={selectedCustomer}
+        consultantDraft={
+          (saleKey && consultantBySaleId[saleKey]) || EMPTY_CONSULTANT_DRAFT
+        }
+        onConsultantDraftChange={(draft) => {
+          if (!saleKey) return;
+          setConsultantBySaleId((prev) => ({ ...prev, [saleKey]: draft }));
+        }}
         onBack={() => setShowPaymentPage(false)}
         onSelectCustomer={(customer: unknown) => {
           setSelectedCustomer(customer);
@@ -98,6 +110,13 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
           setCart([]);
           cartOrderRef.current = [];
           setSelectedCustomer(null);
+          if (saleKey) {
+            setConsultantBySaleId((prev) => {
+              const next = { ...prev };
+              delete next[saleKey];
+              return next;
+            });
+          }
           setDiscountValue("");
           if (openShiftId) {
             try {

@@ -113,3 +113,48 @@ export const fetchShiftSalesAsync = createAsyncThunk<any, void | any>(
     }
   }
 );
+
+const shiftSalesPage = (data: any) => {
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data)) return data;
+  return [];
+};
+
+const fetchShiftSalesPages = async (
+  url: string,
+  params: any,
+  maxPages: number,
+) => {
+  const all: any[] = [];
+  let page = 1;
+  while (page <= maxPages) {
+    const { data } = await api.get(url, {
+      params: { ...params, page },
+    });
+    const chunk = shiftSalesPage(data);
+    all.push(...chunk);
+    if (!data?.next || chunk.length === 0) break;
+    page += 1;
+  }
+  return all;
+};
+
+/** Все продажи смены (для разбивки по способам оплаты, пока бэк не отдаёт payment_breakdown). */
+export const fetchAllShiftSales = async (
+  shiftId: any,
+  { pageSize = 100, maxPages = 50 }: any = {},
+) => {
+  try {
+    return await fetchShiftSalesPages(
+      `/construction/cash/shifts/${shiftId}/sales/`,
+      { page_size: pageSize },
+      maxPages,
+    );
+  } catch {
+    return fetchShiftSalesPages(
+      "/main/pos/sales/",
+      { shift: shiftId, page_size: pageSize },
+      maxPages,
+    );
+  }
+};

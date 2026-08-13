@@ -5,6 +5,7 @@ import {
   normalizeMarketCashierSettings,
   verifyMarketCashierDeleteCode,
 } from "@shared/api/marketCashierSettings";
+import { parseDebtScheduleVersion } from "@entities/sale";
 import { useUser } from "@entities/user";
 
 /**
@@ -73,8 +74,11 @@ export function useMarketCashierSettings({ enabled = true }: any = {}) {
       ...DEFAULT_MARKET_CASHIER_SETTINGS,
       deleteCodeRequired: Boolean(legacyCode),
       deleteCode: legacyCode,
+      debtScheduleVersion: parseDebtScheduleVersion(
+        company?.debt_schedule_version,
+      ),
     };
-  }, [remoteAvailable, settings, legacyCode]);
+  }, [remoteAvailable, settings, legacyCode, company?.debt_schedule_version]);
 
   useEffect(() => {
     if (!remoteAvailable) localCodeRef.current = legacyCode;
@@ -103,6 +107,8 @@ export function useMarketCashierSettings({ enabled = true }: any = {}) {
     deleteCodeRequired: effective.deleteCodeRequired,
     /** Максимальная скидка в % (null — без ограничения). */
     maxDiscountPercent: effective.maxDiscountPercent,
+    /** v1 — классическая отсрочка, v2 — график дни/месяцы. */
+    debtScheduleVersion: effective.debtScheduleVersion,
     loading,
     remoteAvailable,
     verifyDeleteCode,

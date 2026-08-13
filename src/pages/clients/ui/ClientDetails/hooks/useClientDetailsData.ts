@@ -3,6 +3,12 @@ import { useLocation, useOutletContext, useParams } from "react-router-dom";
 
 import api from "@shared/api";
 import { productSearchHaystackLower } from "@shared/lib/tools/productBarcode";
+import {
+  aggregateClientKpisFromDeals,
+  EMPTY_CLIENT_KPIS,
+  fetchClientKpis,
+  type ClientKpis,
+} from "@entities/client";
 
 import {
   listFrom,
@@ -52,6 +58,9 @@ export function useClientDetailsData() {
   const [deals, setDeals] = useState<DealRecord[]>([]);
   const [dealsLoading, setDealsLoading] = useState(false);
   const [dealsErr, setDealsErr] = useState("");
+  const [clientKpis, setClientKpis] = useState<ClientKpis>(EMPTY_CLIENT_KPIS);
+  const [kpisLoading, setKpisLoading] = useState(false);
+  const [kpisFromApi, setKpisFromApi] = useState(false);
   const [clientErr, setClientErr] = useState("");
   const [supplierProducts, setSupplierProducts] = useState<SupplierProduct[]>(
     [],
@@ -112,6 +121,20 @@ export function useClientDetailsData() {
     };
     void fetchClient();
   }, [client, id, setClients]);
+
+  const loadKpis = useCallback(async (clientId: string | number) => {
+    setKpisLoading(true);
+    try {
+      const next = await fetchClientKpis(clientId);
+      setClientKpis(next);
+      setKpisFromApi(true);
+    } catch (e) {
+      console.warn("Не удалось загрузить KPI клиента, считаем по сделкам", e);
+      setKpisFromApi(false);
+    } finally {
+      setKpisLoading(false);
+    }
+  }, []);
 
   const loadDeals = async (clientId: string | number) => {
     setDealsLoading(true);
@@ -252,6 +275,10 @@ export function useClientDetailsData() {
   }, [client?.id]);
 
   useEffect(() => {
+    if (client?.id) void loadKpis(client.id);
+  }, [client?.id, loadKpis]);
+
+  useEffect(() => {
     if (client?.id) void loadClientSales(client.id);
   }, [client?.id, loadClientSales]);
 
@@ -289,6 +316,11 @@ export function useClientDetailsData() {
   const openClientForm = () => {
     setIsClientFormOpen(true);
   };
+
+  const kpis = useMemo(
+    () => (kpisFromApi ? clientKpis : aggregateClientKpisFromDeals(deals)),
+    [clientKpis, deals, kpisFromApi],
+  );
 
   const filteredDeals = useMemo(() => {
     if (!dateFrom && !dateTo) return deals;
@@ -371,10 +403,12 @@ export function useClientDetailsData() {
         ? prev.map((d) => (d.id === deal.id ? deal : d))
         : [deal, ...prev];
     });
+    if (client?.id) void loadKpis(client.id);
   };
 
   const handleDealDeleted = (dealId: string | number) => {
     setDeals((prev) => prev.filter((d) => d.id !== dealId));
+    if (client?.id) void loadKpis(client.id);
   };
 
   const handleDealError = (message: string) => {
@@ -403,6 +437,9 @@ export function useClientDetailsData() {
     deals,
     dealsLoading,
     dealsErr,
+    kpis,
+    kpisLoading,
+    loadKpis,
     clientErr,
     supplierProducts,
     supplierProductsLoading,

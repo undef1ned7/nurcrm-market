@@ -363,6 +363,9 @@
 
   &__close-modal-content {
     padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
   &__close-modal-info {
@@ -391,7 +394,7 @@
   }
 
   &__close-modal-input-wrapper {
-    margin-bottom: 24px;
+    margin-bottom: 0;
   }
 
   &__close-modal-label {

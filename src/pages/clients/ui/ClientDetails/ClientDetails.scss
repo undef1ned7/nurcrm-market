@@ -284,6 +284,11 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+
+  &--loading {
+    opacity: 0.72;
+    pointer-events: none;
+  }
 }
 
 .cdx__kpi {

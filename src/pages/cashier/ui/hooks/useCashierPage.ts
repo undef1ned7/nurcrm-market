@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useCustomerDisplayPublisher } from "@features/customer-display";
 import { useCashierShifts } from "./cashier/useCashierShifts";
 import { useCashierProducts } from "./cashier/useCashierProducts";
 import { useCashierBarcode } from "./cashier/useCashierBarcode";
@@ -15,6 +16,17 @@ export function useCashierPage() {
   useCashierCartSync(b);
   useCashierCart(b);
   useCashierUi(b);
+
+  useCustomerDisplayPublisher({
+    phase: b.showPaymentPage || b.ageCheckActive
+      ? "skip"
+      : Array.isArray(b.cart) && b.cart.length > 0
+        ? "cart"
+        : "idle",
+    cart: b.cart,
+    total: b.total,
+    cartId: b.currentSale?.id ?? b.multiCart?.activeSaleId,
+  });
 
   return {
     showShiftPage: b.showShiftPage,
@@ -37,6 +49,8 @@ export function useCashierPage() {
     cart: b.cart,
     total: b.total,
     selectedCustomer: b.selectedCustomer,
+    consultantBySaleId: b.consultantBySaleId,
+    setConsultantBySaleId: b.setConsultantBySaleId,
     multiCart: b.multiCart,
     store: b.store,
     setSearchParams: b.setSearchParams,
@@ -140,6 +154,10 @@ export function useCashierPage() {
     handlePieceSaleConfirmPieces: b.handlePieceSaleConfirmPieces,
     showHotkeyProductsModal: b.showHotkeyProductsModal,
     setShowHotkeyProductsModal: b.setShowHotkeyProductsModal,
+    showQuickSlotsModal: b.showQuickSlotsModal,
+    setShowQuickSlotsModal: b.setShowQuickSlotsModal,
+    f3AwaitingDigit: b.f3AwaitingDigit,
+    companyId: b.companyId,
     hotkeyProductsGroup: b.hotkeyProductsGroup,
     hotkeyFilteredProducts: b.hotkeyFilteredProducts,
     hotkeyProductsLoading: b.hotkeyProductsLoading,

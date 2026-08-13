@@ -5,7 +5,11 @@ import useScanDetection from "@shared/hooks/useScanDetection";
 import { useDebounce, useDebounceByKey } from "@shared/hooks/useDebounce";
 import { useCashierQtyScanGuard } from "@shared/hooks/useCashierQtyScanGuard";
 import { fetchClientsAsync } from "@entities/client";
-import { fetchProductsAsync } from "@entities/product";
+import { fetchProductsAsync, isAdultProduct } from "@entities/product";
+import {
+  dismissAdultAgeCheck,
+  publishAdultAgeCheck,
+} from "@features/customer-display";
 import { fetchProductsApi } from "@entities/product/api/products";
 import {
   addCustomItem,
@@ -34,6 +38,11 @@ import {
   MARKET_CASHIER_SALE_ID_PARAM,
   useMarketCashierMultiCart,
 } from "@features/create-sale/model/useMarketCashierMultiCart";
+import {
+  digitFromKeyboardEvent,
+  F3_AWAIT_MS,
+  loadQuickSlots,
+} from "@features/quick-sale-slots";
 import { useMarketCashierSettings } from "@features/create-sale/model/useMarketCashierSettings";
 import {
   getDefaultPackage,
@@ -74,6 +83,7 @@ import {
   stripTrailingZerosAfterDecimal,
 } from "../../cashierPage.utils";
 import type {
+  AlertModalState,
   CartDiscountMode,
   CartLine,
   CashierProduct,
@@ -83,6 +93,7 @@ import type {
 
 
 export function useCashierProducts(b: any) {
+  const { company } = useUser();
   const {
     dispatch, openShiftId, openShiftIdRef, ensureActiveSaleId, refreshSaleFromStore,
     preferredWholesaleMode, preferredWholesaleModeRef, canMarketDiscount, discountLimitPercent,
@@ -163,9 +174,17 @@ export function useCashierProducts(b: any) {
     string,
     unknown
   > | null>(null);
+  const [consultantBySaleId, setConsultantBySaleId] = useState<
+    Record<string, import("@entities/sale").ConsultantDraft>
+  >({});
   const [showCustomServiceModal, setShowCustomServiceModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showHotkeyProductsModal, setShowHotkeyProductsModal] = useState(false);
+  const [showQuickSlotsModal, setShowQuickSlotsModal] = useState(false);
+  const [f3AwaitingDigit, setF3AwaitingDigit] = useState(false);
+  const f3AwaitingDigitRef = React.useRef(false);
+  const f3TimerRef = React.useRef<number | null>(null);
+  const qtyFocusGenRef = React.useRef(0);
   const [hotkeyProductsGroup, setHotkeyProductsGroup] = useState("");
   const [hotkeyProducts, setHotkeyProducts] = useState<CashierProduct[]>([]);
   const [hotkeyProductsLoading, setHotkeyProductsLoading] = useState(false);
@@ -178,14 +197,19 @@ export function useCashierProducts(b: any) {
     quantity: "1",
   });
   const requestCartQuantityFocus = useCallback((target) => {
-    pendingQtyFocusRef.current = target || null;
+    qtyFocusGenRef.current += 1;
+    pendingQtyFocusRef.current = target
+      ? { ...target, gen: qtyFocusGenRef.current }
+      : null;
   }, []);
-  const [alertModal, setAlertModal] = useState({
+  const [alertModal, setAlertModal] = useState<AlertModalState>({
     open: false,
     type: "error",
     title: "",
     message: "",
+    okText: "ОК",
   });
+  const [ageCheckActive, setAgeCheckActive] = useState(false);
 
   const [pieceSaleModal, setPieceSaleModal] = useState<PieceSaleModalState>(null);
   const [mobileProductsList, setMobileProductsList] = useState(false);
@@ -235,12 +259,55 @@ export function useCashierProducts(b: any) {
       type,
       title,
       message,
+      okText: "ОК",
     });
   };
 
   const closeAlert = () => {
-    setAlertModal((prev) => ({ ...prev, open: false }));
+    setAlertModal((prev) => ({
+      ...prev,
+      open: false,
+      onConfirm: undefined,
+      onClose: undefined,
+    }));
   };
+
+  const confirmAdultProduct = useCallback(
+    (product: any) => {
+      if (!isAdultProduct(product, company?.id)) {
+        return Promise.resolve(true);
+      }
+      const alreadyInCart = (cartRef.current || []).some(
+        (line) =>
+          !line.isCustom && String(line.productId) === String(product?.id),
+      );
+      if (alreadyInCart) return Promise.resolve(true);
+
+      return new Promise<boolean>((resolve) => {
+        let settled = false;
+        const finish = (ok: boolean) => {
+          if (settled) return;
+          settled = true;
+          setAgeCheckActive(false);
+          dismissAdultAgeCheck();
+          resolve(ok);
+        };
+
+        setAgeCheckActive(true);
+        publishAdultAgeCheck(product?.name);
+        setAlertModal({
+          open: true,
+          type: "warning",
+          title: "Товар 18+",
+          message: "Этот товар предназначен для совершеннолетних",
+          okText: "Подтвердить",
+          onConfirm: () => finish(true),
+          onClose: () => finish(true),
+        });
+      });
+    },
+    [company?.id],
+  );
 
   const getProductFavorite = useCallback(
     (product) => {
@@ -555,27 +622,127 @@ export function useCashierProducts(b: any) {
     }
   }, []);
 
-  useEffect(() => {
-    const handleHotkeyGroupKeydown = (event) => {
-      const group = normalizeHotkeyGroup(event.key);
-      if (!group) return;
+  const clearF3Awaiting = useCallback(() => {
+    if (f3TimerRef.current) {
+      window.clearTimeout(f3TimerRef.current);
+      f3TimerRef.current = null;
+    }
+    f3AwaitingDigitRef.current = false;
+    setF3AwaitingDigit(false);
+  }, []);
 
-      if (
-        showPaymentPage ||
-        showShiftPage ||
-        showOpenShiftPage ||
-        showCloseShiftPage ||
-        showMenuModal ||
-        showCustomerModal ||
-        showDebtModal ||
-        showDeletionsLogModal ||
-        showReceiptsModal ||
-        showCustomServiceModal ||
-        showDiscountModal ||
-        deleteCodePrompt
-      ) {
+  const blurCartLineInputs = useCallback(() => {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLInputElement)) return;
+    const cls = String(active.className || "");
+    if (
+      cls.includes("cashier-page__cart-item-quantity-input") ||
+      cls.includes("cashier-page__cart-item-price-input")
+    ) {
+      active.blur();
+    }
+  }, []);
+
+  const armF3Awaiting = useCallback(() => {
+    blurCartLineInputs();
+    requestCartQuantityFocus(null);
+    f3AwaitingDigitRef.current = true;
+    setF3AwaitingDigit(true);
+    if (f3TimerRef.current) window.clearTimeout(f3TimerRef.current);
+    f3TimerRef.current = window.setTimeout(() => {
+      f3AwaitingDigitRef.current = false;
+      setF3AwaitingDigit(false);
+      f3TimerRef.current = null;
+    }, F3_AWAIT_MS);
+  }, [blurCartLineInputs, requestCartQuantityFocus]);
+
+  const addQuickSlotProduct = useCallback(
+    async (digit: string) => {
+      const slots = loadQuickSlots(company?.id);
+      const productId = slots[digit as keyof typeof slots];
+      if (!productId) {
+        showAlert("warning", "Слот не назначен", `Слот F3 + ${digit} пуст`);
         return;
       }
+      const local = (products || []).find(
+        (item: any) => String(item?.id) === String(productId),
+      );
+      const addProduct = async (product: any) => {
+        requestCartQuantityFocus(null);
+        await addToCart(product, { focusQuantity: false });
+      };
+      if (local) {
+        await addProduct(local);
+        return;
+      }
+      try {
+        let product: any = null;
+        try {
+          const { data } = await api.get(`/main/products/${productId}/`);
+          product = data?.product || data;
+        } catch {
+          const data = await fetchProductsApi({ search: productId, page_size: 50 });
+          const list = Array.isArray(data) ? data : data?.results || [];
+          product = list.find((item: any) => String(item?.id) === String(productId));
+        }
+        if (!product?.id) throw new Error("not found");
+        await addProduct(product);
+      } catch {
+        showAlert(
+          "error",
+          "Ошибка",
+          `Не удалось загрузить товар для слота F3 + ${digit}`,
+        );
+      }
+    },
+    [addToCart, company?.id, products, requestCartQuantityFocus, showAlert],
+  );
+
+  // Гейт модуля 4 — вариант A: F3 ждёт цифру 0–9; F1–F12 (кроме одиночного F3) открывают группу.
+  useEffect(() => {
+    const blocked =
+      showPaymentPage ||
+      showShiftPage ||
+      showOpenShiftPage ||
+      showCloseShiftPage ||
+      showMenuModal ||
+      showCustomerModal ||
+      showDebtModal ||
+      showDeletionsLogModal ||
+      showReceiptsModal ||
+      showCustomServiceModal ||
+      showDiscountModal ||
+      showQuickSlotsModal ||
+      pieceSaleModal ||
+      deleteCodePrompt;
+
+    const handleHotkeyGroupKeydown = (event) => {
+      if (blocked) return;
+
+      if (event.key === "F3") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (showHotkeyProductsModal) {
+          void openHotkeyProductsModal("F3");
+          return;
+        }
+        armF3Awaiting();
+        return;
+      }
+
+      if (f3AwaitingDigitRef.current) {
+        const digit = digitFromKeyboardEvent(event);
+        if (digit) {
+          event.preventDefault();
+          event.stopPropagation();
+          clearF3Awaiting();
+          void addQuickSlotProduct(digit);
+          return;
+        }
+      }
+
+      const group = normalizeHotkeyGroup(event.key);
+      if (!group || group === "F3") return;
 
       event.preventDefault();
       event.stopPropagation();
@@ -586,6 +753,9 @@ export function useCashierProducts(b: any) {
     return () =>
       window.removeEventListener("keydown", handleHotkeyGroupKeydown, true);
   }, [
+    addQuickSlotProduct,
+    armF3Awaiting,
+    clearF3Awaiting,
     openHotkeyProductsModal,
     showCloseShiftPage,
     showCustomServiceModal,
@@ -598,6 +768,9 @@ export function useCashierProducts(b: any) {
     showOpenShiftPage,
     showPaymentPage,
     showShiftPage,
+    showHotkeyProductsModal,
+    showQuickSlotsModal,
+    pieceSaleModal,
     deleteCodePrompt,
   ]);
 
@@ -639,7 +812,7 @@ export function useCashierProducts(b: any) {
     lastSearchInputTime, searchInputRef, lastScanTimeRef, isScanningRef,
     lastScannedBarcodeRef, searchClearedAfterScanRef, productsGridRef, scanKeysRef,
     qtyInputFocusRef, suppressQtyBlurUpdateRef, commitFocusedQuantityInputRef,
-    cartQtyInputRefs, pendingQtyFocusRef, pendingQtyLineInputRef,
+    cartQtyInputRefs, pendingQtyFocusRef, qtyFocusGenRef, pendingQtyLineInputRef,
     priceInputFocusRef, pendingPricePatchRef, pendingDiscountPatchRef,
     debouncedQtyApiByLine, cancelDebouncedQtyApiByLine,
     debouncedDiscountApiByLine, cancelDiscountApiByLine, pendingDiscountLineRef,
@@ -650,9 +823,12 @@ export function useCashierProducts(b: any) {
     showDebtModal, setShowDebtModal, showReceiptsModal, setShowReceiptsModal,
     showDeletionsLogModal, setShowDeletionsLogModal,
     selectedCustomer, setSelectedCustomer,
+    consultantBySaleId, setConsultantBySaleId,
     showCustomServiceModal, setShowCustomServiceModal,
     showDiscountModal, setShowDiscountModal,
     showHotkeyProductsModal, setShowHotkeyProductsModal,
+    showQuickSlotsModal, setShowQuickSlotsModal,
+    f3AwaitingDigit, companyId: company?.id,
     hotkeyProductsGroup, setHotkeyProductsGroup,
     hotkeyProducts, setHotkeyProducts, hotkeyProductsLoading, setHotkeyProductsLoading,
     hotkeyProductsError, setHotkeyProductsError,
@@ -664,7 +840,8 @@ export function useCashierProducts(b: any) {
     hotkeyProductsRequestIdRef, isDesktopLayout, setIsDesktopLayout,
     desktopProductsWidth, setDesktopProductsWidth, contentRef, isResizingRef,
     cartWidthPercent, isCompactCart,
-    showAlert, closeAlert, getProductFavorite, toggleFavorite, handleDesktopResizeStart,
+    showAlert, closeAlert, confirmAdultProduct, ageCheckActive,
+    getProductFavorite, toggleFavorite, handleDesktopResizeStart,
     resolveProductWithPackages, cartLineProductCacheRef, resolveCartLineProduct,
     openPieceSaleChoice, closePieceSaleModal, handleProductCardClick, refreshSale,
     debouncedDiscount, handleDiscountChange, handleAddCustomService, openHotkeyProductsModal,

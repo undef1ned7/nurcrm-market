@@ -116,6 +116,10 @@
   }
 }
 
+.warehouse-sale-unit-toggle {
+  flex-wrap: wrap;
+}
+
 @media (max-width: 560px) {
   .warehouse-search__actions {
     flex-wrap: wrap;
@@ -127,6 +131,10 @@
 
   .warehouse-view-toggle__btn {
     flex: 1;
+  }
+
+  .warehouse-sale-unit-toggle {
+    flex: 1 1 100%;
   }
 
   .warehouse-search__filter-btn {

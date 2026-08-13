@@ -13,11 +13,12 @@ export interface ClientKpiItem {
 
 export interface ClientKpiRowProps {
   kpis: ClientKpiItem[];
+  loading?: boolean;
 }
 
-export function ClientKpiRow({ kpis }: ClientKpiRowProps) {
+export function ClientKpiRow({ kpis, loading = false }: ClientKpiRowProps) {
   return (
-    <div className="cdx__kpis">
+    <div className={`cdx__kpis${loading ? " cdx__kpis--loading" : ""}`}>
       {kpis.map((kpi) => (
         <button
           key={kpi.key}

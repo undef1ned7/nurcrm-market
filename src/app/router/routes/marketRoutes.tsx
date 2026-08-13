@@ -16,7 +16,21 @@ const MarketSupplierReceiptsListPage = lazy(() =>
     default: m.SupplierReceiptsListPage,
   })),
 );
+const MarketProcurementRecommendationsPage = lazy(() =>
+  import("@pages/procurement").then((m) => ({
+    default: m.ProcurementRecommendationsPage,
+  })),
+);
+const MarketSupplierReturnPage = lazy(() =>
+  import("@pages/procurement").then((m) => ({
+    default: m.SupplierReturnPage,
+  })),
+);
 const MarketCashierPage = lazy(() => import("@pages/cashier"));
+const MarketCustomerDisplayPage = lazy(() => import("@pages/customer-display"));
+const MarketMassScanPage = lazy(() =>
+  import("@pages/warehouse").then((m) => ({ default: m.MassScanPage })),
+);
 const MarketCategories = lazy(() => import("@pages/categories"));
 const MarketClients = lazy(() => import("@pages/clients"));
 const MarketClientDetails = lazy(() =>
@@ -32,6 +46,10 @@ const MarketAnalytics = lazy(() => import("@pages/analytics"));
 export const marketRoutes = (_profile?: any) => [
   createProtectedRoute("market/bar", MarketBar),
   createProtectedRoute("market/procurement", MarketSupplierReceiptsListPage),
+  createProtectedRoute(
+    "market/procurement/recommendations",
+    MarketProcurementRecommendationsPage,
+  ),
   <Route
     key="market/suppliers"
     path="market/suppliers"
@@ -41,9 +59,12 @@ export const marketRoutes = (_profile?: any) => [
       </ProtectedRoute>
     }
   />,
+  createProtectedRoute("market/customer-display", MarketCustomerDisplayPage),
+  createProtectedRoute("sklad/mass-scan", MarketMassScanPage),
   createProtectedRoute("sklad", MarketWarehouse),
   createProtectedRoute("sklad/:id", MarketProductDetail),
   createProtectedRoute("market/procurement/receipt", MarketSupplierReceiptPage),
+  createProtectedRoute("market/procurement/return", MarketSupplierReturnPage),
   createProtectedRoute("market/cashier", MarketCashierPage),
   createProtectedRoute("market/categories", MarketCategories),
   createProtectedRoute("clients", MarketClients),

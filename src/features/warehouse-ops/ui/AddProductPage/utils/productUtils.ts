@@ -211,6 +211,7 @@ export const buildProductPayload = ({
     article: marketData.article || "",
     unit: marketData.unit || "шт",
     is_weight: isWeight,
+    is_adult: itemType === "product" ? Boolean(marketData.isAdult) : false,
     price: finalPrice,
     wholesale_price: finalWholesalePrice,
     discount_percent: (marketData.discount || "0").toString(),

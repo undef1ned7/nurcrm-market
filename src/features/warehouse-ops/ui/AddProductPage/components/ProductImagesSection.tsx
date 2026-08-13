@@ -1,4 +1,5 @@
 import React from "react";
+import { FormBlock } from "../formLayout";
 
 /**
  * Компонент загрузки изображений товара
@@ -11,6 +12,7 @@ const ProductImagesSection = ({
   onSetPrimary,
 }) => {
   return (
+    <FormBlock id="images">
     <div className="market-product-form__section">
       <h3 className="market-product-form__section-title">Изображение</h3>
       <div className="market-product-form__image-upload">
@@ -91,6 +93,7 @@ const ProductImagesSection = ({
         )}
       </div>
     </div>
+    </FormBlock>
   );
 };
 

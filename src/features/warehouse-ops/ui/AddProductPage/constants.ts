@@ -70,6 +70,7 @@ export const DEFAULT_MARKET_DATA = {
   article: "",
   unit: DEFAULT_VALUES.UNIT,
   isWeightProduct: false,
+  isAdult: false,
   isFractionalService: false,
   plu: "",
   height: DEFAULT_VALUES.HEIGHT,

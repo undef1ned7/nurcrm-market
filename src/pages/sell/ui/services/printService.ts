@@ -25,4 +25,12 @@ export {
   printRussianRawUsb,
   enrichMarketReceiptPayload,
   handleCheckoutResponseForPrinting,
+  kickCashDrawer,
 } from "./print/print";
+
+export {
+  DEFAULT_DRAWER_CMD,
+  getDrawerSettings,
+  parseEscPosCommand,
+  saveDrawerSettings,
+} from "./print/drawer";
