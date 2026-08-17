@@ -54,9 +54,9 @@ function capEntries<T>(entries: [string, T][]): [string, T][] {
 export function normalizeBarcodeById(raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const entries = Object.entries(raw as Record<string, unknown>)
-    .map(([id, value]) => [String(id), String(value ?? "").trim()] as const)
+    .map(([id, value]) => [String(id), String(value ?? "").trim()] as [string, string])
     .filter(([id, value]) => id && value);
-  return Object.fromEntries(capEntries([...entries]));
+  return Object.fromEntries(capEntries(entries));
 }
 
 export function normalizeCopiesById(raw: unknown): Record<string, number> {
