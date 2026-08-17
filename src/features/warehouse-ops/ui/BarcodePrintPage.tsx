@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BarcodePrintTab from "./components/BarcodePrintTab";
+import {
+  loadBarcodePrintPage,
+  saveBarcodePrintPage,
+} from "./components/BarcodePrintTab/barcodePrintTab.storage";
 import { fetchProductsAsync } from "@entities/product";
 import { clearProducts } from "@entities/product";
 import { useDebouncedValue } from "@shared/hooks/useDebounce";
@@ -18,14 +22,24 @@ const BarcodePrintPage = () => {
   const { list: products, loading, count } = useAppSelector(
     (state: any) => state.product,
   );
-  const [searchTerm, setSearchTerm] = useState("");
+  const [savedPage] = useState(loadBarcodePrintPage);
+  const [searchTerm, setSearchTerm] = useState(savedPage.searchTerm);
   const debouncedSearch = useDebouncedValue(searchTerm, 300, undefined);
   const normalizedSearch = debouncedSearch.trim();
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(savedPage.page);
+  const skipSearchPageResetRef = useRef(true);
 
   useEffect(() => {
+    if (skipSearchPageResetRef.current) {
+      skipSearchPageResetRef.current = false;
+      return;
+    }
     setPage(1);
   }, [normalizedSearch]);
+
+  useEffect(() => {
+    saveBarcodePrintPage({ searchTerm, page });
+  }, [searchTerm, page]);
 
   // Загрузка товаров с пагинацией
   useEffect(() => {
@@ -50,6 +64,11 @@ const BarcodePrintPage = () => {
   };
 
   const totalPages = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
+
+  useEffect(() => {
+    if (!count) return;
+    if (page > totalPages) setPage(totalPages);
+  }, [count, page, totalPages]);
 
   return (
     <PageShell className="barcode-print-page">

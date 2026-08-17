@@ -24,6 +24,7 @@
 | [analytics.md](./analytics.md) | Аналитика: datetime + таймзона | правка фильтра |
 | [bulk_update_products.md](./bulk_update_products.md) | Массовая смена brand/category/supplier | новый PATCH |
 | [receipt-price-edit-discount.md](./receipt-price-edit-discount.md) | Ручная цена ≠ discount в чеке | правка JSON чека |
+| [supplier-receipt-selling-price-backend.md](./supplier-receipt-selling-price-backend.md) | Приход: пересчёт `price` по `markup_percent` | правка POST receipt |
 | [scales-weight-products.md](./scales-weight-products.md) | Фильтр весовых `?is_weight=true` | сделано |
 
 Если фронт уже ходит в path из документа — не менять URL без сообщения фронту: парсер обычно в одном файле `*Api.ts`.

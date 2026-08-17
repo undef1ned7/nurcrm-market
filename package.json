@@ -9,6 +9,7 @@
     "build:stage": "VITE_API_URL=https://stageapp.nurcrm.kg/api VITE_WS_API_URL=https://stageapp.nurcrm.kg vite build",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
+    "i18n:check": "node tools/check-i18n-keys.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",

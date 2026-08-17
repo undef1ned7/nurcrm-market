@@ -97,6 +97,28 @@
     color: var(--nur-muted);
   }
 
+  &__languageSelect {
+    flex-shrink: 0;
+    min-width: 180px;
+    padding: 10px 36px 10px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nur-text);
+    background: var(--nur-surface-2);
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius);
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: var(--nur-primary, #f7d74f);
+    }
+  }
+
   &__switch {
     position: relative;
     display: inline-flex;

@@ -11,6 +11,10 @@ import {
   getProductBarcodes,
 } from "@shared/lib/tools/productBarcode";
 import {
+  loadBarcodePrintSettings,
+  saveBarcodePrintSettings,
+} from "../barcodePrintTab.storage";
+import {
   AVAILABLE_FONTS,
   DEFAULT_PRINT_SETTINGS,
   buildPreviewLayout,
@@ -31,28 +35,40 @@ export function useBarcodePrintTab({
   products,
   loading,
 }) {
+  const [savedPrefs] = useState(loadBarcodePrintSettings);
   const [printingIds, setPrintingIds] = useState(() => new Set());
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   // Количество копий для каждой позиции отдельно: { [productId]: number }
-  const [copiesById, setCopiesById] = useState<any>({});
+  const [copiesById, setCopiesById] = useState<any>(() => savedPrefs.copiesById);
   const [isBatchPrinting, setIsBatchPrinting] = useState(false);
   const [isPrinterConnected, setIsPrinterConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [previewProduct, setPreviewProduct] = useState<any>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [showA4Modal, setShowA4Modal] = useState(false);
-  const [labelSize, setLabelSize] = useState("30x20"); // размер этикетки по умолчанию
-  const [customWidthMm, setCustomWidthMm] = useState(40);
-  const [customHeightMm, setCustomHeightMm] = useState(30);
-  const [didTouchTextScale, setDidTouchTextScale] = useState(false);
-  const [didTouchBarcodeSize, setDidTouchBarcodeSize] = useState(false);
+  const [labelSize, setLabelSize] = useState(savedPrefs.labelSize);
+  const [customWidthMm, setCustomWidthMm] = useState(savedPrefs.customWidthMm);
+  const [customHeightMm, setCustomHeightMm] = useState(savedPrefs.customHeightMm);
+  const [didTouchTextScale, setDidTouchTextScale] = useState(
+    savedPrefs.didTouchTextScale,
+  );
+  const [didTouchBarcodeSize, setDidTouchBarcodeSize] = useState(
+    savedPrefs.didTouchBarcodeSize,
+  );
   // Что отображать на этикетке (как в печати на A4)
-  const [showName, setShowName] = useState(true);
-  const [showPrice, setShowPrice] = useState(true);
+  const [showName, setShowName] = useState(savedPrefs.showName);
+  const [showPrice, setShowPrice] = useState(savedPrefs.showPrice);
   const barcodeCanvasRef = useRef<any>(null);
 
   const defaultSettings = useMemo(() => ({ ...DEFAULT_PRINT_SETTINGS }), []);
-  const [printSettings, setPrintSettings] = useState(defaultSettings);
+  const [printSettings, setPrintSettings] = useState(() => ({
+    ...defaultSettings,
+    fontId: savedPrefs.fontId,
+    textScale: savedPrefs.textScale,
+    copies: savedPrefs.copies,
+    barcodeHeight: savedPrefs.barcodeHeight,
+    barcodeBarWidth: savedPrefs.barcodeBarWidth,
+  }));
   const {
     fontId,
     textScale,
@@ -86,7 +102,8 @@ export function useBarcodePrintTab({
 
   // Какой штрих-код печатать для позиции: { [productId]: barcode }.
   // По умолчанию — основной; товар может иметь ещё и дополнительные.
-  const [barcodeById, setBarcodeById] = useState<any>({});
+  // Последний выбор запоминается, чтобы не сбрасывался при уходе со страницы.
+  const [barcodeById, setBarcodeById] = useState<any>(() => savedPrefs.barcodeById);
 
   const getProductBarcodeOptions = useCallback(
     (product) => getProductBarcodes(product),
@@ -108,6 +125,40 @@ export function useBarcodePrintTab({
   const setSelectedBarcode = useCallback((id, barcode) => {
     setBarcodeById((prev) => ({ ...prev, [id]: String(barcode || "") }));
   }, []);
+
+  useEffect(() => {
+    saveBarcodePrintSettings({
+      labelSize,
+      customWidthMm,
+      customHeightMm,
+      fontId,
+      textScale: textScaleValue,
+      copies: copiesValue,
+      barcodeHeight,
+      barcodeBarWidth,
+      didTouchTextScale,
+      didTouchBarcodeSize,
+      showName,
+      showPrice,
+      barcodeById,
+      copiesById,
+    });
+  }, [
+    labelSize,
+    customWidthMm,
+    customHeightMm,
+    fontId,
+    textScaleValue,
+    copiesValue,
+    barcodeHeight,
+    barcodeBarWidth,
+    didTouchTextScale,
+    didTouchBarcodeSize,
+    showName,
+    showPrice,
+    barcodeById,
+    copiesById,
+  ]);
 
   const availableFonts = useMemo(() => AVAILABLE_FONTS, []);
 
@@ -354,6 +405,8 @@ export function useBarcodePrintTab({
     });
 
     try {
+      setSelectedBarcode(previewProduct.id, previewBarcode);
+
       await printXp365bBarcodeLabel({
         barcode: previewBarcode,
         title: showName ? previewProduct.name || "Товар" : "",
@@ -422,8 +475,10 @@ export function useBarcodePrintTab({
     try {
       for (const product of selectedWithBarcode) {
         const productCopies = getProductCopies(product.id);
+        const productBarcode = getSelectedBarcode(product);
+        setSelectedBarcode(product.id, productBarcode);
         await printXp365bBarcodeLabel({
-          barcode: getSelectedBarcode(product),
+          barcode: productBarcode,
           title: showName ? product.name || "Товар" : "",
           price: showPrice ? product.price : "",
           copies: productCopies,
@@ -491,6 +546,7 @@ export function useBarcodePrintTab({
     showName,
     showPrice,
     getSelectedBarcode,
+    setSelectedBarcode,
   ]);
 
   // Генерация визуализации штрих-кода для предпросмотра

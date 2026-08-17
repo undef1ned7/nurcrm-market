@@ -70,11 +70,11 @@
 
 Три кнопки-карточки:
 
-| Ключ | Label (магазин) | Сумма | Счётчик |
-|---|---|---|---|
-| `debt` | Общий долг | `debt.amount` | `debt.count` + «сделка/сделок» |
-| `prepayment` | Аванс | `prepayment.amount` | `prepayment.count` |
-| `sale` | Продажи | `sale.amount` | `sale.count` |
+| Ключ | Label (магазин) | i18n | Сумма | Счётчик |
+|---|---|---|---|---|
+| `debt` | Общий долг | `clients.kpi.debt` | `debt.amount` | `debt.count` + `clients.kpi.dealsCount` |
+| `prepayment` | Аванс | `clients.kpi.prepayment` | `prepayment.amount` | `prepayment.count` |
+| `sale` | Продажи | `clients.kpi.sale` | `sale.amount` | `sale.count` |
 
 Клик по карточке открывает drawer/sheet со списком сделок этой категории (фильтр локально по уже загруженным `deals`).
 

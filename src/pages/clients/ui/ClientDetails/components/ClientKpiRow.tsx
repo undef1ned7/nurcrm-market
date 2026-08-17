@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { Layers } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { formatMoneyAmount } from "@shared/lib/i18n/format";
 
 export interface ClientKpiItem {
   key: string;
@@ -17,6 +19,8 @@ export interface ClientKpiRowProps {
 }
 
 export function ClientKpiRow({ kpis, loading = false }: ClientKpiRowProps) {
+  const { t, i18n } = useTranslation();
+
   return (
     <div className={`cdx__kpis${loading ? " cdx__kpis--loading" : ""}`}>
       {kpis.map((kpi) => (
@@ -31,15 +35,15 @@ export function ClientKpiRow({ kpis, loading = false }: ClientKpiRowProps) {
             <span className="cdx__kpi-label">{kpi.label}</span>
           </div>
           <div className="cdx__kpi-value">
-            {Number(kpi.value).toFixed(2)}
-            <span className="cdx__kpi-cur">сом</span>
+            {formatMoneyAmount(Number(kpi.value), i18n.language)}
+            <span className="cdx__kpi-cur">{t("common.currencySom")}</span>
           </div>
           <div className="cdx__kpi-foot">
             <span className="cdx__kpi-pill">
               <Layers />
               {kpi.count}
             </span>
-            {kpi.count === 1 ? "сделка" : "сделок"}
+            {t("clients.kpi.dealsCount", { count: kpi.count })}
           </div>
         </button>
       ))}

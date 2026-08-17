@@ -1,5 +1,9 @@
+import { useTranslation } from "react-i18next";
+import { LanguageSelect } from "@shared/ui/LanguageSelect/LanguageSelect";
+
 /** Settings tab: Интерфейс */
 export function InterfaceTab(props) {
+  const { t } = useTranslation();
   const {
     Moon,
     Sun,
@@ -20,6 +24,21 @@ export function InterfaceTab(props) {
             <h2 className="settings__section-title">
               <span className="settings__emoji">🧩</span> Настройки интерфейса
             </h2>
+
+            <div className="settings__prefRow">
+              <div className="settings__prefText">
+                <label className="settings__prefLabel" htmlFor="settings-language">
+                  {t("settings.interface.language")}
+                </label>
+                <p className="settings__prefHint">
+                  {t("settings.interface.languageHint")}
+                </p>
+              </div>
+              <LanguageSelect
+                id="settings-language"
+                className="settings__languageSelect"
+              />
+            </div>
 
             <div className="settings__prefRow">
               <div className="settings__prefText">

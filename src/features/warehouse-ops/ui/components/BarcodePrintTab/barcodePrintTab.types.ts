@@ -1,6 +1,28 @@
 
 export type LabelSizeKey = "30x20" | "58x40" | "58x30" | "custom";
 
+export type BarcodePrintSettingsState = {
+  labelSize: LabelSizeKey;
+  customWidthMm: number;
+  customHeightMm: number;
+  fontId: string;
+  textScale: number;
+  copies: number;
+  barcodeHeight: number;
+  barcodeBarWidth: number;
+  didTouchTextScale: boolean;
+  didTouchBarcodeSize: boolean;
+  showName: boolean;
+  showPrice: boolean;
+  barcodeById: Record<string, string>;
+  copiesById: Record<string, number>;
+};
+
+export type BarcodePrintPageState = {
+  searchTerm: string;
+  page: number;
+};
+
 export type PrintSettings = {
   fontId: string;
   textScale: number | string;

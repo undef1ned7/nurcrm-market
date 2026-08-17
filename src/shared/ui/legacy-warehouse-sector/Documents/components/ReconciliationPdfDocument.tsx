@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { registerPdfFonts } from "@shared/lib/pdf/registerFonts";
+import { shortenUuidsInText } from "@shared/lib/pdf/shortenUuid";
 
 const s = StyleSheet.create({
   page: {
@@ -35,6 +36,7 @@ const s = StyleSheet.create({
   table: { borderWidth: 1, borderColor: "#000" },
   row: {
     flexDirection: "row",
+    alignItems: "stretch",
     borderBottomWidth: 1,
     borderBottomColor: "#000",
     minHeight: 14,
@@ -46,6 +48,10 @@ const s = StyleSheet.create({
     borderRightColor: "#000",
     padding: 3,
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  wrapText: {
+    width: "100%",
   },
   cellLast: { borderRightWidth: 0 },
   // Колонки: Date | Doc | Debit | Credit (по 2 блока)
@@ -109,10 +115,12 @@ function safe(v: any) {
 
 function n2(v: any) {
   const num = Number(v || 0);
-  return num.toLocaleString("ru-RU", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return num
+    .toLocaleString("ru-RU", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+    .replace(/[\u00A0\u202F]/g, " ");
 }
 
 function fmtDate(dt: any) {
@@ -223,37 +231,6 @@ function pickDocType(row: any) {
   return pickFirst(row, ["ref_type", "doc_type", "type", "document_type"]);
 }
 
-function isUUID(str: any) {
-  if (!str || typeof str !== "string") return false;
-  // Проверяем формат UUID (с дефисами или без)
-  const uuidRegex =
-    /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-}
-
-function removeUUID(str: any) {
-  if (!str || typeof str !== "string") return str;
-  // Удаляем UUID из строки (может быть в начале, середине или конце)
-  // Формат: 8-4-4-4-12 символов hex, разделенных дефисами или без них
-  const uuidPattern =
-    /[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}/gi;
-  let cleaned = str.replace(uuidPattern, "");
-
-  // Убираем лишние пробелы (двойные, тройные и т.д.)
-  cleaned = cleaned.replace(/\s+/g, " ");
-
-  // Убираем пробелы перед знаками препинания
-  cleaned = cleaned.replace(/\s+([.,:;])/g, "$1");
-
-  // Убираем пробелы после знаков препинания (кроме случаев, где нужен пробел)
-  cleaned = cleaned.replace(/([.,:;])\s+/g, "$1 ");
-
-  // Убираем пробелы в начале и конце
-  cleaned = cleaned.trim();
-
-  return cleaned;
-}
-
 function pickDocNumber(row: any) {
   // Ищем номер документа в различных полях
   return pickFirst(row, [
@@ -278,7 +255,7 @@ function formatDocDescription(row: any) {
   // Если есть title, используем его (это полное описание из API)
   if (title) {
     // Очищаем title от UUID
-    const cleanedTitle = removeUUID(String(title));
+    const cleanedTitle = shortenUuidsInText(String(title));
 
     // Если в title уже есть дата, не добавляем её повторно
     // Проверяем, есть ли дата в формате "от DD.MM.YYYY г." в title
@@ -293,11 +270,10 @@ function formatDocDescription(row: any) {
   }
 
   // Если нет title, формируем описание на основе типа документа
-  let cleanedDoc = doc ? removeUUID(String(doc)) : null;
+  let cleanedDoc = doc ? shortenUuidsInText(String(doc)) : null;
 
-  // Если после очистки осталась пустая строка или только UUID, используем docNumber
-  if (!cleanedDoc || cleanedDoc.trim() === "" || isUUID(doc)) {
-    cleanedDoc = docNumber || null;
+  if (!cleanedDoc || cleanedDoc.trim() === "") {
+    cleanedDoc = docNumber ? shortenUuidsInText(String(docNumber)) : null;
   }
 
   // Определяем тип документа и формируем описание
@@ -327,7 +303,7 @@ function formatDocDescription(row: any) {
     // Обрабатываем формат "Сделка: Долг ЭЛМИРБЕК (Долг)"
     if (cleanedDoc) {
       // Убираем UUID из описания сделки
-      const cleanedTransaction = removeUUID(cleanedDoc);
+      const cleanedTransaction = shortenUuidsInText(cleanedDoc);
       return cleanedTransaction + (dateStr ? ` от ${dateStr} г.` : "");
     }
     return `Сделка${dateStr ? ` от ${dateStr} г.` : ""}`;
@@ -336,7 +312,7 @@ function formatDocDescription(row: any) {
     docTypeLower === "предоплата"
   ) {
     if (cleanedDoc) {
-      const cleanedPrepayment = removeUUID(cleanedDoc);
+      const cleanedPrepayment = shortenUuidsInText(cleanedDoc);
       return cleanedPrepayment + (dateStr ? ` от ${dateStr} г.` : "");
     }
     return `Предоплата${dateStr ? ` от ${dateStr} г.` : ""}`;
@@ -345,13 +321,13 @@ function formatDocDescription(row: any) {
     docTypeLower === "оплата по рассрочке"
   ) {
     if (cleanedDoc) {
-      const cleanedPayment = removeUUID(cleanedDoc);
+      const cleanedPayment = shortenUuidsInText(cleanedDoc);
       return cleanedPayment + (dateStr ? ` от ${dateStr} г.` : "");
     }
     return `Оплата по рассрочке${dateStr ? ` от ${dateStr} г.` : ""}`;
   } else if (cleanedDoc) {
     // Для других типов документов очищаем описание от UUID
-    const finalDoc = removeUUID(cleanedDoc);
+    const finalDoc = shortenUuidsInText(cleanedDoc);
     if (finalDoc && finalDoc.trim() !== "") {
       return finalDoc + (dateStr ? ` от ${dateStr} г.` : "");
     }
@@ -829,7 +805,7 @@ export default function ReconciliationPdfDocument({ data, meta }) {
                   <Text>{date ? fmtDate(date) : ""}</Text>
                 </View>
                 <View style={[s.cell, s.cDoc]}>
-                  <Text>{description}</Text>
+                  <Text style={s.wrapText}>{description}</Text>
                 </View>
                 <View style={[s.cell, s.cMoney]}>
                   <Text style={s.right}>
@@ -845,7 +821,7 @@ export default function ReconciliationPdfDocument({ data, meta }) {
                   <Text>{date ? fmtDate(date) : ""}</Text>
                 </View>
                 <View style={[s.cell, s.cDoc]}>
-                  <Text>{description}</Text>
+                  <Text style={s.wrapText}>{description}</Text>
                 </View>
                 <View style={[s.cell, s.cMoney]}>
                   <Text style={s.right}>
