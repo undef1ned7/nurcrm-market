@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   EMPTY_CLIENT_KPIS,
   type ClientKpis,
@@ -62,6 +63,7 @@ export function useClientDetailsViewModel({
   sectorName,
   onOpenDetailsView,
 }: UseClientDetailsViewModelArgs) {
+  const { t } = useTranslation();
   const kindTranslate: Record<string, string> = { new: "Новый" };
   const clientName = client?.fio || client?.full_name || "—";
   const clientTypeLabel = typeLabel(client?.type);
@@ -201,7 +203,9 @@ export function useClientDetailsViewModel({
       key: "debt",
       modifier: "cdx__kpi--debt",
       icon: <TrendingDown />,
-      label: isBuildingSector ? "Сумма договора" : "Общий долг",
+      label: isBuildingSector
+        ? t("clients.kpi.contractAmount")
+        : t("clients.kpi.debt"),
       value: isBuildingSector ? totals.sale ?? 0 : totals.debt ?? 0,
       count: dealKindCounts.debt,
       onClick: () => onOpenDetailsView("debt"),
@@ -210,7 +214,9 @@ export function useClientDetailsViewModel({
       key: "prepayment",
       modifier: "cdx__kpi--prepay",
       icon: <Wallet />,
-      label: isBuildingSector ? "Предоплата" : "Аванс",
+      label: isBuildingSector
+        ? t("clients.kpi.prepaid")
+        : t("clients.kpi.prepayment"),
       value: totals.prepayment ?? 0,
       count: dealKindCounts.prepayment,
       onClick: () => onOpenDetailsView("prepayment"),
@@ -219,7 +225,9 @@ export function useClientDetailsViewModel({
       key: "sale",
       modifier: "cdx__kpi--sale",
       icon: <TrendingUp />,
-      label: isBuildingSector ? "Остаток долга" : "Продажи",
+      label: isBuildingSector
+        ? t("clients.kpi.debtRemaining")
+        : t("clients.kpi.sale"),
       value: isBuildingSector ? totals.debt ?? 0 : totals.sale ?? 0,
       count: dealKindCounts.sale,
       onClick: () => onOpenDetailsView("sale"),

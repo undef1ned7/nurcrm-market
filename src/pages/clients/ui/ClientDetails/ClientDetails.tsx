@@ -171,6 +171,7 @@ export default function MarketClientDetails() {
         <ReconciliationModal
           open={data.showReconciliation}
           clientId={data.client?.id}
+          clientName={vm.clientName}
           onClose={() => data.setShowReconciliation(false)}
         />
 

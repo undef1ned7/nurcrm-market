@@ -1,0 +1,15 @@
+---
+description: New UI copy must use i18n keys (ru source, ky overlay)
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# i18n
+
+- User-facing strings go through `t("namespace.path")` from `react-i18next`.
+- Add the key to `public/locales/ru/translation.json` and the same key to `ky` (translation or RU copy). Never leave ky empty.
+- Keys name meaning (`clients.kpi.debt`), not the Russian sentence.
+- Plurals: `key_one` / `key_few` / `key_many` / `key_other` with `t(key, { count })`.
+- Do not translate API payloads (names, product titles). Map enums to keys.
+- Format money/dates with `@shared/lib/i18n/format`, not hardcoded `ru-RU`.
+- Full contract: `docs/i18n.md`.

@@ -14,7 +14,7 @@
 - Бэкенд — общий NurCRM API (`https://app.nurcrm.kg/api`), не в этом репозитории.
 - Домен: POS-касса, склад, закупки, документы, клиенты/поставщики, смены, касса (cashbox), долги, аналитика, штрихкоды, весы, сотрудники, филиалы, публичный каталог.
 
-Язык UI: русский (+ i18n). Часовой пояс бизнеса: **Бишкек, UTC+6**.
+Язык UI: русский + кыргызский (`docs/i18n.md`). Часовой пояс бизнеса: **Бишкек, UTC+6**.
 
 ---
 
@@ -56,6 +56,7 @@ npm run dev                  # http://localhost:3000
 | `npm run build` | Production build → `build/` |
 | `npm run lint` | ESLint, `--max-warnings 0` |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm run i18n:check` | Совпадение ключей ru/ky в `public/locales` |
 | `npm test` | Vitest once |
 | `npm run test:watch` | Vitest watch |
 | `npm run preview` | Превью production build |
@@ -358,14 +359,19 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 1. `npm ci`
 2. `npm run lint`
 3. `npm run typecheck`
-4. `npm test`
-5. `npm run build` (`VITE_API_URL=https://app.nurcrm.kg/api`)
+4. `npm run i18n:check`
+5. `npm test`
+6. `npm run build` (`VITE_API_URL=https://app.nurcrm.kg/api`)
 
 Локально перед PR желательно прогнать тот же набор.
 
 ---
 
 ## 13. Документация домена
+
+### i18n
+
+Контракт ключей, глоссарий, чеклист PR: [`docs/i18n.md`](./i18n.md). Каталоги `public/locales/{ru,ky}/`. Переключатель: Настройки → Интерфейс.
 
 ### Фронт / агенты — `docs/market/`
 
@@ -485,6 +491,7 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 - [ ] `npm run build` для крупных UI/router/chunk изменений
 - [ ] Ручная проверка затронутого сценария (касса/склад/печать)
 - [ ] Нет нарушений FSD import boundaries
+- [ ] Новые UI-строки — через `t()`, ключи в ru и ky (`docs/i18n.md`)
 - [ ] Нет секретов в diff
 
 ---

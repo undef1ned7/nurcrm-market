@@ -14,7 +14,9 @@ import {
   StatusChip,
 } from "@shared/ui/page-shell";
 
-const HostelClients = lazy(() => import("@shared/ui/legacy-hostel/Clients/Clients"));
+const HostelClients = lazy(
+  () => import("@shared/ui/legacy-hostel/Clients/Clients"),
+);
 
 const STORAGE_KEY = "clients_view_mode";
 
@@ -229,7 +231,6 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
   useEffect(() => {
     if (activeTab === "clientsBooking") return;
     load();
-     
   }, [activeTab]);
 
   const ctxTypeLabel = (t) => {
@@ -740,7 +741,10 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
             aria-labelledby="client-create-main-title"
           >
             <div className="clientCreateModal__sectionHead">
-              <h4 id="client-create-main-title" className="clientCreateModal__sectionTitle">
+              <h4
+                id="client-create-main-title"
+                className="clientCreateModal__sectionTitle"
+              >
                 Основная информация
               </h4>
               <span className="clientCreateModal__requiredHint">
@@ -750,7 +754,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
 
             <div className="clientCreateModal__grid clientCreateModal__grid--main">
               <label className="clientCreateModal__field clientCreateModal__field--required">
-                <span className="clientCreateModal__label">ФИО или название</span>
+                <span className="clientCreateModal__label">
+                  ФИО или название
+                </span>
                 <input
                   type="text"
                   value={addFullName}
@@ -785,7 +791,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
               </label>
 
               <label className="clientCreateModal__field">
-                <span className="clientCreateModal__label">Дата регистрации</span>
+                <span className="clientCreateModal__label">
+                  Дата регистрации
+                </span>
                 <input
                   type="date"
                   value={addDate}
@@ -815,13 +823,18 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
               className="clientCreateModal__section clientCreateModal__section--extra"
               aria-labelledby="client-create-extra-title"
             >
-              <h4 id="client-create-extra-title" className="clientCreateModal__sectionTitle">
+              <h4
+                id="client-create-extra-title"
+                className="clientCreateModal__sectionTitle"
+              >
                 Дополнительные данные
               </h4>
 
               <div className="clientCreateModal__grid">
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">ОсОО / компания</span>
+                  <span className="clientCreateModal__label">
+                    ОсОО / компания
+                  </span>
                   <input
                     type="text"
                     value={addLlc}
@@ -861,7 +874,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">Расчётный счёт</span>
+                  <span className="clientCreateModal__label">
+                    Расчётный счёт
+                  </span>
                   <input
                     type="text"
                     value={addScore}

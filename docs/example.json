@@ -1,17 +1,10 @@
 {
-  "title": "Долг undef1ned",
-  "kind": "debt",
-  "amount": "263.00",
-  "note": "",
-  "client": "6aeaef6e-146f-4484-bb79-77d02385b754",
-  "debt_months": 3,
-  "first_due_date": "2026-09-12",
-  "interval_months": 1,
-  "installments": [
-    { "number": 1, "amount": "87.66", "due_date": "2026-09-12" },
-    { "number": 2, "amount": "87.66", "due_date": "2026-10-12" },
-    { "number": 3, "amount": "87.68", "due_date": "2026-11-12" }
+  "items": [
+    {
+      "product": "992e5a01-c875-48d7-9a19-1fd6c8face24",
+      "qty": 100,
+      "purchase_price": 120
+    }
   ],
-  "schedule_version": "v2",
-  "auto_schedule": true
+  "payment_type": "cash"
 }

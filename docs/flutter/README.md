@@ -7,7 +7,8 @@
 
 Авторизация: `Authorization: Bearer <accessToken>`.  
 Таймзона бизнеса: **Asia/Bishkek, UTC+6**.  
-Валюта в UI: COM (сом).
+Валюта в UI: COM (сом).  
+i18n (те же ключи, что веб): [`../i18n.md`](../i18n.md).
 
 Бэкенд-контракты: [`../backend/README.md`](../backend/README.md).
 

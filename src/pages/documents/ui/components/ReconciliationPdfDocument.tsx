@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { registerPdfFonts } from "@shared/lib/pdf/registerFonts";
+import { shortenUuidsInText } from "@shared/lib/pdf/shortenUuid";
 
 const s = StyleSheet.create({
   page: {
@@ -31,6 +32,7 @@ const s = StyleSheet.create({
   table: { borderWidth: 1, borderColor: "#000" },
   row: {
     flexDirection: "row",
+    alignItems: "stretch",
     borderBottomWidth: 1,
     borderBottomColor: "#000",
     minHeight: 14,
@@ -42,6 +44,10 @@ const s = StyleSheet.create({
     borderRightColor: "#000",
     padding: 3,
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  wrapText: {
+    width: "100%",
   },
   cellLast: { borderRightWidth: 0 },
   // 2 блока по 4 колонки:
@@ -76,10 +82,12 @@ function safe(v: any) {
 
 function n2(v: any) {
   const num = Number(v || 0);
-  return num.toLocaleString("ru-RU", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return num
+    .toLocaleString("ru-RU", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+    .replace(/[\u00A0\u202F]/g, " ");
 }
 
 function fmtDate(dt: any) {
@@ -173,19 +181,27 @@ export default function ReconciliationPdfDocument({ data, meta }: any) {
 
   // Обороты по данным проводок
   const totalCompanyDebit = lines.reduce(
-    (sum, r) => sum + getNumber(r?.company_debit ?? r?.debit_company ?? r?.company_dt ?? 0),
+    (sum, r) =>
+      sum +
+      getNumber(r?.a_debit ?? r?.company_debit ?? r?.debit_company ?? r?.company_dt ?? 0),
     0
   );
   const totalCompanyCredit = lines.reduce(
-    (sum, r) => sum + getNumber(r?.company_credit ?? r?.credit_company ?? r?.company_kt ?? 0),
+    (sum, r) =>
+      sum +
+      getNumber(r?.a_credit ?? r?.company_credit ?? r?.credit_company ?? r?.company_kt ?? 0),
     0
   );
   const totalClientDebit = lines.reduce(
-    (sum, r) => sum + getNumber(r?.client_debit ?? r?.debit_client ?? r?.client_dt ?? 0),
+    (sum, r) =>
+      sum +
+      getNumber(r?.b_debit ?? r?.client_debit ?? r?.debit_client ?? r?.client_dt ?? 0),
     0
   );
   const totalClientCredit = lines.reduce(
-    (sum, r) => sum + getNumber(r?.client_credit ?? r?.credit_client ?? r?.client_kt ?? 0),
+    (sum, r) =>
+      sum +
+      getNumber(r?.b_credit ?? r?.client_credit ?? r?.credit_client ?? r?.client_kt ?? 0),
     0
   );
 
@@ -288,10 +304,18 @@ export default function ReconciliationPdfDocument({ data, meta }: any) {
           {lines.map((r: any, idx: any) => {
             const dt = pickDate(r);
             const doc = pickDoc(r);
-            const companyDebit = getNumber(r?.company_debit ?? r?.debit_company ?? r?.company_dt ?? 0);
-            const companyCredit = getNumber(r?.company_credit ?? r?.credit_company ?? r?.company_kt ?? 0);
-            const clientDebit = getNumber(r?.client_debit ?? r?.debit_client ?? r?.client_dt ?? 0);
-            const clientCredit = getNumber(r?.client_credit ?? r?.credit_client ?? r?.client_kt ?? 0);
+            const companyDebit = getNumber(
+              r?.a_debit ?? r?.company_debit ?? r?.debit_company ?? r?.company_dt ?? 0,
+            );
+            const companyCredit = getNumber(
+              r?.a_credit ?? r?.company_credit ?? r?.credit_company ?? r?.company_kt ?? 0,
+            );
+            const clientDebit = getNumber(
+              r?.b_debit ?? r?.client_debit ?? r?.debit_client ?? r?.client_dt ?? 0,
+            );
+            const clientCredit = getNumber(
+              r?.b_credit ?? r?.client_credit ?? r?.credit_client ?? r?.client_kt ?? 0,
+            );
 
             return (
               <View key={idx} style={s.row}>
@@ -299,7 +323,9 @@ export default function ReconciliationPdfDocument({ data, meta }: any) {
                   <Text>{dt ? fmtDate(dt) : ""}</Text>
                 </View>
                 <View style={[s.cell, s.cDoc]}>
-                  <Text>{safe(doc)}</Text>
+                  <Text style={s.wrapText}>
+                    {shortenUuidsInText(safe(doc))}
+                  </Text>
                 </View>
                 <View style={[s.cell, s.cMoney]}>
                   <Text style={s.right}>{companyDebit ? n2(companyDebit) : ""}</Text>
@@ -312,7 +338,9 @@ export default function ReconciliationPdfDocument({ data, meta }: any) {
                   <Text>{dt ? fmtDate(dt) : ""}</Text>
                 </View>
                 <View style={[s.cell, s.cDoc]}>
-                  <Text>{safe(doc)}</Text>
+                  <Text style={s.wrapText}>
+                    {shortenUuidsInText(safe(doc))}
+                  </Text>
                 </View>
                 <View style={[s.cell, s.cMoney]}>
                   <Text style={s.right}>{clientDebit ? n2(clientDebit) : ""}</Text>
