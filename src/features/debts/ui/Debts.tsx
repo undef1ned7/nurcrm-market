@@ -7,6 +7,8 @@ import {
   useCash,
 } from "@entities/cash";
 import { PageShell, PagePanel } from "@shared/ui/page-shell";
+import Pagination from "@pages/warehouse/ui/components/Pagination";
+import { useDebouncedValue } from "@shared/hooks/useDebounce";
 
 import {
   listFrom,
@@ -26,17 +28,31 @@ import { PayDebtModal } from "./components/PayDebtModal";
 import { EditDebtModal } from "./components/EditDebtModal";
 import { useAppDispatch } from "@app/store";
 
-async function fetchDebtsAll() {
-  let url: any = "/main/debts/";
-  const acc: any[] = [];
-  let guard = 0;
-  while (url && guard < 60) {
-    const res = await api.get(url);
-    acc.push(...listFrom(res));
-    url = res?.data?.next || null;
-    guard += 1;
+async function fetchDebtsPage({
+  page,
+  page_size,
+  q,
+  dateFrom,
+  dateTo,
+}: {
+  page: number;
+  page_size: number;
+  q: string;
+  dateFrom: string;
+  dateTo: string;
+}) {
+  const params: any = { page, page_size };
+  const trimmed = String(q || "").trim();
+  if (trimmed) {
+    // на случай разных бэкенд-реализаций отправим и `search`, и `q`
+    params.search = trimmed;
+    params.q = trimmed;
   }
-  return acc;
+  if (dateFrom) params.date_from = dateFrom;
+  if (dateTo) params.date_to = dateTo;
+
+  const res = await api.get("/main/debts/", { params });
+  return res?.data || {};
 }
 
 async function createDebt(payload) {
@@ -63,6 +79,16 @@ const Debts = () => {
   const [q, setQ] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  // Пагинация списка долгов (убирает while-loop до 60 страниц)
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+
+  // Дебаунс поискового инпута, чтобы не дергать API на каждый символ
+  const debouncedQ = useDebouncedValue(q, 300, () => {});
 
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -97,24 +123,50 @@ const Debts = () => {
     try {
       setLoading(true);
       setLoadErr("");
-      const data = await fetchDebtsAll();
-      setItems(data);
+      const data = await fetchDebtsPage({
+        page,
+        page_size: PAGE_SIZE,
+        q: debouncedQ,
+        dateFrom,
+        dateTo,
+      });
 
-      const newNotifications = checkNotifications(data);
+      // data в формате DRF: { count, next, previous, results }
+      const nextItems = Array.isArray(data?.results) ? data.results : listFrom({ data });
+      setItems(Array.isArray(nextItems) ? nextItems : []);
+
+      const nextCount =
+        typeof data?.count === "number" ? data.count : Array.isArray(nextItems) ? nextItems.length : 0;
+      setTotalCount(nextCount);
+      setHasNextPage(Boolean(data?.next));
+      setHasPrevPage(Boolean(data?.previous));
+
+      const newNotifications = checkNotifications(nextItems || []);
       setNotifications(newNotifications);
     } catch (e: any) {
       console.error(e);
       setLoadErr(extractApiErr(e, "Не удалось загрузить долги"));
       setItems([]);
+      setTotalCount(0);
+      setHasNextPage(false);
+      setHasPrevPage(false);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
     dispatch(getCashBoxes({} as any) as any);
   }, [dispatch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ, dateFrom, dateTo]);
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedQ, dateFrom, dateTo]);
 
   useEffect(() => {
     if (cashBoxes && cashBoxes.length > 0 && !cashbox) {
@@ -127,7 +179,7 @@ const Debts = () => {
   }, [cashBoxes, cashbox]);
 
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = String(debouncedQ || "").trim().toLowerCase();
     let arr = !s
       ? items
       : items.filter((x) => `${x.name} ${x.phone}`.toLowerCase().includes(s));
@@ -140,7 +192,7 @@ const Debts = () => {
     return [...arr].sort(
       (a: any, b: any) => Number(new Date(b.created_at || 0)) - Number(new Date(a.created_at || 0))
     );
-  }, [items, q, dateFrom, dateTo]);
+  }, [items, debouncedQ, dateFrom, dateTo]);
 
   const openNew = () => {
     setFullName("");
@@ -326,6 +378,22 @@ const Debts = () => {
           onOpenEdit={openEdit}
         />
       </PagePanel>
+
+      <div style={{ marginTop: 12 }}>
+        <Pagination
+          currentPage={page}
+          totalPages={Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
+          count={totalCount}
+          countLabel="долгов"
+          loading={loading}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+          onPageChange={(p) => {
+            if (p < 1) return;
+            setPage(p);
+          }}
+        />
+      </div>
 
       <NewDebtModal
         open={isNewOpen}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useDispatch, useStore } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import useScanDetection from "@shared/hooks/useScanDetection";
 import { useDebounce, useDebounceByKey } from "@shared/hooks/useDebounce";
@@ -18,15 +18,10 @@ import {
   updateProductInCart,
 } from "@entities/sale";
 import { fetchShiftsAsync } from "@entities/shift";
-import { getCashBoxes, useCash } from "@entities/cash";
+import { getCashBoxes } from "@entities/cash";
 import api from "@shared/api";
 import { productMatchesBarcode } from "@shared/lib/tools/productBarcode";
 import { isMarketWarehouseServiceProduct } from "@shared/lib/tools/marketWarehouseFilters";
-import { useClient } from "@entities/client";
-import { useProducts } from "@entities/product";
-import { useSale } from "@entities/sale";
-import { useShifts } from "@entities/shift";
-import { useUser } from "@entities/user";
 import sleep from "@shared/lib/tools/sleep";
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
@@ -89,22 +84,24 @@ export function useCashierShifts(b: any) {
   const navigate = useNavigate();
   const dispatch = useDispatch() as any;
   const store = useStore();
-  const {
-    list: products,
-    count,
-    next,
-    previous,
-    loading: productsLoading,
-  } = useProducts();
-  const { list: clients } = useClient();
-  const {
-    start: currentSale,
-    loading: saleLoading,
-    startSaleLoading,
-  } = useSale();
-  const { shifts } = useShifts();
-  useCash();
-  const { currentUser, profile, userId } = useUser();
+  // Узкие селекторы: чтобы не ререндерить кассу из-за обновлений "лишних" полей slice.
+  const products = useSelector((s: any) => s.product.list);
+  const count = useSelector((s: any) => s.product.count);
+  const next = useSelector((s: any) => s.product.next);
+  const previous = useSelector((s: any) => s.product.previous);
+  const productsLoading = useSelector((s: any) => s.product.loading);
+
+  const clients = useSelector((s: any) => s.client.list);
+
+  const currentSale = useSelector((s: any) => s.sale.start);
+  const saleLoading = useSelector((s: any) => s.sale.loading);
+  const startSaleLoading = useSelector((s: any) => s.sale.startSaleLoading);
+
+  const shifts = useSelector((s: any) => s.shifts.shifts);
+
+  const currentUser = useSelector((s: any) => s.user.currentUser);
+  const profile = useSelector((s: any) => s.user.profile);
+  const userId = useSelector((s: any) => s.user.userId);
   const cashierId = useMemo(
     () => resolveCashierId({ currentUser, userId, profile }),
     [currentUser, userId, profile],

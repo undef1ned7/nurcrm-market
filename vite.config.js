@@ -50,6 +50,36 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "build",
       sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return undefined;
+
+            // Стабильные vendor-chunks для лучшего кэширования.
+            if (
+              id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("react-router") ||
+              id.includes("redux") ||
+              id.includes("@reduxjs") ||
+              id.includes("react-redux")
+            ) {
+              return "vendor-react";
+            }
+
+            if (id.includes("@mui") || id.includes("material-ui")) {
+              return "vendor-mui";
+            }
+
+            // @react-pdf/renderer обычно тяжёлый — изолируем в отдельный chunk.
+            if (id.includes("react-pdf") || id.includes("@react-pdf")) {
+              return "vendor-pdf";
+            }
+
+            return "vendor";
+          },
+        },
+      },
     },
     test: {
       environment: "jsdom",

@@ -24,6 +24,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
   const [debtors, setDebtors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [clientDebts, setClientDebts] = useState<any>(new Map()); // Map<clientId, totalDebt>
+  const [isDebtTotalReliable, setIsDebtTotalReliable] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [clientDeals, setClientDeals] = useState<any[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(false);
@@ -70,6 +71,20 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
   // Загрузка должников
   useEffect(() => {
     let cancelled = false;
+
+    const getClientDebt = (client: any): number => {
+      // Сервер может называть сумму по-разному; выбираем первое найденное числовое поле.
+      const raw =
+        client?.remaining_debt ??
+        client?.total_debt ??
+        client?.debt ??
+        client?.amount ??
+        client?.debt_amount ??
+        null;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    };
+
     const loadDebtors = async () => {
       try {
         setLoading(true);
@@ -77,34 +92,22 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         if (cancelled) return;
         setDebtors(allDebtors);
 
-        // Загружаем deals для каждого клиента, чтобы получить сумму долга
+        // Fast-path: не грузим deals для каждого должника при открытии модалки.
+        // Если бэк отдает агрегированную сумму долга в элементе списка —
+        // используем её для общего долга/фильтрации. Deals грузим только после выбора клиента.
         const debtsMap = new Map<any, any>();
-        const debtPromises = allDebtors.map(async (client: any) => {
-          if (cancelled) return { clientId: client.id, debt: 0 };
-          try {
-            const deals = await fetchAllPages(
-              `/main/clients/${client.id}/deals/?kind=debt`
-            );
-            const totalDebt = deals.reduce((sum: any, deal: any) => {
-              const remainingDebt = parseFloat(deal.remaining_debt || 0);
-              return sum + remainingDebt;
-            }, 0);
-            if (totalDebt > 0) {
-              debtsMap.set(client.id, totalDebt);
-            }
-            return { clientId: client.id, debt: totalDebt };
-          } catch (error: any) {
-            console.error(
-              `Ошибка при загрузке deals для клиента ${client.id}:`,
-              error
-            );
-            return { clientId: client.id, debt: 0 };
-          }
-        });
+        let hasAnyDebtTotal = false;
+        for (const client of allDebtors) {
+          const clientId = client?.id;
+          if (!clientId) continue;
+          const debt = getClientDebt(client);
+          debtsMap.set(clientId, debt);
+          hasAnyDebtTotal = hasAnyDebtTotal || debt > 0;
+        }
 
-        await Promise.allSettled(debtPromises);
         if (cancelled) return;
         setClientDebts(debtsMap);
+        setIsDebtTotalReliable(hasAnyDebtTotal);
       } catch (error: any) {
         if (cancelled) return;
         console.error("Ошибка при загрузке должников:", error);
@@ -122,10 +125,9 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
 
   // Фильтруем по поисковому запросу и показываем только тех, у кого есть долг
   const filteredDebtors = useMemo(() => {
-    let filtered = debtors.filter((customer: any) => {
-      const debt = clientDebts.get(customer.id) || 0;
-      return debt > 0; // Показываем только клиентов с долгом > 0
-    });
+    // Endpoint `/main/clients/with-debts/` должен уже отдавать только должников,
+    // поэтому фильтрацию по `clientDebts` делаем только по поиску (без N+1).
+    let filtered = debtors;
 
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
@@ -137,7 +139,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
     }
 
     return filtered;
-  }, [debtors, searchTerm, clientDebts]);
+  }, [debtors, searchTerm]);
 
   // Вычисляем общий долг
   const totalDebt = useMemo(() => {
@@ -565,11 +567,13 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
           </div>
           <div className="debt-payment-modal__summary-item">
             Общий долг:{" "}
-            {totalDebt.toLocaleString("ru-RU", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}{" "}
-            сом
+            {isDebtTotalReliable
+              ? totalDebt.toLocaleString("ru-RU", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              : "уточняется"}{" "}
+            {isDebtTotalReliable ? "сом" : ""}
           </div>
         </div>
 
@@ -611,11 +615,12 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
                     )}
                   </div>
                   <div className="debt-payment-modal__item-debt">
-                    {debt.toLocaleString("ru-RU", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{" "}
-                    сом
+                    {isDebtTotalReliable
+                      ? `${debt.toLocaleString("ru-RU", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })} сом`
+                      : "—"}
                   </div>
                 </div>
               );

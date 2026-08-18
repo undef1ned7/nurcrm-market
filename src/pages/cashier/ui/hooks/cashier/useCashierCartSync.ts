@@ -145,6 +145,8 @@ export function useCashierCartSync(b: any) {
   useEffect(() => {
     const params: any = {
         page: currentPage,
+        // Снижаем нагрузку: page_size должен соответствовать UI-страницам.
+        page_size: 100,
     };
     if (debouncedSearchTerm && typeof debouncedSearchTerm === "string") {
       const trimmed = debouncedSearchTerm.trim();

@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, ChevronUp, ChevronDown, Download, Printer } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { pdf } from "@react-pdf/renderer";
 import { getInvoiceJson } from "@entities/sale";
-import InvoicePdfDocument from "@pages/documents/ui/components/InvoicePdfDocument";
 import "./SuccessPaymentModal.scss";
 
 const toMoney = (value) => {
@@ -85,9 +83,13 @@ const SuccessPaymentModal = ({
           throw new Error("Нет данных для генерации PDF");
         }
 
-        const blob = await pdf(
-          <InvoicePdfDocument data={invoiceData} />,
-        ).toBlob();
+        // PDF-стек должен попадать в chunk только по клику "Скачать накладную".
+        const [{ pdf }, { default: InvoicePdfDocument }] = await Promise.all([
+          import("@react-pdf/renderer"),
+          import("@pages/documents/ui/components/InvoicePdfDocument"),
+        ]);
+
+        const blob = await pdf(<InvoicePdfDocument data={invoiceData} />).toBlob();
 
         const fileName = `invoice_${
           invoiceData?.document?.number || saleId

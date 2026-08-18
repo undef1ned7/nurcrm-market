@@ -89,6 +89,8 @@ const initialState = {
   latestFetchRequestId: null as any,
 };
 
+const MAX_PRODUCTS_CACHE_KEYS = 30;
+
 const productSlice = createSlice({
   name: "product",
   initialState,
@@ -162,7 +164,7 @@ const productSlice = createSlice({
         // Сохраняем в кэш (если передан _cacheKey в params)
         const cacheKey = action.meta?.arg?._cacheKey;
         if (cacheKey) {
-          state.productsCache[cacheKey] = {
+          const nextEntry = {
             list: [...state.list], // Копируем массив
             count: state.count,
             next: state.next,
@@ -170,6 +172,22 @@ const productSlice = createSlice({
             weightProductsCount: state.weightProductsCount,
             timestamp: Date.now(),
           };
+
+          state.productsCache[cacheKey] = nextEntry;
+
+          // LRU-стиль эвикт по timestamp (без затрат на структуру связного списка).
+          const keys = Object.keys(state.productsCache);
+          if (keys.length > MAX_PRODUCTS_CACHE_KEYS) {
+            // Сортируем по свежести (desc), затем удаляем хвост.
+            keys.sort((a, b) => {
+              const ta = state.productsCache[a]?.timestamp ?? 0;
+              const tb = state.productsCache[b]?.timestamp ?? 0;
+              return tb - ta;
+            });
+            for (const k of keys.slice(MAX_PRODUCTS_CACHE_KEYS)) {
+              delete state.productsCache[k];
+            }
+          }
         }
       })
       .addCase(fetchProductsAsync.rejected, (state, action) => {
