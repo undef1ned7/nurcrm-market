@@ -1,8 +1,10 @@
 import React from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 
 export function UsersAnalyticsTab({ vm }: any) {
+  const { t } = useTranslation();
   const {
     usersData,
     expandedUserPerformanceId,
@@ -45,21 +47,21 @@ export function UsersAnalyticsTab({ vm }: any) {
           <div className="analytics-page__grid">
             <div className="analytics-page__table-card">
               <h3 className="analytics-page__table-title">
-                Эффективность сотрудников
+                {t("crm.analytics.employees.efficiency")}
               </h3>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Сотрудник</th>
-                    <th>Email</th>
-                    <th>Телефон</th>
-                    <th>Выручка</th>
-                    <th>Транзакций</th>
-                    <th>Средний чек</th>
-                    <th>Ед. продано</th>
-                    <th>Уник. позиций</th>
+                    <th>{t("crm.analytics.employees.employee")}</th>
+                    <th>{t("crm.analytics.employees.email")}</th>
+                    <th>{t("common.phone")}</th>
+                    <th>{t("crm.analytics.employees.revenue")}</th>
+                    <th>{t("crm.analytics.employees.transactions")}</th>
+                    <th>{t("crm.analytics.employees.avgCheck")}</th>
+                    <th>{t("crm.analytics.employees.unitsSold")}</th>
+                    <th>{t("crm.analytics.employees.uniqueItems")}</th>
                     <th className="analytics-page__users-products-col">
-                      Товары
+                      {t("crm.analytics.employees.productsCol")}
                     </th>
                   </tr>
                 </thead>
@@ -145,7 +147,9 @@ export function UsersAnalyticsTab({ vm }: any) {
                                 <div
                                   className="analytics-page__users-products-dropdown-panel"
                                   role="region"
-                                  aria-label={String(row.user ?? "Товары")}
+                                  aria-label={String(
+                                    row.user ?? t("crm.analytics.employees.productsCol"),
+                                  )}
                                 >
                                   {soldProducts.length > 0 ? (
                                     <ul className="analytics-page__users-sold-products">
@@ -174,7 +178,7 @@ export function UsersAnalyticsTab({ vm }: any) {
                         colSpan={9}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -184,19 +188,19 @@ export function UsersAnalyticsTab({ vm }: any) {
 
             <div className="analytics-page__table-card">
               <h3 className="analytics-page__table-title">
-                Расхождения по сменам
+                {t("crm.analytics.employees.shiftDiscrepancies")}
               </h3>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Кассир</th>
-                    <th>Касса</th>
-                    <th>Открыта</th>
-                    <th>Закрыта</th>
-                    <th>Ожидалось</th>
-                    <th>Фактически</th>
-                    <th>Разница</th>
-                    <th>Тип</th>
+                    <th>{t("crm.analytics.shifts.cashier")}</th>
+                    <th>{t("crm.analytics.filterFields.cashbox")}</th>
+                    <th>{t("crm.analytics.employees.opened")}</th>
+                    <th>{t("crm.analytics.employees.closed")}</th>
+                    <th>{t("crm.analytics.employees.expected")}</th>
+                    <th>{t("crm.analytics.employees.actual")}</th>
+                    <th>{t("crm.analytics.employees.difference")}</th>
+                    <th>{t("crm.analytics.employees.type")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -219,7 +223,7 @@ export function UsersAnalyticsTab({ vm }: any) {
                         colSpan={8}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}

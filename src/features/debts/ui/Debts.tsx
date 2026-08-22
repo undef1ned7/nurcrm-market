@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import "./debts.scss";
 import {
@@ -70,6 +71,7 @@ async function deleteDebt(id) {
 }
 
 const Debts = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -145,7 +147,7 @@ const Debts = () => {
       setNotifications(newNotifications);
     } catch (e: any) {
       console.error(e);
-      setLoadErr(extractApiErr(e, "Не удалось загрузить долги"));
+      setLoadErr(extractApiErr(e, t("crm.debts.loadError")));
       setItems([]);
       setTotalCount(0);
       setHasNextPage(false);
@@ -207,13 +209,13 @@ const Debts = () => {
     e.preventDefault();
     setFormErr("");
 
-    if (!fullName.trim()) return setFormErr("Введите имя");
+    if (!fullName.trim()) return setFormErr(t("crm.debts.enterName"));
     const ph = phoneNorm(phone);
-    if (!ph) return setFormErr("Введите телефон");
+    if (!ph) return setFormErr(t("crm.debts.enterPhone"));
     if (items.some((x) => phoneNorm(x.phone) === ph))
-      return setFormErr("Такой номер телефона уже существует");
+      return setFormErr(t("crm.debts.phoneExists"));
     const a = num(amount);
-    if (!(a > 0)) return setFormErr("Введите сумму долга (> 0)");
+    if (!(a > 0)) return setFormErr(t("crm.debts.enterAmount"));
 
     try {
       setSavingNew(true);
@@ -230,7 +232,7 @@ const Debts = () => {
       setNotifications(newNotifications);
     } catch (e2: any) {
       console.error(e2);
-      setFormErr(extractApiErr(e2, "Не удалось создать долг"));
+      setFormErr(extractApiErr(e2, t("crm.debts.createError")));
     } finally {
       setSavingNew(false);
     }
@@ -247,13 +249,12 @@ const Debts = () => {
     e.preventDefault();
     setPayErr("");
     const amt = num(payAmt);
-    if (!(amt > 0)) return setPayErr("Введите сумму оплаты (> 0)");
+    if (!(amt > 0)) return setPayErr(t("crm.debts.enterPayAmount"));
 
     const current = items.find((x) => x.id === payId);
-    if (!current) return setPayErr("Запись не найдена");
+    if (!current) return setPayErr(t("crm.debts.recordNotFound"));
 
-    if (!cashbox)
-      return setPayErr("Касса не выбрана. Создайте кассу в разделе «Кассы».");
+    if (!cashbox) return setPayErr(t("crm.debts.cashboxRequired"));
 
     const baseDebt = getDebtAmount(current);
     const nextAmount = Math.max(0, baseDebt - amt);
@@ -266,8 +267,8 @@ const Debts = () => {
       await dispatch(
         addCashFlows({
           name: current.name
-            ? `Возврат долга: ${current.name}`
-            : "Возврат долга",
+            ? t("crm.debts.debtReturnName", { name: current.name })
+            : t("crm.debts.debtReturn"),
           amount: String(amt),
           type: "income",
           cashbox,
@@ -277,7 +278,7 @@ const Debts = () => {
       setPayOpen(false);
     } catch (e2: any) {
       console.error(e2);
-      setPayErr(extractApiErr(e2, "Не удалось обновить сумму долга"));
+      setPayErr(extractApiErr(e2, t("crm.debts.updateError")));
     } finally {
       setSavingPay(false);
     }
@@ -297,13 +298,13 @@ const Debts = () => {
     e.preventDefault();
     setEditErr("");
 
-    if (!eFullName.trim()) return setEditErr("Введите имя");
+    if (!eFullName.trim()) return setEditErr(t("crm.debts.enterName"));
     const ph = phoneNorm(ePhone);
-    if (!ph) return setEditErr("Введите телефон");
+    if (!ph) return setEditErr(t("crm.debts.enterPhone"));
     if (items.some((x) => x.id !== editId && phoneNorm(x.phone) === ph))
-      return setEditErr("Такой номер телефона уже существует");
+      return setEditErr(t("crm.debts.phoneExists"));
     const newAmount = num(eAmount);
-    if (!(newAmount > 0)) return setEditErr("Введите сумму долга (> 0)");
+    if (!(newAmount > 0)) return setEditErr(t("crm.debts.enterAmount"));
 
     try {
       setSavingEdit(true);
@@ -323,7 +324,7 @@ const Debts = () => {
       setNotifications(newNotifications);
     } catch (e2: any) {
       console.error(e2);
-      setEditErr(extractApiErr(e2, "Не удалось сохранить изменения"));
+      setEditErr(extractApiErr(e2, t("crm.debts.saveError")));
     } finally {
       setSavingEdit(false);
     }
@@ -384,7 +385,7 @@ const Debts = () => {
           currentPage={page}
           totalPages={Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
           count={totalCount}
-          countLabel="долгов"
+          countLabel={t("crm.debts.countLabel")}
           loading={loading}
           hasNextPage={hasNextPage}
           hasPrevPage={hasPrevPage}

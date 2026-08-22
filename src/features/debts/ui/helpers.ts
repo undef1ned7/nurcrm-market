@@ -1,6 +1,8 @@
+import i18n from "@shared/config/i18n";
+
 export const money = (v: any) =>
   new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(
-    Math.round(Number(v) || 0)
+    Math.round(Number(v) || 0),
   ) + " с";
 
 export const num = (v: any) => {
@@ -45,13 +47,14 @@ export const listFrom = (res: any) =>
   Array.isArray(res?.data?.results)
     ? res.data.results
     : Array.isArray(res?.data)
-    ? res.data
-    : [];
+      ? res.data
+      : [];
 
-export const extractApiErr = (e: any, fallback = "Ошибка запроса") => {
+export const extractApiErr = (e: any, fallback?: string) => {
+  const fb = fallback ?? i18n.t("common.error");
   try {
     const data = e?.response?.data;
-    if (!data) return fallback;
+    if (!data) return fb;
     if (typeof data === "string") return data;
     if (Array.isArray(data)) return data.join("; ");
     const parts: string[] = [];
@@ -61,13 +64,17 @@ export const extractApiErr = (e: any, fallback = "Ошибка запроса") 
     }
     return parts.join("; ");
   } catch {
-    return fallback;
+    return fb;
   }
 };
 
 export const getDebtStatus = (dueDate: any) => {
   if (!dueDate)
-    return { status: "no-date", color: "#6b7280", text: "Без срока" };
+    return {
+      status: "no-date",
+      color: "#6b7280",
+      text: i18n.t("crm.debts.statusNoDate"),
+    };
 
   const today = new Date();
   const due = new Date(dueDate);
@@ -78,25 +85,35 @@ export const getDebtStatus = (dueDate: any) => {
     return {
       status: "overdue",
       color: "#dc2626",
-      text: `Просрочен на ${Math.abs(diffDays)} дн.`,
+      text: i18n.t("crm.debts.statusOverdue", { days: Math.abs(diffDays) }),
     };
-  } else if (diffDays === 0) {
-    return { status: "due-today", color: "#ea580c", text: "Срок сегодня" };
-  } else if (diffDays === 1) {
-    return { status: "due-tomorrow", color: "#f59e0b", text: "Срок завтра" };
-  } else if (diffDays <= 3) {
+  }
+  if (diffDays === 0) {
+    return {
+      status: "due-today",
+      color: "#ea580c",
+      text: i18n.t("crm.debts.statusDueToday"),
+    };
+  }
+  if (diffDays === 1) {
+    return {
+      status: "due-tomorrow",
+      color: "#f59e0b",
+      text: i18n.t("crm.debts.statusDueTomorrow"),
+    };
+  }
+  if (diffDays <= 3) {
     return {
       status: "due-soon",
       color: "#f59e0b",
-      text: `Осталось ${diffDays} дн.`,
-    };
-  } else {
-    return {
-      status: "normal",
-      color: "#059669",
-      text: `Осталось ${diffDays} дн.`,
+      text: i18n.t("crm.debts.statusDaysLeft", { days: diffDays }),
     };
   }
+  return {
+    status: "normal",
+    color: "#059669",
+    text: i18n.t("crm.debts.statusDaysLeft", { days: diffDays }),
+  };
 };
 
 export const checkNotifications = (items: any[]) => {
@@ -114,13 +131,16 @@ export const checkNotifications = (items: any[]) => {
       if (diffDays === 1) {
         notifications.push({
           type: "warning",
-          message: `Долг ${item.name} должен быть возвращен завтра!`,
+          message: i18n.t("crm.debts.notifyDueTomorrow", { name: item.name }),
           item,
         });
       } else if (diffDays < 0) {
         notifications.push({
           type: "error",
-          message: `Долг ${item.name} просрочен на ${Math.abs(diffDays)} дней!`,
+          message: i18n.t("crm.debts.notifyOverdue", {
+            name: item.name,
+            days: Math.abs(diffDays),
+          }),
           item,
         });
       }

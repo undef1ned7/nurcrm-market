@@ -1,9 +1,11 @@
 import { Bar, Doughnut } from "react-chartjs-2";
 import { TrendingUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import "../analytics.charts";
 
 export function WarehouseAnalyticsTab({ vm }: any) {
+  const { t } = useTranslation();
   const {
     warehouseData,
     stockSort,
@@ -59,7 +61,7 @@ export function WarehouseAnalyticsTab({ vm }: any) {
           <div className="analytics-page__grid">
             <div className="analytics-page__chart-card">
               <h3 className="analytics-page__chart-title">
-                Распределение по категориям
+                {t("crm.analytics.warehouse.categoryDistribution")}
               </h3>
               <Doughnut
                 data={{
@@ -84,13 +86,13 @@ export function WarehouseAnalyticsTab({ vm }: any) {
             </div>
 
             <div className="analytics-page__chart-card">
-              <h3 className="analytics-page__chart-title">Движение товаров</h3>
+              <h3 className="analytics-page__chart-title">{t("crm.analytics.warehouse.movement")}</h3>
               <Bar
                 data={{
                   labels: warehouseData.movementChart.labels,
                   datasets: [
                     {
-                      label: "Продано единиц",
+                      label: t("crm.analytics.warehouse.soldUnits"),
                       data: warehouseData.movementChart.data,
                       backgroundColor: "#f7d617",
                     },
@@ -121,25 +123,25 @@ export function WarehouseAnalyticsTab({ vm }: any) {
           {!isStartTariff && (
             <div className="analytics-page__table-card">
               <div className="analytics-page__table-header">
-                <h3 className="analytics-page__table-title">Остатки товаров</h3>
+                <h3 className="analytics-page__table-title">{t("crm.analytics.warehouse.stockRemaining")}</h3>
                 <select
                   className="analytics-page__sort-select"
                   value={stockSort}
                   onChange={(e) => setStockSort(e.target.value)}
-                  aria-label="Сортировка остатков"
+                  aria-label={t("crm.analytics.filterFields.sortStock")}
                 >
-                  <option value="none">Без сортировки</option>
-                  <option value="name-asc">По алфавиту (А–Я)</option>
-                  <option value="name-desc">По алфавиту (Я–А)</option>
-                  <option value="stock-desc">По остатку (больше)</option>
-                  <option value="stock-asc">По остатку (меньше)</option>
+                  <option value="none">{t("crm.analytics.warehouse.sortNone")}</option>
+                  <option value="name-asc">{t("crm.analytics.warehouse.sortAlphaAsc")}</option>
+                  <option value="name-desc">{t("crm.analytics.warehouse.sortAlphaDesc")}</option>
+                  <option value="stock-desc">{t("crm.analytics.warehouse.sortStockDesc")}</option>
+                  <option value="stock-asc">{t("crm.analytics.warehouse.sortStockAsc")}</option>
                 </select>
               </div>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Товар</th>
-                    <th>Остаток</th>
+                    <th>{t("crm.analytics.sales.goods")}</th>
+                    <th>{t("crm.analytics.warehouse.stock")}</th>
                   </tr>
                 </thead>
                 <tbody>

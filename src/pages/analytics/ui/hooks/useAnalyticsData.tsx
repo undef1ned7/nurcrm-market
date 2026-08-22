@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useUser } from "@entities/user";
 import { useCash } from "@entities/cash";
@@ -21,7 +22,6 @@ import {
   formatCurrency,
   formatDateForAPI,
   mapTabToAPI,
-  saleStatusInfo,
 } from "./analytics/formatters";
 
 const DEFAULT_FILTERS: any = {
@@ -47,6 +47,7 @@ const DEFAULT_FILTERS: any = {
 const DEFAULT_CASHBOX_NAME = "Основная касса";
 
 export function useAnalyticsData() {
+  const { t } = useTranslation();
   const { mode } = useContext(ThemeModeContext);
   const isDark = mode === "dark";
   const { company, currentUser } = useUser();
@@ -169,6 +170,11 @@ export function useAnalyticsData() {
 
   const mainCashboxId = mainCashbox?.id ? String(mainCashbox.id) : "";
 
+  const mainCashboxTitle =
+    mainCashbox?.name ||
+    mainCashbox?.department_name ||
+    t("crm.analytics.cashiers.mainCompanyCashbox");
+
   useEffect(() => {
     if (!mainCashboxId) return;
     setFilters((prev) => {
@@ -230,8 +236,6 @@ export function useAnalyticsData() {
   return {
     normalizeLowStockStatusType,
     translateLowStockStatus,
-    sortStockList,
-    barPercentOfMax,
     DEFAULT_CASHBOX_NAME,
     DEFAULT_FILTERS,
     activeTab,
@@ -265,6 +269,7 @@ export function useAnalyticsData() {
     currentUser,
     mainCashbox,
     mainCashboxId,
+    mainCashboxTitle,
     formatNumber,
     formatAnalyticsQty,
     formatDateForChart,
@@ -274,7 +279,6 @@ export function useAnalyticsData() {
     salaryAnalyticsRows,
     ...modals,
     ...tabData,
-    saleStatusInfo,
   };
 }
 

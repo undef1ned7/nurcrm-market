@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import * as OrdersPrintService from "@shared/ui/legacy-cafe/Orders/OrdersPrintService";
 
@@ -16,6 +17,7 @@ const {
 const safeName = (p: any) => p?.name || "USB Printer";
 
 export default function CafeReceiptPrinterSettings({ showAlert }: any) {
+  const { t } = useTranslation();
   const [device, setDevice] = useState("wifi"); // wifi | usb
   const [ipPort, setIpPort] = useState("");
   const [usbKey, setUsbKey] = useState("");
@@ -111,7 +113,7 @@ export default function CafeReceiptPrinterSettings({ showAlert }: any) {
       const binding = formatPrinterBinding({ kind: "ip", ipPort });
       const parsed = parsePrinterBinding(`ip/${ipPort}`);
       if (!binding || parsed.kind !== "ip") {
-        showAlert?.("error", "Введите IP:порт (например 192.168.1.200:9100)");
+        showAlert?.("error", t("settings.print.alerts.enterIpPort"));
         return;
       }
       localStorage.setItem("cafe_receipt_printer", binding);
@@ -197,29 +199,29 @@ export default function CafeReceiptPrinterSettings({ showAlert }: any) {
   return (
     <div className="settings__section">
       <h2 className="settings__section-title">
-        <span className="settings__emoji">🧾</span> Кафе • Принтер кассы (чековый аппарат)
+        <span className="settings__emoji">🧾</span> {t("settings.print.receiptTitle")}
       </h2>
 
       <p className="settings__mutedText" style={{ marginTop: -8 }}>
-        Этот принтер используется для печати чеков оплаты. Принтеры кухонь настраиваются отдельно при создании кухни.
+        {t("settings.print.receiptHint")}
       </p>
 
       <div className="settings__form-group">
-        <div className="settings__label">Тип подключения</div>
+        <div className="settings__label">{t("settings.print.connectionType")}</div>
         <div className="settings__segmented">
           <button
             type="button"
             className={`settings__segBtn ${device === "wifi" ? "settings__segBtn--active" : ""}`}
             onClick={() => setDevice("wifi")}
           >
-            Wi‑Fi (IP:порт)
+            {t("settings.print.wifiIpPort")}
           </button>
           <button
             type="button"
             className={`settings__segBtn ${device === "usb" ? "settings__segBtn--active" : ""}`}
             onClick={() => setDevice("usb")}
           >
-            USB
+            {t("settings.print.usb")}
           </button>
         </div>
       </div>
@@ -228,7 +230,7 @@ export default function CafeReceiptPrinterSettings({ showAlert }: any) {
         <>
           <div className="settings__form-group">
             <label className="settings__label" htmlFor="cafeReceiptIpPort">
-              IP принтера
+              {t("settings.print.printerIp")}
             </label>
             <div className="settings__input-wrapper">
               <input

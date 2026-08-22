@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import type { AnalyticsVm } from "../hooks/useAnalyticsData";
 
@@ -6,6 +7,7 @@ type Props = {
 };
 
 export function PurchasesAnalyticsTab({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     purchasesData,
     formatNumber,
@@ -44,15 +46,15 @@ export function PurchasesAnalyticsTab({ vm }: Props) {
           </div>
 
           <div className="analytics-page__table-card analytics-page__table-card--scrollable">
-            <h3 className="analytics-page__table-title">Закупки по поставщикам</h3>
+            <h3 className="analytics-page__table-title">{t("crm.analytics.purchases.bySuppliers")}</h3>
             <div className="analytics-page__table-scroll analytics-page__table-scroll--suppliers">
               <table className="analytics-page__table analytics-page__table--suppliers">
                 <thead>
                   <tr>
-                    <th>Поставщик</th>
-                    <th>SKU</th>
-                    <th>Ед. закуплено</th>
-                    <th>Сумма закупок</th>
+                    <th>{t("crm.analytics.purchases.supplier")}</th>
+                    <th>{t("crm.analytics.suppliers.sku")}</th>
+                    <th>{t("crm.analytics.purchases.unitsPurchased")}</th>
+                    <th>{t("crm.analytics.purchases.purchaseAmount")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -82,7 +84,7 @@ export function PurchasesAnalyticsTab({ vm }: Props) {
                         colSpan={4}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}

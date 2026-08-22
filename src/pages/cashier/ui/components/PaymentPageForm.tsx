@@ -1,4 +1,5 @@
 import { User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type {
   DebtSchedule,
   DebtScheduleUnit,
@@ -140,11 +141,13 @@ export function PaymentPageForm({
   onCancel,
   consultant,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <div className="payment-page__content">
       <div className="payment-page__left">
         <div className="payment-page__section">
-          <h3 className="payment-page__section-title">СПОСОБ ОПЛАТЫ</h3>
+          <h3 className="payment-page__section-title">{t("crm.cashier.payment.methodSection")}</h3>
           <div className="payment-page__methods">
             {PAYMENT_METHODS.map((method) => (
               <button
@@ -157,9 +160,9 @@ export function PaymentPageForm({
                 onClick={() => onPaymentMethodChange(method.id)}
               >
                 <div className="payment-page__method-content">
-                  <div className="payment-page__method-label">{method.label}</div>
+                  <div className="payment-page__method-label">{t(method.labelKey)}</div>
                   <div className="payment-page__method-description">
-                    {method.description}
+                    {t(method.descriptionKey)}
                   </div>
                 </div>
                 {paymentMethod === method.id && (
@@ -171,7 +174,7 @@ export function PaymentPageForm({
         </div>
 
         <div className="payment-page__section">
-          <h3 className="payment-page__section-title">ПОКУПАТЕЛЬ</h3>
+          <h3 className="payment-page__section-title">{t("crm.cashier.payment.customerSection")}</h3>
           {selectedCustomer ? (
             <div className="payment-page__customer">
               <div className="payment-page__customer-avatar">
@@ -184,7 +187,7 @@ export function PaymentPageForm({
                     className="payment-page__customer-change"
                     onClick={onSelectCustomerClick}
                   >
-                    изменить
+                    {t("crm.cashier.payment.changeCustomer")}
                   </button>
                 </div>
                 {selectedCustomer.phone && (
@@ -194,7 +197,9 @@ export function PaymentPageForm({
                 )}
                 {customerDebt > 0 && (
                   <div className="payment-page__customer-debt">
-                    Текущий долг: {formatMoneyRu(customerDebt)} сом
+                    {t("crm.cashier.payment.currentDebt", {
+                      amount: formatMoneyRu(customerDebt),
+                    })}
                   </div>
                 )}
               </div>
@@ -204,7 +209,7 @@ export function PaymentPageForm({
               className="payment-page__select-customer-btn"
               onClick={onSelectCustomerClick}
             >
-              Выбрать покупателя
+              {t("crm.cashier.payment.selectCustomer")}
             </button>
           )}
         </div>
@@ -230,7 +235,7 @@ export function PaymentPageForm({
 
         {paymentMethod === "cashless" && (
           <div className="payment-page__section">
-            <h3 className="payment-page__section-title">ВЫБОР БАНКА</h3>
+            <h3 className="payment-page__section-title">{t("crm.cashier.payment.bankSection")}</h3>
             <PaymentPageBankGrid
               banks={PAYMENT_BANKS}
               selectedId={selectedBank}
@@ -242,7 +247,7 @@ export function PaymentPageForm({
 
         {paymentMethod === "split" && (
           <div className="payment-page__section payment-page__split">
-            <h3 className="payment-page__section-title">ОНЛАЙН-ОПЛАТА</h3>
+            <h3 className="payment-page__section-title">{t("crm.cashier.payment.onlineSection")}</h3>
             <PaymentPageBankGrid
               banks={PAYMENT_BANKS}
               selectedId={splitOnlineBank}
@@ -251,7 +256,7 @@ export function PaymentPageForm({
               logoMode="split"
             />
             <label className="payment-page__split-field">
-              <span>Сумма онлайн (сом)</span>
+              <span>{t("crm.cashier.payment.onlineAmount")}</span>
               <input
                 type="number"
                 min="0"
@@ -261,9 +266,9 @@ export function PaymentPageForm({
                 onChange={(e) => onSplitOnlineAmountChange(e.target.value)}
               />
             </label>
-            <h3 className="payment-page__section-title">НАЛИЧНЫЕ</h3>
+            <h3 className="payment-page__section-title">{t("crm.cashier.payment.cashSection")}</h3>
             <label className="payment-page__split-field">
-              <span>Сумма наличными (сом)</span>
+              <span>{t("crm.cashier.payment.cashAmount")}</span>
               <input
                 type="number"
                 min="0"
@@ -274,12 +279,13 @@ export function PaymentPageForm({
               />
             </label>
             <p className="payment-page__split-total">
-              Итого частей:{" "}
-              {(
-                (parseFloat(splitOnlineAmount) || 0) +
-                (parseFloat(splitTransferAmount) || 0)
-              ).toFixed(2)}{" "}
-              / {total.toFixed(2)} сом
+              {t("crm.cashier.payment.splitTotal", {
+                parts: (
+                  (parseFloat(splitOnlineAmount) || 0) +
+                  (parseFloat(splitTransferAmount) || 0)
+                ).toFixed(2),
+                total: total.toFixed(2),
+              })}
             </p>
           </div>
         )}
@@ -322,7 +328,7 @@ export function PaymentPageForm({
         ) : paymentMethod === "split" ? null : (
           <div className="payment-page__amount-section">
             <h3 className="payment-page__section-title">
-              ПОЛУЧЕНО ОТ ПОКУПАТЕЛЯ
+              {t("crm.cashier.payment.receivedSection")}
             </h3>
             <div className="payment-page__amount-input-wrapper">
               <input
@@ -336,7 +342,7 @@ export function PaymentPageForm({
             </div>
             <div className="payment-page__quick-select">
               <div className="payment-page__quick-select-label">
-                БЫСТРЫЙ ВЫБОР
+                {t("crm.cashier.payment.quickSelect")}
               </div>
               <div className="payment-page__quick-select-buttons">
                 {quickSelectAmounts.length > 0
@@ -363,9 +369,9 @@ export function PaymentPageForm({
 
             {change > 0 && (
               <div className="payment-page__change">
-                <span className="payment-page__change-label">СДАЧА</span>
+                <span className="payment-page__change-label">{t("crm.cashier.payment.change")}</span>
                 <span className="payment-page__change-value">
-                  {change.toFixed(2)} сом
+                  {change.toFixed(2)} {t("common.currencySom")}
                 </span>
               </div>
             )}
@@ -374,7 +380,7 @@ export function PaymentPageForm({
 
         <div className="payment-page__actions">
           <label className="flex items-center gap-2" htmlFor="withoutCheck">
-            Без чека
+            {t("crm.cashier.payment.withoutCheck")}
             <input
               id="withoutCheck"
               type="checkbox"
@@ -387,10 +393,10 @@ export function PaymentPageForm({
             className="payment-page__accept-btn"
             onClick={onAcceptPayment}
           >
-            ПРИНЯТЬ ОПЛАТУ [ENTER]
+            {t("crm.cashier.payment.accept")}
           </button>
           <button className="payment-page__cancel-btn" onClick={onCancel}>
-            Отмена [ESC]
+            {t("crm.cashier.payment.cancel")}
           </button>
         </div>
       </div>

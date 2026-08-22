@@ -11,23 +11,23 @@ export const SUPPORTED_CHECKOUT_BANKS = ["mbank", "optima", "obank", "bakai"];
 export const PAYMENT_METHODS = [
   {
     id: "cash",
-    label: "Наличные",
-    description: "Оплата наличными",
+    labelKey: "crm.cashier.payment.methods.cash.label",
+    descriptionKey: "crm.cashier.payment.methods.cash.description",
   },
   {
     id: "cashless",
-    label: "Безналичные",
-    description: "Карта / перевод",
+    labelKey: "crm.cashier.payment.methods.cashless.label",
+    descriptionKey: "crm.cashier.payment.methods.cashless.description",
   },
   {
     id: "deferred",
-    label: "Отсрочка",
-    description: "Оплата в долг",
+    labelKey: "crm.cashier.payment.methods.deferred.label",
+    descriptionKey: "crm.cashier.payment.methods.deferred.description",
   },
   {
     id: "split",
-    label: "Смешанная",
-    description: "Часть онлайн, часть наличными",
+    labelKey: "crm.cashier.payment.methods.split.label",
+    descriptionKey: "crm.cashier.payment.methods.split.description",
   },
 ];
 

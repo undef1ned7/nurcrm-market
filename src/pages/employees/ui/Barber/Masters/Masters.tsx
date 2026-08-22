@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FaEdit, FaLock, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
 import RoleCreateModal from "./modals/RoleCreateModal";
 import RoleEditModal from "./modals/RoleEditModal";
@@ -28,13 +29,14 @@ import {
 import "./Masters.scss";
 
 const Masters = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const m = useMastersPage();
 
   return (
     <PageShell className="barbermasters">
       <PageHeader
-        title="Сотрудники"
+        title={t("crm.employees.pageTitle")}
         subtitle={m.employeesSubtitle}
         actions={
           m.tab === "roles" ? (
@@ -42,11 +44,11 @@ const Masters = () => {
               type="button"
               className="nur-btn nur-btn--primary"
               onClick={() => m.setRoleCreateOpen(true)}
-              title="Добавить роль"
-              aria-label="Добавить роль"
+              title={t("crm.employees.addRole")}
+              aria-label={t("crm.employees.addRole")}
             >
               <FaPlus />
-              <span className="nur-btn__label">Добавить роль</span>
+              <span className="nur-btn__label">{t("crm.employees.addRole")}</span>
             </button>
           ) : (
             <button
@@ -57,12 +59,12 @@ const Masters = () => {
               title={
                 !m.canAddEmployeeByStartPlan
                   ? MARKET_START_EMPLOYEE_LIMIT_MESSAGE
-                  : "Добавить сотрудника"
+                  : t("crm.employees.addEmployee")
               }
-              aria-label="Добавить сотрудника"
+              aria-label={t("crm.employees.addEmployee")}
             >
               <FaPlus />
-              <span className="nur-btn__label">Добавить</span>
+              <span className="nur-btn__label">{t("crm.employees.add")}</span>
             </button>
           )
         }
@@ -77,7 +79,7 @@ const Masters = () => {
             }`}
             onClick={() => m.setTab("roles")}
           >
-            Роли
+            {t("crm.employees.roles")}
           </button>
           <button
             type="button"
@@ -86,7 +88,7 @@ const Masters = () => {
             }`}
             onClick={() => m.setTab("masters")}
           >
-            Сотрудники
+            {t("crm.employees.employeesTab")}
           </button>
         </div>
 
@@ -95,7 +97,7 @@ const Masters = () => {
             options={m.roleFilterOptions}
             value={m.filterRole}
             onChange={m.setFilterRole}
-            placeholder="Все роли"
+            placeholder={t("crm.employees.allRoles")}
             hideCurrentLabelInMenu
             className="barbermasters__roleFilter"
           />
@@ -106,11 +108,13 @@ const Masters = () => {
           <input
             className="nur-input barbermasters__searchInput"
             placeholder={
-              m.tab === "roles" ? "Поиск ролей…" : "Поиск по сотрудникам"
+              m.tab === "roles"
+                ? t("crm.employees.searchRoles")
+                : t("crm.employees.searchEmployees")
             }
             value={m.q}
             onChange={(e: any) => m.setQ(e.target.value)}
-            aria-label="Поиск"
+            aria-label={t("common.search")}
           />
         </div>
       </FilterBar>
@@ -119,7 +123,7 @@ const Masters = () => {
       {!!m.pageNotice && (
         <div className="barbermasters__alert">{m.pageNotice}</div>
       )}
-      {m.loading && <div className="barbermasters__alert">Загрузка…</div>}
+      {m.loading && <div className="barbermasters__alert">{t("common.loading")}</div>}
 
       {!m.loading && m.tab === "roles" && (
         <>
@@ -133,12 +137,12 @@ const Masters = () => {
                   <div>
                     <div className="barbermasters__nameRow">
                       <h4 className="barbermasters__name">
-                        {r.name || "Без названия"}
+                        {r.name || t("crm.employees.noTitle")}
                       </h4>
                     </div>
                     {r._sys && (
                       <div className="barbermasters__meta">
-                        <span className="bm-item">Системная роль</span>
+                        <span className="bm-item">{t("crm.employees.systemRole")}</span>
                       </div>
                     )}
                   </div>
@@ -151,31 +155,37 @@ const Masters = () => {
                     disabled={r._sys}
                     title={
                       r._sys
-                        ? "Системные роли нельзя изменять"
-                        : "Редактировать"
+                        ? t("crm.employees.cannotEditSystemRole")
+                        : t("common.edit")
                     }
                   >
                     <FaEdit />
                     <span className="barbermasters__btnText">
-                      Редактировать
+                      {t("common.edit")}
                     </span>
                   </button>
                   <button
                     className="nur-btn nur-btn--danger"
                     onClick={() => m.setRoleToDelete(r)}
                     disabled={r._sys || m.roleDeletingIds.has(r.id)}
-                    title={r._sys ? "Системные роли нельзя удалять" : "Удалить"}
+                    title={
+                      r._sys
+                        ? t("crm.employees.cannotDeleteSystemRole")
+                        : t("common.delete")
+                    }
                   >
                     <FaTrash />
                     <span className="barbermasters__btnText">
-                      {m.roleDeletingIds.has(r.id) ? "Удаление…" : "Удалить"}
+                      {m.roleDeletingIds.has(r.id)
+                        ? t("common.deleting")
+                        : t("common.delete")}
                     </span>
                   </button>
                 </div>
               </article>
             ))}
             {m.rolesForList.length === 0 && (
-              <div className="barbermasters__alert">Пока нет ролей.</div>
+              <div className="barbermasters__alert">{t("crm.employees.noRoles")}</div>
             )}
           </div>
 
@@ -213,7 +223,7 @@ const Masters = () => {
                     tabIndex={openDetail ? 0 : undefined}
                     title={
                       openDetail
-                        ? "Карточка сотрудника: зарплата, доступы, редактирование"
+                        ? t("crm.employees.employeeCardHint")
                         : undefined
                     }
                     onClick={
@@ -249,7 +259,7 @@ const Masters = () => {
                     <div>
                       <div className="barbermasters__nameRow">
                         <h4 className="barbermasters__name">
-                          {fullName(u) || "Без имени"}
+                          {fullName(u) || t("crm.employees.noName")}
                         </h4>
                       </div>
                       <div className="barbermasters__meta">
@@ -263,7 +273,7 @@ const Masters = () => {
                     <button
                       className="nur-btn nur-btn--secondary"
                       onClick={() => m.openEmpEdit(u)}
-                      title="Редактировать сотрудника"
+                      title={t("crm.employees.editEmployee")}
                     >
                       <FaEdit />
                     </button>
@@ -275,10 +285,10 @@ const Masters = () => {
                           onClick={() =>
                             navigate(`/crm/production/agents/${u.id}/analytics`)
                           }
-                          title="Аналитика агента"
+                          title={t("crm.employees.agentAnalytics")}
                         >
                           <span className="barbermasters__btnText">
-                            📊 Аналитика
+                            📊 {t("crm.employees.analytics")}
                           </span>
                         </button>
                       )}
@@ -293,10 +303,10 @@ const Masters = () => {
                               { state: { agentName: fullName(u) } },
                             )
                           }
-                          title="Аналитика склада (агент)"
+                          title={t("crm.employees.warehouseAgentAnalytics")}
                         >
                           <span className="barbermasters__btnText">
-                            📊 Аналитика
+                            📊 {t("crm.employees.analytics")}
                           </span>
                         </button>
                       )}
@@ -306,31 +316,35 @@ const Masters = () => {
                         <button
                           className="nur-btn nur-btn--secondary"
                           onClick={() => m.openWarehouseAgentModal(u)}
-                          title="Назначить агентом склада (модуль агентов)"
+                          title={t("crm.employees.assignWarehouseAgent")}
                         >
                           <span className="barbermasters__btnText">
-                            🧑‍💼 Агент склада
+                            🧑‍💼 {t("crm.employees.warehouseAgent")}
                           </span>
                         </button>
                       )}
                     <button
                       className="nur-btn nur-btn--secondary"
                       onClick={() => m.openAccessModal(u)}
-                      title="Управление доступами"
+                      title={t("crm.employees.manageAccesses")}
                       disabled={u.role === "owner"}
                     >
                       <FaLock />
-                      <span className="barbermasters__btnText">Доступы</span>
+                      <span className="barbermasters__btnText">
+                        {t("crm.employees.accesses")}
+                      </span>
                     </button>
                     <button
                       className="nur-btn nur-btn--danger"
                       onClick={() => m.setEmpToDelete(u)}
                       disabled={m.empDeletingIds.has(u.id)}
-                      title="Удалить сотрудника"
+                      title={t("crm.employees.deleteEmployee")}
                     >
                       <FaTrash />
                       <span className="barbermasters__btnText">
-                        {m.empDeletingIds.has(u.id) ? "Удаление…" : "Удалить"}
+                        {m.empDeletingIds.has(u.id)
+                          ? t("common.deleting")
+                          : t("common.delete")}
                       </span>
                     </button>
                   </div>
@@ -338,10 +352,10 @@ const Masters = () => {
               );
             })}
             {m.filteredEmployees.length === 0 && m.employees.length > 0 && (
-              <div className="barbermasters__alert">Ничего не найдено.</div>
+              <div className="barbermasters__alert">{t("crm.employees.notFound")}</div>
             )}
             {!m.loading && m.employees.length === 0 && (
-              <div className="barbermasters__alert">Пока нет сотрудников.</div>
+              <div className="barbermasters__alert">{t("crm.employees.noEmployees")}</div>
             )}
           </div>
 

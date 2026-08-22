@@ -1,4 +1,5 @@
 import { Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import "./CashierPage.scss";
 import { useCashierPage } from "./hooks/useCashierPage";
 import { CashierPageHeader } from "./components/CashierPageHeader";
@@ -8,6 +9,7 @@ import { CashierPageModals } from "./components/CashierPageModals";
 import { CashierSubPages } from "./components/CashierSubPages";
 
 export default function CashierPage() {
+  const { t } = useTranslation();
   const vm = useCashierPage();
 
   if (
@@ -37,14 +39,14 @@ export default function CashierPage() {
           onClick={() => setMobileProductsList(true)}
           color="info"
         >
-          Добавить товар
+          {t("crm.cashier.addProduct")}
         </Button>
         <div
           className="cashier-page__splitter"
           onMouseDown={handleDesktopResizeStart}
           role="separator"
           aria-orientation="vertical"
-          aria-label="Изменить ширину панелей"
+          aria-label={t("crm.cashier.resizePanels")}
         />
         <CashierCartPanel vm={vm} />
       </div>

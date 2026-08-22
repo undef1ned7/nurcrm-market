@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Search, MoreVertical, X } from "lucide-react";
 import {
   fetchShiftsAsync,
@@ -17,6 +18,7 @@ import "./ShiftPage.scss";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 
 const ShiftPage = ({ onBack }: any) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { shifts, currentShift, loading } = useShifts();
   const [activeTab, setActiveTab] = useState("sales");
@@ -487,7 +489,7 @@ const ShiftPage = ({ onBack }: any) => {
   if (!openShift) {
     return (
       <div className="shift-page">
-        <div className="shift-page__error">Нет открытой смены</div>
+        <div className="shift-page__error">{t("crm.cashier.noOpenShift")}</div>
         <button className="shift-page__back-btn" onClick={onBack}>
           <ArrowLeft size={20} />
           Назад
@@ -517,7 +519,7 @@ const ShiftPage = ({ onBack }: any) => {
         </div>
         {shift.status === "open" && (
           <button className="shift-page__close-btn" onClick={handleCloseShift}>
-            ЗАКРЫТЬ СМЕНУ
+            {t("crm.cashier.shift.closeShiftBtn")}
           </button>
         )}
       </div>
@@ -526,19 +528,19 @@ const ShiftPage = ({ onBack }: any) => {
         <div className="shift-page__summary-card">
           <div className="shift-page__summary-icon">🛒</div>
           <div className="shift-page__summary-content">
-            <div className="shift-page__summary-label">ПРОДАЖИ</div>
+            <div className="shift-page__summary-label">{t("crm.cashier.shift.sales")}</div>
             <div className="shift-page__summary-value">
-              {salesSummary.total.toFixed(2)} сом
+              {salesSummary.total.toFixed(2)} {t("common.currencySom")}
             </div>
             <div className="shift-page__summary-count">
-              {salesSummary.checks} чеков
+              {t("crm.cashier.shift.checks", { count: salesSummary.checks })}
             </div>
           </div>
         </div>
         <div className="shift-page__summary-card">
           <div className="shift-page__summary-icon">💰</div>
           <div className="shift-page__summary-content">
-            <div className="shift-page__summary-label">НАЛИЧНЫЕ</div>
+            <div className="shift-page__summary-label">{t("crm.cashier.shift.cash")}</div>
             <div className="shift-page__summary-value">
               {salesSummary.cash.toFixed(2)} сом
             </div>
@@ -550,7 +552,7 @@ const ShiftPage = ({ onBack }: any) => {
         <div className="shift-page__summary-card">
           <div className="shift-page__summary-icon">💳</div>
           <div className="shift-page__summary-content">
-            <div className="shift-page__summary-label">БЕЗНАЛ</div>
+            <div className="shift-page__summary-label">{t("crm.cashier.shift.cashless")}</div>
             <div className="shift-page__summary-value">
               {salesSummary.cashless.toFixed(2)} сом
             </div>
@@ -562,7 +564,7 @@ const ShiftPage = ({ onBack }: any) => {
         <div className="shift-page__summary-card">
           <div className="shift-page__summary-icon">⏰</div>
           <div className="shift-page__summary-content">
-            <div className="shift-page__summary-label">ОТСРОЧКА</div>
+            <div className="shift-page__summary-label">{t("crm.cashier.shift.deferred")}</div>
             <div className="shift-page__summary-value">
               {salesSummary.deferred.toFixed(2)} сом
             </div>
@@ -579,20 +581,20 @@ const ShiftPage = ({ onBack }: any) => {
             }`}
           onClick={() => setActiveTab("sales")}
         >
-          Продажи
+          {t("crm.cashier.shift.tabSales")}
         </button>
         <button
           className={`shift-page__tab ${activeTab === "money" ? "shift-page__tab--active" : ""
             }`}
           onClick={() => setActiveTab("money")}
         >
-          Движение денег
+          {t("crm.cashier.shift.tabMoney")}
         </button>
         <div className="shift-page__search">
           <Search size={18} />
           <input
             type="text"
-            placeholder="Поиск..."
+            placeholder={t("crm.cashier.shift.searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="shift-page__search-input"
@@ -687,7 +689,7 @@ const ShiftPage = ({ onBack }: any) => {
                         <span
                           className={`shift-page__type shift-page__type--${movement.type}`}
                         >
-                          {movement.type === "income" ? "Приход" : "Расход"}
+                          {movement.type === "income" ? t("crm.cashier.shift.income") : t("crm.cashier.shift.expense")}
                         </span>
                       </td>
                       <td>
@@ -777,7 +779,7 @@ const ShiftPage = ({ onBack }: any) => {
           >
             <div className="shift-page__close-modal-header">
               <h2 className="shift-page__close-modal-title">
-                {closeModalDone ? "Смена закрыта" : "Закрыть смену"}
+                {closeModalDone ? t("crm.cashier.shift.closeModalDone") : t("crm.cashier.shift.closeModalTitle")}
               </h2>
               {!closeModalDone && (
                 <button

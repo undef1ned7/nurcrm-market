@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Wallet } from "lucide-react";
 import { openShiftAsync } from "@entities/shift";
 import { fetchShiftsAsync } from "@entities/shift";
@@ -10,6 +11,7 @@ import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import "./OpenShiftPage.scss";
 
 const OpenShiftPage = ({ onBack }: any) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { list: cashBoxes } = useCash();
   const { currentUser, userId } = useUser();
@@ -40,7 +42,7 @@ const OpenShiftPage = ({ onBack }: any) => {
     // Валидация
     const cashAmount = parseFloat(openingCash);
     if (isNaN(cashAmount) || cashAmount < 0) {
-      showAlert("error", "Ошибка", "Пожалуйста, введите корректную сумму");
+      showAlert("error", t("common.error"), t("crm.cashier.shift.alerts.invalidAmount"));
       return;
     }
 
@@ -48,8 +50,8 @@ const OpenShiftPage = ({ onBack }: any) => {
     if (!cashBoxes || cashBoxes.length === 0) {
       showAlert(
         "error",
-        "Ошибка",
-        "Нет доступных касс. Пожалуйста, создайте кассу перед началом смены."
+        t("common.error"),
+        t("crm.cashier.shift.alerts.noCashboxes")
       );
       return;
     }
@@ -59,7 +61,7 @@ const OpenShiftPage = ({ onBack }: any) => {
     const cashboxId = firstCashBox?.id;
 
     if (!cashboxId) {
-      showAlert("error", "Ошибка", "Не удалось определить кассу");
+      showAlert("error", t("common.error"), t("crm.cashier.shift.alerts.cashboxNotFound"));
       return;
     }
 
@@ -67,7 +69,7 @@ const OpenShiftPage = ({ onBack }: any) => {
     const cashierId = currentUser?.id || userId;
 
     if (!cashierId) {
-      showAlert("error", "Ошибка", "Не удалось определить кассира");
+      showAlert("error", t("common.error"), t("crm.cashier.shift.alerts.cashierNotFound"));
       return;
     }
 
@@ -82,7 +84,7 @@ const OpenShiftPage = ({ onBack }: any) => {
         })
       ).unwrap();
 
-      showAlert("success", "Успех", "Смена успешно открыта");
+      showAlert("success", t("common.success"), t("crm.cashier.shift.alerts.openSuccess"));
       // Обновляем список смен
       dispatch((fetchShiftsAsync as any)());
       dispatch((getCashBoxes as any)());
@@ -94,8 +96,8 @@ const OpenShiftPage = ({ onBack }: any) => {
       console.error("Ошибка при открытии смены:", error);
       showAlert(
         "error",
-        "Ошибка",
-        error?.data?.detail || error?.message || "Не удалось открыть смену"
+        t("common.error"),
+        error?.data?.detail || error?.message || t("crm.cashier.shift.alerts.openFailed")
       );
     } finally {
       setLoading(false);
@@ -112,7 +114,7 @@ const OpenShiftPage = ({ onBack }: any) => {
         >
           <ArrowLeft size={20} />
         </button>
-        <h1 className="open-shift-page__title">Открытие смены</h1>
+        <h1 className="open-shift-page__title">{t("crm.cashier.shift.openTitle")}</h1>
       </div>
 
       <div className="open-shift-page__content">
@@ -120,14 +122,14 @@ const OpenShiftPage = ({ onBack }: any) => {
           <div className="open-shift-page__icon">
             <Wallet size={48} style={{ color: "#22c55e" }} />
           </div>
-          <h2 className="open-shift-page__card-title">Начальная сумма</h2>
+          <h2 className="open-shift-page__card-title">{t("crm.cashier.shift.openingAmount")}</h2>
           <p className="open-shift-page__card-description">
-            Введите сумму наличных денег в кассе на начало смены
+            {t("crm.cashier.shift.openingHint")}
           </p>
 
           <div className="open-shift-page__input-wrapper">
             <label className="open-shift-page__label">
-              Сумма наличных (сом) *
+              {t("crm.cashier.shift.cashAmountLabel")}
             </label>
             <input
               type="number"
@@ -147,7 +149,7 @@ const OpenShiftPage = ({ onBack }: any) => {
             onClick={handleOpenShift}
             disabled={loading || !openingCash}
           >
-            {loading ? "Открытие..." : "Открыть смену"}
+            {loading ? t("crm.cashier.shift.opening") : t("crm.cashier.shift.openShift")}
           </button>
         </div>
       </div>

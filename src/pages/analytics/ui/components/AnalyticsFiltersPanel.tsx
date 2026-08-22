@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { fetchSaleConsultants, type SaleConsultant } from "@entities/sale";
 import { formatDateForAPI } from "../analytics.utils";
 
 export function AnalyticsFiltersPanel({ vm }: any) {
+  const { t } = useTranslation();
   const {
     showFilters,
     setShowFilters,
@@ -19,6 +21,7 @@ export function AnalyticsFiltersPanel({ vm }: any) {
     mainCashboxTitle,
   } = vm;
   const [consultants, setConsultants] = useState<SaleConsultant[]>([]);
+  const ff = "crm.analytics.filterFields";
 
   useEffect(() => {
     if (!showFilters) return undefined;
@@ -46,19 +49,19 @@ export function AnalyticsFiltersPanel({ vm }: any) {
       {showFilters && (
         <div className="analytics-page__filters">
           <div className="analytics-page__filters-header">
-            <h3>Фильтры</h3>
+            <h3>{t("crm.analytics.filters")}</h3>
             <button
               className="analytics-page__filters-close"
               onClick={() => setShowFilters(false)}
+              aria-label={t("common.close")}
             >
               <X size={20} />
             </button>
           </div>
 
           <div className="analytics-page__filters-content">
-            {/* Период */}
             <div className="analytics-page__filter-group analytics-page__filter-group--period">
-              <label>Период</label>
+              <label>{t(`${ff}.period`)}</label>
               <div className="analytics-page__filter-row">
                 <input
                   type="datetime-local"
@@ -86,12 +89,12 @@ export function AnalyticsFiltersPanel({ vm }: any) {
             {showPeopleFilters && (
               <>
                 <div className="analytics-page__filter-group">
-                  <label>Кассир</label>
+                  <label>{t(`${ff}.cashier`)}</label>
                   <select
                     value={filters.cashier}
                     onChange={(e) => updateFilter("cashier", e.target.value)}
                   >
-                    <option value="">Все</option>
+                    <option value="">{t(`${ff}.all`)}</option>
                     {consultants.map((item) => (
                       <option key={`cashier-${item.id}`} value={item.id}>
                         {item.full_name}
@@ -100,14 +103,14 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                   </select>
                 </div>
                 <div className="analytics-page__filter-group">
-                  <label>Консультант</label>
+                  <label>{t(`${ff}.consultant`)}</label>
                   <select
                     value={filters.consultant}
                     onChange={(e) =>
                       updateFilter("consultant", e.target.value)
                     }
                   >
-                    <option value="">Все</option>
+                    <option value="">{t(`${ff}.all`)}</option>
                     {consultants.map((item) => (
                       <option key={`consultant-${item.id}`} value={item.id}>
                         {item.full_name}
@@ -118,28 +121,27 @@ export function AnalyticsFiltersPanel({ vm }: any) {
               </>
             )}
 
-            {/* Фильтры для Sales и Cashiers */}
             {(activeTab === "sales" ||
               activeTab === "cashiers" ||
               activeTab === "suppliers" ||
               activeTab === "purchases") && (
               <>
                 <div className="analytics-page__filter-group">
-                  <label>Способ оплаты</label>
+                  <label>{t(`${ff}.paymentMethod`)}</label>
                   <select
                     value={filters.payment_method}
                     onChange={(e) =>
                       updateFilter("payment_method", e.target.value)
                     }
                   >
-                    <option value="">Все способы</option>
-                    <option value="cash">Наличные</option>
-                    <option value="transfer">Безналичные</option>
+                    <option value="">{t(`${ff}.allMethods`)}</option>
+                    <option value="cash">{t("crm.analytics.sales.cash")}</option>
+                    <option value="transfer">{t("crm.analytics.cashiers.transfer")}</option>
                   </select>
                 </div>
 
                 <div className="analytics-page__filter-group">
-                  <label>Сумма от</label>
+                  <label>{t(`${ff}.amountFrom`)}</label>
                   <input
                     type="number"
                     value={filters.min_total}
@@ -149,7 +151,7 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                 </div>
 
                 <div className="analytics-page__filter-group">
-                  <label>Сумма до</label>
+                  <label>{t(`${ff}.amountTo`)}</label>
                   <input
                     type="number"
                     value={filters.max_total}
@@ -161,7 +163,7 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                 {(activeTab === "suppliers" || activeTab === "purchases") && (
                   <>
                     <div className="analytics-page__filter-group">
-                      <label>Дата закупки от</label>
+                      <label>{t(`${ff}.purchaseDateFrom`)}</label>
                       <input
                         type="date"
                         value={filters.purchase_date_from}
@@ -172,7 +174,7 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                     </div>
 
                     <div className="analytics-page__filter-group">
-                      <label>Дата закупки до</label>
+                      <label>{t(`${ff}.purchaseDateTo`)}</label>
                       <input
                         type="date"
                         value={filters.purchase_date_to}
@@ -186,16 +188,15 @@ export function AnalyticsFiltersPanel({ vm }: any) {
               </>
             )}
 
-            {/* Филиал (только для owner/admin) - показываем после основных фильтров */}
             {(currentUser?.role === "owner" ||
               currentUser?.role === "admin") && (
               <div className="analytics-page__filter-group">
-                <label>Филиал</label>
+                <label>{t(`${ff}.branch`)}</label>
                 <select
                   value={filters.branch}
                   onChange={(e) => updateFilter("branch", e.target.value)}
                 >
-                  <option value="">Все филиалы</option>
+                  <option value="">{t(`${ff}.allBranches`)}</option>
                   {branches.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.name}
@@ -211,30 +212,29 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                         updateFilter("include_global", e.target.checked)
                       }
                     />
-                    Включить глобальные записи
+                    {t(`${ff}.includeGlobal`)}
                   </label>
                 )}
               </div>
             )}
 
-            {/* Фильтры для Warehouse */}
             {activeTab === "warehouse" && (
               <>
                 <div className="analytics-page__filter-group">
-                  <label>Тип товара</label>
+                  <label>{t(`${ff}.productKind`)}</label>
                   <select
                     value={filters.kind}
                     onChange={(e) => updateFilter("kind", e.target.value)}
                   >
-                    <option value="">Все типы</option>
-                    <option value="product">Товар</option>
-                    <option value="service">Услуга</option>
-                    <option value="bundle">Комплект</option>
+                    <option value="">{t(`${ff}.allKinds`)}</option>
+                    <option value="product">{t(`${ff}.kindProduct`)}</option>
+                    <option value="service">{t(`${ff}.kindService`)}</option>
+                    <option value="bundle">{t(`${ff}.kindBundle`)}</option>
                   </select>
                 </div>
 
                 <div className="analytics-page__filter-group analytics-page__filter-group--checkbox">
-                  <span className="analytics-page__filter-group-label">Остаток</span>
+                  <span className="analytics-page__filter-group-label">{t(`${ff}.stock`)}</span>
                   <label className="analytics-page__filter-checkbox">
                     <input
                       type="checkbox"
@@ -243,47 +243,45 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                         updateFilter("low_only", e.target.checked)
                       }
                     />
-                    Только товары с низким остатком
+                    {t(`${ff}.lowStockOnly`)}
                   </label>
                 </div>
               </>
             )}
 
-            {/* Лимит записей для детальных вкладок */}
             {(activeTab === "products" ||
               activeTab === "suppliers" ||
               activeTab === "purchases" ||
               activeTab === "users" ||
               activeTab === "finance") && (
               <div className="analytics-page__filter-group">
-                <label>Лимит записей</label>
+                <label>{t(`${ff}.recordLimit`)}</label>
                 <input
                   type="number"
                   min="1"
                   value={filters.limit}
                   onChange={(e) => updateFilter("limit", e.target.value)}
-                  placeholder="Без лимита"
+                  placeholder={t(`${ff}.noLimit`)}
                 />
               </div>
             )}
 
-            {/* Фильтры для Shifts */}
             {activeTab === "shifts" && (
               <>
                 <div className="analytics-page__filter-group">
-                  <label>Статус</label>
+                  <label>{t(`${ff}.status`)}</label>
                   <select
                     value={filters.status}
                     onChange={(e) => updateFilter("status", e.target.value)}
                   >
-                    <option value="">Все статусы</option>
-                    <option value="open">Открыта</option>
-                    <option value="closed">Закрыта</option>
+                    <option value="">{t(`${ff}.allStatuses`)}</option>
+                    <option value="open">{t("crm.analytics.employees.opened")}</option>
+                    <option value="closed">{t("crm.analytics.employees.closed")}</option>
                   </select>
                 </div>
 
                 <div className="analytics-page__filter-group">
-                  <label>Касса</label>
+                  <label>{t(`${ff}.cashbox`)}</label>
                   <input value={mainCashboxTitle} disabled readOnly />
                 </div>
               </>
@@ -294,7 +292,7 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                 className="analytics-page__filter-reset"
                 onClick={resetFilters}
               >
-                Сбросить
+                {t("common.reset")}
               </button>
               <button
                 className="analytics-page__filter-apply"
@@ -303,7 +301,7 @@ export function AnalyticsFiltersPanel({ vm }: any) {
                   setShowFilters(false);
                 }}
               >
-                Применить
+                {t("common.apply")}
               </button>
             </div>
           </div>

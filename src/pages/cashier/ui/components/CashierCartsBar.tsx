@@ -1,4 +1,5 @@
 import { Plus, ShoppingCart, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "./CashierCartsBar.scss";
 
 const CashierCartsBar = ({
@@ -11,16 +12,18 @@ const CashierCartsBar = ({
   layout = "compact",
   alwaysShow = false,
 }: any) => {
+  const { t } = useTranslation();
+
   if (!alwaysShow && !carts.length) return null;
 
   return (
     <div
       className={`cashier-carts-bar cashier-carts-bar--${layout}`}
     >
-      <div className="cashier-carts-bar__label">Корзины</div>
-      <div className="cashier-carts-bar__tabs" role="tablist" aria-label="Корзины">
+      <div className="cashier-carts-bar__label">{t("crm.cashier.carts")}</div>
+      <div className="cashier-carts-bar__tabs" role="tablist" aria-label={t("crm.cashier.carts")}>
         {!carts.length && (
-          <span className="cashier-carts-bar__empty">Нет открытых корзин</span>
+          <span className="cashier-carts-bar__empty">{t("crm.cashier.noOpenCarts")}</span>
         )}
         {carts.map((cart) => {
           const isActive = String(cart.saleId) === String(activeSaleId);
@@ -41,7 +44,7 @@ const CashierCartsBar = ({
                   isActive ? "cashier-carts-bar__tab--active" : ""
                 } ${cart.isMain ? "cashier-carts-bar__tab--main" : ""}`}
                 onClick={() => onSelect(cart.saleId)}
-                title={cart.isMain ? "Основная корзина" : cart.label}
+                title={cart.isMain ? t("crm.cashier.mainCart") : cart.label}
               >
                 <ShoppingCart size={14} aria-hidden />
                 <span className="cashier-carts-bar__tab-label">{cart.label}</span>
@@ -55,8 +58,8 @@ const CashierCartsBar = ({
                   className="cashier-carts-bar__delete-btn"
                   disabled={switching}
                   onClick={() => onDelete(cart.saleId)}
-                  title={`Удалить ${cart.label}`}
-                  aria-label={`Удалить ${cart.label}`}
+                  title={t("crm.cashier.deleteCart", { label: cart.label })}
+                  aria-label={t("crm.cashier.deleteCart", { label: cart.label })}
                 >
                   <X size={13} />
                 </button>
@@ -70,10 +73,10 @@ const CashierCartsBar = ({
         className="cashier-carts-bar__new-btn"
         disabled={switching}
         onClick={onNewCart}
-        title="Отложить текущую корзину и начать новую"
+        title={t("crm.cashier.parkCartHint")}
       >
         <Plus size={16} />
-        <span>Новая</span>
+        <span>{t("crm.cashier.newCartLabel")}</span>
       </button>
     </div>
   );

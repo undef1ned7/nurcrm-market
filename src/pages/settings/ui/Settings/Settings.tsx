@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import "./Settings.scss";
 import Tabs from "../Tabs/Tabs";
 import {
@@ -41,18 +42,23 @@ import { ScalesTokenTab } from "./tabs/ScalesTokenTab";
 import { InterfaceTab } from "./tabs/InterfaceTab";
 import { OnlineTab } from "./tabs/OnlineTab";
 import { PrintTab } from "./tabs/PrintTab";
+import {
+  SETTINGS_TABS,
+  type SettingsTabId,
+} from "../settingsTabs";
 
 /* helpers */
 const safeOrigin = () =>
   typeof window !== "undefined" ? window.location.origin : "";
 
-const SCALE_BARCODE_MODE_OPTIONS = [
-  { value: "auto", label: "Авто (по префиксу)" },
-  { value: "weight", label: "По весу" },
-  { value: "amount", label: "По сумме" },
-];
+const SCALE_BARCODE_MODE_VALUES = [
+  { value: "auto", labelKey: "settings.company.scaleBarcodeAuto" },
+  { value: "weight", labelKey: "settings.company.scaleBarcodeWeight" },
+  { value: "amount", labelKey: "settings.company.scaleBarcodeAmount" },
+] as const;
 
 const Settings = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const navigate = useNavigate();
 
@@ -99,11 +105,11 @@ const Settings = () => {
   ]);
 
   // Определяем начальный активный таб в зависимости от доступных табов
-  const initialTab = useMemo(() => {
-    if (isOwner) return "Моя компания";
-    if (isMarketSector) return "Токен для весов";
-    if (canViewOnline) return "Онлайн";
-    return "Безопасность";
+  const initialTab = useMemo((): SettingsTabId => {
+    if (isOwner) return SETTINGS_TABS.company;
+    if (isMarketSector) return SETTINGS_TABS.scalesToken;
+    if (canViewOnline) return SETTINGS_TABS.online;
+    return SETTINGS_TABS.security;
   }, [isOwner, isMarketSector, canViewOnline]);
 
   // Инициализируем настройку сайдбара из localStorage при загрузке (только один раз)
@@ -114,7 +120,9 @@ const Settings = () => {
     }
   }, []);
 
-  const [activeTab, setActiveTab] = useState("Безопасность");
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(
+    SETTINGS_TABS.security,
+  );
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Устанавливаем начальный таб при первой загрузке данных
@@ -129,33 +137,37 @@ const Settings = () => {
   useEffect(() => {
     if (!isInitialized) return;
 
-    if (activeTab === "Моя компания" && !isOwner) {
+    if (activeTab === SETTINGS_TABS.company && !isOwner) {
       setActiveTab(
         isMarketSector
-          ? "Токен для весов"
+          ? SETTINGS_TABS.scalesToken
           : canViewOnline
-            ? "Онлайн"
-            : "Безопасность"
+            ? SETTINGS_TABS.online
+            : SETTINGS_TABS.security,
       );
-    } else if (activeTab === "Токен для весов" && !isMarketSector) {
-      setActiveTab(
-        isOwner ? "Моя компания" : canViewOnline ? "Онлайн" : "Безопасность"
-      );
-    } else if (activeTab === "Онлайн" && !canViewOnline) {
+    } else if (activeTab === SETTINGS_TABS.scalesToken && !isMarketSector) {
       setActiveTab(
         isOwner
-          ? "Моя компания"
-          : isMarketSector
-            ? "Токен для весов"
-            : "Безопасность"
+          ? SETTINGS_TABS.company
+          : canViewOnline
+            ? SETTINGS_TABS.online
+            : SETTINGS_TABS.security,
       );
-    } else if (activeTab === "Касса" && !canViewMarketCashierSettings) {
+    } else if (activeTab === SETTINGS_TABS.online && !canViewOnline) {
       setActiveTab(
         isOwner
-          ? "Моя компания"
+          ? SETTINGS_TABS.company
           : isMarketSector
-            ? "Токен для весов"
-            : "Безопасность"
+            ? SETTINGS_TABS.scalesToken
+            : SETTINGS_TABS.security,
+      );
+    } else if (activeTab === SETTINGS_TABS.cashier && !canViewMarketCashierSettings) {
+      setActiveTab(
+        isOwner
+          ? SETTINGS_TABS.company
+          : isMarketSector
+            ? SETTINGS_TABS.scalesToken
+            : SETTINGS_TABS.security,
       );
     }
   }, [
@@ -200,7 +212,7 @@ const Settings = () => {
       } catch (err: any) {
         if (cancelled) return;
         setCashierSettingsError(
-          validateResErrors(err, "Не удалось загрузить настройки кассы")
+          validateResErrors(err, t("settings.alerts.cashierLoadFailed"))
         );
       } finally {
         if (!cancelled) setCashierSettingsLoading(false);
@@ -219,7 +231,7 @@ const Settings = () => {
 
     const code = String(cashierSettings.deleteCode || "").trim();
     if (code && !/^\d{4,8}$/.test(code)) {
-      showAlert("error", "Код удаления должен состоять из 4–8 цифр");
+      showAlert("error", t("settings.alerts.deleteCodeInvalid"));
       return;
     }
 
@@ -230,7 +242,7 @@ const Settings = () => {
     if (rawPercent !== "") {
       percent = parseFloat(rawPercent);
       if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
-        showAlert("error", "Максимальная скидка должна быть от 0 до 100 %");
+        showAlert("error", t("settings.alerts.maxDiscountInvalid"));
         return;
       }
     }
@@ -254,11 +266,11 @@ const Settings = () => {
         debtScheduleVersion: normalized.debtScheduleVersion || "v2",
       });
       setCashierSettingsError("");
-      showAlert("success", "Настройки кассы сохранены");
+      showAlert("success", t("settings.alerts.cashierSaved"));
     } catch (err: any) {
       showAlert(
         "error",
-        validateResErrors(err, "Не удалось сохранить настройки кассы")
+        validateResErrors(err, t("settings.alerts.cashierSaveFailed"))
       );
     } finally {
       setCashierSettingsSaving(false);
@@ -369,9 +381,9 @@ const Settings = () => {
       }
       await dispatch(updateUserCompanyName(payload)).unwrap();
       await dispatch(getCompany(undefined as any));
-      showAlert("success", "Данные компании успешно сохранены");
+      showAlert("success", t("settings.alerts.companySaved"));
     } catch (err: any) {
-      const errorMessage = validateResErrors(err, "Ошибка при сохранении данных компании");
+      const errorMessage = validateResErrors(err, t("settings.alerts.companySaveFailed"));
       showAlert("error", errorMessage);
     } finally {
       setSaving(false);
@@ -385,26 +397,26 @@ const Settings = () => {
       (s) => s.trim() !== ""
     );
     if (!anyPasswordFilled) {
-      showAlert("warning", "Заполните поля для изменения пароля");
+      showAlert("warning", t("settings.alerts.passwordFieldsRequired"));
       return;
     }
 
     if (passwordsMismatch) {
-      showAlert("error", "Пароли не совпадают");
+      showAlert("error", t("settings.alerts.passwordMismatch"));
       return;
     }
 
     setSaving(true);
     try {
       await dispatch(updateUserData(formData)).unwrap();
-      showAlert("success", "Пароль успешно изменен");
+      showAlert("success", t("settings.alerts.passwordSaved"));
       setFormData({
         current_password: "",
         new_password: "",
         new_password2: "",
       });
     } catch (err: any) {
-      const errorMessage = validateResErrors(err, "Ошибка при изменении пароля");
+      const errorMessage = validateResErrors(err, t("settings.alerts.passwordSaveFailed"));
       showAlert("error", errorMessage);
     } finally {
       setSaving(false);
@@ -434,9 +446,9 @@ const Settings = () => {
     e.preventDefault();
     try {
       localStorage.setItem("sidebarAutoClose", String(sidebarAutoClose));
-      showAlert("success", "Настройки интерфейса успешно сохранены");
+      showAlert("success", t("settings.alerts.interfaceSaved"));
     } catch (err: any) {
-      const errorMessage = validateResErrors(err, "Ошибка при сохранении настроек интерфейса");
+      const errorMessage = validateResErrors(err, t("settings.alerts.interfaceSaveFailed"));
       showAlert("error", errorMessage);
     }
   };
@@ -452,7 +464,7 @@ const Settings = () => {
         (typeof result === "string" ? result : null);
 
       if (!token) {
-        showAlert("error", "Токен не найден в ответе сервера");
+        showAlert("error", t("settings.alerts.tokenNotFound"));
         return;
       }
 
@@ -481,12 +493,11 @@ const Settings = () => {
       const title = document.createElement("h3");
       title.style.cssText =
         "margin:0 0 16px;font-size:18px;font-weight:600;color:var(--nur-text);";
-      title.textContent = "Токен для доступа к весам";
+      title.textContent = t("settings.scalesToken.modalTitle");
 
       const hint = document.createElement("p");
       hint.style.cssText = "margin:0 0 12px;color:var(--nur-muted);font-size:14px;";
-      hint.textContent =
-        "Скопируйте токен и сохраните его в безопасном месте:";
+      hint.textContent = t("settings.scalesToken.modalHint");
 
       const tokenBox = document.createElement("div");
       tokenBox.style.cssText =
@@ -499,13 +510,13 @@ const Settings = () => {
 
       const copyBtn = document.createElement("button");
       copyBtn.type = "button";
-      copyBtn.textContent = "Копировать";
+      copyBtn.textContent = t("settings.copy");
       copyBtn.style.cssText =
         "padding:8px 16px;background:var(--nur-info);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;";
 
       const closeBtn = document.createElement("button");
       closeBtn.type = "button";
-      closeBtn.textContent = "Закрыть";
+      closeBtn.textContent = t("common.close");
       closeBtn.style.cssText =
         "padding:8px 16px;background:var(--nur-surface-3);color:var(--nur-text);border:1px solid var(--nur-border);border-radius:4px;cursor:pointer;font-size:14px;";
 
@@ -522,15 +533,15 @@ const Settings = () => {
         navigator.clipboard
           .writeText(tokenString)
           .then(() => {
-            copyBtn.textContent = "Скопировано!";
+            copyBtn.textContent = t("settings.scalesToken.copied");
             copyBtn.style.background = "#f7d74f";
             setTimeout(() => {
-              copyBtn.textContent = "Копировать";
+              copyBtn.textContent = t("settings.copy");
               copyBtn.style.background = "#2563eb";
             }, 2000);
           })
           .catch(() => {
-            showAlert("error", "Не удалось скопировать. Токен: " + tokenString);
+            showAlert("error", t("settings.alerts.copyFailed", { token: tokenString }));
           });
       };
 
@@ -697,11 +708,11 @@ const Settings = () => {
       await dispatch(updateUserCompanyName({ slug: candidate })).unwrap();
       await dispatch(getCompany(undefined as any));
       setSlugAvailable(null);
-      showAlert("success", "Slug компании обновлён");
+      showAlert("success", t("settings.alerts.slugSaved"));
     } catch (e: any) {
       const msg = validateResErrors(e, "Не удалось сохранить slug");
       setSlugError(typeof msg === "string" ? msg : "Slug уже существует");
-      showAlert("error", typeof msg === "string" ? msg : "Не удалось сохранить slug");
+      showAlert("error", typeof msg === "string" ? msg : t("settings.alerts.slugSaveFailed"));
     } finally {
       setSlugSaving(false);
     }
@@ -712,7 +723,7 @@ const Settings = () => {
       if (!text) return;
       try {
         await navigator.clipboard.writeText(String(text));
-        showAlert("success", "Скопировано");
+        showAlert("success", t("settings.alerts.copied"));
       } catch (e: any) { 
         const errorMessage = validateResErrors(e, "Не удалось скопировать. Скопируйте вручную.");
         showAlert("error", errorMessage);
@@ -727,12 +738,21 @@ const Settings = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   }, []);
 
+  const scaleBarcodeModeOptions = useMemo(
+    () =>
+      SCALE_BARCODE_MODE_VALUES.map((option) => ({
+        value: option.value,
+        label: t(option.labelKey),
+      })),
+    [t],
+  );
+
   const tabProps = {
     CafeKitchenPrintersSettings,
     CafeReceiptPrinterSettings,
     DataContainer,
     Moon,
-    SCALE_BARCODE_MODE_OPTIONS,
+    SCALE_BARCODE_MODE_OPTIONS: scaleBarcodeModeOptions,
     Sun,
     canEditSlug,
     canSaveSlug,
@@ -788,19 +808,19 @@ const Settings = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case "Моя компания":
+      case SETTINGS_TABS.company:
         return <CompanyTab {...tabProps} />;
-      case "Безопасность":
+      case SETTINGS_TABS.security:
         return <SecurityTab {...tabProps} />;
-      case "Касса":
+      case SETTINGS_TABS.cashier:
         return <CashierTab {...tabProps} />;
-      case "Токен для весов":
+      case SETTINGS_TABS.scalesToken:
         return <ScalesTokenTab {...tabProps} />;
-      case "Интерфейс":
+      case SETTINGS_TABS.interface:
         return <InterfaceTab {...tabProps} />;
-      case "Онлайн":
+      case SETTINGS_TABS.online:
         return <OnlineTab {...tabProps} />;
-      case "Печать":
+      case SETTINGS_TABS.print:
         return <PrintTab {...tabProps} />;
       default:
         return null;
@@ -810,8 +830,8 @@ const Settings = () => {
   return (
     <PageShell className="settings">
       <PageHeader
-        title="Настройки"
-        subtitle="Управление настройками вашей компании"
+        title={t("settings.pageTitle")}
+        subtitle={t("settings.pageSubtitle")}
       />
 
       <Tabs
@@ -837,7 +857,7 @@ const Settings = () => {
             window.location.reload();
           }}
         >
-          Выйти из аккаунта
+          {t("settings.logout")}
         </button>
       </div>
 
@@ -848,7 +868,7 @@ const Settings = () => {
         message={alertModal.message}
         onClose={closeAlert}
       onConfirm={undefined as any}
-      okText="Ок"
+      okText={t("settings.ok")}
       />
     </PageShell>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Bell, ShoppingCart } from "lucide-react";
 import { useUser } from "@entities/user";
 import NotificationModal from "@widgets/notification-modal/ui/NotificationModal";
@@ -12,95 +13,55 @@ import { usePageChrome } from "@shared/ui/page-shell";
 import "./Header.scss";
 import { useAppDispatch, useAppSelector } from "@app/store";
 
-const pageTitles = {
-  "/login": "Вход",
-  "/crm/set": "Настройки",
-  "/crm/pos-print-settings": "Печать чеков",
-  "/crm/market/cashier": "Касса",
-  "/crm/market/customer-display": "Экран покупателя",
-  "/crm/market/analytics": "Аналитика",
-  "/crm/market/history": "История",
-  "/crm/market/documents": "Документы",
-  "/crm/market/documents/create": "Новый документ",
-  "/crm/market/procurement": "Закупки",
-  "/crm/market/procurement/recommendations": "Рекомендуемый заказ",
-  "/crm/market/procurement/receipt": "Приёмка",
-  "/crm/market/procurement/return": "Возврат поставщику",
-  "/crm/market/suppliers": "Поставщики",
-  "/crm/market/categories": "Категории",
-  "/crm/sklad": "Склад",
-  "/crm/sklad/mass-scan": "Массовое сканирование",
-  "/crm/sklad/add-product": "Товар",
-  "/crm/clients": "Клиенты",
-  "/crm/sell": "Продажи",
-  "/crm/kassa": "Касса",
-  "/crm/employ": "Сотрудники",
-  "/crm/shifts": "Смены",
-  "/crm/branch": "Филиалы",
-  "/crm/debts": "Долги",
-  "/crm/barcodes": "Штрихкоды",
-  "/crm/scales": "Весы",
-  "/crm/brand-category": "Бренд и категория",
-  "/crm/additional-services": "Доп. услуги",
-};
+function resolvePageMeta(pathname: string, t: ReturnType<typeof useTranslation>["t"]) {
+  const pages = t("header.pages", { returnObjects: true }) as unknown as Record<
+    string,
+    string
+  >;
+  const descriptions = t("header.descriptions", {
+    returnObjects: true,
+  }) as unknown as Record<string, string>;
 
-const pageDescriptions = {
-  "/crm/sklad": "Товары, остатки и операции склада",
-  "/crm/clients": "Клиенты и контрагенты",
-  "/crm/market/analytics": "Показатели продаж и динамика",
-  "/crm/market/cashier": "Продажи и оплата",
-  "/crm/sell": "История и управление продажами",
-  "/crm/shifts": "Открытие, закрытие и отчёты смен",
-  "/crm/debts": "Долги клиентов и погашения",
-  "/crm/set": "Компания, пользователи и безопасность",
-  "/crm/branch": "Филиалы и точки продаж",
-  "/crm/market/documents": "Накладные, чеки и акты",
-  "/crm/market/history": "История продаж",
-  "/crm/employ": "Сотрудники и роли",
-  "/crm/kassa": "Кассовые операции",
-  "/crm/market/procurement": "История закупок и возвраты поставщикам",
-  "/crm/market/procurement/recommendations":
-    "Рекомендации по закупке у поставщика",
-  "/crm/market/procurement/return": "Списание товара обратно поставщику",
-};
-
-function resolvePageMeta(pathname: any) {
-  const exactTitle = pageTitles[pathname];
-  const exactDesc = pageDescriptions[pathname];
+  const exactTitle = pages[pathname];
+  const exactDesc = descriptions[pathname];
   if (exactTitle) {
     return { title: exactTitle, description: exactDesc ?? null };
   }
 
   let bestKey = "";
-  let bestTitle = null;
-  for (const key of Object.keys(pageTitles)) {
+  let bestTitle: string | null = null;
+  for (const key of Object.keys(pages)) {
     if (pathname === key || pathname.startsWith(`${key}/`)) {
       if (key.length > bestKey.length) {
         bestKey = key;
-        bestTitle = pageTitles[key];
+        bestTitle = pages[key];
       }
     }
   }
 
-  let desc = null;
+  let desc: string | null = null;
   let descKey = "";
-  for (const key of Object.keys(pageDescriptions)) {
+  for (const key of Object.keys(descriptions)) {
     if (pathname === key || pathname.startsWith(`${key}/`)) {
       if (key.length > descKey.length) {
         descKey = key;
-        desc = pageDescriptions[key];
+        desc = descriptions[key];
       }
     }
   }
 
-  return { title: bestTitle ?? "Магазин", description: desc };
+  return { title: bestTitle ?? t("header.defaultTitle"), description: desc };
 }
 
 const Header = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const routeMeta = resolvePageMeta(location.pathname);
+  const routeMeta = useMemo(
+    () => resolvePageMeta(location.pathname, t),
+    [location.pathname, t],
+  );
   const { meta, actions } = usePageChrome();
   const title = meta?.title ?? routeMeta.title;
   const description = meta?.subtitle ?? routeMeta.description;
@@ -125,7 +86,7 @@ const Header = () => {
   const usernameToDisplay = userProfile
     ? `${userProfile.first_name || ""} ${userProfile.last_name || ""}`.trim() ||
       userProfile.email
-    : "Гость";
+    : t("header.guest");
 
   return (
     <header className="header">
@@ -145,22 +106,22 @@ const Header = () => {
           <button
             className="header__cashier-btn"
             onClick={() => navigate("/crm/market/cashier")}
-            title="Открыть кассу"
+            title={t("header.openCashier")}
             type="button"
-            aria-label="Открыть кассу"
+            aria-label={t("header.openCashier")}
           >
             <ShoppingCart size={18} />
-            <span>Касса</span>
+            <span>{t("header.cashier")}</span>
           </button>
         )}
         <button
           className="header__notify-btn"
           type="button"
-          title="Уведомления"
+          title={t("header.notifications")}
           aria-label={
             unreadBadge
-              ? `Уведомления, непрочитанных: ${unreadBadge}`
-              : "Уведомления"
+              ? `${t("header.notifications")}: ${unreadBadge}`
+              : t("header.notifications")
           }
           onClick={() => setShowNotifications(true)}
         >
@@ -178,8 +139,8 @@ const Header = () => {
             if (!userProfile) return;
             navigate("/crm/set");
           }}
-          title="Настройки профиля"
-          aria-label="Настройки профиля"
+          title={t("header.profileSettings")}
+          aria-label={t("header.profileSettings")}
         >
           <div className="header__avatar" aria-hidden="true">
             {usernameToDisplay

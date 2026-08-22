@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import SellHistoryToolbar from "./SellHistoryToolbar";
 import SellHistoryTable from "./SellHistoryTable";
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export default function SellHistory({ vm }: Props) {
+  const { t } = useTranslation();
   const { filterField, historyView } = vm;
 
   return (
@@ -16,7 +18,7 @@ export default function SellHistory({ vm }: Props) {
       <SellHistoryToolbar vm={vm} />
 
       {filterField.length === 0 ? (
-        <div className="sell__empty">Ничего не найдено</div>
+        <div className="sell__empty">{t("common.nothingFound")}</div>
       ) : (
         <DataContainer>
           {historyView === "table" ? (

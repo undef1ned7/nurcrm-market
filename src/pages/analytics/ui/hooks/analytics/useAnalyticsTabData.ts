@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DollarSign,
   ShoppingCart,
@@ -11,7 +12,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  translateLowStockStatus,
   normalizeLowStockStatusType,
   barPercentOfMax,
   sortStockList,
@@ -24,7 +24,6 @@ import {
   formatNumber,
   formatAnalyticsQty,
   formatDateForChart,
-  formatCurrency,
 } from "./formatters";
 
 export function useAnalyticsTabData({
@@ -34,933 +33,953 @@ export function useAnalyticsTabData({
   stockSort,
   salaryAnalyticsRows,
 }: any) {
-// Данные для вкладки "Продажи"
-const salesData = useMemo(() => {
-  const filterSalesKpis = (kpis: any) =>
-    isStartTariff
-      ? kpis.filter((kpi: any) => !START_HIDDEN_SALES_KPI_TITLES.has(kpi.title))
-      : kpis;
+  const { t } = useTranslation();
+  const som = t("common.currencySom");
 
-  if (!analyticsData || activeTab !== "sales") {
+  const translateLowStock = (status: string) => {
+    const normalized = String(status || "")
+      .trim()
+      .toLowerCase();
+    if (normalized === "critical") {
+      return t("crm.analytics.warehouse.statusCritical");
+    }
+    if (normalized === "low") {
+      return t("crm.analytics.warehouse.statusLow");
+    }
+    return (
+      String(status || t("crm.analytics.warehouse.statusLow")).trim() ||
+      t("crm.analytics.warehouse.statusLow")
+    );
+  };
+
+  const salesPaymentLabels = useMemo(
+    () => ({
+      cash: t("crm.analytics.sales.cash"),
+      card: t("crm.analytics.sales.card"),
+      transfer: t("crm.analytics.sales.transfer"),
+    }),
+    [t],
+  );
+
+  const cashierPaymentLabels = useMemo(
+    () => ({
+      cash: t("crm.analytics.sales.cash"),
+      transfer: t("crm.analytics.cashiers.transfer"),
+      card: t("crm.analytics.cashiers.card"),
+      debt: t("crm.analytics.cashiers.debt"),
+      deferred: t("crm.analytics.cashiers.deferred"),
+    }),
+    [t],
+  );
+
+  const weekdayLabels = useMemo(
+    () => [
+      t("crm.analytics.weekdays.sun"),
+      t("crm.analytics.weekdays.mon"),
+      t("crm.analytics.weekdays.tue"),
+      t("crm.analytics.weekdays.wed"),
+      t("crm.analytics.weekdays.thu"),
+      t("crm.analytics.weekdays.fri"),
+      t("crm.analytics.weekdays.sat"),
+    ],
+    [t],
+  );
+
+  const salesData = useMemo(() => {
+    const filterSalesKpis = (kpis: any) =>
+      isStartTariff
+        ? kpis.filter(
+            (kpi: any) => !START_HIDDEN_SALES_KPI_TITLES.has(kpi.titleKey),
+          )
+        : kpis;
+
+    if (!analyticsData || activeTab !== "sales") {
+      return {
+        kpis: filterSalesKpis([
+          {
+            titleKey: "crm.analytics.sales.revenue",
+            title: t("crm.analytics.sales.revenue"),
+            value: "0",
+            currency: som,
+            icon: DollarSign,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.sales.transactions",
+            title: t("crm.analytics.sales.transactions"),
+            value: "0",
+            icon: ShoppingCart,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.sales.avgCheck",
+            title: t("crm.analytics.sales.avgCheck"),
+            value: "0",
+            currency: som,
+            icon: BarChart3,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.sales.clients",
+            title: t("crm.analytics.sales.clients"),
+            value: "0",
+            icon: Users,
+            color: "#f7d617",
+          },
+        ]),
+        salesChart: { labels: [], data: [] },
+        topProducts: [],
+        documents: [],
+        paymentMethods: { labels: [], data: [] },
+      };
+    }
+
+    const cards = analyticsData.cards || {};
+    const charts = analyticsData.charts || {};
+    const tables = analyticsData.tables || {};
+
     return {
       kpis: filterSalesKpis([
         {
-          title: "Выручка",
-          value: "0",
-          currency: "сом",
+          titleKey: "crm.analytics.sales.revenue",
+          title: t("crm.analytics.sales.revenue"),
+          value: formatNumber(cards.revenue || "0"),
+          raw: Number(cards.revenue || 0),
+          currency: som,
           icon: DollarSign,
           color: "#f7d617",
         },
         {
-          title: "Транзакции",
-          value: "0",
+          titleKey: "crm.analytics.sales.transactions",
+          title: t("crm.analytics.sales.transactions"),
+          value: formatNumber(cards.transactions || 0),
+          raw: Number(cards.transactions || 0),
           icon: ShoppingCart,
           color: "#f7d617",
         },
         {
-          title: "Средний чек",
-          value: "0",
-          currency: "сом",
+          titleKey: "crm.analytics.sales.avgCheck",
+          title: t("crm.analytics.sales.avgCheck"),
+          value: formatNumber(cards.avg_check || "0"),
+          raw: Number(cards.avg_check || 0),
+          currency: som,
           icon: BarChart3,
           color: "#f7d617",
         },
         {
-          title: "Клиенты",
-          value: "0",
+          titleKey: "crm.analytics.sales.clients",
+          title: t("crm.analytics.sales.clients"),
+          value: formatNumber(cards.clients || 0),
+          raw: Number(cards.clients || 0),
           icon: Users,
           color: "#f7d617",
         },
       ]),
       salesChart: {
-        labels: [],
-        data: [],
+        labels:
+          charts.sales_dynamics?.map((item: any) =>
+            formatDateForChart(item.date),
+          ) || [],
+        data:
+          charts.sales_dynamics?.map((item: any) =>
+            parseFloat(item.value || 0),
+          ) || [],
       },
-      topProducts: [],
-      documents: [],
+      topProducts:
+        tables.top_products?.map((product: any) => ({
+          name: product.name,
+          sold: product.sold || 0,
+          revenue: parseFloat(product.revenue || 0),
+        })) || [],
+      documents:
+        tables.documents?.map((doc: any) => ({
+          name: doc.name,
+          quantity: doc.count || 0,
+          amount: parseFloat(doc.sum || 0),
+          warehouse: doc.stock ? parseFloat(doc.stock) : 0,
+        })) || [],
       paymentMethods: {
-        labels: [],
-        data: [],
+        labels:
+          charts.payment_methods?.map(
+            (item: any) =>
+              salesPaymentLabels[
+                item.method as keyof typeof salesPaymentLabels
+              ] || item.method,
+          ) || [],
+        data:
+          charts.payment_methods?.map((item: any) =>
+            parseFloat(item.total || item.count || 0),
+          ) || [],
       },
     };
-  }
+  }, [analyticsData, activeTab, isStartTariff, t, som, salesPaymentLabels]);
 
-  const cards = analyticsData.cards || {};
-  const charts = analyticsData.charts || {};
-  const tables = analyticsData.tables || {};
+  const warehouseData = useMemo(() => {
+    if (!analyticsData || activeTab !== "warehouse") {
+      return {
+        kpis: [
+          {
+            titleKey: "crm.analytics.warehouse.totalProducts",
+            title: t("crm.analytics.warehouse.totalProducts"),
+            value: "0",
+            subtitle: t("crm.analytics.warehouse.inCategories", { count: 0 }),
+            icon: Package,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.warehouse.warehouseValue",
+            title: t("crm.analytics.warehouse.warehouseValue"),
+            value: "0",
+            currency: som,
+            icon: DollarSign,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.warehouse.runningOut",
+            title: t("crm.analytics.warehouse.runningOut"),
+            value: "0",
+            subtitle: t("crm.analytics.warehouse.needReorder"),
+            icon: TrendingUp,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.warehouse.turnover",
+            title: t("crm.analytics.warehouse.turnover"),
+            value: t("crm.analytics.warehouse.daysShort", { count: 0 }),
+            icon: BarChart3,
+            color: "#f7d617",
+          },
+        ],
+        categoryChart: { labels: [], data: [], colors: [] },
+        movementChart: { labels: [], data: [] },
+        lowStock: [],
+      };
+    }
 
-  const paymentMethodLabels = {
-    cash: "Наличные",
-    card: "Карта",
-    transfer: "Перевод",
-  };
+    const cards = analyticsData.cards || {};
+    const charts = analyticsData.charts || {};
+    const tables = analyticsData.tables || {};
+    const colors = [
+      "#f7d617",
+      "#f59e0b",
+      "#10b981",
+      "#3b82f6",
+      "#9ca3af",
+      "#8b5cf6",
+      "#ec4899",
+      "#06b6d4",
+    ];
 
-  return {
-    kpis: filterSalesKpis([
-      {
-        title: "Выручка",
-        value: formatNumber(cards.revenue || "0"),
-        raw: Number(cards.revenue || 0),
-        currency: "сом",
-        icon: DollarSign,
-        color: "#f7d617",
-      },
-      {
-        title: "Транзакции",
-        value: formatNumber(cards.transactions || 0),
-        raw: Number(cards.transactions || 0),
-        icon: ShoppingCart,
-        color: "#f7d617",
-      },
-      {
-        title: "Средний чек",
-        value: formatNumber(cards.avg_check || "0"),
-        raw: Number(cards.avg_check || 0),
-        currency: "сом",
-        icon: BarChart3,
-        color: "#f7d617",
-      },
-      {
-        title: "Клиенты",
-        value: formatNumber(cards.clients || 0),
-        raw: Number(cards.clients || 0),
-        icon: Users,
-        color: "#f7d617",
-      },
-    ]),
-    salesChart: {
-      labels:
-        charts.sales_dynamics?.map((item: any) => formatDateForChart(item.date)) ||
-        [],
-      data:
-        charts.sales_dynamics?.map((item: any) => parseFloat(item.value || 0)) ||
-        [],
-    },
-    topProducts:
-      tables.top_products?.map((product: any) => ({
-        name: product.name,
-        sold: product.sold || 0,
-        revenue: parseFloat(product.revenue || 0),
-      })) || [],
-    documents:
-      tables.documents?.map((doc: any) => ({
-        name: doc.name,
-        quantity: doc.count || 0,
-        amount: parseFloat(doc.sum || 0),
-        warehouse: doc.stock ? parseFloat(doc.stock) : 0,
-      })) || [],
-    paymentMethods: {
-      labels:
-        charts.payment_methods?.map(
-          (item: any) => paymentMethodLabels[item.method] || item.method,
-        ) || [],
-      data:
-        charts.payment_methods?.map((item: any) =>
-          parseFloat(item.total || item.count || 0),
-        ) || [],
-    },
-  };
-}, [analyticsData, activeTab, isStartTariff]);
-
-// Данные для вкладки "Склад"
-const warehouseData = useMemo(() => {
-  if (!analyticsData || activeTab !== "warehouse") {
     return {
       kpis: [
         {
-          title: "Всего товаров",
-          value: "0",
-          subtitle: "В 0 категориях",
+          titleKey: "crm.analytics.warehouse.totalProducts",
+          title: t("crm.analytics.warehouse.totalProducts"),
+          value: formatNumber(cards.total_products || 0),
+          subtitle: t("crm.analytics.warehouse.inCategories", {
+            count: cards.categories_count || cards.categories || 0,
+          }),
           icon: Package,
           color: "#f7d617",
         },
         {
-          title: "Стоимость склада",
-          value: "0",
-          currency: "сом",
+          titleKey: "crm.analytics.warehouse.warehouseValue",
+          title: t("crm.analytics.warehouse.warehouseValue"),
+          value: formatNumber(cards.inventory_value || "0"),
+          currency: som,
           icon: DollarSign,
           color: "#f7d617",
         },
         {
-          title: "Заканчиваются",
-          value: "0",
-          subtitle: "Требуют заказа",
+          titleKey: "crm.analytics.warehouse.totalStock",
+          title: t("crm.analytics.warehouse.totalStock"),
+          value: formatAnalyticsQty(
+            cards.total_stock_quantity ?? cards.total_units ?? 0,
+          ),
+          subtitle: t("crm.analytics.warehouse.totalQtySubtitle"),
           icon: TrendingUp,
           color: "#f7d617",
         },
         {
-          title: "Оборачиваемость",
-          value: "0 дн.",
+          titleKey: "crm.analytics.warehouse.zeroQtyProducts",
+          title: t("crm.analytics.warehouse.zeroQtyProducts"),
+          value: formatNumber(
+            cards.zero_stock_products_count ??
+              cards.zero_stock_count ??
+              cards.out_of_stock_count ??
+              0,
+          ),
           icon: BarChart3,
           color: "#f7d617",
         },
       ],
       categoryChart: {
-        labels: [],
-        data: [],
-        colors: [],
+        labels: charts.category_distribution?.map((item: any) => item.name) || [],
+        data: charts.category_distribution?.map((item: any) => item.percent) || [],
+        colors: colors.slice(0, charts.category_distribution?.length || 0),
       },
       movementChart: {
-        labels: [],
-        data: [],
+        labels:
+          (charts.movement_units || charts.movement || []).map((item: any) =>
+            formatDateForChart(item.date),
+          ) || [],
+        data:
+          (charts.movement_units || charts.movement || []).map(
+            (item: any) => item.units || 0,
+          ) || [],
       },
-      lowStock: [],
+      lowStock:
+        (tables.products_stock || tables.low_stock || []).map((item: any) => ({
+          name: item.name,
+          stock: item.quantity ?? item.qty ?? 0,
+          minimum: item.min || 0,
+          status: translateLowStock(item.status),
+          statusType: normalizeLowStockStatusType(item.status),
+        })) || [],
     };
-  }
+  }, [analyticsData, activeTab, t, som]);
 
-  const cards = analyticsData.cards || {};
-  const charts = analyticsData.charts || {};
-  const tables = analyticsData.tables || {};
+  const cashierData = useMemo(() => {
+    if (!analyticsData || activeTab !== "cashiers") {
+      return {
+        kpis: [
+          {
+            titleKey: "crm.analytics.cashiers.dailyRevenue",
+            title: t("crm.analytics.cashiers.dailyRevenue"),
+            value: "0",
+            currency: som,
+            icon: DollarSign,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.cashiers.transactions",
+            title: t("crm.analytics.cashiers.transactions"),
+            value: "0",
+            icon: ShoppingCart,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.cashiers.avgCheck",
+            title: t("crm.analytics.cashiers.avgCheck"),
+            value: "0",
+            currency: som,
+            icon: BarChart3,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.cashiers.cashInRegister",
+            title: t("crm.analytics.cashiers.cashInRegister"),
+            value: "0",
+            currency: som,
+            subtitle: t("crm.analytics.cashiers.cashShareOfRevenue", {
+              percent: 0,
+            }),
+            icon: DollarSign,
+            color: "#f7d617",
+          },
+        ],
+        hourlyChart: { labels: [], data: [] },
+        paymentMethods: { labels: [], data: [], colors: [] },
+        weeklyTransactions: { labels: [], data: [] },
+        paymentDetails: [],
+        peakHours: [],
+      };
+    }
 
-  // Генерируем цвета для категорий
-  const colors = [
-    "#f7d617",
-    "#f59e0b",
-    "#10b981",
-    "#3b82f6",
-    "#9ca3af",
-    "#8b5cf6",
-    "#ec4899",
-    "#06b6d4",
-  ];
+    const cards = analyticsData.cards || {};
+    const charts = analyticsData.charts || {};
+    const tables = analyticsData.tables || {};
 
-  return {
-    kpis: [
-      {
-        title: "Всего товаров",
-        value: formatNumber(cards.total_products || 0),
-        subtitle: `В ${cards.categories_count || cards.categories || 0} категориях`,
-        icon: Package,
-        color: "#f7d617",
-      },
-      {
-        title: "Стоимость склада",
-        value: formatNumber(cards.inventory_value || "0"),
-        currency: "сом",
-        icon: DollarSign,
-        color: "#f7d617",
-      },
-      {
-        title: "Общий остаток",
-        value: formatAnalyticsQty(
-          cards.total_stock_quantity ?? cards.total_units ?? 0,
-        ),
-        subtitle: "Сумма количеств всех товаров",
-        icon: TrendingUp,
-        color: "#f7d617",
-      },
-      {
-        title: "Товаров с нулём",
-        value: formatNumber(
-          cards.zero_stock_products_count ??
-            cards.zero_stock_count ??
-            cards.out_of_stock_count ??
-            0,
-        ),
-        icon: BarChart3,
-        color: "#f7d617",
-      },
-    ],
-    categoryChart: {
-      labels: charts.category_distribution?.map((item: any) => item.name) || [],
-      data: charts.category_distribution?.map((item: any) => item.percent) || [],
-      colors: colors.slice(0, charts.category_distribution?.length || 0),
-    },
-    movementChart: {
-      labels:
-        (charts.movement_units || charts.movement || []).map((item: any) =>
-          formatDateForChart(item.date),
-        ) || [],
-      data:
-        (charts.movement_units || charts.movement || []).map(
-          (item: any) => item.units || 0,
-        ) || [],
-    },
-    lowStock:
-      (tables.products_stock || tables.low_stock || []).map((item: any) => ({
-        name: item.name,
-        stock: item.quantity ?? item.qty ?? 0,
-        minimum: item.min || 0,
-        status: translateLowStockStatus(item.status),
-        statusType: normalizeLowStockStatusType(item.status),
-      })) || [],
-  };
-}, [analyticsData, activeTab]);
-
-// Данные для вкладки "Кассы"
-const cashierData = useMemo(() => {
-  if (!analyticsData || activeTab !== "cashiers") {
     return {
       kpis: [
         {
-          title: "Выручка за день",
-          value: "0",
-          currency: "сом",
+          titleKey: "crm.analytics.cashiers.dailyRevenue",
+          title: t("crm.analytics.cashiers.dailyRevenue"),
+          value: formatNumber(cards.revenue || "0"),
+          currency: som,
           icon: DollarSign,
           color: "#f7d617",
         },
         {
-          title: "Транзакций",
-          value: "0",
+          titleKey: "crm.analytics.cashiers.transactions",
+          title: t("crm.analytics.cashiers.transactions"),
+          value: formatNumber(cards.transactions || 0),
           icon: ShoppingCart,
           color: "#f7d617",
         },
         {
-          title: "Средний чек",
-          value: "0",
-          currency: "сом",
+          titleKey: "crm.analytics.cashiers.avgCheck",
+          title: t("crm.analytics.cashiers.avgCheck"),
+          value: formatNumber(cards.avg_check || "0"),
+          currency: som,
           icon: BarChart3,
           color: "#f7d617",
         },
         {
-          title: "Наличных в кассе",
-          value: "0",
-          currency: "сом",
-          subtitle: "0% от выручки",
+          titleKey: "crm.analytics.cashiers.cashInRegister",
+          title: t("crm.analytics.cashiers.cashInRegister"),
+          value: formatNumber(cards.cash_in_box || "0"),
+          currency: som,
+          subtitle: t("crm.analytics.cashiers.cashShareOfRevenue", {
+            percent: cards.cash_share_percent || 0,
+          }),
           icon: DollarSign,
           color: "#f7d617",
         },
       ],
       hourlyChart: {
-        labels: [],
-        data: [],
+        labels:
+          charts.sales_by_hours
+            ?.sort((a: any, b: any) => (a.hour || 0) - (b.hour || 0))
+            .map(
+              (item: any) =>
+                `${String(item.hour || 0).padStart(2, "0")}:00`,
+            ) || [],
+        data:
+          charts.sales_by_hours
+            ?.sort((a: any, b: any) => (a.hour || 0) - (b.hour || 0))
+            .map((item: any) => parseFloat(item.revenue || 0)) || [],
       },
       paymentMethods: {
-        labels: [],
-        data: [],
-        colors: [],
+        labels:
+          charts.payment_methods?.map(
+            (item: any) =>
+              cashierPaymentLabels[
+                item.name as keyof typeof cashierPaymentLabels
+              ] || item.name,
+          ) || [],
+        data: charts.payment_methods?.map((item: any) => item.percent) || [],
+        colors: ["#f7d617", "#f59e0b", "#10b981"],
       },
       weeklyTransactions: {
-        labels: [],
-        data: [],
+        labels: weekdayLabels,
+        data: charts.transactions_by_weekday
+          ? weekdayLabels.map((_: any, index: any) => {
+              const weekday = charts.transactions_by_weekday.find(
+                (item: any) => item.weekday === index,
+              );
+              return weekday?.transactions || 0;
+            })
+          : [],
       },
-      paymentDetails: [],
-      peakHours: [],
+      paymentDetails:
+        tables.payment_detail?.map((item: any) => ({
+          method:
+            cashierPaymentLabels[
+              item.method as keyof typeof cashierPaymentLabels
+            ] || item.method,
+          transactions: item.transactions || 0,
+          amount: parseFloat(item.sum || 0),
+          share: `${item.share || 0}%`,
+        })) || [],
+      peakHours:
+        tables.peak_hours?.map((item: any) => ({
+          time: `${item.hour}:00`,
+          transactions: item.transactions || 0,
+          revenue: parseFloat(item.revenue || 0),
+          avgCheck: parseFloat(item.avg_check || 0),
+        })) || [],
     };
-  }
+  }, [analyticsData, activeTab, t, som, cashierPaymentLabels, weekdayLabels]);
 
-  const cards = analyticsData.cards || {};
-  const charts = analyticsData.charts || {};
-  const tables = analyticsData.tables || {};
+  const shiftsData = useMemo(() => {
+    const formatTime = (dateString: any) => {
+      if (!dateString) return "-";
+      try {
+        const date = new Date(dateString);
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        return `${hours}:${minutes}`;
+      } catch {
+        return dateString;
+      }
+    };
 
-  // Маппинг способов оплаты
-  const paymentMethodLabels = {
-    cash: "Наличные",
-    transfer: "Безналичные",
-    card: "Карта",
-    debt: "Долг",
-    deferred: "Отсрочка",
-  };
+    if (!analyticsData || activeTab !== "shifts") {
+      return {
+        kpis: [
+          {
+            titleKey: "crm.analytics.shifts.activeShifts",
+            title: t("crm.analytics.shifts.activeShifts"),
+            value: "0",
+            subtitle: t("crm.analytics.shifts.currently"),
+            icon: Calendar,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.shifts.shiftsToday",
+            title: t("crm.analytics.shifts.shiftsToday"),
+            value: "0",
+            subtitle: t("crm.analytics.shifts.totalOpened"),
+            icon: Calendar,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.shifts.avgDuration",
+            title: t("crm.analytics.shifts.avgDuration"),
+            value: t("crm.analytics.shifts.hoursShort", { count: 0 }),
+            subtitle: t("crm.analytics.shifts.onShift"),
+            icon: BarChart3,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.shifts.avgIncome",
+            title: t("crm.analytics.shifts.avgIncome"),
+            value: "0",
+            currency: som,
+            subtitle: t("crm.analytics.shifts.perShift"),
+            icon: DollarSign,
+            color: "#f7d617",
+          },
+        ],
+        shiftsChart: { labels: [], data: [] },
+        activeShifts: [],
+        bestCashiers: [],
+      };
+    }
 
-  // Маппинг дней недели
-  const weekdayLabels = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+    const cards = analyticsData.cards || {};
+    const charts = analyticsData.charts || {};
+    const tables = analyticsData.tables || {};
 
-  return {
-    kpis: [
-      {
-        title: "Выручка за день",
-        value: formatNumber(cards.revenue || "0"),
-        currency: "сом",
-        icon: DollarSign,
-        color: "#f7d617",
-      },
-      {
-        title: "Транзакций",
-        value: formatNumber(cards.transactions || 0),
-        icon: ShoppingCart,
-        color: "#f7d617",
-      },
-      {
-        title: "Средний чек",
-        value: formatNumber(cards.avg_check || "0"),
-        currency: "сом",
-        icon: BarChart3,
-        color: "#f7d617",
-      },
-      {
-        title: "Наличных в кассе",
-        value: formatNumber(cards.cash_in_box || "0"),
-        currency: "сом",
-        subtitle: `${cards.cash_share_percent || 0}% от выручки`,
-        icon: DollarSign,
-        color: "#f7d617",
-      },
-    ],
-    hourlyChart: {
-      labels:
-        charts.sales_by_hours
-          ?.sort((a, b) => (a.hour || 0) - (b.hour || 0))
-          .map((item: any) => `${String(item.hour || 0).padStart(2, "0")}:00`) ||
-        [],
-      data:
-        charts.sales_by_hours
-          ?.sort((a, b) => (a.hour || 0) - (b.hour || 0))
-          .map((item: any) => parseFloat(item.revenue || 0)) || [],
-    },
-    paymentMethods: {
-      labels:
-        charts.payment_methods?.map(
-          (item: any) => paymentMethodLabels[item.name] || item.name,
-        ) || [],
-      data: charts.payment_methods?.map((item: any) => item.percent) || [],
-      colors: ["#f7d617", "#f59e0b", "#10b981"],
-    },
-    weeklyTransactions: {
-      labels: weekdayLabels,
-      data: charts.transactions_by_weekday
-        ? weekdayLabels.map((_: any, index: any) => {
-            const weekday = charts.transactions_by_weekday.find(
-              (item: any) => item.weekday === index,
-            );
-            return weekday?.transactions || 0;
-          })
-        : [],
-    },
-    paymentDetails:
-      tables.payment_detail?.map((item: any) => ({
-        method: paymentMethodLabels[item.method] || item.method,
-        transactions: item.transactions || 0,
-        amount: parseFloat(item.sum || 0),
-        share: `${item.share || 0}%`,
-      })) || [],
-    peakHours:
-      tables.peak_hours?.map((item: any) => ({
-        time: `${item.hour}:00`,
-        transactions: item.transactions || 0,
-        revenue: parseFloat(item.revenue || 0),
-        avgCheck: parseFloat(item.avg_check || 0),
-      })) || [],
-  };
-}, [analyticsData, activeTab]);
-
-// Данные для вкладки "Смены"
-const shiftsData = useMemo(() => {
-  if (!analyticsData || activeTab !== "shifts") {
     return {
       kpis: [
         {
-          title: "Активных смен",
-          value: "0",
-          subtitle: "В данный момент",
+          titleKey: "crm.analytics.shifts.activeShifts",
+          title: t("crm.analytics.shifts.activeShifts"),
+          value: formatNumber(cards.active_shifts || 0),
+          subtitle: t("crm.analytics.shifts.currently"),
           icon: Calendar,
           color: "#f7d617",
         },
         {
-          title: "Смен сегодня",
-          value: "0",
-          subtitle: "Всего открыто",
+          titleKey: "crm.analytics.shifts.shiftsToday",
+          title: t("crm.analytics.shifts.shiftsToday"),
+          value: formatNumber(cards.shifts_today || 0),
+          subtitle: t("crm.analytics.shifts.totalOpened"),
           icon: Calendar,
           color: "#f7d617",
         },
         {
-          title: "Средняя длит.",
-          value: "0 ч",
-          subtitle: "На смену",
+          titleKey: "crm.analytics.shifts.avgDuration",
+          title: t("crm.analytics.shifts.avgDuration"),
+          value: t("crm.analytics.shifts.hoursShort", {
+            count: formatNumber(cards.avg_duration_hours || 0),
+          }),
+          subtitle: t("crm.analytics.shifts.onShift"),
           icon: BarChart3,
           color: "#f7d617",
         },
         {
-          title: "Средний доход",
-          value: "0",
-          currency: "сом",
-          subtitle: "За смену",
+          titleKey: "crm.analytics.shifts.avgIncome",
+          title: t("crm.analytics.shifts.avgIncome"),
+          value: formatNumber(cards.avg_revenue_per_shift || "0"),
+          currency: som,
+          subtitle: t("crm.analytics.shifts.perShift"),
           icon: DollarSign,
           color: "#f7d617",
         },
       ],
       shiftsChart: {
-        labels: [],
-        data: [],
+        labels: charts.sales_by_shift_bucket?.map((item: any) => item.name) || [],
+        data:
+          charts.sales_by_shift_bucket?.map((item: any) =>
+            parseFloat(item.revenue || 0),
+          ) || [],
       },
-      activeShifts: [],
-      bestCashiers: [],
+      activeShifts:
+        tables.active_shifts?.map((shift: any) => ({
+          cashier: shift.cashier || "-",
+          register: shift.cashbox || "-",
+          start: formatTime(shift.opened_at),
+          sales: parseFloat(shift.sales || 0),
+          status:
+            shift.status === "open"
+              ? t("crm.analytics.shifts.statusActive")
+              : t("crm.analytics.shifts.statusClosed"),
+        })) || [],
+      bestCashiers:
+        tables.best_cashiers?.map((cashier: any) => ({
+          place: cashier.place || 0,
+          cashier: cashier.cashier || "-",
+          shifts: cashier.shifts || 0,
+          sales: parseFloat(cashier.sales || 0),
+          avgCheck: parseFloat(cashier.avg_check || 0),
+        })) || [],
     };
-  }
+  }, [analyticsData, activeTab, t, som]);
 
-  const cards = analyticsData.cards || {};
-  const charts = analyticsData.charts || {};
-  const tables = analyticsData.tables || {};
+  const productsData = useMemo(() => {
+    const filterProductsKpis = (kpis: any) =>
+      isStartTariff
+        ? kpis.filter(
+            (kpi: any) =>
+              !START_HIDDEN_PRODUCTS_KPI_TITLES.has(kpi.titleKey),
+          )
+        : kpis;
 
-  // Форматирование времени
-  const formatTime = (dateString: any) => {
-    if (!dateString) return "-";
-    try {
-      const date = new Date(dateString);
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      return `${hours}:${minutes}`;
-    } catch {
-      return dateString;
-    }
-  };
-
-  return {
-    kpis: [
+    const baseKpis = [
       {
-        title: "Активных смен",
-        value: formatNumber(cards.active_shifts || 0),
-        subtitle: "В данный момент",
-        icon: Calendar,
-        color: "#f7d617",
-      },
-      {
-        title: "Смен сегодня",
-        value: formatNumber(cards.shifts_today || 0),
-        subtitle: "Всего открыто",
-        icon: Calendar,
-        color: "#f7d617",
-      },
-      {
-        title: "Средняя длит.",
-        value: `${formatNumber(cards.avg_duration_hours || 0)} ч`,
-        subtitle: "На смену",
-        icon: BarChart3,
-        color: "#f7d617",
-      },
-      {
-        title: "Средний доход",
-        value: formatNumber(cards.avg_revenue_per_shift || "0"),
-        currency: "сом",
-        subtitle: "За смену",
-        icon: DollarSign,
-        color: "#f7d617",
-      },
-    ],
-    shiftsChart: {
-      labels: charts.sales_by_shift_bucket?.map((item: any) => item.name) || [],
-      data:
-        charts.sales_by_shift_bucket?.map((item: any) =>
-          parseFloat(item.revenue || 0),
-        ) || [],
-    },
-    activeShifts:
-      tables.active_shifts?.map((shift: any) => ({
-        cashier: shift.cashier || "-",
-        register: shift.cashbox || "-",
-        start: formatTime(shift.opened_at),
-        sales: parseFloat(shift.sales || 0),
-        status: shift.status === "open" ? "Активна" : "Закрыта",
-      })) || [],
-    bestCashiers:
-      tables.best_cashiers?.map((cashier: any) => ({
-        place: cashier.place || 0,
-        cashier: cashier.cashier || "-",
-        shifts: cashier.shifts || 0,
-        sales: parseFloat(cashier.sales || 0),
-        avgCheck: parseFloat(cashier.avg_check || 0),
-      })) || [],
-  };
-}, [analyticsData, activeTab]);
-
-// Данные для вкладки "Товары"
-const productsData = useMemo(() => {
-  const filterProductsKpis = (kpis: any) =>
-    isStartTariff
-      ? kpis.filter(
-          (kpi) => !START_HIDDEN_PRODUCTS_KPI_TITLES.has(kpi.title),
-        )
-      : kpis;
-
-  if (!analyticsData || activeTab !== "products") {
-    return {
-      kpis: filterProductsKpis([
-        {
-          title: "Общее кол-во товаров",
-          value: "0",
-          icon: Package,
-          color: "#f7d617",
-          subtitle: "В каталоге",
-        },
-        {
-          title: "Стоимость остатков",
-          value: "0",
-          currency: "сом",
-          icon: DollarSign,
-          color: "#f7d617",
-        },
-        {
-          title: "Товаров с низким остатком",
-          value: "0",
-          icon: Package,
-          color: "#f7d617",
-          anchorKey: "lowStockProducts",
-        },
-        {
-          title: "Отклоненные товары",
-          value: "0",
-          icon: X,
-          color: "#f7d617",
-          subtitle: "rejected_products_count",
-        },
-        {
-          title: "Продажи без товара",
-          value: "0",
-          icon: HelpCircle,
-          color: "#f7d617",
-          subtitle: "sales_lines_missing_product_count",
-        },
-      ]),
-      topByRevenue: [],
-      topByQuantity: [],
-      categories: [],
-      brands: [],
-      lowStockProducts: [],
-    };
-  }
-
-  const cards = analyticsData.cards || {};
-  const tables = analyticsData.tables || {};
-
-  return {
-    kpis: filterProductsKpis([
-      {
-        title: "Общее кол-во товаров",
-        value: formatNumber(cards.catalog_products_count || 0),
+        titleKey: "crm.analytics.products.totalQty",
+        title: t("crm.analytics.products.totalQty"),
+        value: "0",
         icon: Package,
         color: "#f7d617",
-        subtitle: "В каталоге",
+        subtitle: t("crm.analytics.products.inCatalog"),
       },
       {
-        title: "Стоимость остатков",
-        value: formatNumber(cards.stock_value || "0"),
-        currency: "сом",
+        titleKey: "crm.analytics.products.stockValue",
+        title: t("crm.analytics.products.stockValue"),
+        value: "0",
+        currency: som,
         icon: DollarSign,
         color: "#f7d617",
       },
       {
-        title: "Товаров с низким остатком",
-        value: formatNumber(cards.low_stock_count || 0),
+        titleKey: "crm.analytics.products.lowStock",
+        title: t("crm.analytics.products.lowStock"),
+        value: "0",
         icon: Package,
         color: "#f7d617",
         anchorKey: "lowStockProducts",
       },
       {
-        title: "Отклоненные товары",
-        value: formatNumber(cards.rejected_products_count || 0),
+        titleKey: "crm.analytics.products.rejected",
+        title: t("crm.analytics.products.rejected"),
+        value: "0",
         icon: X,
         color: "#f7d617",
         subtitle: "rejected_products_count",
       },
       {
-        title: "Продажи без товара",
-        value: formatNumber(cards.sales_lines_missing_product_count || 0),
+        titleKey: "crm.analytics.products.salesWithoutProduct",
+        title: t("crm.analytics.products.salesWithoutProduct"),
+        value: "0",
         icon: HelpCircle,
         color: "#f7d617",
         subtitle: "sales_lines_missing_product_count",
       },
-    ]),
-    topByRevenue: tables.top_by_revenue || [],
-    topByQuantity: tables.top_by_quantity || [],
-    categories: tables.categories || [],
-    brands: tables.brands || [],
-    lowStockProducts:
-      (tables.low_stock_products || []).map((item: any) => ({
-        ...item,
-        status: translateLowStockStatus(item.status),
-        statusType: normalizeLowStockStatusType(item.status),
-      })) || [],
-  };
-}, [analyticsData, activeTab, isStartTariff]);
+    ];
 
-const suppliersData = useMemo(() => {
-  if (!analyticsData || activeTab !== "suppliers") {
+    if (!analyticsData || activeTab !== "products") {
+      return {
+        kpis: filterProductsKpis(baseKpis),
+        topByRevenue: [],
+        topByQuantity: [],
+        categories: [],
+        brands: [],
+        lowStockProducts: [],
+      };
+    }
+
+    const cards = analyticsData.cards || {};
+    const tables = analyticsData.tables || {};
+
     return {
-      kpis: [
+      kpis: filterProductsKpis([
         {
-          title: "Поставщиков",
-          value: "0",
-          icon: Users,
-          color: "#f7d617",
+          ...baseKpis[0],
+          value: formatNumber(cards.catalog_products_count || 0),
         },
         {
-          title: "Стоимость остатков",
-          value: "0",
-          currency: "сом",
-          icon: DollarSign,
-          color: "#f7d617",
+          ...baseKpis[1],
+          value: formatNumber(cards.stock_value || "0"),
         },
         {
-          title: "Продано за период",
-          value: "0",
-          icon: ShoppingCart,
-          color: "#f7d617",
+          ...baseKpis[2],
+          value: formatNumber(cards.low_stock_count || 0),
         },
         {
-          title: "Выручка за период",
-          value: "0",
-          currency: "сом",
-          icon: TrendingUp,
-          color: "#f7d617",
+          ...baseKpis[3],
+          value: formatNumber(cards.rejected_products_count || 0),
         },
-      ],
-      suppliers: [],
-      suppliersByStock: [],
+        {
+          ...baseKpis[4],
+          value: formatNumber(cards.sales_lines_missing_product_count || 0),
+        },
+      ]),
+      topByRevenue: tables.top_by_revenue || [],
+      topByQuantity: tables.top_by_quantity || [],
+      categories: tables.categories || [],
+      brands: tables.brands || [],
+      lowStockProducts:
+        (tables.low_stock_products || []).map((item: any) => ({
+          ...item,
+          status: translateLowStock(item.status),
+          statusType: normalizeLowStockStatusType(item.status),
+        })) || [],
     };
-  }
+  }, [analyticsData, activeTab, isStartTariff, t, som]);
 
-  const cards = analyticsData.cards || {};
-  const tables = analyticsData.tables || {};
-
-  const normalizeSupplierRow = (row: any) => ({
-    supplier_id: row?.supplier_id || row?.id || "",
-    name: row?.name || "—",
-    phone: row?.phone || "—",
-    products_count: row?.products_count || 0,
-    stock_qty: row?.stock_qty || 0,
-    stock_value: row?.stock_value || 0,
-    period_qty_sold: row?.period_qty_sold || 0,
-    period_revenue: row?.period_revenue || 0,
-    period_transactions: row?.period_transactions || 0,
-    rank_by_qty: row?.rank_by_qty || "—",
-    rank_by_stock: row?.rank_by_stock || "—",
-    rating: row?.rating || 0,
-  });
-
-  return {
-    kpis: [
+  const suppliersData = useMemo(() => {
+    const kpiDefs = [
       {
-        title: "Поставщиков",
-        value: formatNumber(cards.suppliers_count || 0),
+        titleKey: "crm.analytics.suppliers.count",
+        title: t("crm.analytics.suppliers.count"),
         icon: Users,
-        color: "#f7d617",
       },
       {
-        title: "Стоимость остатков",
-        value: formatNumber(cards.total_stock_value || 0),
-        currency: "сом",
+        titleKey: "crm.analytics.suppliers.stockValue",
+        title: t("crm.analytics.suppliers.stockValue"),
+        currency: som,
         icon: DollarSign,
-        color: "#f7d617",
       },
       {
-        title: "Продано за период",
-        value: formatAnalyticsQty(cards.total_period_qty_sold || 0),
+        titleKey: "crm.analytics.suppliers.soldInPeriod",
+        title: t("crm.analytics.suppliers.soldInPeriod"),
         icon: ShoppingCart,
-        color: "#f7d617",
       },
       {
-        title: "Выручка за период",
-        value: formatNumber(cards.total_period_revenue || 0),
-        currency: "сом",
+        titleKey: "crm.analytics.suppliers.revenueInPeriod",
+        title: t("crm.analytics.suppliers.revenueInPeriod"),
+        currency: som,
         icon: TrendingUp,
-        color: "#f7d617",
       },
-    ],
-    suppliers: (tables.suppliers || []).map(normalizeSupplierRow),
-    suppliersByStock: (tables.suppliers_by_stock || []).map(
-      normalizeSupplierRow,
-    ),
-  };
-}, [analyticsData, activeTab]);
+    ];
 
-const purchasesData = useMemo(() => {
-  if (!analyticsData || activeTab !== "purchases") {
+    if (!analyticsData || activeTab !== "suppliers") {
+      return {
+        kpis: kpiDefs.map((kpi) => ({ ...kpi, value: "0", color: "#f7d617" })),
+        suppliers: [],
+        suppliersByStock: [],
+      };
+    }
+
+    const cards = analyticsData.cards || {};
+    const tables = analyticsData.tables || {};
+    const normalizeSupplierRow = (row: any) => ({
+      supplier_id: row?.supplier_id || row?.id || "",
+      name: row?.name || "—",
+      phone: row?.phone || "—",
+      products_count: row?.products_count || 0,
+      stock_qty: row?.stock_qty || 0,
+      stock_value: row?.stock_value || 0,
+      period_qty_sold: row?.period_qty_sold || 0,
+      period_revenue: row?.period_revenue || 0,
+      period_transactions: row?.period_transactions || 0,
+      rank_by_qty: row?.rank_by_qty || "—",
+      rank_by_stock: row?.rank_by_stock || "—",
+      rating: row?.rating || 0,
+    });
+
     return {
       kpis: [
         {
-          title: "SKU в закупках",
-          value: "0",
-          icon: Package,
+          ...kpiDefs[0],
+          value: formatNumber(cards.suppliers_count || 0),
           color: "#f7d617",
         },
         {
-          title: "Ед. закуплено",
-          value: "0",
-          icon: ShoppingCart,
+          ...kpiDefs[1],
+          value: formatNumber(cards.total_stock_value || 0),
           color: "#f7d617",
         },
         {
-          title: "Сумма закупок",
-          value: "0",
-          currency: "сом",
-          icon: DollarSign,
+          ...kpiDefs[2],
+          value: formatAnalyticsQty(cards.total_period_qty_sold || 0),
+          color: "#f7d617",
+        },
+        {
+          ...kpiDefs[3],
+          value: formatNumber(cards.total_period_revenue || 0),
           color: "#f7d617",
         },
       ],
-      bySupplier: [],
+      suppliers: (tables.suppliers || []).map(normalizeSupplierRow),
+      suppliersByStock: (tables.suppliers_by_stock || []).map(
+        normalizeSupplierRow,
+      ),
     };
-  }
+  }, [analyticsData, activeTab, t, som]);
 
-  const cards = analyticsData.cards || {};
-  const tables = analyticsData.tables || {};
-
-  return {
-    kpis: [
+  const purchasesData = useMemo(() => {
+    const kpiDefs = [
       {
-        title: "SKU в закупках",
-        value: formatNumber(cards.purchased_sku_count || 0),
+        titleKey: "crm.analytics.purchases.skuInPurchases",
+        title: t("crm.analytics.purchases.skuInPurchases"),
         icon: Package,
-        color: "#f7d617",
       },
       {
-        title: "Ед. закуплено",
-        value: formatAnalyticsQty(cards.purchased_units || 0),
+        titleKey: "crm.analytics.purchases.unitsPurchased",
+        title: t("crm.analytics.purchases.unitsPurchased"),
         icon: ShoppingCart,
-        color: "#f7d617",
       },
       {
-        title: "Сумма закупок",
-        value: formatNumber(cards.purchased_value || 0),
-        currency: "сом",
+        titleKey: "crm.analytics.purchases.purchaseAmount",
+        title: t("crm.analytics.purchases.purchaseAmount"),
+        currency: som,
         icon: DollarSign,
-        color: "#f7d617",
       },
-    ],
-    bySupplier: tables.by_supplier || [],
-  };
-}, [analyticsData, activeTab]);
+    ];
 
-// Данные для вкладки "Сотрудники"
-const usersData = useMemo(() => {
-  if (!analyticsData || activeTab !== "users") {
+    if (!analyticsData || activeTab !== "purchases") {
+      return {
+        kpis: kpiDefs.map((kpi) => ({ ...kpi, value: "0", color: "#f7d617" })),
+        bySupplier: [],
+      };
+    }
+
+    const cards = analyticsData.cards || {};
+    const tables = analyticsData.tables || {};
+
     return {
       kpis: [
         {
-          title: "Всего смен",
-          value: "0",
-          icon: Calendar,
+          ...kpiDefs[0],
+          value: formatNumber(cards.purchased_sku_count || 0),
           color: "#f7d617",
         },
         {
-          title: "Закрытых смен",
-          value: "0",
-          icon: Calendar,
+          ...kpiDefs[1],
+          value: formatAnalyticsQty(cards.purchased_units || 0),
           color: "#f7d617",
         },
         {
-          title: "Открытых смен",
-          value: "0",
-          icon: Calendar,
-          color: "#f7d617",
-        },
-        {
-          title: "Расхождений в кассах",
-          value: "0",
-          icon: HelpCircle,
+          ...kpiDefs[2],
+          value: formatNumber(cards.purchased_value || 0),
           color: "#f7d617",
         },
       ],
-      usersPerformance: [],
-      shiftDiscrepancies: [],
+      bySupplier: tables.by_supplier || [],
     };
-  }
+  }, [analyticsData, activeTab, t, som]);
 
-  const cards = analyticsData.cards || {};
-  const tables = analyticsData.tables || {};
-
-  return {
-    kpis: [
+  const usersData = useMemo(() => {
+    const kpiDefs = [
       {
-        title: "Всего смен",
-        value: formatNumber(cards.total || 0),
+        titleKey: "crm.analytics.employees.totalShifts",
+        title: t("crm.analytics.employees.totalShifts"),
         icon: Calendar,
-        color: "#f7d617",
       },
       {
-        title: "Закрытых смен",
-        value: formatNumber(cards.closed || 0),
+        titleKey: "crm.analytics.employees.closedShifts",
+        title: t("crm.analytics.employees.closedShifts"),
         icon: Calendar,
-        color: "#f7d617",
       },
       {
-        title: "Открытых смен",
-        value: formatNumber(cards.open || 0),
+        titleKey: "crm.analytics.employees.openShifts",
+        title: t("crm.analytics.employees.openShifts"),
         icon: Calendar,
-        color: "#f7d617",
       },
       {
-        title: "Расхождений в кассах",
-        value: formatNumber(cards.discrepancies_count || 0),
+        titleKey: "crm.analytics.employees.cashDiscrepancies",
+        title: t("crm.analytics.employees.cashDiscrepancies"),
         icon: HelpCircle,
-        color: "#f7d617",
       },
-    ],
-    usersPerformance: tables.users_performance || [],
-    shiftDiscrepancies: tables.shift_discrepancies || [],
-  };
-}, [analyticsData, activeTab]);
+    ];
 
-// Данные для вкладки "Финансы"
-const financeData = useMemo(() => {
-  if (!analyticsData || activeTab !== "finance") {
+    if (!analyticsData || activeTab !== "users") {
+      return {
+        kpis: kpiDefs.map((kpi) => ({ ...kpi, value: "0", color: "#f7d617" })),
+        usersPerformance: [],
+        shiftDiscrepancies: [],
+      };
+    }
+
+    const cards = analyticsData.cards || {};
+    const tables = analyticsData.tables || {};
+
     return {
       kpis: [
         {
-          title: "Доходы",
-          value: "0",
-          currency: "сом",
-          icon: DollarSign,
+          ...kpiDefs[0],
+          value: formatNumber(cards.total || 0),
           color: "#f7d617",
         },
         {
-          title: "Расходы",
-          value: "0",
-          currency: "сом",
-          icon: DollarSign,
+          ...kpiDefs[1],
+          value: formatNumber(cards.closed || 0),
           color: "#f7d617",
         },
         {
-          title: "Чистый поток",
-          value: "0",
-          currency: "сом",
-          icon: TrendingUp,
+          ...kpiDefs[2],
+          value: formatNumber(cards.open || 0),
           color: "#f7d617",
         },
         {
-          title: "Операций",
-          value: "0",
-          icon: BarChart3,
+          ...kpiDefs[3],
+          value: formatNumber(cards.discrepancies_count || 0),
           color: "#f7d617",
         },
       ],
-      expenseBreakdown: [],
-      incomeBreakdown: [],
-      expenseItems: [],
-      incomeItems: [],
-      salaryRows: [],
+      usersPerformance: tables.users_performance || [],
+      shiftDiscrepancies: tables.shift_discrepancies || [],
     };
-  }
+  }, [analyticsData, activeTab, t]);
 
-  const cards = analyticsData.cards || {};
-  const tables = analyticsData.tables || {};
-
-  return {
-    kpis: [
+  const financeData = useMemo(() => {
+    const kpiDefs = [
       {
-        title: "Доходы",
-        value: formatNumber(cards.income_total || "0"),
-        currency: "сом",
+        titleKey: "crm.analytics.finance.income",
+        title: t("crm.analytics.finance.income"),
+        currency: som,
         icon: DollarSign,
-        color: "#f7d617",
       },
       {
-        title: "Расходы",
-        value: formatNumber(cards.expense_total || "0"),
-        currency: "сом",
+        titleKey: "crm.analytics.finance.expense",
+        title: t("crm.analytics.finance.expense"),
+        currency: som,
         icon: DollarSign,
-        color: "#f7d617",
       },
       {
-        title: "Чистый поток",
-        value: formatNumber(cards.net_flow || "0"),
-        currency: "сом",
+        titleKey: "crm.analytics.finance.netFlow",
+        title: t("crm.analytics.finance.netFlow"),
+        currency: som,
         icon: TrendingUp,
-        color: "#f7d617",
       },
       {
-        title: "Операций",
-        value: formatNumber(
-          (cards.income_count || 0) + (cards.expense_count || 0),
-        ),
+        titleKey: "crm.analytics.finance.operations",
+        title: t("crm.analytics.finance.operations"),
         icon: BarChart3,
-        color: "#f7d617",
       },
-    ],
-    expenseBreakdown: tables.expense_breakdown || [],
-    incomeBreakdown: tables.income_breakdown || [],
-    expenseItems: tables.expense_items || [],
-    incomeItems: tables.income_items || [],
-    salaryRows: Array.isArray(salaryAnalyticsRows) ? salaryAnalyticsRows : [],
-  };
-}, [analyticsData, activeTab, salaryAnalyticsRows]);
+    ];
+
+    if (!analyticsData || activeTab !== "finance") {
+      return {
+        kpis: kpiDefs.map((kpi) => ({ ...kpi, value: "0", color: "#f7d617" })),
+        expenseBreakdown: [],
+        incomeBreakdown: [],
+        expenseItems: [],
+        incomeItems: [],
+        salaryRows: [],
+      };
+    }
+
+    const cards = analyticsData.cards || {};
+    const tables = analyticsData.tables || {};
+
+    return {
+      kpis: [
+        {
+          ...kpiDefs[0],
+          value: formatNumber(cards.income_total || "0"),
+          color: "#f7d617",
+        },
+        {
+          ...kpiDefs[1],
+          value: formatNumber(cards.expense_total || "0"),
+          color: "#f7d617",
+        },
+        {
+          ...kpiDefs[2],
+          value: formatNumber(cards.net_flow || "0"),
+          color: "#f7d617",
+        },
+        {
+          ...kpiDefs[3],
+          value: formatNumber(
+            (cards.income_count || 0) + (cards.expense_count || 0),
+          ),
+          color: "#f7d617",
+        },
+      ],
+      expenseBreakdown: tables.expense_breakdown || [],
+      incomeBreakdown: tables.income_breakdown || [],
+      expenseItems: tables.expense_items || [],
+      incomeItems: tables.income_items || [],
+      salaryRows: Array.isArray(salaryAnalyticsRows) ? salaryAnalyticsRows : [],
+    };
+  }, [analyticsData, activeTab, salaryAnalyticsRows, t, som]);
 
   return {
     salesData,
@@ -972,5 +991,7 @@ const financeData = useMemo(() => {
     purchasesData,
     usersData,
     financeData,
+    barPercentOfMax,
+    sortStockList,
   };
 }

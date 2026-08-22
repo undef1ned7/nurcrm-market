@@ -1,9 +1,7 @@
+import { useTranslation } from "react-i18next";
 import Loading from "@shared/ui/Loading/Loading";
 import { PagePanel } from "@shared/ui/page-shell";
 
-/**
- * Product list: selection bar, cards grid, pagination.
- */
 const BarcodePrintList = ({
   loading,
   isInitialLoading,
@@ -30,27 +28,33 @@ const BarcodePrintList = ({
   getProductCopies,
   setProductCopies,
 }: any) => {
+  const { t } = useTranslation();
+
   return (
     <PagePanel className="barcode-print-tab__content">
       {isInitialLoading ? (
         <div className="barcode-print-tab__loading">
-          <Loading message="Загрузка товаров..." />
+          <Loading message={t("crm.barcodePrint.loadingProducts")} />
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="barcode-print-tab__empty">
           <div className="barcode-print-tab__empty-icon">📦</div>
-          <div className="barcode-print-tab__empty-text">Товары не найдены</div>
+          <div className="barcode-print-tab__empty-text">
+            {t("crm.barcodePrint.productsNotFound")}
+          </div>
         </div>
       ) : (
         <>
           <div className="barcode-print-tab__selection-bar">
             <span className="barcode-print-tab__selection-count">
-              Выбрано: {selectedIds.size}
+              {t("crm.barcodePrint.selected", { count: selectedIds.size })}
               {selectedWithBarcode.length < selectedIds.size &&
                 selectedIds.size > 0 && (
                   <span className="barcode-print-tab__selection-hint">
                     {" "}
-                    (с штрих-кодом: {selectedWithBarcode.length})
+                    {t("crm.barcodePrint.withBarcode", {
+                      count: selectedWithBarcode.length,
+                    })}
                   </span>
                 )}
             </span>
@@ -61,7 +65,7 @@ const BarcodePrintList = ({
                 onClick={onSelectAllOnPage}
                 disabled={isBatchPrinting || filteredProducts.length === 0}
               >
-                Выбрать все на странице
+                {t("crm.barcodePrint.selectAllOnPage")}
               </button>
               <button
                 type="button"
@@ -69,15 +73,15 @@ const BarcodePrintList = ({
                 onClick={onClearSelection}
                 disabled={selectedIds.size === 0 || isBatchPrinting}
               >
-                Снять выбор
+                {t("crm.barcodePrint.clearSelection")}
               </button>
               <button
                 type="button"
                 className="barcode-print-tab__selection-btn"
                 onClick={onShowA4Modal}
-                title="Печать штрих-кодов на листе A4 (обычный принтер)"
+                title={t("crm.barcodePrint.printA4Title")}
               >
-                🖨️ Печать на A4
+                🖨️ {t("crm.barcodePrint.printA4")}
               </button>
               <button
                 type="button"
@@ -90,23 +94,30 @@ const BarcodePrintList = ({
                 }
                 title={
                   !isPrinterConnected
-                    ? "Подключите принтер"
+                    ? t("crm.barcodePrint.connectPrinterHint")
                     : selectedWithBarcode.length === 0
-                      ? "Выберите товары с штрих-кодом"
-                      : `Распечатать ${selectedLabelsTotal} этикеток (${selectedWithBarcode.length} позиций)`
+                      ? t("crm.barcodePrint.selectWithBarcode")
+                      : t("crm.barcodePrint.printLabels", {
+                          labels: selectedLabelsTotal,
+                          items: selectedWithBarcode.length,
+                        })
                 }
               >
                 {isBatchPrinting ? (
                   <>
                     <span className="barcode-print-tab__spinner" />
-                    Печать...
+                    {t("crm.barcodePrint.printing")}
                   </>
                 ) : (
                   <>
                     <span className="barcode-print-tab__print-icon">🖨️</span>
-                    Печать выбранных ({selectedWithBarcode.length}
+                    {t("crm.barcodePrint.printSelectedCount", {
+                      count: selectedWithBarcode.length,
+                    })}
                     {selectedLabelsTotal > selectedWithBarcode.length
-                      ? ` · ${selectedLabelsTotal} эт.`
+                      ? t("crm.barcodePrint.labelsShort", {
+                          count: selectedLabelsTotal,
+                        })
                       : ""}
                     )
                   </>
@@ -139,16 +150,16 @@ const BarcodePrintList = ({
                         disabled={!hasBarcode || isBatchPrinting}
                         title={
                           !hasBarcode
-                            ? "У товара нет штрих-кода"
-                            : "Выбрать для печати"
+                            ? t("crm.barcodePrint.noBarcode")
+                            : t("crm.barcodePrint.selectForPrint")
                         }
                       />
                       <span className="barcode-print-tab__card-checkbox-label">
-                        В печать
+                        {t("crm.barcodePrint.forPrint")}
                       </span>
                     </label>
                     <div className="barcode-print-tab__barcode-label">
-                      Штрих-код:
+                      {t("crm.barcodePrint.barcode")}
                     </div>
                     {barcodeOptions.length > 1 ? (
                       <select
@@ -158,12 +169,14 @@ const BarcodePrintList = ({
                           setSelectedBarcode(product.id, e.target.value)
                         }
                         disabled={isBatchPrinting}
-                        title="У товара несколько штрих-кодов — выберите, какой печатать"
+                        title={t("crm.barcodePrint.multipleBarcodes")}
                       >
                         {barcodeOptions.map((code, idx) => (
                           <option key={code} value={code}>
                             {code}
-                            {idx === 0 ? " (основной)" : " (доп.)"}
+                            {idx === 0
+                              ? t("crm.barcodePrint.barcodePrimary")
+                              : t("crm.barcodePrint.barcodeExtra")}
                           </option>
                         ))}
                       </select>
@@ -181,14 +194,16 @@ const BarcodePrintList = ({
                       disabled={!hasBarcode || isItemPrinting}
                       title={
                         !hasBarcode
-                          ? "У товара отсутствует штрих-код"
+                          ? t("crm.barcodePrint.noBarcodeProduct")
                           : isItemPrinting
-                            ? "Идёт печать..."
-                            : "Предпросмотр и печать штрих-кода"
+                            ? t("crm.barcodePrint.printingItem")
+                            : t("crm.barcodePrint.previewAndPrint")
                       }
                     >
                       <span className="barcode-print-tab__print-icon">🖨️</span>
-                      {isItemPrinting ? "Печать..." : "Распечатать штрих-код"}
+                      {isItemPrinting
+                        ? t("crm.barcodePrint.printing")
+                        : t("crm.barcodePrint.printBarcode")}
                     </button>
 
                     <div className="barcode-print-tab__product-name">
@@ -197,9 +212,9 @@ const BarcodePrintList = ({
 
                     <label
                       className="barcode-print-tab__card-copies"
-                      title="Сколько копий этикетки печатать для этой позиции"
+                      title={t("crm.barcodePrint.copiesTitle")}
                     >
-                      Копий:
+                      {t("crm.barcodePrint.copies")}
                       <input
                         type="number"
                         min={1}
@@ -222,11 +237,12 @@ const BarcodePrintList = ({
           {totalPages > 1 && onPageChange && (
             <nav
               className="barcode-print-tab__pagination"
-              aria-label="Пагинация"
+              aria-label={t("crm.barcodePrint.pagination")}
             >
               <span className="barcode-print-tab__pagination-info">
-                Страница {page} из {totalPages}
-                {count > 0 && <> · Всего: {count}</>}
+                {t("common.paginationPage", { current: page, total: totalPages })}
+                {count > 0 &&
+                  t("crm.barcodePrint.pageTotal", { count })}
               </span>
               <div className="barcode-print-tab__pagination-buttons">
                 <button
@@ -234,18 +250,18 @@ const BarcodePrintList = ({
                   className="barcode-print-tab__pagination-btn"
                   onClick={() => onPageChange(page - 1)}
                   disabled={page <= 1 || loading}
-                  aria-label="Предыдущая страница"
+                  aria-label={t("catalog.prevPage")}
                 >
-                  Назад
+                  {t("common.back")}
                 </button>
                 <button
                   type="button"
                   className="barcode-print-tab__pagination-btn"
                   onClick={() => onPageChange(page + 1)}
                   disabled={page >= totalPages || loading}
-                  aria-label="Следующая страница"
+                  aria-label={t("catalog.nextPage")}
                 >
-                  Вперёд
+                  {t("common.forward")}
                 </button>
               </div>
             </nav>

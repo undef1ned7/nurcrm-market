@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import * as OrdersPrintService from "@shared/ui/legacy-cafe/Orders/OrdersPrintService";
 
@@ -30,6 +31,7 @@ function writeKitchenPrinterMap(obj: any) {
 }
 
 export default function CafeKitchenPrintersSettings({ showAlert }: any) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [savingAll, setSavingAll] = useState(false);
   const [kitchens, setKitchens] = useState<any[]>([]);
@@ -262,24 +264,24 @@ export default function CafeKitchenPrintersSettings({ showAlert }: any) {
     <div className="settings__section">
       <div className="settings__sectionHeadRow">
         <h2 className="settings__section-title" style={{ margin: 0 }}>
-          <span className="settings__emoji">🍳</span> Кафе • Принтеры кухонь
+          <span className="settings__emoji">🍳</span> {t("settings.print.kitchenTitle")}
         </h2>
 
         <div className="settings__sectionHeadBtns">
           <button type="button" className="settings__btnSmall settings__btnSmall--secondary" onClick={refreshKitchens} disabled={loading}>
-            Обновить
+            {t("settings.print.refresh")}
           </button>
           <button type="button" className="settings__btnSmall settings__btnSmall--secondary" onClick={refreshUsb} disabled={loadingUsb}>
-            USB список
+            {t("settings.print.usbList")}
           </button>
           <button type="button" className="settings__btnSmall settings__btnSmall--primary" onClick={saveAll} disabled={savingAll || loading}>
-            {savingAll ? "Сохранение…" : "Сохранить всё"}
+            {savingAll ? t("settings.print.saving") : t("settings.print.saveAll")}
           </button>
         </div>
       </div>
 
       <p className="settings__mutedText" style={{ marginTop: 10 }}>
-        Позиции заказа печатаются на ту кухню, которая указана в меню. Здесь можно централизованно привязать принтер к каждой кухне.
+        {t("settings.print.kitchenHint")}
       </p>
 
       <div className="settings__form-group" style={{ marginTop: 6 }}>

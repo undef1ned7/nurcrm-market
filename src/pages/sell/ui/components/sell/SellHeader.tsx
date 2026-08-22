@@ -1,4 +1,5 @@
 import { Plus, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { SellPageVm } from "../../hooks/useSellPage";
 
 type Props = {
@@ -6,6 +7,7 @@ type Props = {
 };
 
 export default function SellHeader({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     onChange,
     isMarketCompany,
@@ -25,7 +27,7 @@ export default function SellHeader({ vm }: Props) {
             className="w-full"
             onChange={onChange}
             type="text"
-            placeholder="Поиск"
+            placeholder={t("crm.sell.search")}
           />
           <span>
             <Search size={15} color="#91929E" />
@@ -36,7 +38,7 @@ export default function SellHeader({ vm }: Props) {
             className="sell__header-btn sell__filter-btn"
             onClick={() => setShowFiltersModal(true)}
           >
-            Фильтр
+            {t("crm.sell.filter")}
           </button>
         )}
       </div>
@@ -45,22 +47,19 @@ export default function SellHeader({ vm }: Props) {
           className="sell__header-btn "
           onClick={() => navigate("start")}
         >
-          Начать продажу
+          {t("crm.sell.startSale")}
         </button>
       )}
       {isBuildingCompany ? (
-        <button
-          className="sklad__add"
-          onClick={() => setShowBuilding(true)}
-        >
-          <Plus size={16} style={{ marginRight: 4 }} /> Продать квартиру
+        <button className="sklad__add" onClick={() => setShowBuilding(true)}>
+          <Plus size={16} style={{ marginRight: 4 }} /> {t("crm.sell.sellApartment")}
         </button>
       ) : !isStartPlanCompany && !isMarketCompany ? (
         <button
           className="sell__header-btn"
           onClick={() => setShowAddCashboxModal(true)}
         >
-          Прочие расходы
+          {t("crm.sell.otherExpenses")}
         </button>
       ) : null}
     </div>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import { MARKET_ANALYTICS_TIMEOUT_MS } from "../../analytics.constants";
 import { formatDateForAPI, mapTabToAPI } from "./formatters";
 
 export function useAnalyticsFetch({ activeTab, period, filters }: any) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState<any>(false);
   const [error, setError] = useState<any>(null);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -124,15 +126,15 @@ const fetchAnalytics = React.useCallback(
       setError(
         err.response?.data?.detail ||
           (isTimeout
-            ? "Сервер долго отвечает. Уменьшите период или попробуйте позже."
-            : "Ошибка при загрузке данных"),
+            ? t("crm.analytics.errors.timeout")
+            : t("crm.analytics.errors.loadFailed")),
       );
       setSalaryAnalyticsRows([]);
     } finally {
       setLoading(false);
     }
   },
-  [period.from, period.to, filters],
+  [period.from, period.to, filters, t],
 );
 
   useEffect(() => {

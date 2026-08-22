@@ -1,4 +1,5 @@
 import { ArrowLeft, PackageCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import {
   EmptyState,
@@ -19,6 +20,7 @@ import { RecommendationTable } from "./RecommendationTable";
 import "./ProcurementRecommendations.scss";
 
 export function ProcurementRecommendationsView() {
+  const { t } = useTranslation();
   const vm = useProcurementRecommendations();
   const {
     navigate,
@@ -38,8 +40,8 @@ export function ProcurementRecommendationsView() {
   return (
     <PageShell className="warehouse-page procurement-recommendations">
       <PageHeader
-        title="Рекомендуемый заказ"
-        subtitle="Анализ остатков и продаж поставщика перед созданием прихода"
+        title={t("crm.procurement.recommendedOrder")}
+        subtitle={t("crm.procurement.recommendedOrderSubtitle")}
         actions={
           <>
             <button
@@ -48,7 +50,7 @@ export function ProcurementRecommendationsView() {
               onClick={() => navigate("/crm/market/procurement")}
             >
               <ArrowLeft size={16} />
-              К закупкам
+              {t("crm.procurement.backToProcurement")}
             </button>
             <button
               type="button"
@@ -57,7 +59,7 @@ export function ProcurementRecommendationsView() {
               disabled={!canSubmit}
             >
               <PackageCheck size={16} />
-              Сформировать закупку
+              {t("crm.procurement.createPurchase")}
               {orderedCount > 0 ? ` (${orderedCount})` : ""}
             </button>
           </>
@@ -76,7 +78,7 @@ export function ProcurementRecommendationsView() {
 
           {suppliersError ? (
             <ErrorState
-              title="Не удалось загрузить поставщиков"
+              title={t("crm.procurement.suppliersLoadError")}
               text={suppliersError}
               action={
                 <button
@@ -84,13 +86,13 @@ export function ProcurementRecommendationsView() {
                   className="nur-btn nur-btn--secondary"
                   onClick={() => void loadSuppliers()}
                 >
-                  Повторить
+                  {t("common.retry")}
                 </button>
               }
             />
           ) : error ? (
             <ErrorState
-              title="Не удалось загрузить рекомендации"
+              title={t("crm.procurement.recommendationsLoadError")}
               text={error}
               action={
                 <button
@@ -98,7 +100,7 @@ export function ProcurementRecommendationsView() {
                   className="nur-btn nur-btn--secondary"
                   onClick={() => void loadRecommendations()}
                 >
-                  Повторить
+                  {t("common.retry")}
                 </button>
               }
             />
@@ -106,23 +108,23 @@ export function ProcurementRecommendationsView() {
             <LoadingState rows={6} />
           ) : emptyKind === "no-supplier" ? (
             <EmptyState
-              title="Выберите поставщика"
-              text="Выберите поставщика, чтобы увидеть рекомендации по закупке."
+              title={t("crm.procurement.selectSupplier")}
+              text={t("crm.procurement.selectSupplierHint")}
             />
           ) : emptyKind === "no-products" ? (
             <EmptyState
-              title="Нет связанных товаров"
-              text="У этого поставщика пока нет связанных товаров."
+              title={t("crm.procurement.noLinkedProducts")}
+              text={t("crm.procurement.noLinkedProductsHint")}
             />
           ) : emptyKind === "none-required" ? (
             <EmptyState
-              title="Закупка пока не требуется"
-              text="По текущим продажам закупка пока не требуется."
+              title={t("crm.procurement.noPurchaseRequired")}
+              text={t("crm.procurement.noPurchaseRequiredHint")}
             />
           ) : emptyKind === "no-matches" ? (
             <EmptyState
-              title="Ничего не найдено"
-              text="Измените поиск или фильтр, чтобы увидеть товары."
+              title={t("common.nothingFound")}
+              text={t("crm.procurement.changeSearchFilter")}
             />
           ) : (
             <RecommendationTable vm={vm} />

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useUser, getProfile } from "@entities/user";
 import { useMenuItems } from "./hooks/useMenuItems";
 import MenuItem from "./components/MenuItem";
@@ -9,9 +10,11 @@ import Logo from "@shared/ui/Photo/logo2.png";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getCompany } from "@entities/user";
 import { groupMenuItems } from "./config/menuGroups";
+import { translateMenuGroup } from "@shared/lib/i18n/menuLabelKeys";
 import { useAppDispatch } from "@app/store";
 
 const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { company, profile, tariff, sector } = useUser();
@@ -178,7 +181,7 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
           <div className="sidebar__loading">
             <div className="sidebar__loading-spinner" />
             {isOpen && (
-              <p className="sidebar__loading-text">Загрузка меню…</p>
+              <p className="sidebar__loading-text">{t("crm.nav.chrome.loadingMenu")}</p>
             )}
           </div>
         )}
@@ -187,7 +190,9 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
           {!isLoading &&
             menuSections.map((section) => (
               <div key={section.label} className="sidebar__section">
-                <div className="sidebar__section-label">{section.label}</div>
+                <div className="sidebar__section-label">
+                  {translateMenuGroup(section.label, t)}
+                </div>
                 <ul className="sidebar__menu">
                   {section.items.map((item) => (
                     <MenuItem
@@ -211,8 +216,8 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
         <button
           type="button"
           className="sidebar__footer-btn"
-          title="Настройки"
-          aria-label="Настройки"
+          title={t("crm.nav.items.settings")}
+          aria-label={t("crm.nav.items.settings")}
           onClick={() => navigate("/crm/set")}
         >
           <Settings size={20} strokeWidth={1.75} />
@@ -220,8 +225,8 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
         <button
           type="button"
           className="sidebar__footer-btn"
-          title={isOpen ? "Свернуть меню" : "Открыть меню"}
-          aria-label={isOpen ? "Свернуть меню" : "Открыть меню"}
+          title={isOpen ? t("crm.nav.chrome.collapseMenu") : t("crm.nav.chrome.openMenu")}
+          aria-label={isOpen ? t("crm.nav.chrome.collapseMenu") : t("crm.nav.chrome.openMenu")}
           onClick={toggleSidebar}
         >
           <Menu size={20} strokeWidth={1.75} />

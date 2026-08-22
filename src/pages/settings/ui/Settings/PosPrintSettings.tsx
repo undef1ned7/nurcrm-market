@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   DEFAULT_DRAWER_CMD,
@@ -33,6 +34,7 @@ const readString = (key, fallback) => {
 };
 
 export default function PosPrintSettings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [dotsPerLine, setDotsPerLine] = useState(576);
@@ -193,8 +195,8 @@ export default function PosPrintSettings() {
   return (
     <PageShell className="settings">
       <PageHeader
-        title="Печать чеков"
-        subtitle="Настройки ESC/POS принтера для POS-кассы"
+        title={t("settings.print.posTitle")}
+        subtitle={t("settings.print.posSubtitle")}
         actions={
           <button
             type="button"
@@ -351,7 +353,7 @@ export default function PosPrintSettings() {
               onClick={save}
               disabled={saving}
             >
-              {saving ? "Сохранение..." : "Сохранить"}
+              {saving ? t("settings.print.posSaving") : t("settings.print.posSave")}
             </button>
             <button
               type="button"
@@ -359,7 +361,7 @@ export default function PosPrintSettings() {
               onClick={testUsb}
               disabled={testing}
             >
-              {testing ? "Отправка..." : "Тест USB‑печати"}
+              {testing ? t("settings.print.posTesting") : t("settings.print.posTestUsb")}
             </button>
           </div>
         </div>
@@ -448,7 +450,7 @@ export default function PosPrintSettings() {
               onClick={testDrawer}
               disabled={testingDrawer}
             >
-              {testingDrawer ? "Отправка..." : "Проверить открывание ящика"}
+              {testingDrawer ? t("settings.print.posTesting") : t("settings.print.posTestDrawer")}
             </button>
           </div>
         </div>

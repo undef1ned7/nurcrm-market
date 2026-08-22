@@ -1,7 +1,27 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './Whynur.module.scss';
 
+const WHY_OPTION_KEYS = [
+  'organizeSales',
+  'manageTeam',
+  'clientBase',
+  'automateDeals',
+  'unifyMessengers',
+  'teamChat',
+  'undecided',
+] as const;
+
+const ROLE_OPTION_KEYS = [
+  'owner',
+  'director',
+  'marketing',
+  'salesManager',
+  'other',
+] as const;
+
 const Whynur = () => {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -9,20 +29,12 @@ const Whynur = () => {
     if (step === 1) {
       return (
         <>
-          <h1 className={styles.whynur__title}>Зачем вам CRM-система?</h1>
-          <p className={styles.whynur__subtitle}>Можно выбрать один или несколько вариантов</p>
+          <h1 className={styles.whynur__title}>{t('auth.registration.whyTitle')}</h1>
+          <p className={styles.whynur__subtitle}>{t('auth.registration.whySubtitle')}</p>
           <div className={styles.whynur__options}>
-            {[
-              'Организовать отдел продаж',
-              'Управлять командой',
-              'Вести клиентскую базу',
-              'Автоматизировать сделки',
-              'Объединить мессенджеры',
-              'Общаться с командой',
-              'Еще не решил',
-            ].map((item, idx) => (
-              <label className={styles.whynur__option} key={idx}>
-                <input type="checkbox" /> {item}
+            {WHY_OPTION_KEYS.map((key) => (
+              <label className={styles.whynur__option} key={key}>
+                <input type="checkbox" /> {t(`auth.registration.options.${key}`)}
               </label>
             ))}
           </div>
@@ -31,20 +43,12 @@ const Whynur = () => {
     } else if (step === 2) {
       return (
         <>
-          <h1 className={styles.whynur__title}>Какая ваша роль в бизнесе?</h1>
-          <p className={styles.whynur__subtitle}>Скажите, чем занимаетесь</p>
+          <h1 className={styles.whynur__title}>{t('auth.registration.roleTitle')}</h1>
+          <p className={styles.whynur__subtitle}>{t('auth.registration.roleSubtitle')}</p>
           <div className={styles.whynur__options}>
-            {[
-              'я владелец компании',
-              'руководитель компании',
-              'отвечаю за маркетинг',
-              'руководитель отделом продаж',
-              'руководитель проекта',
-              'я самозанятый',
-              'нет моего варианта',
-            ].map((item, idx) => (
-              <label className={styles.whynur__option} key={idx}>
-                <input type="radio" name="role" /> {item}
+            {ROLE_OPTION_KEYS.map((key) => (
+              <label className={styles.whynur__option} key={key}>
+                <input type="radio" name="role" /> {t(`auth.registration.options.${key}`)}
               </label>
             ))}
           </div>

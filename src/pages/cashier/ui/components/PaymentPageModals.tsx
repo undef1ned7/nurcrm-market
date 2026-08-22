@@ -1,6 +1,7 @@
 import CustomerModal from "./CustomerModal";
 import SuccessPaymentModal from "./SuccessPaymentModal";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
+import { useTranslation } from "react-i18next";
 import type {
   AlertModalState,
   PaymentAmounts,
@@ -44,6 +45,8 @@ export function PaymentPageModals({
   alertModal,
   onCloseAlert,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <>
       {showCustomerModal && (
@@ -51,6 +54,7 @@ export function PaymentPageModals({
           onClose={onCloseCustomerModal}
           onSelect={onSelectCustomer}
           customers={customers as any}
+          titleKey="crm.cashier.payment.customerModalTitle"
         />
       )}
 
@@ -76,7 +80,7 @@ export function PaymentPageModals({
         type={alertModal.type}
         title={alertModal.title}
         message={alertModal.message}
-        okText="ОК"
+        okText={t("settings.ok")}
         onClose={onCloseAlert}
         onConfirm={onCloseAlert}
       />

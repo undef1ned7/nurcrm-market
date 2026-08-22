@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import {
   productCheckout,
@@ -60,6 +61,7 @@ export function usePaymentPage({
   consultantDraft,
   onConsultantDraftChange,
 }: PaymentPageProps) {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { list: cashBoxes } = useCash();
   const { company, profile } = useUser();
@@ -422,22 +424,18 @@ export function usePaymentPage({
 
     try {
       if (!saleId) {
-        showAlert("error", "Ошибка", "Продажа не найдена");
+        showAlert("error", t("crm.cashier.paymentAlerts.error"), t("crm.cashier.paymentAlerts.saleNotFound"));
         return;
       }
 
       if (paymentMethod === "deferred") {
         if (!selectedCustomer?.id) {
-          showAlert(
-            "warning",
-            "Требуется клиент",
-            "Для оформления отсрочки необходимо выбрать клиента",
-          );
+          showAlert("warning", t("crm.cashier.paymentAlerts.customerRequired"), t("crm.cashier.paymentAlerts.customerRequiredDeferred"));
           return;
         }
         if (deferredPrepaymentEnabled) {
           if (deferredPrepaymentValue <= 0) {
-            showAlert("warning", "Предоплата", "Укажите сумму предоплаты");
+            showAlert("warning", t("crm.cashier.paymentAlerts.prepayment"), t("crm.cashier.paymentAlerts.enterPrepayment"));
             return;
           }
           if (
@@ -449,8 +447,8 @@ export function usePaymentPage({
               "warning",
               "Предоплата",
               isDebtScheduleV2
-                ? "Предоплата должна быть меньше суммы заказа — остаток уходит в долг"
-                : "Сумма предоплаты не может быть больше суммы заказа",
+                ? t("crm.cashier.paymentAlerts.prepaymentLessThanTotal")
+                : t("crm.cashier.paymentAlerts.prepaymentTooMuch"),
             );
             return;
           }
@@ -458,21 +456,13 @@ export function usePaymentPage({
             deferredPrepaymentMethod === "cashless" &&
             !deferredPrepaymentBank
           ) {
-            showAlert(
-              "warning",
-              "Требуется банк",
-              "Выберите банк для безналичной предоплаты",
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.bankRequired"), t("crm.cashier.paymentAlerts.bankRequiredPrepayment"));
             return;
           }
         }
         if (isDebtScheduleV2) {
           if (deferredSaleDebtRemaining <= 0) {
-            showAlert(
-              "warning",
-              "Сумма долга",
-              "После предоплаты должен остаться долг больше нуля",
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.debtAmount"), t("crm.cashier.paymentAlerts.debtMustRemain"));
             return;
           }
           const countNum =
@@ -504,13 +494,7 @@ export function usePaymentPage({
               ? dayInterval
               : parseInt(String(dayInterval), 10);
           if (!Number.isFinite(intervalNum) || intervalNum < 1) {
-            showAlert(
-              "warning",
-              "Интервал",
-              scheduleUnit === "month"
-                ? "Укажите интервал не менее 1 месяца"
-                : "Укажите интервал не менее 1 дня",
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.interval"), scheduleUnit === "month" ? t("crm.cashier.paymentAlerts.intervalMonthsMin") : t("crm.cashier.paymentAlerts.intervalDaysMin"));
             return;
           }
           if (intervalNum > maxIntervalForUnit(scheduleUnit)) {
@@ -524,19 +508,11 @@ export function usePaymentPage({
             return;
           }
           if (!deferredDueDate || deferredDueDate < todayIsoDate()) {
-            showAlert(
-              "warning",
-              "Дата первого платежа",
-              "Дата первого платежа не может быть раньше сегодня",
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.firstPaymentDate"), t("crm.cashier.paymentAlerts.firstPaymentPast"));
             return;
           }
           if (!debtSchedule) {
-            showAlert(
-              "warning",
-              "График погашения",
-              "Не удалось построить график. Проверьте срок и дату первого платежа",
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.schedule"), t("crm.cashier.paymentAlerts.scheduleBuildError"));
             return;
           }
         } else {
@@ -545,33 +521,21 @@ export function usePaymentPage({
               ? debtDays
               : parseInt(String(debtDays), 10);
           if (!Number.isFinite(daysNum) || daysNum < 1) {
-            showAlert(
-              "warning",
-              "Срок рассрочки",
-              "Укажите срок рассрочки не менее 1 дня",
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.deferredTerm"), t("crm.cashier.paymentAlerts.deferredTermMin"));
             return;
           }
         }
       }
 
       if (paymentMethod === "cashless" && !selectedBank) {
-        showAlert(
-          "warning",
-          "Требуется банк",
-          "Для безналичной оплаты необходимо выбрать банк",
-        );
+        showAlert("warning", t("crm.cashier.paymentAlerts.bankRequired"), t("crm.cashier.paymentAlerts.bankRequiredCashless"));
         return;
       }
 
       let splitParts: any = null;
       if (paymentMethod === "split") {
         if (!splitOnlineBank) {
-          showAlert(
-            "warning",
-            "Требуется банк",
-            "Выберите банк для онлайн-оплаты",
-          );
+          showAlert("warning", t("crm.cashier.paymentAlerts.bankRequired"), t("crm.cashier.paymentAlerts.bankRequiredOnline"));
           return;
         }
         const check = validateSplitAmounts(
@@ -580,7 +544,7 @@ export function usePaymentPage({
           splitTransferAmount,
         );
         if (!check.ok) {
-          showAlert("warning", "Смешанная оплата", check.message);
+          showAlert("warning", t("crm.cashier.paymentAlerts.splitPayment"), check.message);
           return;
         }
         splitParts = check;
@@ -589,18 +553,14 @@ export function usePaymentPage({
       if (paymentMethod === "cash") {
         const received = readAmountReceived();
         if (received < total) {
-          showAlert(
-            "warning",
-            "Недостаточно средств",
-            "Полученная сумма меньше суммы заказа!",
-          );
+          showAlert("warning", t("crm.cashier.paymentAlerts.insufficientFunds"), t("crm.cashier.paymentAlerts.receivedLessThanTotal"));
           return;
         }
       }
 
       const consultantError = validateConsultantDraft(consultant.draft);
       if (consultantError) {
-        showAlert("warning", "Консультант", consultantError);
+        showAlert("warning", t("crm.cashier.paymentAlerts.consultant"), consultantError);
         return;
       }
 
@@ -699,7 +659,7 @@ export function usePaymentPage({
                   name:
                     selectedCustomer.full_name ||
                     selectedCustomer.name ||
-                    "Клиент",
+                    t("crm.cashier.paymentAlerts.client"),
                   phone: selectedCustomer.phone || "",
                   due_date: dueDateString,
                   amount:
@@ -731,9 +691,9 @@ export function usePaymentPage({
                       title: `${hasPrepayment ? "Предоплата" : "Долг"} ${
                         selectedCustomer.full_name ||
                         selectedCustomer.name ||
-                        "Клиент"
+                        t("crm.cashier.paymentAlerts.client")
                       }`,
-                      statusRu: "Долги",
+                      statusRu: t("crm.cashier.paymentAlerts.debts"),
                       amount: total,
                       prepayment: hasPrepayment
                         ? deferredPrepaymentValue
@@ -760,9 +720,9 @@ export function usePaymentPage({
                       title: `${hasPrepayment ? "Предоплата" : "Долг"} ${
                         selectedCustomer.full_name ||
                         selectedCustomer.name ||
-                        "Клиент"
+                        t("crm.cashier.paymentAlerts.client")
                       }`,
-                      statusRu: hasPrepayment ? "Предоплата" : "Долги",
+                      statusRu: hasPrepayment ? t("crm.cashier.paymentAlerts.prepaymentLabel") : t("crm.cashier.paymentAlerts.debts"),
                       amount: total,
                       prepayment: hasPrepayment
                         ? deferredPrepaymentValue
@@ -775,14 +735,7 @@ export function usePaymentPage({
             ).unwrap();
           } catch (debtError) {
             console.warn("Ошибка при создании долга:", debtError);
-            showAlert(
-              "warning",
-              "Предупреждение",
-              validateResErrors(
-                debtError,
-                "Оплата оформлена, но не удалось создать запись о долге. ",
-              ),
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.warning"), validateResErrors(debtError, t("crm.cashier.paymentAlerts.debtCreateFailed")));
           }
         }
 
@@ -794,8 +747,8 @@ export function usePaymentPage({
           const prepayMethodLabel =
             deferredPrepaymentMethod === "cashless"
               ? PAYMENT_BANKS.find((b) => b.id === deferredPrepaymentBank)
-                  ?.name || "Безналичные"
-              : "Наличные";
+                  ?.name || t("crm.cashier.paymentAlerts.cashless")
+              : t("crm.cashier.paymentAlerts.cash");
           try {
             await dispatch(
               addCashFlows({
@@ -805,7 +758,7 @@ export function usePaymentPage({
                 amount: deferredPrepaymentValue.toFixed(2),
                 source_cashbox_flow_id:
                   result.payload?.sale_id || result.payload?.id,
-                source_business_operation_id: "Продажа",
+                source_business_operation_id: t("crm.cashier.paymentAlerts.sale"),
                 status:
                   company?.subscription_plan?.name === "Старт"
                     ? "approved"
@@ -834,7 +787,7 @@ export function usePaymentPage({
             type: "income",
             source_cashbox_flow_id:
               result.payload?.sale_id || result.payload?.id,
-            source_business_operation_id: "Продажа",
+            source_business_operation_id: t("crm.cashier.paymentAlerts.sale"),
             status:
               company?.subscription_plan?.name === "Старт"
                 ? "approved"
@@ -846,7 +799,7 @@ export function usePaymentPage({
                 await dispatch(
                   addCashFlows({
                     ...flowBase,
-                    name: "Продажа (онлайн)",
+                    name: t("crm.cashier.paymentAlerts.saleOnline"),
                     amount: splitParts.online,
                   }),
                 ).unwrap();
@@ -855,7 +808,7 @@ export function usePaymentPage({
                 await dispatch(
                   addCashFlows({
                     ...flowBase,
-                    name: "Продажа (наличные)",
+                    name: t("crm.cashier.paymentAlerts.saleCash"),
                     amount: splitParts.transfer,
                   }),
                 ).unwrap();
@@ -864,21 +817,14 @@ export function usePaymentPage({
               await dispatch(
                 addCashFlows({
                   ...flowBase,
-                  name: "Продажа",
+                  name: t("crm.cashier.paymentAlerts.sale"),
                   amount: total,
                 }),
               ).unwrap();
             }
           } catch (cashError) {
             console.warn("Ошибка при создании денежного потока:", cashError);
-            showAlert(
-              "warning",
-              "Предупреждение",
-              validateResErrors(
-                cashError,
-                "Оплата оформлена, но не удалось записать доход в кассу. ",
-              ),
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.warning"), validateResErrors(cashError, t("crm.cashier.paymentAlerts.incomeCashFailed")));
           }
         }
 
@@ -910,11 +856,7 @@ export function usePaymentPage({
                 }
               }
               if (!ok) {
-                showAlert(
-                  "warning",
-                  "Печать",
-                  "Не удалось распечатать чек. Вы можете выбрать принтер и распечатать из окна успешной оплаты.",
-                );
+                showAlert("warning", t("crm.cashier.paymentAlerts.print"), t("crm.cashier.paymentAlerts.printFailed"));
               }
             } else {
               const receiptResult = await dispatch(
@@ -935,11 +877,7 @@ export function usePaymentPage({
             }
           } catch (receiptError) {
             console.warn("Не удалось получить чек для печати:", receiptError);
-            showAlert(
-              "warning",
-              "Печать",
-              "Не удалось распечатать чек. Вы можете повторить печать из окна успешной оплаты.",
-            );
+            showAlert("warning", t("crm.cashier.paymentAlerts.print"), t("crm.cashier.paymentAlerts.printFailedRetry"));
           }
         }
 
@@ -965,11 +903,7 @@ export function usePaymentPage({
       }
     } catch (error: any) {
       console.error("Ошибка при оформлении оплаты:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        validateResErrors(error, "Ошибка при оформлении оплаты. "),
-      );
+      showAlert("error", t("crm.cashier.paymentAlerts.error"), validateResErrors(error, t("crm.cashier.paymentAlerts.checkoutError")));
     } finally {
       payingInFlightRef.current = false;
     }
@@ -1012,7 +946,7 @@ export function usePaymentPage({
 
   const handlePrintReceipt = useCallback(async () => {
     if (!receiptData?.saleId) {
-      showAlert("error", "Ошибка", "Данные чека не найдены");
+      showAlert("error", t("crm.cashier.paymentAlerts.error"), t("crm.cashier.paymentAlerts.receiptNotFound"));
       return;
     }
 

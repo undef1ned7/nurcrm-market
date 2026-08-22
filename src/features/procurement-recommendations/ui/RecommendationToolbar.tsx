@@ -1,4 +1,5 @@
 import { Eraser, Settings2, Sparkles, Wand2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
 import { FilterBar } from "@shared/ui/page-shell";
 import type { RecommendationFilter } from "../model/types";
@@ -8,13 +9,13 @@ type Props = {
   vm: ProcurementRecommendationsVm;
 };
 
-const FILTERS: { value: RecommendationFilter; label: string }[] = [
-  { value: "all", label: "Все товары" },
-  { value: "required", label: "Только требующие закупки" },
-  { value: "critical", label: "Критический остаток" },
-];
-
 export function RecommendationToolbar({ vm }: Props) {
+  const { t } = useTranslation();
+  const filters: { value: RecommendationFilter; label: string }[] = [
+    { value: "all", label: t("crm.procurement.allProducts") },
+    { value: "required", label: t("crm.procurement.requiredOnly") },
+    { value: "critical", label: t("crm.procurement.criticalStock") },
+  ];
   const {
     suppliersLoading,
     supplierOptions,
@@ -36,25 +37,27 @@ export function RecommendationToolbar({ vm }: Props) {
     <div className="procurement-recommendations__controls">
       <FilterBar className="procurement-recommendations__toolbar">
         <div className="procurement-recommendations__field">
-          <label className="nur-label">Поставщик</label>
+          <label className="nur-label">{t("crm.procurement.selectSupplier")}</label>
           <SearchableCombobox
             value={selectedSupplierId}
             onChange={setSelectedSupplierId}
             options={supplierOptions}
             placeholder={
-              suppliersLoading ? "Загрузка поставщиков..." : "Выберите поставщика"
+              suppliersLoading
+                ? t("crm.procurement.suppliersLoading")
+                : t("crm.procurement.selectSupplier")
             }
             classNamePrefix="searchableCombo"
           />
         </div>
         <div className="procurement-recommendations__field procurement-recommendations__field--search">
-          <label className="nur-label">Поиск</label>
+          <label className="nur-label">{t("common.search")}</label>
           <input
             className="nur-input"
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Название или штрихкод"
+            placeholder={t("crm.procurement.searchNameBarcode")}
             disabled={!selectedSupplierId}
           />
         </div>
@@ -62,7 +65,7 @@ export function RecommendationToolbar({ vm }: Props) {
 
       <div className="procurement-recommendations__filters">
         <div className="procurement-recommendations__chips" role="tablist">
-          {FILTERS.map((item) => (
+          {filters.map((item) => (
             <button
               key={item.value}
               type="button"

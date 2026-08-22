@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import BarcodePrintTab from "./components/BarcodePrintTab";
 import {
   loadBarcodePrintPage,
@@ -18,6 +19,7 @@ const PAGE_SIZE = 100;
  * Товары загружаются постранично (по 100 шт) через API.
  */
 const BarcodePrintPage = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { list: products, loading, count } = useAppSelector(
     (state: any) => state.product,
@@ -73,8 +75,8 @@ const BarcodePrintPage = () => {
   return (
     <PageShell className="barcode-print-page">
       <PageHeader
-        title="Печать штрихкодов"
-        subtitle="Поиск товаров и печать этикеток"
+        title={t("crm.barcodePrint.pageTitle")}
+        subtitle={t("crm.barcodePrint.searchPlaceholder")}
       />
       <BarcodePrintTab
         products={products}

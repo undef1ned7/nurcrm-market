@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Wallet, AlertCircle, CheckCircle } from "lucide-react";
 import {
   closeShiftAsync,
@@ -14,6 +15,7 @@ import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import "./CloseShiftPage.scss";
 
 const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { shifts, currentShift } = useShifts();
 
@@ -90,7 +92,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
   if (!shift) {
     return (
       <div className="close-shift-page">
-        <div className="close-shift-page__error">Смена не найдена</div>
+        <div className="close-shift-page__error">{t("crm.cashier.shift.notFound")}</div>
       </div>
     );
   }
@@ -105,7 +107,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
   const handleCloseShift = async () => {
     if (isNaN(closingCashNum) || closingCashNum < 0) {
-      showAlert("error", "Ошибка", "Пожалуйста, введите корректную сумму");
+      showAlert("error", t("common.error"), t("crm.cashier.shift.alerts.invalidAmount"));
       return;
     }
 
@@ -131,11 +133,11 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
       console.error("Ошибка при закрытии смены:", error);
       showAlert(
         "error",
-        "Ошибка",
+        t("common.error"),
         error?.data?.detail ||
           error?.data?.closing_cash?.[0] ||
           error?.message ||
-          "Не удалось закрыть смену",
+          t("crm.cashier.shift.alerts.closeFailed"),
       );
     } finally {
       setLoading(false);
@@ -160,7 +162,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
           <ArrowLeft size={20} />
         </button>
         <h1 className="close-shift-page__title">
-          {closedSummary ? "Смена закрыта" : "Закрытие смены"}
+          {closedSummary ? t("crm.cashier.shift.closedTitle") : t("crm.cashier.shift.closeTitle")}
         </h1>
       </div>
 
@@ -171,12 +173,12 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
               <div className="close-shift-page__icon close-shift-page__icon--success">
                 <CheckCircle size={48} />
               </div>
-              <h2 className="close-shift-page__card-title">Смена закрыта</h2>
+              <h2 className="close-shift-page__card-title">{t("crm.cashier.shift.closedTitle")}</h2>
 
               <div className="close-shift-page__info-section">
                 <div className="close-shift-page__info-item">
                   <span className="close-shift-page__info-label">
-                    Касса закрыта на:
+                    {t("crm.cashier.shift.closedOn")}
                   </span>
                   <span className="close-shift-page__info-value">
                     {formatShiftMoney(closedSummary.closingCash)}
@@ -184,14 +186,14 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
                 </div>
                 <div className="close-shift-page__info-item">
                   <span className="close-shift-page__info-label">
-                    Ожидаемая сумма:
+                    {t("crm.cashier.shift.expectedCash")}
                   </span>
                   <span className="close-shift-page__info-value">
                     {formatShiftMoney(closedSummary.expectedCash)}
                   </span>
                 </div>
                 <div className="close-shift-page__info-item">
-                  <span className="close-shift-page__info-label">Расхождение:</span>
+                  <span className="close-shift-page__info-label">{t("crm.cashier.shift.discrepancy")}</span>
                   <span className="close-shift-page__info-value">
                     {closedSummary.cashDiff > 0 ? "+" : ""}
                     {formatShiftMoney(closedSummary.cashDiff)}
@@ -206,7 +208,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
                 className="close-shift-page__submit-btn close-shift-page__submit-btn--done"
                 onClick={onBack}
               >
-                Готово
+                {t("crm.cashier.shift.done")}
               </button>
             </>
           ) : (
@@ -214,12 +216,12 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
               <div className="close-shift-page__icon">
                 <Wallet size={48} style={{ color: "#ef4444" }} />
               </div>
-              <h2 className="close-shift-page__card-title">Завершение смены</h2>
+              <h2 className="close-shift-page__card-title">{t("crm.cashier.shift.finishTitle")}</h2>
 
               <div className="close-shift-page__info-section">
                 <div className="close-shift-page__info-item">
                   <span className="close-shift-page__info-label">
-                    Начальная сумма:
+                    {t("crm.cashier.shift.openingAmountShort")}
                   </span>
                   <span className="close-shift-page__info-value">
                     {formatShiftMoney(openingCash)}
@@ -228,7 +230,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
                 <div className="close-shift-page__info-item">
                   <span className="close-shift-page__info-label">
-                    Продажи всего:
+                    {t("crm.cashier.shift.totalSales")}
                   </span>
                   <span className="close-shift-page__info-value">
                     {formatShiftMoney(salesTotal)}
@@ -236,7 +238,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
                 </div>
 
                 <div className="close-shift-page__info-item">
-                  <span className="close-shift-page__info-label">Наличными:</span>
+                  <span className="close-shift-page__info-label">{t("crm.cashier.shift.cashSales")}</span>
                   <span className="close-shift-page__info-value">
                     {formatShiftMoney(cashSalesTotal)}
                   </span>
@@ -244,7 +246,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
                 <div className="close-shift-page__info-item">
                   <span className="close-shift-page__info-label">
-                    Безналичными:
+                    {t("crm.cashier.shift.cashlessSales")}
                   </span>
                   <span className="close-shift-page__info-value">
                     {formatShiftMoney(noncashSalesTotal)}
@@ -253,7 +255,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
                 <div className="close-shift-page__info-item">
                   <span className="close-shift-page__info-label">
-                    Ожидаемая сумма:
+                    {t("crm.cashier.shift.expectedCash")}
                   </span>
                   <span className="close-shift-page__info-value">
                     {formatShiftMoney(expectedCash)}
@@ -270,7 +272,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
               <div className="close-shift-page__input-wrapper">
                 <label className="close-shift-page__label">
-                  Фактическая сумма на кассе (сом) *
+                  {t("crm.cashier.shift.closingAmountLabel")}
                 </label>
                 <input
                   type="number"
@@ -287,7 +289,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
               {closingCash && !isNaN(closingCashNum) && (
                 <div className="close-shift-page__diff-section">
-                  <div className="close-shift-page__diff-label">Расхождение:</div>
+                  <div className="close-shift-page__diff-label">{t("crm.cashier.shift.discrepancy")}</div>
                   <div className={`close-shift-page__diff-value ${diffClass}`}>
                     <AlertCircle size={20} />
                     <span>
@@ -304,7 +306,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
                 onClick={handleCloseShift}
                 disabled={loading || !closingCash}
               >
-                {loading ? "Закрытие..." : "Закрыть смену"}
+                {loading ? t("crm.cashier.shift.closing") : t("crm.cashier.shift.closeShift")}
               </button>
             </>
           )}

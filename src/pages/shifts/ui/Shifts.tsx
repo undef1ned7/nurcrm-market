@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@app/store";
 import {
@@ -19,12 +20,14 @@ import {
   LoadingState,
   PagePanel,
 } from "@shared/ui/page-shell";
+import { GlossaryText } from "@shared/ui/GlossaryText/GlossaryText";
 import "./Shifts.scss";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 
 const PAGE_SIZE = 100;
 
 const Shifts = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -148,8 +151,8 @@ const Shifts = () => {
     return (
       <PageShell className="shifts-page">
         <PageHeader
-          title="Смены"
-          subtitle="Открытие, закрытие и контроль кассовых смен"
+          title={<GlossaryText>{t("crm.shifts.pageTitle")}</GlossaryText>}
+          subtitle={<GlossaryText>{t("crm.shifts.subtitle")}</GlossaryText>}
         />
         <PagePanel flush>
           <LoadingState rows={6} />
@@ -161,12 +164,12 @@ const Shifts = () => {
   return (
     <PageShell className="shifts-page">
       <PageHeader
-        title="Смены"
-        subtitle="Открытие, закрытие и контроль кассовых смен"
+        title={<GlossaryText>{t("crm.shifts.pageTitle")}</GlossaryText>}
+        subtitle={<GlossaryText>{t("crm.shifts.subtitle")}</GlossaryText>}
       />
 
       {/* Табы */}
-      <div className="nur-tabs shifts-page__tabs" role="tablist" aria-label="Статус смен">
+      <div className="nur-tabs shifts-page__tabs" role="tablist" aria-label={t("crm.shifts.tabsAriaLabel")}>
         <button
           type="button"
           role="tab"
@@ -183,7 +186,7 @@ const Shifts = () => {
           }}
         >
           <CheckCircle size={18} />
-          <span>Открытые</span>
+          <span>{t("crm.shifts.open")}</span>
           {activeTab === "open" && displayedShifts.length > 0 && (
             <span className="shifts-page__tab-badge">
               {displayedShifts.length}
@@ -206,7 +209,7 @@ const Shifts = () => {
           }}
         >
           <XCircle size={18} />
-          <span>Закрытые</span>
+          <span>{t("crm.shifts.closed")}</span>
           {activeTab === "closed" && displayedShifts.length > 0 && (
             <span className="shifts-page__tab-badge">
               {displayedShifts.length}
@@ -220,10 +223,10 @@ const Shifts = () => {
             <EmptyState
               title={
                 activeTab === "open"
-                  ? "Открытые смены не найдены"
-                  : "Закрытые смены не найдены"
+                  ? t("crm.shifts.emptyOpen")
+                  : t("crm.shifts.emptyClosed")
               }
-              text="Выберите другой фильтр или откройте смену в кассе"
+              text={t("crm.shifts.emptyHint")}
             />
           ) : (
             <ul className="shifts-page__shift-list">
@@ -253,11 +256,11 @@ const Shifts = () => {
                         </div>
                         <div className="shifts-page__shift-header-info">
                           <h3 className="shifts-page__shift-title">
-                            Смена #{shiftNumber}
+                            {t("crm.shifts.shiftTitle", { number: shiftNumber })}
                           </h3>
                           <div className="shifts-page__shift-date">
                             <Calendar size={14} />
-                            <span>Открыта {formatDate(shift.opened_at)}</span>
+                            <span>{t("crm.shifts.openedAt", { date: formatDate(shift.opened_at) })}</span>
                           </div>
                         </div>
                       </div>
@@ -268,12 +271,12 @@ const Shifts = () => {
                         {shift.status === "open" ? (
                           <>
                             <Lock size={14} />
-                            <span>Открыта</span>
+                            <span>{t("crm.shifts.statusOpen")}</span>
                           </>
                         ) : (
                           <>
                             <XCircle size={14} />
-                            <span>Закрыта</span>
+                            <span>{t("crm.shifts.statusClosed")}</span>
                           </>
                         )}
                       </StatusChip>
@@ -288,11 +291,11 @@ const Shifts = () => {
                             <DollarSign size={20} />
                             <div className="shifts-page__shift-metric-content">
                               <div className="shifts-page__shift-metric-label">
-                                Выручка
+                                {t("crm.shifts.revenue")}
                               </div>
                               <div className="shifts-page__shift-metric-value">
                                 {parseFloat(shift.sales_total || 0).toFixed(2)}{" "}
-                                сом
+                                {t("common.currencySom")}
                               </div>
                             </div>
                           </div>
@@ -305,7 +308,7 @@ const Shifts = () => {
                             <ShoppingCart size={20} />
                             <div className="shifts-page__shift-metric-content">
                               <div className="shifts-page__shift-metric-label">
-                                Продажи
+                                {t("crm.shifts.sales")}
                               </div>
                               <div className="shifts-page__shift-metric-value">
                                 {shift.sales_count || 0}
@@ -320,7 +323,7 @@ const Shifts = () => {
                           <Wallet size={20} />
                           <div className="shifts-page__shift-metric-content">
                             <div className="shifts-page__shift-metric-label">
-                              Касса
+                              {t("crm.shifts.cashbox")}
                             </div>
                             <div className="shifts-page__shift-metric-value">
                               {shift.cashbox_name}
@@ -333,7 +336,7 @@ const Shifts = () => {
                     {/* Информация о кассире */}
                     <div className="shifts-page__shift-footer">
                       <span className="shifts-page__shift-footer-label">
-                        Кассир:
+                        {t("crm.shifts.cashierLabel")}
                       </span>
                       <span className="shifts-page__shift-footer-value">
                         {shift.cashier_display || shift.cashier || "—"}
@@ -356,11 +359,16 @@ const Shifts = () => {
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1 || loading || !hasPrevPage}
           >
-            Назад
+            {t("common.back")}
           </button>
           <span className="shifts-page__pagination-info">
-            Страница {currentPage} из {totalPages}
-            {shiftsCount ? ` (${shiftsCount} смен)` : ""}
+            {t("common.paginationPage", { current: currentPage, total: totalPages })}
+            {shiftsCount
+              ? ` ${t("common.paginationCount", {
+                  count: shiftsCount,
+                  label: t("crm.shifts.shiftsCount"),
+                })}`
+              : ""}
           </span>
           <button
             type="button"
@@ -372,7 +380,7 @@ const Shifts = () => {
               (totalPages && currentPage >= totalPages)
             }
           >
-            Вперед
+            {t("common.forward")}
           </button>
         </div>
       )}

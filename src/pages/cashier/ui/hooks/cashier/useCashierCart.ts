@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useStore } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -83,6 +84,7 @@ import type {
 
 
 export function useCashierCart(b: any) {
+  const { t } = useTranslation();
   const {
     dispatch, openShiftId, ensureActiveSaleId, getSelectedSaleId, getCartLineSaleId,
     preferredWholesaleMode, refreshSaleFromStore, multiCart, multiCartRef,
@@ -126,11 +128,7 @@ export function useCashierCart(b: any) {
     try {
       // Проверяем наличие открытой смены перед добавлением товара
       if (!openShiftId) {
-        showAlert(
-          "warning",
-          "Нет открытой смены",
-          "Для работы с кассой необходимо начать смену",
-        );
+        showAlert("warning", t("crm.cashier.cartAlerts.noOpenShift"), t("crm.cashier.cartAlerts.shiftRequired"));
         return;
       }
 
@@ -147,12 +145,12 @@ export function useCashierCart(b: any) {
           error,
           "Не удалось создать продажу",
         );
-        showAlert("error", "Ошибка", message);
+        showAlert("error", t("crm.cashier.cartAlerts.error"), message);
         return;
       }
 
       if (!saleId) {
-        showAlert("error", "Ошибка", "Не удалось получить ID продажи");
+        showAlert("error", t("crm.cashier.cartAlerts.error"), t("crm.cashier.cartAlerts.noSaleId"));
         return;
       }
 
@@ -223,11 +221,8 @@ export function useCashierCart(b: any) {
       }
     } catch (error: any) {
       console.error("Ошибка при добавлении товара в корзину:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        "Ошибка при добавлении товара: " +
-          (error.message || "Неизвестная ошибка"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        t("crm.cashier.cartAlerts.addProductError", { message: error.message || t("crm.cashier.cartAlerts.unknownError") }),
       );
     }
   };
@@ -266,10 +261,8 @@ export function useCashierCart(b: any) {
       await dispatch(getSale({ id: saleId })).unwrap();
       setBarcodeAmbiguity(null);
     } catch (error: any) {
-      showAlert(
-        "error",
-        "Ошибка",
-        validateResErrors(error, "Не удалось добавить выбранный товар"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        validateResErrors(error, t("crm.cashier.cartAlerts.addSelectedError")),
       );
     } finally {
       setBarcodeAmbiguityLoading(false);
@@ -327,11 +320,7 @@ export function useCashierCart(b: any) {
     );
 
     if (maxQty > 0 && qty > maxQty) {
-      showAlert(
-        "warning",
-        "Недостаточно товара",
-        `Доступно не более ${maxQty} ${pkg.unit || "шт."}`,
-      );
+      showAlert("warning", t("crm.cashier.cartAlerts.insufficientStock"), t("crm.cashier.cartAlerts.maxAvailable", { qty: maxQty, unit: pkg.unit || "шт." }));
       return;
     }
 
@@ -369,11 +358,7 @@ export function useCashierCart(b: any) {
 
       if (newQuantity === 0) {
         if (!canMarketDeleteCartItem) {
-          showAlert(
-            "warning",
-            "Нет доступа",
-            "У вас нет доступа на удаление позиций из корзины",
-          );
+          showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noDeleteAccess"));
           return;
         }
         if (!(await ensureDeleteCode())) return;
@@ -416,11 +401,8 @@ export function useCashierCart(b: any) {
       }
     } catch (error: any) {
       console.error("Ошибка при обновлении количества:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        "Ошибка при обновлении количества: " +
-          (error.message || "Неизтвестная ошибка"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        t("crm.cashier.cartAlerts.qtyUpdateError", { message: error.message || t("crm.cashier.cartAlerts.unknownError") }),
       );
     }
   };
@@ -434,11 +416,7 @@ export function useCashierCart(b: any) {
     cancelPendingDiscountLineInput(item.id);
 
     if (!canMarketDeleteCartItem) {
-      showAlert(
-        "warning",
-        "Нет доступа",
-        "У вас нет доступа на удаление позиций из корзины",
-      );
+      showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noDeleteAccess"));
       return;
     }
 
@@ -483,11 +461,8 @@ export function useCashierCart(b: any) {
       // await refreshSale();
     } catch (error: any) {
       console.error("Ошибка при удалении товара:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        "Ошибка при удалении товара: " +
-          (error.message || "Неизвестная ошибка"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        t("crm.cashier.cartAlerts.deleteProductError", { message: error.message || t("crm.cashier.cartAlerts.unknownError") }),
       );
     }
   }, [
@@ -532,10 +507,10 @@ export function useCashierCart(b: any) {
         ) {
           showAlert(
             "warning",
-            availableQuantity > 0 ? "Недостаточно товара" : "Товар отсутствует",
+            availableQuantity > 0 ? t("crm.cashier.cartAlerts.insufficientStock") : t("crm.cashier.cartAlerts.outOfStock"),
             availableQuantity > 0
-              ? `Доступно только ${availableQuantity} ${product.unit || "шт"}`
-              : "Товар отсутствует в наличии",
+              ? t("crm.cashier.cartAlerts.availableOnly", { qty: availableQuantity, unit: product.unit || "шт" })
+              : t("crm.cashier.cartAlerts.outOfStockHint"),
           );
           return;
         }
@@ -545,11 +520,7 @@ export function useCashierCart(b: any) {
         !isMarketWarehouseServiceProduct(product)
       ) {
         if (!(availableQuantity > 0)) {
-          showAlert(
-            "warning",
-            "Товар отсутствует",
-            "Товар отсутствует в наличии",
-          );
+          showAlert("warning", t("crm.cashier.cartAlerts.outOfStock"), t("crm.cashier.cartAlerts.outOfStockHint"));
           return;
         }
         const items = currentSale?.items || currentSale?.cart?.items || [];
@@ -560,11 +531,7 @@ export function useCashierCart(b: any) {
             ?.quantity_in_package,
         );
         if (!(qip > 0)) {
-          showAlert(
-            "error",
-            "Ошибка упаковки",
-            "Для поштучной продажи не найдена корректная упаковка товара",
-          );
+          showAlert("error", t("crm.cashier.cartAlerts.packagingError"), t("crm.cashier.cartAlerts.packagingNotFound"));
           return;
         }
         // Передаём именно resolved-товар: его может не быть в products
@@ -585,11 +552,7 @@ export function useCashierCart(b: any) {
 
       if (qtyNum === 0) {
         if (!canMarketDeleteCartItem) {
-          showAlert(
-            "warning",
-            "Нет доступа",
-            "У вас нет доступа на удаление позиций из корзины",
-          );
+          showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noDeleteAccess"));
           setCartQuantities((prev: any) => ({
             ...prev,
             [item.id]: formatQuantity(item.quantity || 0),
@@ -617,11 +580,8 @@ export function useCashierCart(b: any) {
       }
     } catch (error: any) {
       console.error("Ошибка при обновлении количества:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        "Ошибка при обновлении количества: " +
-          (error.message || "Неизвестная ошибка"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        t("crm.cashier.cartAlerts.qtyUpdateError", { message: error.message || t("crm.cashier.cartAlerts.unknownError") }),
       );
     }
   }, [
@@ -804,7 +764,7 @@ export function useCashierCart(b: any) {
     if (!saleId) return;
     cancelPendingDiscountLineInput(item.id);
     if (!canMarketEditPrice) {
-      showAlert("warning", "Нет доступа", "У вас нет доступа на изменение цены");
+      showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noPriceAccess"));
       setCartPrices((prev: any) => ({
         ...prev,
         [item.id]: formatPrice(item.price ?? 0),
@@ -826,9 +786,7 @@ export function useCashierCart(b: any) {
       const product = products.find((p: any) => p.id === item.productId);
       const purchasePrice = product ? parseFloat(product.purchase_price) : NaN;
       if (!isNaN(purchasePrice) && num < purchasePrice) {
-        showAlert(
-          "warning",
-          "Закупочная цена",
+        showAlert("warning", t("crm.cashier.cartAlerts.purchasePrice"),
           `Цена не может быть ниже закупочной (${formatPrice(purchasePrice)} сом). При необходимости используйте скидку.`,
         );
         setCartPrices((prev: any) => ({
@@ -862,7 +820,7 @@ export function useCashierCart(b: any) {
       }
     } catch (err: any) {
       console.error("Ошибка при изменении цены:", err);
-      showAlert("error", "Ошибка", err?.message || "Не удалось изменить цену");
+      showAlert("error", t("crm.cashier.cartAlerts.error"), err?.message || t("crm.cashier.cartAlerts.priceChangeError"));
       setCartPrices((prev: any) => ({
         ...prev,
         [item.id]: formatPrice(item.price ?? 0),
@@ -886,7 +844,7 @@ export function useCashierCart(b: any) {
     const saleId = getCartLineSaleId(item);
     if (!saleId) return;
     if (!canMarketDiscount) {
-      showAlert("warning", "Нет доступа", "У вас нет доступа на применение скидки");
+      showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noDiscountAccess"));
       setCartDiscounts((prev: any) => ({
         ...prev,
         [item.id]: formatPrice(item.discountTotal ?? 0),
@@ -898,9 +856,7 @@ export function useCashierCart(b: any) {
     let num = Math.max(0, normalizePrice(parseFloat(value) || 0));
     if (num > lineTotal) {
       num = lineTotal;
-      showAlert(
-        "warning",
-        "Скидка",
+      showAlert("warning", t("crm.cashier.cartAlerts.discount"),
         `Скидка не может быть больше суммы по строке (${formatPrice(lineTotal)} сом). Установлено ${formatPrice(lineTotal)} сом.`,
       );
     }
@@ -912,9 +868,7 @@ export function useCashierCart(b: any) {
         if (mode === "percent") {
           displayValue = stripTrailingZerosAfterDecimal(discountLimitPercent);
         }
-        showAlert(
-          "warning",
-          "Скидка",
+        showAlert("warning", t("crm.cashier.cartAlerts.discount"),
           `Максимальная скидка — ${stripTrailingZerosAfterDecimal(discountLimitPercent)}%. Установлено ${formatPrice(maxDiscountSom)} сом.`,
         );
       }
@@ -948,10 +902,8 @@ export function useCashierCart(b: any) {
       );
     } catch (err: any) {
       console.error("Ошибка при изменении скидки:", err);
-      showAlert(
-        "error",
-        "Ошибка",
-        err?.message || "Не удалось изменить скидку",
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        err?.message || t("crm.cashier.cartAlerts.discountChangeError"),
       );
       setCartDiscounts((prev: any) => ({
         ...prev,

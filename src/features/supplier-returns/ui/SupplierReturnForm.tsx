@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -42,6 +43,7 @@ const COMPENSATION_META: Record<
 };
 
 export function SupplierReturnForm() {
+  const { t } = useTranslation();
   const vm = useSupplierReturnForm();
   const {
     navigate,
@@ -87,11 +89,11 @@ export function SupplierReturnForm() {
   return (
     <PageShell className="supplier-return-form">
       <PageHeader
-        title="Возврат поставщику"
+        title={t("crm.procurement.returnTitle")}
         subtitle={
           receiptId
-            ? "Товары подставлены из прихода. Вернуть можно не больше остатка и не больше купленного."
-            : "Спишите брак, излишек или ошибку поставки — остаток и деньги обновятся вместе."
+            ? t("crm.procurement.returnSubtitleReceipt")
+            : t("crm.procurement.returnSubtitleDefault")
         }
         actions={
           <button
@@ -100,7 +102,7 @@ export function SupplierReturnForm() {
             onClick={() => navigate("/crm/market/procurement?tab=returns")}
           >
             <ArrowLeft size={16} />
-            К возвратам
+            {t("crm.procurement.returnsTab")}
           </button>
         }
       />
@@ -439,7 +441,7 @@ export function SupplierReturnForm() {
               disabled={!canSubmit}
             >
               <Undo2 size={18} />
-              {submitting ? "Сохранение..." : "Оформить возврат"}
+              {submitting ? t("common.saving") : t("crm.procurement.submitReturn")}
             </button>
           </div>
         </footer>

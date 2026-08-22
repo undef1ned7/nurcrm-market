@@ -1,5 +1,6 @@
 // src/components/Education/Login.jsx
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   loginUserAsync,
   getCompany,
@@ -57,6 +58,7 @@ const formatLockTime = (ms) => {
 };
 
 const Login = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const alert = useAlert();
@@ -137,7 +139,7 @@ const Login = () => {
       const txt = err.detail.trim();
       const low = txt.toLowerCase();
       if (low.includes("no active account found with the given credentials")) {
-        return "Неверный логин или пароль";
+        return t("auth.login.wrongLoginOrPassword");
       }
       return txt;
     }
@@ -147,7 +149,7 @@ const Login = () => {
       const txt = String(err.non_field_errors[0] || "").trim();
       const low = txt.toLowerCase();
       if (low.includes("unable to log in") || low.includes("credentials")) {
-        return "Неверный логин или пароль";
+        return t("auth.login.wrongLoginOrPassword");
       }
       return txt;
     }
@@ -164,7 +166,7 @@ const Login = () => {
     try {
       return JSON.stringify(err);
     } catch {
-      return "Ошибка входа";
+      return t("auth.login.loginError");
     }
   };
 
@@ -217,13 +219,13 @@ const Login = () => {
   return (
     <div className="login">
       <section className="login__left" aria-hidden="true">
-        <h1 className="login__slogan">Сила управления в ваших руках</h1>
+        <h1 className="login__slogan">{t("hero.title")}</h1>
       </section>
 
       <aside className="login__right">
         <div className="login__card" role="dialog" aria-labelledby="loginTitle">
           <h2 id="loginTitle" className="login__title">
-            Вход в NurCRM
+            {t("auth.login.title")}
           </h2>
 
           {isAuthenticated && currentUser && (
@@ -231,28 +233,29 @@ const Login = () => {
               className="login__message login__message--success"
               role="status"
             >
-              Добро пожаловать,&nbsp;
-              <strong>
-                {currentUser.email ||
+              {t("auth.login.welcome", {
+                name:
+                  currentUser.email ||
                   (currentUser.user && currentUser.user.email) ||
-                  "пользователь"}
-              </strong>
+                  t("auth.login.defaultUser"),
+              })}
               !
               <button
                 type="button"
                 onClick={handleLogout}
                 className="login__logout-button"
-                aria-label="Выйти из аккаунта"
+                aria-label={t("auth.login.logoutAria")}
               >
-                Выйти
+                {t("auth.login.logout")}
               </button>
             </div>
           )}
 
           {isLocked ? (
             <div className="login__message login__message--error" role="alert">
-              Слишком много неудачных попыток входа. Повторите через{" "}
-              <strong>{formatLockTime(lockRemainingMs)}</strong>
+              {t("auth.login.tooManyAttempts", {
+                time: formatLockTime(lockRemainingMs),
+              })}
             </div>
           ) : (
             !!errText && (
@@ -264,12 +267,13 @@ const Login = () => {
                   localError
                 ) : (
                   <>
-                    Неправильный логин или пароль
+                    {t("auth.login.wrongCredentials")}
                     {lockState.attempts > 0 && (
                       <>
                         {" "}
-                        (осталось попыток:{" "}
-                        {Math.max(0, MAX_LOGIN_ATTEMPTS - lockState.attempts)})
+                        ({t("auth.login.attemptsLeft", {
+                          count: Math.max(0, MAX_LOGIN_ATTEMPTS - lockState.attempts),
+                        })})
                       </>
                     )}
                   </>
@@ -282,14 +286,14 @@ const Login = () => {
           <form className="login__form" onSubmit={handleSubmit} noValidate>
             <div className="login__field">
               <label className="login__label" htmlFor="email">
-                Email
+                {t("auth.login.email")}
               </label>
               <input
                 className="login__input"
                 type="email"
                 id="email"
                 name="email"
-                placeholder="Введите email"
+                placeholder={t("auth.login.emailPlaceholder")}
                 autoComplete="off"
                 autoSave="off"
                 value={formData.email}
@@ -301,7 +305,7 @@ const Login = () => {
 
             <div className="login__field">
               <label className="login__label" htmlFor="password">
-                Пароль
+                {t("auth.login.password")}
               </label>
               <div className="login__password">
                 <input
@@ -309,7 +313,7 @@ const Login = () => {
                   type={showPass ? "text" : "password"}
                   id="password"
                   name="password"
-                  placeholder="Введите пароль"
+                  placeholder={t("auth.login.passwordPlaceholder")}
                   autoComplete="off"
                   autoSave="off"
                   value={formData.password}
@@ -321,9 +325,9 @@ const Login = () => {
                   type="button" // ← ВАЖНО: не submit
                   className="login__toggle"
                   onClick={() => setShowPass((s) => !s)}
-                  aria-label={showPass ? "Скрыть пароль" : "Показать пароль"}
+                  aria-label={showPass ? t("auth.login.hidePassword") : t("auth.login.showPassword")}
                 >
-                  {showPass ? "Скрыть" : "Показать"}
+                  {showPass ? t("auth.login.hide") : t("auth.login.show")}
                 </button>
               </div>
             </div>
@@ -334,10 +338,10 @@ const Login = () => {
               disabled={loading || isLocked}
             >
               {isLocked
-                ? `Заблокировано (${formatLockTime(lockRemainingMs)})`
+                ? t("auth.login.locked", { time: formatLockTime(lockRemainingMs) })
                 : loading
-                  ? "Вход..."
-                  : "Войти"}
+                  ? t("auth.login.submitting")
+                  : t("auth.login.submit")}
             </button>
           </form>
         </div>

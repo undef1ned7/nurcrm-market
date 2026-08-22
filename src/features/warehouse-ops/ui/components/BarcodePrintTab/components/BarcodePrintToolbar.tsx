@@ -1,9 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { FilterBar } from "@shared/ui/page-shell";
 import BarcodePrintSettings from "./BarcodePrintSettings";
 
-/**
- * Top toolbar: search, label size, copies, printer connection, display settings.
- */
 const BarcodePrintToolbar = ({
   searchTerm,
   onSearchChange,
@@ -31,12 +29,14 @@ const BarcodePrintToolbar = ({
   onBarcodeHeightChange,
   onBarcodeBarWidthChange,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <FilterBar className="barcode-print-tab__header">
       <div className="barcode-print-tab__search-wrapper">
         <input
           type="text"
-          placeholder="Поиск по названию или штрих-коду"
+          placeholder={t("crm.barcodePrint.searchPlaceholder")}
           value={searchTerm || ""}
           onChange={onSearchChange}
           className="nur-input barcode-print-tab__search"
@@ -53,7 +53,7 @@ const BarcodePrintToolbar = ({
       <div className="barcode-print-tab__printer-controls">
         <div className="barcode-print-tab__size-select-wrapper">
           <label className="nur-label barcode-print-tab__size-label">
-            Размер этикетки:
+            {t("crm.barcodePrint.labelSizeColon")}
             <select
               className="nur-select barcode-print-tab__size-select"
               value={labelSize}
@@ -62,14 +62,14 @@ const BarcodePrintToolbar = ({
               <option value="30x20">30×20 мм</option>
               <option value="58x40">58×40 мм</option>
               <option value="58x30">58×30 мм</option>
-              <option value="custom">Свой размер…</option>
+              <option value="custom">{t("crm.barcodePrint.customSize")}</option>
             </select>
           </label>
 
           {labelSize === "custom" && (
             <>
               <label className="barcode-print-tab__size-label">
-                Ширина (мм):
+                {t("crm.barcodePrint.widthMm")}
                 <input
                   className="barcode-print-tab__custom-size-input"
                   type="number"
@@ -78,11 +78,11 @@ const BarcodePrintToolbar = ({
                   step={1}
                   value={customWidthMm}
                   onChange={(e) => onCustomWidthMmChange(e.target.value)}
-                  title="Ширина этикетки в миллиметрах (15–110)"
+                  title={t("crm.barcodePrint.widthTitle")}
                 />
               </label>
               <label className="barcode-print-tab__size-label">
-                Высота (мм):
+                {t("crm.barcodePrint.heightMm")}
                 <input
                   className="barcode-print-tab__custom-size-input"
                   type="number"
@@ -91,14 +91,14 @@ const BarcodePrintToolbar = ({
                   step={1}
                   value={customHeightMm}
                   onChange={(e) => onCustomHeightMmChange(e.target.value)}
-                  title="Высота этикетки в миллиметрах (10–110)"
+                  title={t("crm.barcodePrint.heightTitle")}
                 />
               </label>
             </>
           )}
 
           <label className="barcode-print-tab__size-label">
-            Копий (по умолчанию):
+            {t("crm.barcodePrint.copiesDefault")}:
             <input
               className="barcode-print-tab__copies-input"
               type="number"
@@ -107,7 +107,7 @@ const BarcodePrintToolbar = ({
               step={1}
               value={copiesValue}
               onChange={(e) => onCopiesChange(e.target.value)}
-              title="Значение копий для позиций, у которых не задано своё количество"
+              title={t("crm.barcodePrint.copiesTitle")}
             />
           </label>
 
@@ -116,9 +116,9 @@ const BarcodePrintToolbar = ({
               type="button"
               className="barcode-print-tab__selection-btn"
               onClick={onResetCopiesById}
-              title="Вернуть всем позициям количество копий по умолчанию"
+              title={t("crm.barcodePrint.resetCopiesTitle")}
             >
-              Сбросить копии позиций
+              {t("crm.barcodePrint.resetCopies")}
             </button>
           )}
         </div>
@@ -132,7 +132,9 @@ const BarcodePrintToolbar = ({
             }`}
           />
           <span className="barcode-print-tab__status-text">
-            {isPrinterConnected ? "Принтер подключен" : "Принтер не подключен"}
+            {isPrinterConnected
+              ? t("crm.barcodePrint.printerConnected")
+              : t("crm.barcodePrint.printerDisconnected")}
           </span>
         </div>
 
@@ -142,7 +144,9 @@ const BarcodePrintToolbar = ({
           onClick={onConnectPrinter}
           disabled={isConnecting}
         >
-          {isConnecting ? "Подключение..." : "Подключить принтер"}
+          {isConnecting
+            ? t("crm.barcodePrint.connecting")
+            : t("crm.barcodePrint.connectPrinter")}
         </button>
       </div>
 

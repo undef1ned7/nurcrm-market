@@ -1,4 +1,5 @@
 import { Filter } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { PageShell, PageHeader } from "@shared/ui/page-shell";
 import "./Analytics.scss";
 import "./analytics.charts";
@@ -16,6 +17,7 @@ import { UsersAnalyticsTab } from "./components/UsersAnalyticsTab";
 import { FinanceAnalyticsTab } from "./components/FinanceAnalyticsTab";
 
 const Analytics = () => {
+  const { t } = useTranslation();
   const vm = useAnalyticsData();
   const {
     isDark,
@@ -30,18 +32,18 @@ const Analytics = () => {
   return (
     <PageShell className={`analytics-page${isDark ? " analytics-page--dark" : ""}`}>
       <PageHeader
-        title="Аналитика"
-        subtitle={`Статистика и отчеты за ${monthName}`}
+        title={t("crm.analytics.pageTitle")}
+        subtitle={t("crm.analytics.pageSubtitle", { month: monthName })}
         actions={
           <button
             type="button"
             className="nur-btn nur-btn--secondary"
             onClick={() => setShowFilters(!showFilters)}
-            title="Фильтры"
-            aria-label="Фильтры"
+            title={t("crm.analytics.filters")}
+            aria-label={t("crm.analytics.filters")}
           >
             <Filter size={20} />
-            <span className="nur-btn__label">Фильтры</span>
+            <span className="nur-btn__label">{t("crm.analytics.filters")}</span>
           </button>
         }
       />
@@ -52,7 +54,7 @@ const Analytics = () => {
       {/* Индикатор загрузки */}
       {loading && (
         <div className="analytics-page__loading">
-          <p>Загрузка данных...</p>
+          <p>{t("crm.analytics.loading")}</p>
         </div>
       )}
 

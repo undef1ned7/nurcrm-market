@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export const EditDebtModal = ({
   open,
   eFullName,
@@ -13,6 +15,7 @@ export const EditDebtModal = ({
   onClose,
   onSubmit,
 }) => {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -25,7 +28,7 @@ export const EditDebtModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="debts-page__modal-title" id="debt-edit-title">
-          Изменить долг
+          {t("crm.debts.editDebt")}
         </div>
 
         {editErr && (
@@ -35,43 +38,51 @@ export const EditDebtModal = ({
         )}
 
         <form onSubmit={onSubmit}>
-          <label className="nur-label" htmlFor="debt-edit-name">Имя *</label>
+          <label className="nur-label" htmlFor="debt-edit-name">
+            {t("crm.debts.name")} *
+          </label>
           <input
             id="debt-edit-name"
             className="nur-input debts-page__modal-input"
-            placeholder="Имя *"
+            placeholder={`${t("crm.debts.name")} *`}
             value={eFullName}
             onChange={(e) => setEFullName(e.target.value)}
             autoFocus
           />
-          <label className="nur-label" htmlFor="debt-edit-phone">Телефон *</label>
+          <label className="nur-label" htmlFor="debt-edit-phone">
+            {t("crm.debts.phone")} *
+          </label>
           <input
             id="debt-edit-phone"
             className="nur-input debts-page__modal-input"
-            placeholder="Только цифры"
+            placeholder={t("crm.debts.digitsOnly")}
             inputMode="numeric"
             pattern="\d*"
             value={ePhone}
             onChange={(e) => setEPhone(e.target.value.replace(/\D/g, ""))}
           />
-          <label className="nur-label" htmlFor="debt-edit-amount">Сумма долга *</label>
+          <label className="nur-label" htmlFor="debt-edit-amount">
+            {t("crm.debts.debt")} *
+          </label>
           <input
             id="debt-edit-amount"
             className="nur-input debts-page__modal-input"
-            placeholder="Только цифры"
+            placeholder={t("crm.debts.digitsOnly")}
             inputMode="numeric"
             pattern="\d*"
             value={eAmount}
             onChange={(e) => setEAmount(e.target.value.replace(/\D/g, ""))}
           />
-          <label className="nur-label" htmlFor="debt-edit-due">Дата возврата</label>
+          <label className="nur-label" htmlFor="debt-edit-due">
+            {t("crm.debts.dueDate")}
+          </label>
           <input
             id="debt-edit-due"
             className="nur-input debts-page__modal-input"
             type="date"
             value={eDueDate}
             onChange={(e) => setEDueDate(e.target.value)}
-            title="Дата возврата долга (необязательно)"
+            title={t("crm.debts.dueDateOptional")}
           />
 
           <div className="debts-page__modal-actions">
@@ -81,14 +92,14 @@ export const EditDebtModal = ({
               onClick={onClose}
               disabled={savingEdit}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               className="nur-btn nur-btn--primary"
               disabled={savingEdit}
             >
-              {savingEdit ? "Сохранение…" : "Сохранить изменения"}
+              {savingEdit ? t("common.saving") : t("crm.debts.saveChanges")}
             </button>
           </div>
         </form>

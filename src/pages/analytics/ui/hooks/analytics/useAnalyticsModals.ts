@@ -1,15 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
-import { saleStatusInfo } from "./formatters";
+import { saleStatusInfo as baseSaleStatusInfo } from "./formatters";
 
 export function useAnalyticsModals({ period, filters }: any) {
+  const { t } = useTranslation();
   const [showRevenueModal, setShowRevenueModal] = useState(false);
   const [showTxModal, setShowTxModal] = useState(false);
   const [txLoading, setTxLoading] = useState(false);
   const [txError, setTxError] = useState("");
   const [txSales, setTxSales] = useState<any[]>([]);
 
-  const openTransactions = React.useCallback(async () => {
+  const saleStatusInfo = useCallback(
+    (sale: any) => {
+      const info = baseSaleStatusInfo(sale);
+      const s = String(sale?.status || "").toLowerCase();
+      if (s === "partial" || s === "partially_paid") {
+        return { ...info, label: t("crm.analytics.saleStatus.partial") };
+      }
+      const labels: Record<string, string> = {
+        canceled: t("crm.analytics.saleStatus.canceled"),
+        debt: t("crm.analytics.saleStatus.debt"),
+        paid: t("crm.analytics.saleStatus.paid"),
+      };
+      return { ...info, label: labels[info.variant] ?? info.label };
+    },
+    [t],
+  );
+
+  const openTransactions = useCallback(async () => {
     setShowTxModal(true);
     setTxLoading(true);
     setTxError("");
@@ -62,12 +81,12 @@ export function useAnalyticsModals({ period, filters }: any) {
       );
       setTxSales(filtered);
     } catch {
-      setTxError("Не удалось загрузить продажи");
+      setTxError(t("crm.analytics.errors.salesLoadFailed"));
       setTxSales([]);
     } finally {
       setTxLoading(false);
     }
-  }, [period, filters]);
+  }, [period, filters, t]);
 
   return {
     showRevenueModal,

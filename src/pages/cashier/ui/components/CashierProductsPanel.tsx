@@ -1,4 +1,5 @@
 import { Search, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { isAdultProduct } from "@entities/product";
 import { loadQuickSlots, slotForProduct } from "@features/quick-sale-slots";
 import { Button } from "@mui/material";
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function CashierProductsPanel({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     mobileProductsList,
     setMobileProductsList,
@@ -71,7 +73,7 @@ export function CashierProductsPanel({ vm }: Props) {
                     onClick={() => setMobileProductsList(false)}
                     className="mx-auto"
                   >
-                    Скрыть
+                    {t("crm.cashier.hide")}
                   </Button>
                 </div>
 
@@ -97,7 +99,7 @@ export function CashierProductsPanel({ vm }: Props) {
                   <input
                     ref={searchInputRef}
                     type="text"
-                    placeholder="Поиск товаров..."
+                    placeholder={t("crm.cashier.searchProductsPlaceholder")}
                     value={searchTerm}
                     onChange={(e) => {
                       const newValue = e.target.value;
@@ -228,13 +230,13 @@ export function CashierProductsPanel({ vm }: Props) {
                             disabled={Boolean(favoriteLoadingMap[product.id])}
                             title={
                               product.isFavorite
-                                ? "Убрать из избранного"
-                                : "Добавить в избранное"
+                                ? t("crm.cashier.removeFavorite")
+                                : t("crm.cashier.addFavorite")
                             }
                             aria-label={
                               product.isFavorite
-                                ? "Убрать из избранного"
-                                : "Добавить в избранное"
+                                ? t("crm.cashier.removeFavorite")
+                                : t("crm.cashier.addFavorite")
                             }
                           >
                             <Star size={16} fill="currentColor" />
@@ -242,7 +244,7 @@ export function CashierProductsPanel({ vm }: Props) {
                           {pieceCartItem && (
                             <div
                               className="cashier-page__product-badge cashier-page__product-badge--piece"
-                              title="Поштучно в корзине"
+                              title={t("crm.cashier.pieceSale")}
                             >
                               <span className="cashier-page__product-badge-qty">
                                 {formatQuantity(pieceCartItem.quantity)}

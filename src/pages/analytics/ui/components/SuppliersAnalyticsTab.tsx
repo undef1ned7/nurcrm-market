@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import type { AnalyticsVm } from "../hooks/useAnalyticsData";
 
@@ -6,12 +7,30 @@ type Props = {
 };
 
 export function SuppliersAnalyticsTab({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     suppliersData,
     formatNumber,
     formatCurrency,
     formatAnalyticsQty,
   } = vm;
+
+  const tableHeaders = (
+    <tr>
+      <th>{t("crm.analytics.purchases.supplier")}</th>
+      <th>{t("crm.analytics.suppliers.phone")}</th>
+      <th>{t("crm.analytics.suppliers.sku")}</th>
+      <th>{t("crm.analytics.suppliers.stock")}</th>
+      <th>{t("crm.analytics.suppliers.stockValue")}</th>
+      <th>{t("crm.analytics.suppliers.sold")}</th>
+      <th>{t("crm.analytics.suppliers.revenue")}</th>
+      <th>{t("crm.analytics.suppliers.receipts")}</th>
+      <th>{t("crm.analytics.suppliers.salesRank")}</th>
+      <th>{t("crm.analytics.suppliers.warehouseRank")}</th>
+      <th>{t("crm.analytics.suppliers.rating")}</th>
+    </tr>
+  );
+
   return (
     <>
         <div className="analytics-page__content">
@@ -51,25 +70,11 @@ export function SuppliersAnalyticsTab({ vm }: Props) {
           <div className="analytics-page__grid">
             <div className="analytics-page__table-card analytics-page__table-card--scrollable">
               <h3 className="analytics-page__table-title">
-                Поставщики по продажам
+                {t("crm.analytics.suppliers.bySales")}
               </h3>
               <div className="analytics-page__table-scroll analytics-page__table-scroll--suppliers">
                 <table className="analytics-page__table analytics-page__table--suppliers">
-                  <thead>
-                    <tr>
-                      <th>Поставщик</th>
-                      <th>Телефон</th>
-                      <th>SKU</th>
-                      <th>Остаток</th>
-                      <th>Стоимость остатков</th>
-                      <th>Продано</th>
-                      <th>Выручка</th>
-                      <th>Чеков</th>
-                      <th>Место по продажам</th>
-                      <th>Место по складу</th>
-                      <th>Рейтинг</th>
-                    </tr>
-                  </thead>
+                  <thead>{tableHeaders}</thead>
                   <tbody>
                     {suppliersData.suppliers.length > 0 ? (
                       suppliersData.suppliers.map((row: any) => (
@@ -93,7 +98,7 @@ export function SuppliersAnalyticsTab({ vm }: Props) {
                           colSpan={11}
                           style={{ textAlign: "center", color: "#6b7280" }}
                         >
-                          Нет данных
+                          {t("crm.analytics.noData")}
                         </td>
                       </tr>
                     )}
@@ -104,25 +109,11 @@ export function SuppliersAnalyticsTab({ vm }: Props) {
 
             <div className="analytics-page__table-card analytics-page__table-card--scrollable">
               <h3 className="analytics-page__table-title">
-                Поставщики по складу
+                {t("crm.analytics.suppliers.byWarehouse")}
               </h3>
               <div className="analytics-page__table-scroll analytics-page__table-scroll--suppliers">
                 <table className="analytics-page__table analytics-page__table--suppliers">
-                  <thead>
-                    <tr>
-                      <th>Поставщик</th>
-                      <th>Телефон</th>
-                      <th>SKU</th>
-                      <th>Остаток</th>
-                      <th>Стоимость остатков</th>
-                      <th>Продано</th>
-                      <th>Выручка</th>
-                      <th>Чеков</th>
-                      <th>Место по продажам</th>
-                      <th>Место по складу</th>
-                      <th>Рейтинг</th>
-                    </tr>
-                  </thead>
+                  <thead>{tableHeaders}</thead>
                   <tbody>
                     {suppliersData.suppliersByStock.length > 0 ? (
                       suppliersData.suppliersByStock.map((row: any) => (
@@ -146,7 +137,7 @@ export function SuppliersAnalyticsTab({ vm }: Props) {
                           colSpan={11}
                           style={{ textAlign: "center", color: "#6b7280" }}
                         >
-                          Нет данных
+                          {t("crm.analytics.noData")}
                         </td>
                       </tr>
                     )}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import {
   consultantCommissionLabel,
@@ -33,14 +34,15 @@ const statusTone = (status) => {
   return "default";
 };
 
-const statusLabel = (status) => {
-  if (status === "paid") return "Оплачено";
-  if (status === "canceled") return "Отменено";
-  if (status === "new") return "Новый";
+const statusLabel = (status, t) => {
+  if (status === "paid") return t("crm.salesHistory.statusPaid");
+  if (status === "canceled") return t("crm.salesHistory.statusCanceled");
+  if (status === "new") return t("crm.salesHistory.statusNew");
   return status || "—";
 };
 
 export default function MarketHistory() {
+  const { t } = useTranslation();
   const [rows, setRows] = useState<any[]>([]);
   const [count, setCount] = useState(0);
   const [nextUrl, setNextUrl] = useState<any>(null);
@@ -102,12 +104,12 @@ export default function MarketHistory() {
         setNextUrl(data.next || null);
       } catch (e: any) {
         console.error(e);
-        setErr("Не удалось загрузить историю продаж");
+        setErr(t("crm.salesHistory.loadError"));
       } finally {
         setLoading(false);
       }
     },
-    [status, start, end, consultant]
+    [status, start, end, consultant, t]
   );
 
   useEffect(() => {
@@ -139,27 +141,27 @@ export default function MarketHistory() {
   return (
     <PageShell className="history">
       <PageHeader
-        title="История продаж"
-        subtitle="Чеки POS: статусы, суммы и позиции"
+        title={t("crm.salesHistory.pageTitle")}
+        subtitle={t("crm.salesHistory.subtitle")}
       />
 
       <FilterBar className="history__filters">
         <label className="nur-field history__filter">
-          <span className="nur-label">Статус</span>
+          <span className="nur-label">{t("crm.salesHistory.status")}</span>
           <select
             className="nur-select"
             value={status}
             onChange={(e: any) => setStatus(e.target.value)}
           >
-            <option value="">Все</option>
-            <option value="new">Новые</option>
-            <option value="paid">Оплачено</option>
-            <option value="canceled">Отменено</option>
+            <option value="">{t("crm.salesHistory.all")}</option>
+            <option value="new">{t("crm.salesHistory.statusNew")}</option>
+            <option value="paid">{t("crm.salesHistory.statusPaid")}</option>
+            <option value="canceled">{t("crm.salesHistory.statusCanceled")}</option>
           </select>
         </label>
 
         <label className="nur-field history__filter">
-          <span className="nur-label">С</span>
+          <span className="nur-label">{t("crm.salesHistory.from")}</span>
           <input
             type="date"
             className="nur-input"
@@ -170,7 +172,7 @@ export default function MarketHistory() {
         </label>
 
         <label className="nur-field history__filter">
-          <span className="nur-label">По</span>
+          <span className="nur-label">{t("crm.salesHistory.to")}</span>
           <input
             type="date"
             className="nur-input"
@@ -181,13 +183,13 @@ export default function MarketHistory() {
         </label>
 
         <label className="nur-field history__filter">
-          <span className="nur-label">Консультант</span>
+          <span className="nur-label">{t("crm.salesHistory.consultant")}</span>
           <select
             className="nur-select"
             value={consultant}
             onChange={(e: any) => setConsultant(e.target.value)}
           >
-            <option value="">Все</option>
+            <option value="">{t("crm.salesHistory.all")}</option>
             {consultants.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.full_name}
@@ -202,7 +204,7 @@ export default function MarketHistory() {
           onClick={() => load()}
           disabled={loading}
         >
-          Обновить
+          {t("common.refresh")}
         </button>
       </FilterBar>
 
@@ -213,12 +215,12 @@ export default function MarketHistory() {
           <table className="nur-table">
             <thead>
               <tr>
-                <th>Дата</th>
-                <th>Кассир</th>
-                <th>Консультант</th>
-                <th>% / комиссия</th>
-                <th>Статус</th>
-                <th>Итого</th>
+                <th>{t("crm.salesHistory.date")}</th>
+                <th>{t("crm.salesHistory.cashier")}</th>
+                <th>{t("crm.salesHistory.consultant")}</th>
+                <th>{t("crm.salesHistory.commission")}</th>
+                <th>{t("crm.salesHistory.status")}</th>
+                <th>{t("crm.salesHistory.total")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -242,7 +244,7 @@ export default function MarketHistory() {
                     <td>{r.commission}</td>
                     <td>
                       <StatusChip tone={statusTone(r.status)}>
-                        {statusLabel(r.status)}
+                        {statusLabel(r.status, t)}
                       </StatusChip>
                     </td>
                     <td>{fmtMoney(r.total)}</td>
@@ -252,7 +254,7 @@ export default function MarketHistory() {
                         className="nur-btn nur-btn--primary nur-btn--sm"
                         onClick={() => onOpen(r.id)}
                       >
-                        Открыть
+                        {t("crm.salesHistory.open")}
                       </button>
                     </td>
                   </tr>
@@ -261,8 +263,8 @@ export default function MarketHistory() {
                 <tr>
                   <td colSpan={7}>
                     <EmptyState
-                      title="Чеков пока нет"
-                      text="Продажи появятся здесь после оформления в кассе."
+                      title={t("crm.salesHistory.emptyTitle")}
+                      text={t("crm.salesHistory.emptyText")}
                     />
                   </td>
                 </tr>
@@ -271,10 +273,10 @@ export default function MarketHistory() {
             <tfoot>
               <tr>
                 <td colSpan={5}>
-                  <strong>Всего чеков:</strong> {count}
+                  <strong>{t("crm.salesHistory.totalReceipts")}</strong> {count}
                 </td>
                 <td colSpan={2}>
-                  <strong>Сумма по странице:</strong> {fmtMoney(totalSum)}
+                  <strong>{t("crm.salesHistory.pageSum")}</strong> {fmtMoney(totalSum)}
                 </td>
               </tr>
             </tfoot>
@@ -290,7 +292,7 @@ export default function MarketHistory() {
             onClick={() => load(nextUrl)}
             disabled={loading}
           >
-            Загрузить ещё
+            {t("crm.salesHistory.loadMore")}
           </button>
         </div>
       )}
@@ -302,6 +304,7 @@ export default function MarketHistory() {
 
 /* ================== Modal with details ================== */
 function SaleModal({ id, onClose }: any) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [sale, setSale] = useState<any>(null);
@@ -341,7 +344,7 @@ function SaleModal({ id, onClose }: any) {
       });
     } catch (e: any) {
       console.error(e);
-      setErr("Не удалось загрузить детали продажи");
+      setErr(t("crm.salesHistory.detailLoadError"));
     } finally {
       setLoading(false);
     }
@@ -360,13 +363,13 @@ function SaleModal({ id, onClose }: any) {
       >
         <div className="nur-modal__header">
           <h2 className="nur-modal__title">
-            Продажа #{(id || "").slice(0, 8)}…
+            {t("crm.salesHistory.saleTitle", { id: (id || "").slice(0, 8) })}
           </h2>
           <button
             type="button"
             className="nur-modal__close"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
           >
             ×
           </button>
@@ -385,22 +388,22 @@ function SaleModal({ id, onClose }: any) {
             <>
               <div className="history__meta">
                 <div>
-                  <strong>Создано:</strong>{" "}
+                  <strong>{t("crm.salesHistory.created")}</strong>{" "}
                   {sale.createdAt
                     ? new Date(sale.createdAt).toLocaleString()
                     : "—"}
                 </div>
                 <div>
-                  <strong>Кассир:</strong> {sale.user}
+                  <strong>{t("crm.salesHistory.cashier")}:</strong> {sale.user}
                 </div>
                 <div>
-                  <strong>Консультант:</strong> {sale.consultant}
+                  <strong>{t("crm.salesHistory.consultant")}:</strong> {sale.consultant}
                 </div>
                 <div>
-                  <strong>Комиссия:</strong> {sale.commission}
+                  <strong>{t("crm.salesHistory.commissionLabel")}</strong> {sale.commission}
                 </div>
                 <div>
-                  <strong>Итого:</strong> {fmtMoneyLocal(sale.total)}
+                  <strong>{t("crm.salesHistory.total")}:</strong> {fmtMoneyLocal(sale.total)}
                 </div>
               </div>
 
@@ -408,11 +411,11 @@ function SaleModal({ id, onClose }: any) {
                 <table className="nur-table nur-table--dense">
                   <thead>
                     <tr>
-                      <th>Товар</th>
-                      <th>Штрих-код</th>
-                      <th>Кол-во</th>
-                      <th>Цена</th>
-                      <th>Сумма</th>
+                      <th>{t("crm.salesHistory.product")}</th>
+                      <th>{t("crm.salesHistory.barcode")}</th>
+                      <th>{t("crm.salesHistory.qty")}</th>
+                      <th>{t("crm.salesHistory.price")}</th>
+                      <th>{t("crm.salesHistory.amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -434,8 +437,8 @@ function SaleModal({ id, onClose }: any) {
                       <tr>
                         <td colSpan={5}>
                           <EmptyState
-                            title="Позиции отсутствуют"
-                            text="В этом чеке нет товарных позиций."
+                            title={t("crm.salesHistory.noItemsTitle")}
+                            text={t("crm.salesHistory.noItemsText")}
                           />
                         </td>
                       </tr>
@@ -445,7 +448,7 @@ function SaleModal({ id, onClose }: any) {
                     <tr>
                       <td colSpan={3}></td>
                       <td>
-                        <strong>Итого</strong>
+                        <strong>{t("crm.salesHistory.total")}</strong>
                       </td>
                       <td>{fmtMoneyLocal(sale.total)}</td>
                     </tr>
@@ -463,14 +466,14 @@ function SaleModal({ id, onClose }: any) {
               className="nur-btn nur-btn--secondary"
               onClick={load}
             >
-              Обновить
+              {t("common.refresh")}
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--primary"
               onClick={onClose}
             >
-              Закрыть
+              {t("common.close")}
             </button>
           </div>
         )}

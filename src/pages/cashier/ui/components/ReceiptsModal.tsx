@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   X,
   Calendar,
@@ -24,6 +25,7 @@ const getLocalTodayIso = () => {
 };
 
 const ReceiptsModal = ({ onClose, userFilter = "" }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { list: clients } = useClient();
   const { list: products } = useProducts();
@@ -284,7 +286,7 @@ const ReceiptsModal = ({ onClose, userFilter = "" }) => {
           {/* Левая панель с фильтрами */}
           <div className="receipts-modal__filters">
             <div className="receipts-modal__filters-header">
-              <h3 className="receipts-modal__filters-title">Фильтр</h3>
+              <h3 className="receipts-modal__filters-title">{t("crm.cashier.receiptsLogModal.filter")}</h3>
               <button
                 className="receipts-modal__reset-btn"
                 onClick={() => {
@@ -298,7 +300,7 @@ const ReceiptsModal = ({ onClose, userFilter = "" }) => {
                   setShowProductDropdown(false);
                 }}
               >
-                Сбросить
+                {t("crm.cashier.receiptsLogModal.reset")}
               </button>
             </div>
 
@@ -330,31 +332,31 @@ const ReceiptsModal = ({ onClose, userFilter = "" }) => {
                   }}
                 >
                   <Calendar size={18} />
-                  ВЫБЕРИТЕ ДАТУ
+                  {t("crm.cashier.receiptsLogModal.selectDate")}
                 </button>
               </div>
             </div>
 
             <div className="receipts-modal__filter-group">
               <label className="receipts-modal__filter-label">
-                Номер документа
+                {t("crm.cashier.receiptsLogModal.documentNumber")}
               </label>
               <input
                 type="text"
                 className="receipts-modal__filter-input"
-                placeholder="Введите номер"
+                placeholder={t("crm.cashier.receiptsLogModal.documentNumberPlaceholder")}
                 value={documentNumber}
                 onChange={(e) => setDocumentNumber(e.target.value)}
               />
             </div>
 
             <div className="receipts-modal__filter-group">
-              <label className="receipts-modal__filter-label">Клиенты</label>
+              <label className="receipts-modal__filter-label">{t("crm.cashier.receiptsLogModal.clients")}</label>
               <div className="receipts-modal__search-wrapper">
                 <input
                   type="text"
                   className="receipts-modal__filter-input"
-                  placeholder="Поиск по клиентам"
+                  placeholder={t("crm.cashier.receiptsLogModal.searchClients")}
                   value={clientSearch}
                   onChange={(e) => {
                     setClientSearch(e.target.value);

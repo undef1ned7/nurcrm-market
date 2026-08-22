@@ -1,3 +1,4 @@
+import i18n from "i18next";
 import {
   CRITICAL_DAYS_OF_STOCK,
   ENDING_DAYS_OF_STOCK,
@@ -33,10 +34,7 @@ export function resolveStockStatus({
 }
 
 export function stockStatusLabel(status: StockStatus): string {
-  if (status === "critical") return "Критический остаток";
-  if (status === "ending") return "Скоро закончится";
-  if (status === "low") return "Низкий остаток";
-  return "Запаса достаточно";
+  return i18n.t(`crm.procurement.stockStatus.${status}`);
 }
 
 export function stockStatusTone(

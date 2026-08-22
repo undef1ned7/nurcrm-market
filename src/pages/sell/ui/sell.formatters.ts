@@ -1,3 +1,4 @@
+import i18n from "i18next";
 import { paymentMethodTranslate } from "./sell.constants";
 
 export const formatMoney = (v: any) => {
@@ -77,6 +78,9 @@ export const getStatusVariant = (status: any) => {
 
 export const translatePaymentMethod = (method: any) => {
   if (!method) return "-";
-  const lowerMethod = method.toLowerCase();
+  const lowerMethod = String(method).toLowerCase();
+  const key = `crm.sell.paymentMethod.${lowerMethod}`;
+  const translated = i18n.t(key);
+  if (translated !== key) return translated;
   return paymentMethodTranslate[lowerMethod] || method;
 };

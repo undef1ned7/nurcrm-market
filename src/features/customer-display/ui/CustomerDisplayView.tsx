@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { subscribeCustomerDisplay } from "../lib/channel";
 import {
   getCustomerDisplaySlides,
@@ -20,6 +21,7 @@ export function CustomerDisplayView({
   companyName?: string;
   logoUrl?: string;
 }) {
+  const { t } = useTranslation();
   const fallbackWelcome = getCustomerDisplayWelcome(companyName);
   const [message, setMessage] = useState<CustomerDisplayMessage>({
     type: "idle",
@@ -89,14 +91,14 @@ export function CustomerDisplayView({
     idle && "logoUrl" in message ? message.logoUrl || logoUrl : logoUrl;
 
   const currentSlide = slides[slideIndex];
-
   const cartItems = message.type === "cart" ? message.items : [];
+
   const title = useMemo(() => {
-    if (message.type === "thanks") return "Спасибо за покупку!";
-    if (message.type === "payment") return "Оплата";
-    if (message.type === "cart") return "Ваш заказ";
+    if (message.type === "thanks") return t("crm.customerDisplay.thanks");
+    if (message.type === "payment") return t("crm.customerDisplay.payment");
+    if (message.type === "cart") return t("crm.customerDisplay.yourOrder");
     return welcome;
-  }, [message, welcome]);
+  }, [message, welcome, t]);
 
   return (
     <div
@@ -148,7 +150,7 @@ export function CustomerDisplayView({
               ))}
             </ul>
             <div className="customer-display__total">
-              <span>К оплате</span>
+              <span>{t("crm.customerDisplay.toPay")}</span>
               <strong>{formatMoney(message.total)}</strong>
             </div>
           </>
@@ -156,7 +158,7 @@ export function CustomerDisplayView({
 
         {message.type === "payment" ? (
           <div className="customer-display__pay">
-            <p>Проверьте сумму и завершите оплату у кассира</p>
+            <p>{t("crm.customerDisplay.paymentHint")}</p>
             <strong>{formatMoney(message.total)}</strong>
           </div>
         ) : null}
@@ -164,7 +166,7 @@ export function CustomerDisplayView({
         {message.type === "thanks" ? (
           <div className="customer-display__thanks">
             {message.total ? <strong>{formatMoney(message.total)}</strong> : null}
-            <p>Ждём вас снова</p>
+            <p>{t("crm.customerDisplay.seeYouAgain")}</p>
           </div>
         ) : null}
 
@@ -175,7 +177,9 @@ export function CustomerDisplayView({
       {ageCheck ? (
         <div className="customer-display__age-check" role="alert">
           <span className="customer-display__age-check-mark">18+</span>
-          <h2 className="customer-display__age-check-title">Вам есть 18?</h2>
+          <h2 className="customer-display__age-check-title">
+            {t("crm.customerDisplay.ageCheckTitle")}
+          </h2>
           {ageCheck.productName ? (
             <p className="customer-display__age-check-product">
               {ageCheck.productName}
