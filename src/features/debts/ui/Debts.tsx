@@ -8,7 +8,6 @@ import {
   useCash,
 } from "@entities/cash";
 import { PageShell, PagePanel } from "@shared/ui/page-shell";
-import Pagination from "@pages/warehouse/ui/components/Pagination";
 import { useDebouncedValue } from "@shared/hooks/useDebounce";
 
 import {
@@ -22,6 +21,7 @@ import {
 } from "./helpers";
 
 import { DebtsHeader } from "./components/DebtsHeader";
+import { DebtsPagination } from "./components/DebtsPagination";
 import { Notifications } from "./components/Notifications";
 import { DebtsTable } from "./components/DebtsTable";
 import { NewDebtModal } from "./components/NewDebtModal";
@@ -167,7 +167,6 @@ const Debts = () => {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, debouncedQ, dateFrom, dateTo]);
 
   useEffect(() => {
@@ -381,7 +380,7 @@ const Debts = () => {
       </PagePanel>
 
       <div style={{ marginTop: 12 }}>
-        <Pagination
+        <DebtsPagination
           currentPage={page}
           totalPages={Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
           count={totalCount}
