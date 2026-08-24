@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { resolveStockStatus, stockStatusLabel } from "./stockStatus";
+
+vi.mock("i18next", () => ({
+  default: {
+    t: (key: string) => key,
+  },
+}));
 
 describe("stockStatus", () => {
   it("marks zero stock as critical", () => {
@@ -60,6 +66,6 @@ describe("stockStatus", () => {
         averageDailySales: 0,
       }),
     ).toBe("ok");
-    expect(stockStatusLabel("ok")).toBe("Запаса достаточно");
+    expect(stockStatusLabel("ok")).toBe("crm.procurement.stockStatus.ok");
   });
 });
