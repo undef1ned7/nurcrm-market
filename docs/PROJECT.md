@@ -306,6 +306,7 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 
 ### Печать / ESC-POS / денежный ящик
 
+- Подробно: [`docs/market/receipt-printing.md`](./market/receipt-printing.md)
 - `src/pages/sell/ui/services/printService.ts` + `print/`
 - Настройки UI: `/crm/pos-print-settings`
 - localStorage ключи `escpos_*`; ящик — `escpos_drawer_*` (ТЗ модуль 5)
@@ -380,6 +381,7 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 | `tz-aug-2026-detailed.md` | **Актуальное** ТЗ авг 2026: 5 модулей (массовый приход, уведомления, 2-й экран, F3 hotkeys, денежный ящик) |
 | `tz-aug-2026-fe-be-split.md` | Краткий FE/BE сплит (черновик; приоритет у detailed) |
 | `tz-perf-fixes-aug-2026.md` | Perf: lazy PDF, узкие селекторы, долги N+1, page_size, chunks |
+| `receipt-printing.md` | Печать кассового чека: WebUSB, ESC/POS, JSON/PDF, eKassa, ящик |
 
 ### Бэкенд — `docs/backend/`
 
@@ -451,7 +453,7 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 |--------|----------------|
 | Баг/фича кассы | `pages/cashier`, `features/create-sale`, `entities/sale` |
 | Склад / товар / barcode | `pages/warehouse`, `entities/product`, `features/add-product` |
-| Печать чека / ящик | `pages/sell/ui/services/print*`, `pages/settings` (PosPrintSettings) |
+| Печать чека / ящик | `docs/market/receipt-printing.md`, `pages/sell/ui/services/print*`, `PosPrintSettings` |
 | Меню / навигация | `widgets/sidebar/ui/config` |
 | Новый CRM route | `app/router/routes/marketRoutes` или `commonRoutes` + lazy page |
 | Auth | `features/auth`, `entities/user`, `shared/api/authInterceptors` |

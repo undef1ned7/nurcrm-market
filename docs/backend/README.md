@@ -24,6 +24,9 @@
 | [analytics.md](./analytics.md) | Аналитика: datetime + таймзона | правка фильтра |
 | [bulk_update_products.md](./bulk_update_products.md) | Массовая смена brand/category/supplier | новый PATCH |
 | [receipt-price-edit-discount.md](./receipt-price-edit-discount.md) | Ручная цена ≠ discount в чеке | правка JSON чека |
+| [receipt-price-override-flag.md](./receipt-price-override-flag.md) | Флаг ручной цены на позиции чека | новое поле items[] |
+| [receipt-ekassa-item-matching.md](./receipt-ekassa-item-matching.md) | Стабильный id для merge eKassa 1059 ↔ items | item_id в обоих местах |
+| [pos-printer-config-sync.md](./pos-printer-config-sync.md) | Синк escpos_* на бэк (per-device) | low-priority |
 | [supplier-receipt-selling-price-backend.md](./supplier-receipt-selling-price-backend.md) | Приход: пересчёт `price` по `markup_percent` | правка POST receipt |
 | [scales-weight-products.md](./scales-weight-products.md) | Фильтр весовых `?is_weight=true` | сделано |
 
