@@ -1,5 +1,13 @@
 /** WebUSB подключение ESC/POS принтера */
 
+import {
+  PRINTER_IN_USE_MESSAGE,
+  acquireUsbLock,
+  attachUsbLockListenersOnce,
+  isUsbLockHeldByOtherTab,
+  releaseUsbLock,
+} from "./usbLock";
+
 export const usbState: any = { dev: null, opening: null };
 const navUsb: any = () => (navigator as any).usb;
 
@@ -37,6 +45,9 @@ async function requestUsbDevice() {
 }
 async function openUsbDevice(dev: any) {
   if (!dev) throw new Error("USB устройство не найдено");
+  if (isUsbLockHeldByOtherTab()) {
+    throw new Error(PRINTER_IN_USE_MESSAGE);
+  }
   if (!dev.opened) await dev.open();
 
   if (dev.configuration == null) {
@@ -70,6 +81,7 @@ async function openUsbDevice(dev: any) {
         } catch { }
         continue;
       }
+      acquireUsbLock();
       return {
         iface: intf.interfaceNumber,
         alt: needAlt,
@@ -77,12 +89,19 @@ async function openUsbDevice(dev: any) {
       };
     }
   }
+  if (isUsbLockHeldByOtherTab()) {
+    throw new Error(PRINTER_IN_USE_MESSAGE);
+  }
   throw new Error(
     "Не удалось захватить интерфейс с bulk OUT. На Windows установите WinUSB (Zadig) и закройте другие приложения принтера."
   );
 }
 async function ensureUsbReadyAuto() {
   if (!("usb" in navigator)) throw new Error("WebUSB не поддерживается");
+  attachUsbLockListenersOnce();
+  if (isUsbLockHeldByOtherTab()) {
+    throw new Error(PRINTER_IN_USE_MESSAGE);
+  }
   if (usbState.dev) return usbState;
   if (!usbState.opening) {
     (usbState.opening as any) = (async () => {
@@ -105,6 +124,14 @@ async function ensureUsbReadyAuto() {
  */
 export async function ensurePrinterConnectedInteractively(options: any = {}) {
   if (!("usb" in navigator)) return false;
+
+  if (isUsbLockHeldByOtherTab()) {
+    console.warn("[PrintService]", PRINTER_IN_USE_MESSAGE);
+    if (typeof window !== "undefined" && typeof window.alert === "function") {
+      window.alert(PRINTER_IN_USE_MESSAGE);
+    }
+    return false;
+  }
 
   // 1. Пытаемся автоматически подключиться к уже разрешённому устройству
   // (если не требуется принудительно показать окно выбора).
@@ -146,6 +173,7 @@ export function attachUsbListenersOnce() {
   if (!("usb" in navigator)) return;
   if ((attachUsbListenersOnce as any)._did) return;
   (attachUsbListenersOnce as any)._did = true;
+  attachUsbLockListenersOnce();
 
   navUsb().addEventListener("connect", async (e: any) => {
     try {
@@ -164,6 +192,7 @@ export function attachUsbListenersOnce() {
   navUsb().addEventListener("disconnect", (e: any) => {
     if (usbState.dev && e.device === usbState.dev) {
       usbState.dev = null;
+      releaseUsbLock();
     }
   });
 }
@@ -171,6 +200,10 @@ export function attachUsbListenersOnce() {
 export async function checkPrinterConnection() {
   if (!("usb" in navigator)) {
     console.warn("WebUSB не поддерживается в этом браузере");
+    return false;
+  }
+  if (isUsbLockHeldByOtherTab()) {
+    console.warn("[PrintService]", PRINTER_IN_USE_MESSAGE);
     return false;
   }
   try {
