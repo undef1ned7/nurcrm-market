@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   DEFAULT_DRAWER_CMD,
+  exportEscposSettings,
   getDrawerSettings,
+  importEscposSettings,
   kickCashDrawer,
   printRussianRawUsb,
   saveDrawerSettings,
@@ -50,8 +52,9 @@ export default function PosPrintSettings() {
   const [testing, setTesting] = useState(false);
   const [testingDrawer, setTestingDrawer] = useState(false);
   const [msg, setMsg] = useState<any>(null); // {type, text}
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
+  const hydrateFromStorage = useCallback(() => {
     const f = String(readString("escpos_font", "B")).toUpperCase() === "A" ? "A" : "B";
     const dpl = readNumber("escpos_dpl", 576);
     const charDotWidth = f === "B" ? 9 : 12;
@@ -71,6 +74,10 @@ export default function PosPrintSettings() {
     setDrawerWhen(drawer.when);
     setDrawerCmd(drawer.command);
   }, []);
+
+  useEffect(() => {
+    hydrateFromStorage();
+  }, [hydrateFromStorage]);
 
   const presets = useMemo(
     () => [
@@ -184,6 +191,52 @@ export default function PosPrintSettings() {
       setTesting(false);
     }
   }, []);
+
+  const exportSettings = useCallback(() => {
+    setMsg(null);
+    try {
+      const dumped = exportEscposSettings();
+      const blob = new Blob([JSON.stringify(dumped, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `escpos-printer-settings-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setMsg({ type: "success", text: t("settings.print.alerts.posExportOk") });
+    } catch (e: any) {
+      setMsg({
+        type: "error",
+        text: e?.message || t("settings.print.alerts.posExportFailed"),
+      });
+    }
+  }, [t]);
+
+  const importSettingsFromFile = useCallback(
+    async (file: File | undefined) => {
+      if (!file) return;
+      setMsg(null);
+      try {
+        const text = await file.text();
+        const { applied } = importEscposSettings(text);
+        hydrateFromStorage();
+        setMsg({
+          type: "success",
+          text: t("settings.print.alerts.posImportOk", { count: applied.length }),
+        });
+      } catch (e: any) {
+        setMsg({
+          type: "error",
+          text: e?.message || t("settings.print.alerts.posImportFailed"),
+        });
+      } finally {
+        if (importInputRef.current) importInputRef.current.value = "";
+      }
+    },
+    [hydrateFromStorage, t],
+  );
 
   const msgClassName = useMemo(() => {
     if (!msg) return "";
@@ -451,6 +504,41 @@ export default function PosPrintSettings() {
               disabled={testingDrawer}
             >
               {testingDrawer ? t("settings.print.posTesting") : t("settings.print.posTestDrawer")}
+            </button>
+          </div>
+        </div>
+      </PagePanel>
+
+      <PagePanel>
+        <div className="settings__section settings__tab-content--print" style={{ marginBottom: 0 }}>
+          <h2 className="settings__section-title">
+            <span className="settings__emoji" aria-hidden>
+              💾
+            </span>{" "}
+            {t("settings.print.backupTitle")}
+          </h2>
+          <p className="settings__mutedText">{t("settings.print.backupHint")}</p>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => importSettingsFromFile(e.target.files?.[0])}
+          />
+          <div className="settings__actions">
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={exportSettings}
+            >
+              {t("settings.print.posExport")}
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => importInputRef.current?.click()}
+            >
+              {t("settings.print.posImport")}
             </button>
           </div>
         </div>
