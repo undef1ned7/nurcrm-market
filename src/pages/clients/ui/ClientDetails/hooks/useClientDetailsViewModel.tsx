@@ -64,7 +64,9 @@ export function useClientDetailsViewModel({
   onOpenDetailsView,
 }: UseClientDetailsViewModelArgs) {
   const { t } = useTranslation();
-  const kindTranslate: Record<string, string> = { new: "Новый" };
+  const kindTranslate: Record<string, string> = {
+    new: t("crm.clients.details.kindNew"),
+  };
   const clientName = client?.fio || client?.full_name || "—";
   const clientTypeLabel = typeLabel(client?.type);
   const statusText = kindTranslate[String(client?.status || "")] || client?.status || "—";
@@ -117,19 +119,21 @@ export function useClientDetailsViewModel({
 
         return {
           id: deal.id,
-          title: deal.title || "Без названия",
+          title: deal.title || t("crm.clients.details.noTitle"),
           date,
           amount,
         };
       })
       .sort((a, b) => (a.date < b.date ? 1 : -1));
-  }, [deals, detailsView]);
+  }, [deals, detailsView, t]);
 
   const detailsMeta = useMemo<DetailsMeta>(() => {
     if (detailsView === "debt") {
       return {
-        title: isBuildingSector ? "Сумма договора" : "Долг",
-        subtitle: "Список операций по выбранной категории",
+        title: isBuildingSector
+          ? t("crm.clients.details.contractSum")
+          : t("crm.clients.details.debt"),
+        subtitle: t("crm.clients.details.operationsList"),
         icon: <TrendingDown />,
         tone: "danger",
         total: isBuildingSector
@@ -139,23 +143,27 @@ export function useClientDetailsViewModel({
     }
     if (detailsView === "prepayment") {
       return {
-        title: isBuildingSector ? "Предоплата" : "Аванс",
-        subtitle: "Список операций по выбранной категории",
+        title: isBuildingSector
+          ? t("crm.clients.details.prepayment")
+          : t("crm.clients.details.advance"),
+        subtitle: t("crm.clients.details.operationsList"),
         icon: <Wallet />,
         tone: "success",
         total: Number(totals.prepayment || 0),
       };
     }
     return {
-      title: isBuildingSector ? "Остаток долга" : "Продажа",
-      subtitle: "Список операций по выбранной категории",
+      title: isBuildingSector
+        ? t("crm.clients.details.debtRemainder")
+        : t("crm.clients.details.sale"),
+      subtitle: t("crm.clients.details.operationsList"),
       icon: <TrendingUp />,
       tone: "default",
       total: isBuildingSector
         ? Number(totals.debt || 0)
         : Number(totals.sale || 0),
     };
-  }, [detailsView, isBuildingSector, totals.debt, totals.prepayment, totals.sale]);
+  }, [detailsView, isBuildingSector, totals.debt, totals.prepayment, totals.sale, t]);
 
   const clientInitials = useMemo(() => {
     const parts = String(clientName || "")
@@ -180,23 +188,27 @@ export function useClientDetailsViewModel({
 
     return [
       {
-        label: "Сделок",
+        label: t("crm.clients.details.deals"),
         value: String(deals.length),
-        hint: "Всего операций",
+        hint: t("crm.clients.details.dealsHint"),
       },
       {
-        label: isBuildingSector ? "Договор" : "Долг",
+        label: isBuildingSector
+          ? t("crm.clients.details.contract")
+          : t("crm.clients.details.debt"),
         value: `${debtValue.toFixed(2)}`,
-        unit: "сом",
-        hint: isBuildingSector ? "Сумма договора" : "Остаток долга",
+        unit: t("common.currencySom"),
+        hint: isBuildingSector
+          ? t("crm.clients.details.contractSum")
+          : t("crm.clients.details.debtRemainder"),
       },
       {
-        label: "Последняя",
+        label: t("crm.clients.details.last"),
         value: lastDealDate,
-        hint: "Дата последней операции",
+        hint: t("crm.clients.details.lastDealHint"),
       },
     ];
-  }, [deals, isBuildingSector, totals.debt, totals.sale]);
+  }, [deals, isBuildingSector, totals.debt, totals.sale, t]);
 
   const kpis: KpiItem[] = [
     {

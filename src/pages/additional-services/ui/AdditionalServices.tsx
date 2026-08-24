@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import SocialModal from "./SocialModal";
@@ -13,6 +14,7 @@ import {
 } from "@shared/ui/page-shell";
 
 const AdditionalServices = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedSocial, setSelectedSocial] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,7 +76,7 @@ const AdditionalServices = () => {
               className="nur-btn nur-btn--primary nur-btn--sm"
               onClick={() => navigate(social.to)}
             >
-              Перейти
+              {t("crm.additionalServices.goTo")}
             </button>
           ) : null}
           <button
@@ -82,7 +84,7 @@ const AdditionalServices = () => {
             className="nur-btn nur-btn--secondary nur-btn--sm"
             onClick={() => handleSocialClick(social.id)}
           >
-            Подключить
+            {t("crm.additionalServices.connect")}
           </button>
         </div>
       </article>
@@ -98,8 +100,8 @@ const AdditionalServices = () => {
         </div>
       ) : (
         <EmptyState
-          title="Пока нет услуг"
-          text="В этом разделе пока нет доступных услуг."
+          title={t("crm.additionalServices.noServicesTitle")}
+          text={t("crm.additionalServices.noServicesText")}
         />
       )}
     </section>
@@ -108,17 +110,16 @@ const AdditionalServices = () => {
   return (
     <PageShell className="additional-services">
       <PageHeader
-        title="Дополнительные услуги"
-        subtitle="Расширьте возможности CRM — подключите интеграции и расширения."
+        title={t("crm.additionalServices.pageTitle")}
+        subtitle={t("crm.additionalServices.subtitle")}
       />
 
       <PagePanel>
-        {renderSection("Интеграции", integrations)}
-        {renderSection("Расширения", extensions)}
+        {renderSection(t("crm.additionalServices.integrations"), integrations)}
+        {renderSection(t("crm.additionalServices.extensions"), extensions)}
 
         <p className="additional-services__message">
-          Мы свяжемся с вами в ближайшее время для обсуждения деталей
-          подключения.
+          {t("crm.additionalServices.extensionHint")}
         </p>
       </PagePanel>
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import { sendProductsToScales } from "@entities/user";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
@@ -54,19 +55,19 @@ const readBlobErrorDetail = async (err) => {
   return null;
 };
 
-const TABS = [
-  { id: "shtrih-m", label: "Штрих-М" },
-  { id: "rongta", label: "Rongta" },
-  { id: "settings", label: "Настройки" },
+const TABS = (t: (key: string) => string) => [
+  { id: "shtrih-m", label: t("crm.scales.tabShtrihM") },
+  { id: "rongta", label: t("crm.scales.rongta") },
+  { id: "settings", label: t("crm.scales.settings") },
 ];
 
-/** Таб «Штрих-М»: отправка весовых товаров на весы через бэкенд. */
 const ShtrihMTab = ({
   weightProducts,
   loading,
   onSuccess,
   onError,
 }: any) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const [isSending, setIsSending] = useState(false);
 
@@ -84,15 +85,19 @@ const ShtrihMTab = ({
       await dispatch(sendProductsToScales(payload)).unwrap();
 
       const productText =
-        count === 1 ? "товар" : count < 5 ? "товара" : "товаров";
+        count === 1
+          ? t("crm.scales.product_one")
+          : count < 5
+            ? t("crm.scales.product_few")
+            : t("crm.scales.product_many");
 
       onSuccess(
         count > 0
-          ? `Весовые товары (${count} ${productText}) успешно отправлены на весы`
-          : "Нет весовых товаров для отправки на весы",
+          ? t("crm.scales.sendSuccess", { count, label: productText })
+          : t("crm.scales.sendSuccessEmpty"),
       );
     } catch (err: any) {
-      onError(validateResErrors(err, "Ошибка при отправке товаров на весы"));
+      onError(validateResErrors(err, t("crm.scales.sendError")));
     } finally {
       setIsSending(false);
     }
@@ -101,17 +106,13 @@ const ShtrihMTab = ({
   return (
     <div className="scales-page__grid">
       <div className="scales-page__card">
-        <h2 className="scales-page__card-title">Отправка на весы</h2>
-        <p className="scales-page__card-text">
-          Нажмите кнопку ниже, чтобы выгрузить весовые товары со склада на
-          торговые весы. После отправки данные по товарам будут обновлены на
-          весах.
-        </p>
+        <h2 className="scales-page__card-title">{t("crm.scales.sendTitle")}</h2>
+        <p className="scales-page__card-text">{t("crm.scales.sendDescription")}</p>
 
         <div className="scales-page__stats">
           <div className="scales-page__stat-item">
             <div className="scales-page__stat-label">
-              Весовых товаров для выгрузки
+              {t("crm.scales.weightedProducts")}
             </div>
             <div className="scales-page__stat-value">{count}</div>
           </div>
@@ -123,31 +124,24 @@ const ShtrihMTab = ({
           onClick={handleSendAllToScales}
           disabled={loading || isSending || count === 0}
         >
-          {isSending ? "Отправка..." : "Отправить весовые товары на весы"}
+          {isSending ? t("crm.scales.sending") : t("crm.scales.sendToScales")}
         </button>
 
         {loading && (
-          <div className="scales-page__hint">Загрузка товаров...</div>
+          <div className="scales-page__hint">{t("crm.scales.loadingProducts")}</div>
         )}
         {!loading && count === 0 && (
-          <div className="scales-page__hint">
-            Весовых товаров на складе нет
-          </div>
+          <div className="scales-page__hint">{t("crm.scales.noWeightProducts")}</div>
         )}
       </div>
 
       <div className="scales-page__info-card">
-        <h3 className="scales-page__info-title">Как это работает</h3>
+        <h3 className="scales-page__info-title">{t("crm.scales.howItWorks")}</h3>
         <ul className="scales-page__info-list">
-          <li>1. Подключите весы к сети и настройте соединение.</li>
-          <li>2. Убедитесь, что товары на складе заполнены корректно.</li>
-          <li>
-            3. Нажмите кнопку выгрузки — система отправит весовые товары на
-            весы.
-          </li>
-          <li>
-            4. После выгрузки вы можете работать по штрих‑кодам на весах.
-          </li>
+          <li>{t("crm.scales.howItWorksShtrih1")}</li>
+          <li>{t("crm.scales.howItWorksShtrih2")}</li>
+          <li>{t("crm.scales.howItWorksShtrih3")}</li>
+          <li>{t("crm.scales.howItWorksShtrih4")}</li>
         </ul>
       </div>
     </div>
@@ -160,20 +154,22 @@ const ShtrihMTab = ({
  * Формат по умолчанию — .TXP (рабочий формат импорта Rongta RLS),
  * .xls — запасной.
  */
-const EXPORT_FORMATS = [
+const EXPORT_FORMATS = (t: (key: string) => string) => [
   {
     id: "txp",
-    label: ".TXP — формат импорта Rongta RLS (рекомендуется)",
+    label: t("crm.scales.formatTxp"),
     filename: "scale_weight_products.TXP",
   },
   {
     id: "xls",
-    label: ".xls — Excel-таблица (запасной)",
+    label: t("crm.scales.formatXls"),
     filename: "scale_weight_products.xls",
   },
 ];
 
 const RongtaTab = ({ weightProducts, loading, onSuccess, onError }: any) => {
+  const { t } = useTranslation();
+  const exportFormats = EXPORT_FORMATS(t);
   const [isExporting, setIsExporting] = useState(false);
   const [translit, setTranslit] = useState(true);
   const [format, setFormat] = useState("txp");
@@ -193,8 +189,8 @@ const RongtaTab = ({ weightProducts, loading, onSuccess, onError }: any) => {
       const a = document.createElement("a");
       a.href = url;
       a.download =
-        EXPORT_FORMATS.find((f) => f.id === format)?.filename ||
-        EXPORT_FORMATS[0].filename;
+        exportFormats.find((f) => f.id === format)?.filename ||
+        exportFormats[0].filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -203,13 +199,13 @@ const RongtaTab = ({ weightProducts, loading, onSuccess, onError }: any) => {
       const exportedCount = res.headers?.["x-scale-products-count"];
       onSuccess(
         exportedCount
-          ? `Файл для весов скачан, товаров в выгрузке: ${exportedCount}`
-          : "Файл для весов успешно скачан",
+          ? t("crm.scales.exportSuccessCount", { count: exportedCount })
+          : t("crm.scales.exportSuccess"),
       );
     } catch (err: any) {
       const detail = await readBlobErrorDetail(err);
       onError(
-        detail || validateResErrors(err, "Не удалось выгрузить файл для весов"),
+        detail || validateResErrors(err, t("crm.scales.exportError")),
       );
     } finally {
       setIsExporting(false);
@@ -219,30 +215,26 @@ const RongtaTab = ({ weightProducts, loading, onSuccess, onError }: any) => {
   return (
     <div className="scales-page__grid">
       <div className="scales-page__card">
-        <h2 className="scales-page__card-title">Экспорт для весов Rongta</h2>
-        <p className="scales-page__card-text">
-          Скачайте файл с весовыми товарами и импортируйте его в весы Rongta
-          RLS1100 через PLU-менеджер (ПО весов). Товарам без PLU номер будет
-          присвоен автоматически при экспорте.
-        </p>
+        <h2 className="scales-page__card-title">{t("crm.scales.exportTitle")}</h2>
+        <p className="scales-page__card-text">{t("crm.scales.exportDescription")}</p>
 
         <div className="scales-page__stats">
           <div className="scales-page__stat-item">
             <div className="scales-page__stat-label">
-              Весовых товаров для выгрузки
+              {t("crm.scales.weightedProducts")}
             </div>
             <div className="scales-page__stat-value">{count}</div>
           </div>
         </div>
 
         <div className="scales-page__field">
-          <div className="scales-page__field-label">Формат файла</div>
+          <div className="scales-page__field-label">{t("crm.scales.fileFormat")}</div>
           <select
             className="nur-select scales-page__select"
             value={format}
             onChange={(e) => setFormat(e.target.value)}
           >
-            {EXPORT_FORMATS.map((f) => (
+            {exportFormats.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.label}
               </option>
@@ -256,8 +248,7 @@ const RongtaTab = ({ weightProducts, loading, onSuccess, onError }: any) => {
             checked={translit}
             onChange={(e) => setTranslit(e.target.checked)}
           />
-          Транслитерировать названия в латиницу (весы Rongta не печатают
-          кириллицу — вместо неё выходит «?????»)
+          {t("crm.scales.transliterateHint")}
         </label>
 
         <button
@@ -267,64 +258,53 @@ const RongtaTab = ({ weightProducts, loading, onSuccess, onError }: any) => {
           disabled={loading || isExporting || count === 0}
         >
           {isExporting
-            ? "Выгрузка..."
-            : `Экспорт для весов (.${format === "xls" ? "xls" : "TXP"})`}
+            ? t("crm.scales.exporting")
+            : t("crm.scales.exportBtn", {
+                format: format === "xls" ? "xls" : "TXP",
+              })}
         </button>
 
         {loading && (
-          <div className="scales-page__hint">Загрузка товаров...</div>
+          <div className="scales-page__hint">{t("crm.scales.loadingProducts")}</div>
         )}
         {!loading && count === 0 && (
-          <div className="scales-page__hint">
-            Весовых товаров на складе нет
-          </div>
+          <div className="scales-page__hint">{t("crm.scales.noWeightProducts")}</div>
         )}
 
         <div className="scales-page__warning">
-          <strong>Важно про штрихкоды.</strong> Весы по умолчанию печатают
-          штрихкоды с префиксом <b>21</b> (отдел 21, тип штрихкода 5), а касса
-          по умолчанию считает весовым префикс <b>20</b>. Чтобы штрихкоды
-          читались как вес, у компании должен быть включён режим чтения
-          штрихкода весов «По весу» (вкладка «Настройки» на этой странице),
-          либо префикс на весах перенастроен на 20.
+          <strong>{t("crm.scales.barcodeWarningTitle")}</strong>{" "}
+          {t("crm.scales.barcodeWarning")}
         </div>
       </div>
 
       <div className="scales-page__info-card">
-        <h3 className="scales-page__info-title">Как это работает</h3>
+        <h3 className="scales-page__info-title">{t("crm.scales.howItWorks")}</h3>
         <ul className="scales-page__info-list">
-          <li>1. Нажмите «Экспорт для весов» — скачается файл (.TXP).</li>
-          <li>
-            2. Откройте ПО весов (PLU-менеджер) и импортируйте этот файл.
-          </li>
-          <li>3. Загрузите PLU в весы.</li>
-          <li>
-            4. Весы печатают этикетки со штрихкодом, касса их читает при
-            продаже.
-          </li>
+          <li>{t("crm.scales.howItWorksRongta1")}</li>
+          <li>{t("crm.scales.howItWorksRongta2")}</li>
+          <li>{t("crm.scales.howItWorksRongta3")}</li>
+          <li>{t("crm.scales.howItWorksRongta4")}</li>
         </ul>
       </div>
     </div>
   );
 };
 
-const BARCODE_LAYOUTS = [
-  { value: "plu", label: "По PLU — префикс(2) + PLU(5) + значение(5)" },
-  { value: "code", label: "По коду — префикс(2) + Код(6) + вес(4)" },
+const BARCODE_LAYOUTS = (t: (key: string) => string) => [
+  { value: "plu", label: t("crm.scales.layoutPlu") },
+  { value: "code", label: t("crm.scales.layoutCode") },
 ];
 
-const BARCODE_MODES = [
-  { value: "auto", label: "Авто (по префиксу: 20 — вес, 25 — сумма)" },
-  { value: "weight", label: "По весу (граммы)" },
-  { value: "amount", label: "По сумме (сомы)" },
+const BARCODE_MODES = (t: (key: string) => string) => [
+  { value: "auto", label: t("crm.scales.modeAuto") },
+  { value: "weight", label: t("crm.scales.modeWeight") },
+  { value: "amount", label: t("crm.scales.modeAmount") },
 ];
 
-/**
- * Таб «Настройки»: как касса разбирает штрихкод весов —
- * scale_barcode_mode и scale_barcode_layout на уровне компании
- * (GET/PATCH /users/settings/company/).
- */
 const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
+  const { t } = useTranslation();
+  const barcodeLayouts = BARCODE_LAYOUTS(t);
+  const barcodeModes = BARCODE_MODES(t);
   const [layout, setLayout] = useState("plu");
   const [mode, setMode] = useState("auto");
   const [loading, setLoading] = useState(true);
@@ -342,7 +322,7 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
       } catch (err: any) {
         if (!cancelled) {
           onError(
-            validateResErrors(err, "Не удалось загрузить настройки компании"),
+            validateResErrors(err, t("crm.scales.settingsLoadError")),
           );
         }
       } finally {
@@ -364,11 +344,9 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
         scale_barcode_layout: layout,
         scale_barcode_mode: mode,
       });
-      onSuccess(
-        "Настройки чтения штрихкода сохранены. Изменения действуют сразу на следующем скане.",
-      );
+      onSuccess(t("crm.scales.settingsSaved"));
     } catch (err: any) {
-      onError(validateResErrors(err, "Не удалось сохранить настройки"));
+      onError(validateResErrors(err, t("crm.scales.settingsSaveError")));
     } finally {
       setSaving(false);
     }
@@ -377,16 +355,12 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
   return (
     <div className="scales-page__grid">
       <div className="scales-page__card">
-        <h2 className="scales-page__card-title">Чтение штрихкода весов</h2>
-        <p className="scales-page__card-text">
-          Настройки задают, как касса разбирает штрихкод с этикетки весов.
-          Действуют на всю компанию — применяются ко всем кассам. Менять может
-          владелец или администратор.
-        </p>
+        <h2 className="scales-page__card-title">{t("crm.scales.barcodeReading")}</h2>
+        <p className="scales-page__card-text">{t("crm.scales.settingsDescription")}</p>
 
         <div className="scales-page__field">
           <div className="scales-page__field-label">
-            Раскладка штрихкода
+            {t("crm.scales.barcodeLayout")}
           </div>
           <select
             className="nur-select scales-page__select"
@@ -394,7 +368,7 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
             onChange={(e) => setLayout(e.target.value)}
             disabled={loading}
           >
-            {BARCODE_LAYOUTS.map((o) => (
+            {barcodeLayouts.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
@@ -403,14 +377,14 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
         </div>
 
         <div className="scales-page__field">
-          <div className="scales-page__field-label">Режим значения</div>
+          <div className="scales-page__field-label">{t("crm.scales.valueMode")}</div>
           <select
             className="nur-select scales-page__select"
             value={mode}
             onChange={(e) => setMode(e.target.value)}
             disabled={loading}
           >
-            {BARCODE_MODES.map((o) => (
+            {barcodeModes.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
@@ -424,53 +398,34 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
           onClick={handleSave}
           disabled={loading || saving}
         >
-          {saving ? "Сохранение..." : "Сохранить настройки"}
+          {saving ? t("crm.scales.saving") : t("crm.scales.saveSettings")}
         </button>
 
         {loading && (
-          <div className="scales-page__hint">Загрузка настроек...</div>
+          <div className="scales-page__hint">{t("crm.scales.loadingSettings")}</div>
         )}
 
         <div className="scales-page__warning">
-          <strong>Для весов Rongta RLS из нашего экспорта</strong> (отдел 21,
-          тип штрихкода 5) обычно подходит: раскладка «По коду», режим «По
-          весу».
+          <strong>{t("crm.scales.rongtaHint")}</strong>
         </div>
       </div>
 
       <div className="scales-page__info-card">
         <h3 className="scales-page__info-title">
-          Как понять раскладку ваших весов
+          {t("crm.scales.understandLayout")}
         </h3>
         <ul className="scales-page__info-list">
-          <li>
-            1. Свесьте товар с известным PLU и посмотрите штрихкод на этикетке.
-          </li>
-          <li>
-            2. Пример: вызвали PLU 1, весы напечатали{" "}
-            <code>2100100001452</code>.
-          </li>
-          <li>
-            3. Как «По PLU»: 21 | 00100 | 00145 | 2 → PLU = 100 — не тот
-            товар.
-          </li>
-          <li>
-            4. Как «По коду»: 21 | 001000 | 0145 | 2 → Код 1000 → PLU = 1,
-            вес 0.145 кг — совпало.
-          </li>
-          <li>
-            5. Если PLU «не тот», а в штрихкоде виден Код (1000, 1010, …) —
-            ставьте раскладку «По коду».
-          </li>
+          <li>{t("crm.scales.layoutHelp1")}</li>
+          <li>{t("crm.scales.layoutHelp2")}</li>
+          <li>{t("crm.scales.layoutHelp3")}</li>
+          <li>{t("crm.scales.layoutHelp4")}</li>
+          <li>{t("crm.scales.layoutHelp5")}</li>
         </ul>
         <h3 className="scales-page__info-title" style={{ marginTop: 16 }}>
-          Если товар не находится
+          {t("crm.scales.productNotFound")}
         </h3>
         <ul className="scales-page__info-list">
-          <li>
-            PLU из штрихкода не совпадает с PLU товара в системе — сверьте,
-            что выгрузка PLU в весы и товары в системе согласованы.
-          </li>
+          <li>{t("crm.scales.productNotFoundHint")}</li>
         </ul>
       </div>
     </div>
@@ -485,6 +440,8 @@ const ScaleBarcodeSettingsTab = ({ onSuccess, onError }: any) => {
  * «Настройки» — чтение штрихкода весов кассой (на уровне компании).
  */
 const ScalesPage = () => {
+  const { t } = useTranslation();
+  const tabs = TABS(t);
   const [activeTab, setActiveTab] = useState("shtrih-m");
   const [weightProducts, setWeightProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -503,7 +460,7 @@ const ScalesPage = () => {
       } catch (err: any) {
         if (!cancelledRef.current) {
           setAlertMessage(
-            validateResErrors(err, "Ошибка при загрузке весовых товаров"),
+            validateResErrors(err, t("crm.scales.loadError")),
           );
           setShowErrorAlert(true);
         }
@@ -532,13 +489,13 @@ const ScalesPage = () => {
   return (
     <PageShell className="scales-page">
       <PageHeader
-        title="Весы"
-        subtitle="Отправка весовых товаров с вашего склада на торговые весы"
+        title={t("crm.scales.pageTitle")}
+        subtitle={t("crm.scales.subtitle")}
       />
 
       <PagePanel className="scales-page__content">
         <div className="scales-page__tabs">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -579,9 +536,9 @@ const ScalesPage = () => {
       <AlertModal
         open={showSuccessAlert}
         type="success"
-        title="Успешно!"
+        title={t("crm.scales.successTitle")}
         message={alertMessage}
-        okText="ОК"
+        okText={t("crm.scales.ok")}
         onConfirm={() => {}}
         onClose={() => {
           setShowSuccessAlert(false);
@@ -592,9 +549,9 @@ const ScalesPage = () => {
       <AlertModal
         open={showErrorAlert}
         type="error"
-        title="Ошибка!"
+        title={t("crm.scales.errorTitle")}
         message={alertMessage}
-        okText="ОК"
+        okText={t("crm.scales.ok")}
         onConfirm={() => {}}
         onClose={() => {
           setShowErrorAlert(false);

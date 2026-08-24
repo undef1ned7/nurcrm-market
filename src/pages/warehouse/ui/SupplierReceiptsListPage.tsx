@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, RefreshCw, Undo2, Wand2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "@shared/api";
@@ -141,6 +142,7 @@ const receiptRowTotal = (row: any) => {
 };
 
 export default function SupplierReceiptsListPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const alert = useAlert();
@@ -422,39 +424,39 @@ export default function SupplierReceiptsListPage() {
   return (
     <PageShell className="warehouse-page market-receipt-page">
       <PageHeader
-        title="Закупки"
-        subtitle="История приходов и возвраты поставщикам"
+        title={t("crm.procurement.pageTitle")}
+        subtitle={t("crm.procurement.subtitle")}
         actions={
           <>
             <button
               type="button"
               className="nur-btn nur-btn--secondary"
               onClick={() => navigate("/crm/market/procurement/recommendations")}
-              title="Рекомендуемый заказ"
-              aria-label="Рекомендуемый заказ"
+              title={t("crm.procurement.recommendedOrder")}
+              aria-label={t("crm.procurement.recommendedOrder")}
             >
               <Wand2 size={16} />
-              <span className="nur-btn__label">Рекомендуемый заказ</span>
+              <span className="nur-btn__label">{t("crm.procurement.recommendedOrder")}</span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--secondary"
               onClick={() => goCreateReturn()}
-              title="Возврат поставщику"
-              aria-label="Возврат поставщику"
+              title={t("crm.procurement.supplierReturn")}
+              aria-label={t("crm.procurement.supplierReturn")}
             >
               <Undo2 size={16} />
-              <span className="nur-btn__label">Возврат поставщику</span>
+              <span className="nur-btn__label">{t("crm.procurement.supplierReturn")}</span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--primary"
               onClick={() => navigate("/crm/market/procurement/receipt")}
-              title="Прием товара"
-              aria-label="Прием товара"
+              title={t("crm.procurement.receiveGoods")}
+              aria-label={t("crm.procurement.receiveGoods")}
             >
               <Plus size={16} />
-              <span className="nur-btn__label">Прием товара</span>
+              <span className="nur-btn__label">{t("crm.procurement.receiveGoods")}</span>
             </button>
           </>
         }
@@ -466,16 +468,16 @@ export default function SupplierReceiptsListPage() {
           replaceListSearchParams({ tab: nextTab, page: 1 })
         }
         items={[
-          { value: "history", label: "История закупок" },
-          { value: "returns", label: "Возвраты поставщикам" },
+          { value: "history", label: t("crm.procurement.historyTab") },
+          { value: "returns", label: t("crm.procurement.returnsTab") },
         ]}
       />
 
       {tab === "history" && !dateRangeInvalid && (
         <StatGrid>
-          <StatCard label="Всего закупок" value={listCount} />
+          <StatCard label={t("crm.procurement.totalPurchases")} value={listCount} />
           <StatCard
-            label="Общая сумма"
+            label={t("crm.procurement.totalAmount")}
             value={totalAmount != null ? fmtNum(totalAmount) : "—"}
           />
         </StatGrid>
@@ -488,22 +490,22 @@ export default function SupplierReceiptsListPage() {
             <>
           <FilterBar className="market-receipt-page__toolbar">
             <div className="market-receipt-page__field">
-              <label className="nur-label">Поставщик</label>
+              <label className="nur-label">{t("crm.procurement.selectSupplier")}</label>
               <div className="market-receipt-page__supplier-row">
                 <SearchableCombobox
                   value={filtersDraft.supplier_id}
                   onChange={(v: any) =>
                     setFiltersDraft((prev: any) => ({ ...prev, supplier_id: String(v || "") }))
                   }
-                  options={[{ value: "", label: "Все поставщики" }, ...supplierOptions]}
-                  placeholder={suppliersLoading ? "Загрузка..." : "Все поставщики"}
+                  options={[{ value: "", label: t("crm.procurement.allSuppliers") }, ...supplierOptions]}
+                  placeholder={suppliersLoading ? t("common.loading") : t("crm.procurement.allSuppliers")}
                   classNamePrefix="searchableCombo"
                 />
                 <button
                   type="button"
                   className="nur-btn nur-btn--secondary nur-btn--sm market-receipt-page__supplier-add"
                   onClick={() => setCreateSupplierOpen(true)}
-                  title="Добавить поставщика"
+                  title={t("crm.procurement.addSupplier")}
                 >
                   <Plus size={16} />
                 </button>

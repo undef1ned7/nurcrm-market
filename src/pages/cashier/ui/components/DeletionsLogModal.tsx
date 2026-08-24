@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Calendar, Package, Search, User, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import "./DeletionsLogModal.scss";
 
@@ -25,6 +26,7 @@ const normalizeRows = (payload: any) => {
 };
 
 const DeletionsLogModal = ({ onClose }: any) => {
+  const { t } = useTranslation();
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState<any>(true);
   const [search, setSearch] = useState<any>("");
@@ -86,7 +88,7 @@ const DeletionsLogModal = ({ onClose }: any) => {
     <div className="deletions-log-modal-overlay" onClick={onClose}>
       <div className="deletions-log-modal" onClick={(e: any) => e.stopPropagation()}>
         <div className="deletions-log-modal__header">
-          <h2 className="deletions-log-modal__title">Журнал удалений</h2>
+          <h2 className="deletions-log-modal__title">{t("crm.cashier.deletionsLogModal.title")}</h2>
           <button className="deletions-log-modal__close" onClick={onClose}>
             <X size={22} />
           </button>
@@ -97,34 +99,34 @@ const DeletionsLogModal = ({ onClose }: any) => {
             <Search size={16} />
             <input
               type="text"
-              placeholder="Поиск по товару, сотруднику, количеству"
+              placeholder={t("crm.cashier.deletionsLogModal.searchPlaceholder")}
               value={search}
               onChange={(e: any) => setSearch(e.target.value)}
             />
           </div>
           <div className="deletions-log-modal__count">
-            Записей: {filteredRows.length}
+            {t("crm.cashier.deletionsLogModal.records", { count: filteredRows.length })}
           </div>
         </div>
 
         <div className="deletions-log-modal__tableWrap">
           {loading ? (
-            <div className="deletions-log-modal__state">Загрузка...</div>
+            <div className="deletions-log-modal__state">{t("crm.cashier.deletionsLogModal.loading")}</div>
           ) : filteredRows.length === 0 ? (
-            <div className="deletions-log-modal__state">Записи не найдены</div>
+            <div className="deletions-log-modal__state">{t("crm.cashier.deletionsLogModal.notFound")}</div>
           ) : (
             <table className="deletions-log-modal__table">
               <thead>
                 <tr>
                   <th>
-                    <Package size={14} /> Товар
+                    <Package size={14} /> {t("crm.cashier.deletionsLogModal.product")}
                   </th>
-                  <th>Кол-во</th>
+                  <th>{t("crm.cashier.deletionsLogModal.quantity")}</th>
                   <th>
-                    <User size={14} /> Удалил
+                    <User size={14} /> {t("crm.cashier.deletionsLogModal.deletedBy")}
                   </th>
                   <th>
-                    <Calendar size={14} /> Дата
+                    <Calendar size={14} /> {t("crm.cashier.deletionsLogModal.date")}
                   </th>
                 </tr>
               </thead>
@@ -144,7 +146,7 @@ const DeletionsLogModal = ({ onClose }: any) => {
 
         <div className="deletions-log-modal__footer">
           <button className="deletions-log-modal__btn" onClick={onClose}>
-            Закрыть [ESC]
+            {t("crm.cashier.deletionsLogModal.close")}
           </button>
         </div>
       </div>

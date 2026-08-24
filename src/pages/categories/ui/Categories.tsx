@@ -1,5 +1,5 @@
-// src/components/Categories/Categories.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import {
   PageShell,
@@ -9,7 +9,7 @@ import {
   EmptyState,
 } from "@shared/ui/page-shell";
 import styles from "./Categories.module.scss";
-import api from "@shared/api"; // axios instance
+import api from "@shared/api";
 
 function toResults(payload) {
   if (!payload) return [];
@@ -19,16 +19,14 @@ function toResults(payload) {
 }
 
 function MarketCategories() {
+  const { t } = useTranslation();
   const { categories, setCategories, brands, setBrands } = useOutletContext() as any;
 
-  const [tab, setTab] = useState("categories"); // "categories" | "brands"
+  const [tab, setTab] = useState("categories");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-
   const [search, setSearch] = useState("");
-
-  // modal
-  const [editingId, setEditingId] = useState<any>(null); // null | "new" | id
+  const [editingId, setEditingId] = useState<any>(null);
   const [name, setName] = useState("");
 
   const isCats = tab === "categories";
@@ -47,13 +45,12 @@ function MarketCategories() {
       setCategories(toResults(catRes.data));
       setBrands(toResults(brandRes.data));
     } catch (e) {
-      setErr("Не удалось загрузить категории/бренды");
-       
+      setErr(t("crm.categories.loadError"));
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [setBrands, setCategories]);
+  }, [setBrands, setCategories, t]);
 
   useEffect(() => {
     fetchAll();
@@ -95,20 +92,19 @@ function MarketCategories() {
           name: trimmed,
         });
         setData((prev: any = []) =>
-          prev.map((x: any) => (x.id === editingId ? updated : x))
+          prev.map((x: any) => (x.id === editingId ? updated : x)),
         );
       }
       closeModal();
     } catch (e) {
-      setErr("Сохранение не удалось");
-       
+      setErr(t("crm.categories.saveError"));
       console.error(e);
     }
   };
 
   const remove = async () => {
     if (editingId === "new") return closeModal();
-    if (!window.confirm("Удалить этот элемент?")) return;
+    if (!window.confirm(t("crm.categories.deleteConfirm"))) return;
 
     setErr("");
     try {
@@ -116,20 +112,32 @@ function MarketCategories() {
       setData((prev: any = []) => prev.filter((x: any) => x.id !== editingId));
       closeModal();
     } catch (e) {
-      setErr("Удаление не удалось");
-       
+      setErr(t("crm.categories.deleteError"));
       console.error(e);
     }
   };
 
+  const modalTitle =
+    editingId === "new"
+      ? isCats
+        ? t("crm.categories.addCategory")
+        : t("crm.categories.addBrand")
+      : isCats
+        ? t("crm.categories.editCategory")
+        : t("crm.categories.editBrand");
+
   return (
     <PageShell className={styles["cats"]}>
       <PageHeader
-        title={isCats ? "Категории" : "Бренды"}
-        subtitle="Справочник номенклатуры"
+        title={
+          isCats
+            ? t("crm.categories.pageTitleCategories")
+            : t("crm.categories.pageTitleBrands")
+        }
+        subtitle={t("crm.categories.subtitle")}
         actions={
           <button type="button" className="nur-btn nur-btn--primary" onClick={openNew}>
-            + Добавить
+            {t("crm.categories.add")}
           </button>
         }
       />
@@ -143,7 +151,7 @@ function MarketCategories() {
             }`}
             onClick={() => setTab("brands")}
           >
-            Бренды
+            {t("crm.categories.brands")}
           </button>
           <button
             type="button"
@@ -152,13 +160,13 @@ function MarketCategories() {
             }`}
             onClick={() => setTab("categories")}
           >
-            Категории
+            {t("crm.categories.categories")}
           </button>
         </div>
 
         <input
           className={`nur-input ${styles["cats__search"]}`}
-          placeholder="Поиск"
+          placeholder={t("crm.categories.search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -171,8 +179,8 @@ function MarketCategories() {
           <table className={`nur-table nur-table--clickable ${styles["cats__table"]}`}>
             <thead>
               <tr>
-                <th>№</th>
-                <th>Название</th>
+                <th>{t("crm.categories.number")}</th>
+                <th>{t("crm.categories.name")}</th>
                 <th className={styles["cats__thActions"]} />
               </tr>
             </thead>
@@ -180,7 +188,7 @@ function MarketCategories() {
               {loading ? (
                 <tr>
                   <td className={styles["cats__empty"]} colSpan={3}>
-                    Загрузка…
+                    {t("common.loading")}
                   </td>
                 </tr>
               ) : filtered.length ? (
@@ -196,7 +204,7 @@ function MarketCategories() {
                           e.stopPropagation();
                           openEdit(item.id);
                         }}
-                        aria-label="Редактировать"
+                        aria-label={t("crm.categories.edit")}
                       >
                         ⋮
                       </button>
@@ -207,8 +215,8 @@ function MarketCategories() {
                 <tr>
                   <td colSpan={3}>
                     <EmptyState
-                      title="Ничего не найдено"
-                      text="Измените поиск или добавьте новый элемент."
+                      title={t("common.nothingFound")}
+                      text={t("crm.categories.search")}
                     />
                   </td>
                 </tr>
@@ -226,16 +234,12 @@ function MarketCategories() {
             role="dialog"
             aria-modal="true"
           >
-            <h3 className={styles["cats__modalTitle"]}>
-              {editingId === "new"
-                ? `Добавить ${isCats ? "категорию" : "бренд"}`
-                : `Редактировать ${isCats ? "категорию" : "бренд"}`}
-            </h3>
+            <h3 className={styles["cats__modalTitle"]}>{modalTitle}</h3>
 
-            <label className="nur-label">Название</label>
+            <label className="nur-label">{t("crm.categories.name")}</label>
             <input
               className="nur-input"
-              placeholder="Название"
+              placeholder={t("crm.categories.name")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
@@ -249,7 +253,7 @@ function MarketCategories() {
                   onClick={save}
                   disabled={!name.trim()}
                 >
-                  Добавить
+                  {t("common.create")}
                 </button>
               ) : (
                 <>
@@ -259,10 +263,10 @@ function MarketCategories() {
                     onClick={save}
                     disabled={!name.trim()}
                   >
-                    Сохранить
+                    {t("common.save")}
                   </button>
                   <button type="button" className="nur-btn nur-btn--danger" onClick={remove}>
-                    Удалить
+                    {t("common.delete")}
                   </button>
                 </>
               )}
@@ -271,7 +275,7 @@ function MarketCategories() {
                 className="nur-btn nur-btn--secondary"
                 onClick={closeModal}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
             </div>
           </div>

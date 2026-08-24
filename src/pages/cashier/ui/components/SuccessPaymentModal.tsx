@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { X, ChevronUp, ChevronDown, Download, Printer } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { pdf } from "@react-pdf/renderer";
 import { getInvoiceJson } from "@entities/sale";
-import InvoicePdfDocument from "@pages/documents/ui/components/InvoicePdfDocument";
 import "./SuccessPaymentModal.scss";
 
 const toMoney = (value) => {
@@ -25,6 +24,7 @@ const SuccessPaymentModal = ({
   saleId,
   blockEnterCloseUntil = 0,
 }: any) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const [isTotalExpanded, setIsTotalExpanded] = useState(true);
   const [isReceivedExpanded, setIsReceivedExpanded] = useState(false);
@@ -85,9 +85,13 @@ const SuccessPaymentModal = ({
           throw new Error("Нет данных для генерации PDF");
         }
 
-        const blob = await pdf(
-          <InvoicePdfDocument data={invoiceData} />,
-        ).toBlob();
+        // PDF-стек должен попадать в chunk только по клику "Скачать накладную".
+        const [{ pdf }, { default: InvoicePdfDocument }] = await Promise.all([
+          import("@react-pdf/renderer"),
+          import("@pages/documents/ui/components/InvoicePdfDocument"),
+        ]);
+
+        const blob = await pdf(<InvoicePdfDocument data={invoiceData} />).toBlob();
 
         const fileName = `invoice_${
           invoiceData?.document?.number || saleId
@@ -99,9 +103,9 @@ const SuccessPaymentModal = ({
     } catch (err: any) {
       console.error("Скачивание накладной не удалось:", err);
       alert(
-        err?.message ||
+          err?.message ||
           err?.detail ||
-          "Не удалось скачать накладную. Попробуйте позже.",
+          t("crm.cashier.successPayment.downloadFailed"),
       );
     } finally {
       setDownloadingInvoice(false);
@@ -120,14 +124,14 @@ const SuccessPaymentModal = ({
           <X size={24} />
         </button>
 
-        <h2 className="success-payment-modal__title">Продажа прошла успешно</h2>
+        <h2 className="success-payment-modal__title">{t("crm.cashier.successPayment.title")}</h2>
 
         <div className="success-payment-modal__summary">
           <div
             className="success-payment-modal__summary-header"
             onClick={() => setIsTotalExpanded(!isTotalExpanded)}
           >
-            <span className="success-payment-modal__summary-label">Итог</span>
+            <span className="success-payment-modal__summary-label">{t("crm.cashier.successPayment.summary")}</span>
             <div className="success-payment-modal__summary-value-wrapper">
               <span className="success-payment-modal__summary-value">
                 {safeTotal.toFixed(2)}сом
@@ -147,7 +151,7 @@ const SuccessPaymentModal = ({
             <div className="success-payment-modal__summary-details">
               <div className="success-payment-modal__summary-item">
                 <span className="success-payment-modal__summary-label">
-                  Наличные
+                  {t("crm.cashier.successPayment.cash")}
                 </span>
                 <span className="success-payment-modal__summary-value">
                   {safeCash.toFixed(2)}сом
@@ -156,7 +160,7 @@ const SuccessPaymentModal = ({
 
               <div className="success-payment-modal__summary-item">
                 <span className="success-payment-modal__summary-label">
-                  Безналичные
+                  {t("crm.cashier.successPayment.cashless")}
                 </span>
                 <span className="success-payment-modal__summary-value">
                   {safeCashless.toFixed(2)}сом
@@ -165,7 +169,7 @@ const SuccessPaymentModal = ({
 
               <div className="success-payment-modal__summary-item">
                 <span className="success-payment-modal__summary-label">
-                  Отсрочка
+                  {t("crm.cashier.successPayment.deferred")}
                 </span>
                 <span className="success-payment-modal__summary-value">
                   {safeDeferred.toFixed(2)}сом
@@ -181,7 +185,7 @@ const SuccessPaymentModal = ({
             onClick={() => setIsReceivedExpanded(!isReceivedExpanded)}
           >
             <span className="success-payment-modal__received-label">
-              Принято
+              {t("crm.cashier.successPayment.received")}
             </span>
             <div className="success-payment-modal__received-value-wrapper">
               <span className="success-payment-modal__received-value">
@@ -202,7 +206,7 @@ const SuccessPaymentModal = ({
             <div className="success-payment-modal__received-details">
               <div className="success-payment-modal__summary-item">
                 <span className="success-payment-modal__summary-label">
-                  Наличные
+                  {t("crm.cashier.successPayment.cash")}
                 </span>
                 <span className="success-payment-modal__summary-value">
                   {safeReceived.toFixed(2)}сом
@@ -214,9 +218,9 @@ const SuccessPaymentModal = ({
 
         {safeChange > 0 && (
           <div className="success-payment-modal__change">
-            <div className="success-payment-modal__change-label">СДАЧА:</div>
+            <div className="success-payment-modal__change-label">{t("crm.cashier.successPayment.change")}</div>
             <div className="success-payment-modal__change-value">
-              {safeChange.toFixed(2)} сом
+              {safeChange.toFixed(2)} {t("common.currencySom")}
             </div>
           </div>
         )}
@@ -230,7 +234,7 @@ const SuccessPaymentModal = ({
               type="button"
             >
               <Printer size={18} />
-              {printing ? "Печать..." : "ПЕЧАТЬ ЧЕКА"}
+              {printing ? t("crm.cashier.successPayment.printing") : t("crm.cashier.successPayment.printReceipt")}
             </button>
           )}
           {saleId && (
@@ -241,7 +245,7 @@ const SuccessPaymentModal = ({
               type="button"
             >
               <Download size={18} />
-              {downloadingInvoice ? "Скачивание..." : "СКАЧАТЬ НАКЛАДНУЮ"}
+              {downloadingInvoice ? t("crm.cashier.successPayment.downloading") : t("crm.cashier.successPayment.downloadInvoice")}
             </button>
           )}
           <button
@@ -249,7 +253,7 @@ const SuccessPaymentModal = ({
             className="success-payment-modal__close-btn"
             onClick={onClose}
           >
-            ЗАКРЫТЬ{" "}
+            {t("crm.cashier.successPayment.close")}{" "}
             <span className="success-payment-modal__enter-hint">[ENTER]</span>
           </button>
         </div>

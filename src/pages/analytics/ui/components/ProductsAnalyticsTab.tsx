@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import type { AnalyticsVm } from "../hooks/useAnalyticsData";
 
@@ -6,6 +8,7 @@ type Props = {
 };
 
 export function ProductsAnalyticsTab({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     productsData,
     isStartTariff,
@@ -16,7 +19,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
     formatCurrency,
   } = vm;
 
-  const renderProductsAccordion = (key, title, tableContent) => {
+  const renderProductsAccordion = (key: string, title: string, tableContent: ReactNode) => {
     const isOpen = openProductTable === key;
     return (
       <div
@@ -102,16 +105,16 @@ export function ProductsAnalyticsTab({ vm }: Props) {
             {!isStartTariff &&
               renderProductsAccordion(
                 "topByRevenue",
-                "Топ по выручке",
+                t("crm.analytics.products.topByRevenue"),
                 <table className="analytics-page__table">
                   <thead>
                     <tr>
-                      <th>Товар</th>
-                      <th>Категория</th>
-                      <th>Бренд</th>
-                      <th>Продано</th>
-                      <th>Выручка</th>
-                      <th>Транзакций</th>
+                      <th>{t("crm.analytics.products.goods")}</th>
+                      <th>{t("crm.analytics.products.category")}</th>
+                      <th>{t("crm.analytics.products.brand")}</th>
+                      <th>{t("crm.analytics.sales.sold")}</th>
+                      <th>{t("crm.analytics.sales.revenue")}</th>
+                      <th>{t("crm.analytics.sales.transactions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -132,7 +135,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                           colSpan={6}
                           style={{ textAlign: "center", color: "#6b7280" }}
                         >
-                          Нет данных
+                          {t("crm.analytics.noData")}
                         </td>
                       </tr>
                     )}
@@ -142,12 +145,12 @@ export function ProductsAnalyticsTab({ vm }: Props) {
 
             {renderProductsAccordion(
               "topByQuantity",
-              "Топ по количеству",
+              t("crm.analytics.products.topByQty"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Товар</th>
-                    <th>Продано</th>
+                    <th>{t("crm.analytics.products.goods")}</th>
+                    <th>{t("crm.analytics.sales.sold")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,7 +167,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                         colSpan={2}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -176,15 +179,15 @@ export function ProductsAnalyticsTab({ vm }: Props) {
           <div className="analytics-page__grid">
             {renderProductsAccordion(
               "categories",
-              "Категории",
+              t("crm.analytics.products.categories"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Категория</th>
-                    <th>Выручка</th>
-                    <th>Количество</th>
-                    <th>Товаров</th>
-                    <th>Транзакций</th>
+                    <th>{t("crm.analytics.products.category")}</th>
+                    <th>{t("crm.analytics.sales.revenue")}</th>
+                    <th>{t("crm.analytics.products.quantity")}</th>
+                    <th>{t("crm.analytics.products.productsCount")}</th>
+                    <th>{t("crm.analytics.sales.transactions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -204,7 +207,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                         colSpan={5}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -214,13 +217,13 @@ export function ProductsAnalyticsTab({ vm }: Props) {
 
             {renderProductsAccordion(
               "brands",
-              "Бренды",
+              t("crm.analytics.products.brands"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Бренд</th>
-                    <th>Товаров</th>
-                    <th>Выручка</th>
+                    <th>{t("crm.analytics.products.brand")}</th>
+                    <th>{t("crm.analytics.products.productsCount")}</th>
+                    <th>{t("crm.analytics.sales.revenue")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -238,7 +241,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                         colSpan={3}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -250,16 +253,16 @@ export function ProductsAnalyticsTab({ vm }: Props) {
           {!isStartTariff &&
             renderProductsAccordion(
               "lowStockProducts",
-              "Товары с низким остатком",
+              t("crm.analytics.products.lowStock"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Код</th>
-                    <th>Товар</th>
-                    <th>Количество</th>
-                    <th>Цена</th>
-                    <th>Закупочная</th>
-                    <th>Статус</th>
+                    <th>{t("crm.analytics.products.code")}</th>
+                    <th>{t("crm.analytics.products.goods")}</th>
+                    <th>{t("crm.analytics.products.quantity")}</th>
+                    <th>{t("crm.analytics.products.price")}</th>
+                    <th>{t("crm.analytics.products.purchasePrice")}</th>
+                    <th>{t("common.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -286,7 +289,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                         colSpan={6}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}

@@ -1,5 +1,8 @@
+import { useTranslation } from "react-i18next";
+
 /** Settings tab: Печать */
 export function PrintTab(props) {
+  const { t } = useTranslation();
   const {
     CafeKitchenPrintersSettings,
     CafeReceiptPrinterSettings,
@@ -18,10 +21,10 @@ export function PrintTab(props) {
           ) : (
             <div className="settings__section">
               <h2 className="settings__section-title">
-                <span className="settings__emoji">🖨️</span> Печать
+                <span className="settings__emoji">🖨️</span> {t("settings.print.sectionTitle")}
               </h2>
               <p className="settings__mutedText">
-                Эти настройки доступны только для сектора кафе.
+                {t("settings.print.cafeOnlyHint")}
               </p>
             </div>
           )}

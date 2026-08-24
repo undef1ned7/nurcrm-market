@@ -1,46 +1,39 @@
-
-import { Button } from '@mui/material'
-import { useMemo } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Button } from "@mui/material";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 export default function SellLayout() {
-    const location = useLocation()
-    const { text, path } = useMemo(() => {
-        const isHistoryLocatin = location.pathname.split('/').map(el => el.trim()).filter(Boolean).at(-1) === 'start';
-        const text = !isHistoryLocatin ? 'Начать продажу' : 'Назад'
-        const path = isHistoryLocatin ? '' : 'start'
-        return {
-            isHistoryLocatin,
-            path,
-            text
-        }
-    }, [location?.pathname])
-    return (
-        <>
-            <div className='flex gap-x-5 gap-y-2 flex-wrap'>
-                {/* <NavLink className={({ isActive }) => {
-                    let baseClass = 'flex-1 w-full'
-                    if (isActive) {
-                        baseClass += ' group'
-                    }
-                    return baseClass
-                }}>
-                    <Button className='group-bg-red-500! w-full text-nowrap' color='warning' variant='contained'>Заказы</Button>
-                </NavLink> */}
-                <NavLink
-                    to={path}
-                    className={'flex-1 w-full'}
-                >
-                    <Button
-                        className='w-full'
-                        color='warning'
-                        variant='contained'
-                    >
-                        {text}
-                    </Button>
-                </NavLink>
-            </div>
-            <Outlet />
-        </>
-    )
+  const { t } = useTranslation();
+  const location = useLocation();
+  const { text, path } = useMemo(() => {
+    const isHistoryLocatin =
+      location.pathname
+        .split("/")
+        .map((el) => el.trim())
+        .filter(Boolean)
+        .at(-1) === "start";
+    const label = !isHistoryLocatin
+      ? t("crm.sell.startSale")
+      : t("crm.sell.back");
+    const nextPath = isHistoryLocatin ? "" : "start";
+    return {
+      isHistoryLocatin,
+      path: nextPath,
+      text: label,
+    };
+  }, [location?.pathname, t]);
+
+  return (
+    <>
+      <div className="flex gap-x-5 gap-y-2 flex-wrap">
+        <NavLink to={path} className="flex-1 w-full">
+          <Button className="w-full" color="warning" variant="contained">
+            {text}
+          </Button>
+        </NavLink>
+      </div>
+      <Outlet />
+    </>
+  );
 }

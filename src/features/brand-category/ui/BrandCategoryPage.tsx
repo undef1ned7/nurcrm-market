@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
@@ -65,6 +66,7 @@ const TextModal = ({
   onDelete,
   saving,
 }: any) => {
+  const { t } = useTranslation();
   const [value, setValue] = useState(initial?.name || "");
 
   return (
@@ -79,12 +81,12 @@ const TextModal = ({
               <X size={18} className="edit-modal__close-icon" onClick={onClose} />
             </div>
             <div className="edit-modal__section">
-              <label className="nur-label">Название *</label>
+              <label className="nur-label">{t("crm.brandCategory.nameRequired")}</label>
               <input
                 className="nur-input"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                placeholder="Введите название"
+                placeholder={t("crm.brandCategory.namePlaceholder")}
                 autoFocus
               />
             </div>
@@ -96,7 +98,7 @@ const TextModal = ({
                   onClick={onDelete}
                   disabled={deleting || saving}
                 >
-                  {deleting ? "Удаление…" : "Удалить"}
+                  {deleting ? t("common.deleting") : t("common.delete")}
                 </button>
               )}
               <button
@@ -105,7 +107,11 @@ const TextModal = ({
                 onClick={() => onSubmit(value)}
                 disabled={deleting || saving}
               >
-                {saving ? "Сохранение…" : initial ? "Сохранить" : "Добавить"}
+                {saving
+                  ? t("common.saving")
+                  : initial
+                    ? t("common.save")
+                    : t("common.create")}
               </button>
             </div>
           </div>
@@ -115,14 +121,16 @@ const TextModal = ({
   );
 };
 
-const ItemsTable = ({ items, onEdit, startIndex = 0 }: any) => (
+const ItemsTable = ({ items, onEdit, startIndex = 0 }: any) => {
+  const { t } = useTranslation();
+  return (
   <div className="nur-table-wrap brand-category-page__table-wrap">
     <table className="nur-table nur-table--clickable brand-category-page__table">
       <thead>
         <tr>
-          <th>№</th>
-          <th>Название</th>
-          <th className="brand-category-page__table-actions-col">Действия</th>
+          <th>{t("crm.brandCategory.number")}</th>
+          <th>{t("crm.brandCategory.name")}</th>
+          <th className="brand-category-page__table-actions-col">{t("crm.brandCategory.actions")}</th>
         </tr>
       </thead>
       <tbody>
@@ -138,7 +146,7 @@ const ItemsTable = ({ items, onEdit, startIndex = 0 }: any) => (
                   e.stopPropagation();
                   onEdit(item);
                 }}
-                aria-label="Редактировать"
+                aria-label={t("crm.brandCategory.edit")}
               >
                 <Pencil size={16} />
               </button>
@@ -148,7 +156,8 @@ const ItemsTable = ({ items, onEdit, startIndex = 0 }: any) => (
       </tbody>
     </table>
   </div>
-);
+  );
+};
 
 const ItemsCards = ({ items, onEdit, startIndex = 0 }: any) => (
   <div className="brand-category-page__cards">
@@ -277,6 +286,7 @@ const BrandCategoryPagination = ({
 };
 
 export default function BrandCategoryPage() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -520,7 +530,7 @@ export default function BrandCategoryPage() {
   return (
     <PageShell className="brand-category-page brandSection">
       <PageHeader
-        title="Бренд и категория"
+        title={t("crm.brandCategory.pageTitle")}
         subtitle={tabMeta.subtitle}
         actions={
           <button

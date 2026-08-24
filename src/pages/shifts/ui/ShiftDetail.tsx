@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -40,6 +41,7 @@ import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 
 const ShiftDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch() as any;
@@ -113,7 +115,7 @@ const ShiftDetail = () => {
         setSalesHistory(result?.results || []);
       } catch (error: any) {
         console.error("Ошибка при загрузке истории продаж:", error);
-        setSalesError("Не удалось загрузить историю продаж");
+        setSalesError(t("crm.shifts.detail.salesLoadError"));
         setSalesHistory([]);
       } finally {
         setSalesLoading(false);
@@ -167,8 +169,8 @@ const ShiftDetail = () => {
           type: "income",
           date: sale.created_at || sale.paid_at,
           counterparty: sale.client_name || "—",
-          account: shift?.cashbox_name || "Касса",
-          tag: "Оплата от клиента",
+          account: shift?.cashbox_name || t("crm.kassa.pageTitle"),
+          tag: t("crm.shifts.detail.clientPayment"),
           amount: parseFloat(sale.total || 0),
           payment_method: sale.payment_method || "—",
           cashier: sale.cashier_display || "—",
@@ -177,7 +179,7 @@ const ShiftDetail = () => {
         setMoneyMovements(movements);
       } catch (error: any) {
         console.error("Ошибка при загрузке движения денег:", error);
-        const errorMessage = validateResErrors(error, "Ошибка при загрузке движения денег. ")
+        const errorMessage = validateResErrors(error, t("crm.shifts.detail.moneyLoadError"))
         setMoneyError(errorMessage);
         setMoneyMovements([]);
       } finally {
@@ -287,8 +289,8 @@ const ShiftDetail = () => {
     return (
       <PageShell className="shift-detail-page">
         <PageHeader
-          title="Смена"
-          subtitle="Загрузка данных кассовой смены"
+          title={t("crm.shifts.detail.title")}
+          subtitle={t("crm.shifts.detail.loadingSubtitle")}
         />
         <PagePanel flush>
           <LoadingState rows={6} />
@@ -301,28 +303,28 @@ const ShiftDetail = () => {
     return (
       <PageShell className="shift-detail-page">
         <PageHeader
-          title="Смена"
-          subtitle="Детали кассовой смены"
+          title={t("crm.shifts.detail.title")}
+          subtitle={t("crm.shifts.detail.subtitle")}
           actions={
             <button
               type="button"
               className="nur-btn nur-btn--secondary"
               onClick={() => navigate("/crm/shifts")}
             >
-              Назад
+              {t("common.back")}
             </button>
           }
         />
         <EmptyState
-          title="Смена не найдена"
-          text="Возможно, смена была удалена или ссылка устарела."
+          title={t("crm.shifts.detail.notFound")}
+          text={t("crm.shifts.detail.notFoundHint")}
           action={
             <button
               type="button"
               className="nur-btn nur-btn--primary"
               onClick={() => navigate("/crm/shifts")}
             >
-              К списку смен
+              {t("crm.shifts.detail.backToList")}
             </button>
           }
         />
@@ -333,20 +335,22 @@ const ShiftDetail = () => {
   return (
     <PageShell className="shift-detail-page">
       <PageHeader
-        title={`Смена #${shiftNumber}`}
-        subtitle={`Кассир: ${shift.cashier_display || "—"} · продажи и движение денег`}
+        title={t("crm.shifts.shiftTitle", { number: shiftNumber })}
+        subtitle={t("crm.shifts.detail.headerSubtitle", {
+          cashier: shift.cashier_display || "—",
+        })}
         actions={
           <div className="shift-detail-page__header-actions">
             <StatusChip tone={shift.status === "open" ? "success" : "danger"}>
               {shift.status === "open" ? (
                 <>
                   <CheckCircle size={16} />
-                  <span>Открыта</span>
+                  <span>{t("crm.shifts.statusOpen")}</span>
                 </>
               ) : (
                 <>
                   <XCircle size={16} />
-                  <span>Закрыта</span>
+                  <span>{t("crm.shifts.statusClosed")}</span>
                 </>
               )}
             </StatusChip>
@@ -354,11 +358,11 @@ const ShiftDetail = () => {
               type="button"
               className="nur-btn nur-btn--secondary nur-btn--sm"
               onClick={() => navigate("/crm/shifts")}
-              aria-label="Назад к списку смен"
-              title="Назад"
+              aria-label={t("crm.shifts.detail.backToShifts")}
+              title={t("common.back")}
             >
               <X size={18} />
-              <span className="nur-btn__label">Назад</span>
+              <span className="nur-btn__label">{t("common.back")}</span>
             </button>
           </div>
         }
@@ -367,24 +371,24 @@ const ShiftDetail = () => {
       <div className="shift-detail-page__dates">
         <span className="shift-detail-page__meta-line">
           <Calendar size={14} />
-          Открыта {formatDate(shift.opened_at)}
+          {t("crm.shifts.detail.opened", { date: formatDate(shift.opened_at) })}
         </span>
         {shift.closed_at && (
           <span className="shift-detail-page__meta-line">
             <Calendar size={14} />
-            Закрыта {formatDate(shift.closed_at)}
+            {t("crm.shifts.detail.closed", { date: formatDate(shift.closed_at) })}
           </span>
         )}
       </div>
 
       <StatGrid className="shift-detail-page__metrics">
         <StatCard
-          label="Выручка"
-          value={`${parseFloat(shift.sales_total || 0).toFixed(2)} сом`}
+          label={t("crm.shifts.revenue")}
+          value={`${parseFloat(shift.sales_total || 0).toFixed(2)} ${t("common.currencySom")}`}
         />
-        <StatCard label="Продажи" value={shift.sales_count || 0} />
-        <StatCard label="Касса" value={shift.cashbox_name || "—"} />
-        <StatCard label="Магазин" value={shift.branch || "—"} />
+        <StatCard label={t("crm.shifts.sales")} value={shift.sales_count || 0} />
+        <StatCard label={t("crm.shifts.cashbox")} value={shift.cashbox_name || "—"} />
+        <StatCard label={t("crm.shifts.detail.store")} value={shift.branch || "—"} />
       </StatGrid>
 
       <div className="shift-detail-page__details">

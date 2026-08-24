@@ -1,41 +1,61 @@
-// src/Components/pages/Info/Settings/Tabs/Tabs.jsx
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import "./Tabs.scss";
 import { canAccessOnlineShowcase } from "@shared/lib/subscriptionPlan";
 import { FilterBar } from "@shared/ui/page-shell";
-
-const allTabs = ["Моя компания", "Безопасность", "Касса", "Токен для весов", "Интерфейс", "Печать", "Онлайн"];
+import {
+  ALL_SETTINGS_TABS,
+  SETTINGS_TABS,
+  type SettingsTabId,
+} from "../settingsTabs";
 
 const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
-  const sectorName = useMemo(() => String(company?.sector?.name || "").toLowerCase().trim(), [company?.sector?.name]);
+  const { t } = useTranslation();
+  const sectorName = useMemo(
+    () => String(company?.sector?.name || "").toLowerCase().trim(),
+    [company?.sector?.name],
+  );
 
-  // Определяем, является ли сфера "магазин" (market)
   const isMarketSector = useMemo(() => {
-    return sectorName === "магазин" || sectorName === "цветочный магазин" || sectorName.includes("магазин");
+    return (
+      sectorName === "магазин" ||
+      sectorName === "цветочный магазин" ||
+      sectorName.includes("магазин")
+    );
   }, [sectorName]);
 
-  // Определяем, является ли сфера "барбершоп"
   const isBarberSector = useMemo(() => {
-    return sectorName === "барбершоп" || sectorName === "услуги" || sectorName === "стоматология" || sectorName === "салон красоты" || sectorName.includes("барбер") || sectorName.includes("парикмахер");
+    return (
+      sectorName === "барбершоп" ||
+      sectorName === "услуги" ||
+      sectorName === "стоматология" ||
+      sectorName === "салон красоты" ||
+      sectorName.includes("барбер") ||
+      sectorName.includes("парикмахер")
+    );
   }, [sectorName]);
 
-  // Определяем, является ли сфера "кафе"
   const isCafeSector = useMemo(() => {
-    return sectorName === "кафе" || sectorName.includes("кафе") || sectorName.includes("ресторан");
+    return (
+      sectorName === "кафе" ||
+      sectorName.includes("кафе") ||
+      sectorName.includes("ресторан")
+    );
   }, [sectorName]);
 
-  // Определяем, является ли сфера "производство"
   const isProductionSector = useMemo(() => {
-    return sectorName === "производство" || sectorName === "production" || sectorName.includes("производ");
+    return (
+      sectorName === "производство" ||
+      sectorName === "production" ||
+      sectorName.includes("производ")
+    );
   }, [sectorName]);
 
   const isOwner = useMemo(() => profile?.role === "owner", [profile?.role]);
-
-  // Настройки кассы магазина доступны только владельцу и админу
   const isAdmin = useMemo(() => profile?.role === "admin", [profile?.role]);
   const canViewMarketCashierSettings = useMemo(
     () => isMarketSector && (isOwner || isAdmin),
-    [isMarketSector, isOwner, isAdmin]
+    [isMarketSector, isOwner, isAdmin],
   );
 
   const canViewOnline = useMemo(() => {
@@ -63,13 +83,12 @@ const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
   ]);
 
   const visibleTabs = useMemo(() => {
-    return allTabs.filter((tab) => {
-      if (tab === "Моя компания") return isOwner;
-      if (tab === "Касса") return canViewMarketCashierSettings;
-      if (tab === "Токен для весов") return isMarketSector;
-      if (tab === "Печать") return isCafeSector;
-      if (tab === "Онлайн") return canViewOnline;
-      // "Безопасность" и "Интерфейс" всегда видны
+    return ALL_SETTINGS_TABS.filter((tab: SettingsTabId) => {
+      if (tab === SETTINGS_TABS.company) return isOwner;
+      if (tab === SETTINGS_TABS.cashier) return canViewMarketCashierSettings;
+      if (tab === SETTINGS_TABS.scalesToken) return isMarketSector;
+      if (tab === SETTINGS_TABS.print) return isCafeSector;
+      if (tab === SETTINGS_TABS.online) return canViewOnline;
       return true;
     });
   }, [
@@ -89,7 +108,7 @@ const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
           className={`settings-tabs__item ${activeTab === tab ? "settings-tabs__item--active" : ""}`}
           onClick={() => setActiveTab(tab)}
         >
-          {tab}
+          {t(`settings.tabs.${tab}`)}
         </button>
       ))}
     </FilterBar>

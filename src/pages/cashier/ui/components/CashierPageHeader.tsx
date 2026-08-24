@@ -1,4 +1,5 @@
 import { ArrowLeft, Menu, Monitor } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   isCustomerDisplayEnabled,
   openCustomerDisplayWindow,
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function CashierPageHeader({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     navigate,
     openShiftId,
@@ -33,12 +35,12 @@ export function CashierPageHeader({ vm }: Props) {
                 <ArrowLeft size={20} />
               </button>
               <div>
-                <h1 className="cashier-page__title">Касса</h1>
+                <h1 className="cashier-page__title">{t("crm.cashier.pageTitle")}</h1>
                 <p className="cashier-page__subtitle">
                   {openShiftId ? (
                     cashierFullName
                   ) : (
-                    "Нет открытой смены"
+                    t("crm.cashier.noOpenShift")
                   )}
                 </p>
               </div>
@@ -46,7 +48,7 @@ export function CashierPageHeader({ vm }: Props) {
             <div className="cashier-page__header-right">
               {f3AwaitingDigit ? (
                 <div className="cashier-page__f3-hint" role="status">
-                  F3: нажмите 0–9
+                  {t("crm.cashier.f3Hint")}
                 </div>
               ) : null}
               {isCustomerDisplayEnabled() ? (
@@ -56,13 +58,13 @@ export function CashierPageHeader({ vm }: Props) {
                   onClick={() => openCustomerDisplayWindow()}
                 >
                   <Monitor size={16} />
-                  Второй экран
+                  {t("crm.cashier.secondScreen")}
                 </button>
               ) : null}
               <div
                 className="cashier-page__mode-toggle"
                 role="group"
-                aria-label="Режим продажи"
+                aria-label={t("crm.cashier.saleModeLabel")}
               >
                 <button
                   type="button"
@@ -71,7 +73,7 @@ export function CashierPageHeader({ vm }: Props) {
                   }`}
                   onClick={() => handleSwitchSaleMode(false)}
                 >
-                  Розница
+                  {t("crm.cashier.retail")}
                 </button>
                 <button
                   type="button"
@@ -80,7 +82,7 @@ export function CashierPageHeader({ vm }: Props) {
                   }`}
                   onClick={() => handleSwitchSaleMode(true)}
                 >
-                  Опт
+                  {t("crm.cashier.wholesaleShort")}
                 </button>
               </div>
               {openShiftId && openShift?.status === "open" ? (
@@ -89,7 +91,7 @@ export function CashierPageHeader({ vm }: Props) {
                   className="cashier-page__close-shift-btn"
                   onClick={handleCloseShift}
                 >
-                  Завершить смену
+                  {t("crm.cashier.finishShift")}
                 </button>
               ) : (
                 <button
@@ -97,14 +99,14 @@ export function CashierPageHeader({ vm }: Props) {
                   className="cashier-page__close-shift-btn cashier-page__close-shift-btn--start"
                   onClick={handleStartShift}
                 >
-                  Начать смену
+                  {t("crm.cashier.startShift")}
                 </button>
               )}
               <button
                 type="button"
                 className="cashier-page__menu-btn"
                 onClick={() => setShowMenuModal(true)}
-                aria-label="Меню кассы"
+                aria-label={t("crm.cashier.cashierMenuLabel")}
               >
                 <Menu size={22} />
               </button>

@@ -1,7 +1,5 @@
+import { useTranslation } from "react-i18next";
 
-/**
- * Label display / barcode dimension settings shown in the toolbar.
- */
 const BarcodePrintSettings = ({
   showName,
   onShowNameChange,
@@ -12,10 +10,12 @@ const BarcodePrintSettings = ({
   onBarcodeHeightChange,
   onBarcodeBarWidthChange,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="barcode-print-tab__display-settings">
       <span className="barcode-print-tab__display-settings-title">
-        Отображать на этикетке:
+        {t("crm.barcodePrint.showOnLabelColon")}
       </span>
 
       <label className="barcode-print-tab__display-checkbox">
@@ -24,7 +24,7 @@ const BarcodePrintSettings = ({
           checked={showName}
           onChange={(e) => onShowNameChange(e.target.checked)}
         />
-        Название
+        {t("crm.barcodePrint.name")}
       </label>
 
       <label className="barcode-print-tab__display-checkbox">
@@ -33,11 +33,11 @@ const BarcodePrintSettings = ({
           checked={showPrice}
           onChange={(e) => onShowPriceChange(e.target.checked)}
         />
-        Цена
+        {t("crm.barcodePrint.price")}
       </label>
 
       <label className="barcode-print-tab__size-label">
-        Высота штрих-кода:
+        {t("crm.barcodePrint.barcodeHeight")}:
         <input
           className="barcode-print-tab__custom-size-input"
           type="number"
@@ -46,22 +46,22 @@ const BarcodePrintSettings = ({
           step={2}
           value={Math.round(barcodeHeight)}
           onChange={(e) => onBarcodeHeightChange(e.target.value)}
-          title="Высота штрих-кода в точках (203 DPI ≈ 8 точек/мм)"
+          title={t("crm.barcodePrint.barcodeHeightTitle")}
         />
       </label>
 
       <label className="barcode-print-tab__size-label">
-        Толщина штриха:
+        {t("crm.barcodePrint.barcodeWidth")}:
         <select
           className="barcode-print-tab__size-select"
           value={String(Math.max(1, Math.round(barcodeBarWidth)))}
           onChange={(e) => onBarcodeBarWidthChange(e.target.value)}
-          title="Ширина минимального штриха в точках"
+          title={t("crm.barcodePrint.barWidthTitle")}
         >
-          <option value="1">1 (тонкий)</option>
-          <option value="2">2 (стандарт)</option>
-          <option value="3">3 (толстый)</option>
-          <option value="4">4 (очень толстый)</option>
+          <option value="1">{t("crm.barcodePrint.barWidthThin")}</option>
+          <option value="2">{t("crm.barcodePrint.barWidthStandard")}</option>
+          <option value="3">{t("crm.barcodePrint.barWidthThick")}</option>
+          <option value="4">{t("crm.barcodePrint.barWidthVeryThick")}</option>
         </select>
       </label>
     </div>

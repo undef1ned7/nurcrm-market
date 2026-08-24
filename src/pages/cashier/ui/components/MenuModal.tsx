@@ -1,27 +1,30 @@
 import { X, DollarSign, Receipt, History, Keyboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "./MenuModal.scss";
 
 const MenuModal = ({ onClose, onAction }) => {
+  const { t } = useTranslation();
+
   const menuItems = [
     {
       id: "debt",
       icon: DollarSign,
-      label: "Погасить долг",
+      labelKey: "crm.cashier.payDebt",
     },
     {
       id: "receipts",
       icon: Receipt,
-      label: "Журнал чеков",
+      labelKey: "crm.cashier.receiptsLog",
     },
     {
       id: "deletions",
       icon: History,
-      label: "Журнал удалений",
+      labelKey: "crm.cashier.deletionsLog",
     },
     {
       id: "quick-slots",
       icon: Keyboard,
-      label: "Быстрые товары F3",
+      labelKey: "crm.cashier.quickSlots",
     },
   ];
 
@@ -29,7 +32,7 @@ const MenuModal = ({ onClose, onAction }) => {
     <div className="menu-modal-overlay" onClick={onClose}>
       <div className="menu-modal" onClick={(e) => e.stopPropagation()}>
         <div className="menu-modal__header">
-          <h2 className="menu-modal__title">Меню</h2>
+          <h2 className="menu-modal__title">{t("crm.cashier.menu")}</h2>
           <button className="menu-modal__close" onClick={onClose}>
             <X size={24} />
           </button>
@@ -47,7 +50,7 @@ const MenuModal = ({ onClose, onAction }) => {
                 }}
               >
                 <Icon size={24} />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
               </button>
             );
           })}

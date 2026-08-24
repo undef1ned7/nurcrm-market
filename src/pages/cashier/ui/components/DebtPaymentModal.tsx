@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { X, Search, ChevronRight, Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import api from "@shared/api";
 import { payDebtDeal } from "@entities/client";
@@ -17,6 +18,7 @@ import {
 import "./DebtPaymentModal.scss";
 
 const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { list: cashBoxes } = useCash();
   const { company } = useUser();
@@ -24,6 +26,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
   const [debtors, setDebtors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [clientDebts, setClientDebts] = useState<any>(new Map()); // Map<clientId, totalDebt>
+  const [isDebtTotalReliable, setIsDebtTotalReliable] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [clientDeals, setClientDeals] = useState<any[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(false);
@@ -70,6 +73,20 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
   // Загрузка должников
   useEffect(() => {
     let cancelled = false;
+
+    const getClientDebt = (client: any): number => {
+      // Сервер может называть сумму по-разному; выбираем первое найденное числовое поле.
+      const raw =
+        client?.remaining_debt ??
+        client?.total_debt ??
+        client?.debt ??
+        client?.amount ??
+        client?.debt_amount ??
+        null;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    };
+
     const loadDebtors = async () => {
       try {
         setLoading(true);
@@ -77,38 +94,26 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         if (cancelled) return;
         setDebtors(allDebtors);
 
-        // Загружаем deals для каждого клиента, чтобы получить сумму долга
+        // Fast-path: не грузим deals для каждого должника при открытии модалки.
+        // Если бэк отдает агрегированную сумму долга в элементе списка —
+        // используем её для общего долга/фильтрации. Deals грузим только после выбора клиента.
         const debtsMap = new Map<any, any>();
-        const debtPromises = allDebtors.map(async (client: any) => {
-          if (cancelled) return { clientId: client.id, debt: 0 };
-          try {
-            const deals = await fetchAllPages(
-              `/main/clients/${client.id}/deals/?kind=debt`
-            );
-            const totalDebt = deals.reduce((sum: any, deal: any) => {
-              const remainingDebt = parseFloat(deal.remaining_debt || 0);
-              return sum + remainingDebt;
-            }, 0);
-            if (totalDebt > 0) {
-              debtsMap.set(client.id, totalDebt);
-            }
-            return { clientId: client.id, debt: totalDebt };
-          } catch (error: any) {
-            console.error(
-              `Ошибка при загрузке deals для клиента ${client.id}:`,
-              error
-            );
-            return { clientId: client.id, debt: 0 };
-          }
-        });
+        let hasAnyDebtTotal = false;
+        for (const client of allDebtors) {
+          const clientId = client?.id;
+          if (!clientId) continue;
+          const debt = getClientDebt(client);
+          debtsMap.set(clientId, debt);
+          hasAnyDebtTotal = hasAnyDebtTotal || debt > 0;
+        }
 
-        await Promise.allSettled(debtPromises);
         if (cancelled) return;
         setClientDebts(debtsMap);
+        setIsDebtTotalReliable(hasAnyDebtTotal);
       } catch (error: any) {
         if (cancelled) return;
         console.error("Ошибка при загрузке должников:", error);
-        showAlert("error", "Ошибка", "Не удалось загрузить список должников");
+        showAlert("error", t("common.error"), t("crm.cashier.debtPayment.alerts.loadDebtorsFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -122,10 +127,9 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
 
   // Фильтруем по поисковому запросу и показываем только тех, у кого есть долг
   const filteredDebtors = useMemo(() => {
-    let filtered = debtors.filter((customer: any) => {
-      const debt = clientDebts.get(customer.id) || 0;
-      return debt > 0; // Показываем только клиентов с долгом > 0
-    });
+    // Endpoint `/main/clients/with-debts/` должен уже отдавать только должников,
+    // поэтому фильтрацию по `clientDebts` делаем только по поиску (без N+1).
+    let filtered = debtors;
 
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
@@ -137,7 +141,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
     }
 
     return filtered;
-  }, [debtors, searchTerm, clientDebts]);
+  }, [debtors, searchTerm]);
 
   // Вычисляем общий долг
   const totalDebt = useMemo(() => {
@@ -207,7 +211,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
       setClientDeals(debtDeals);
     } catch (error: any) {
       console.error("Ошибка при загрузке deals:", error);
-      showAlert("error", "Ошибка", "Не удалось загрузить долги клиента");
+      showAlert("error", t("common.error"), t("crm.cashier.debtPayment.alerts.loadDebtsFailed"));
     } finally {
       setLoadingDeals(false);
     }
@@ -241,7 +245,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
 
   const handlePayDebt = async (deal, installment) => {
     if (!selectedCashBox) {
-      showAlert("warning", "Предупреждение", "Выберите кассу");
+      showAlert("warning", t("common.warning"), t("crm.cashier.debtPayment.alerts.selectCashbox"));
       return;
     }
 
@@ -252,7 +256,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
     const effectiveAmount = paymentAmount > 0 ? paymentAmount : remaining;
 
     if (effectiveAmount <= 0) {
-      showAlert("warning", "Предупреждение", "Введите сумму для погашения");
+      showAlert("warning", t("common.warning"), t("crm.cashier.debtPayment.alerts.enterAmount"));
       return;
     }
 
@@ -310,8 +314,8 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         console.warn("Ошибка при создании денежного потока:", cashError);
         showAlert(
           "warning",
-          "Предупреждение",
-          "Долг погашен, но не удалось записать доход в кассу. Проверьте кассовые операции.",
+          t("common.warning"),
+          t("crm.cashier.debtPayment.alerts.paidButCashFailed"),
         );
       }
 
@@ -341,13 +345,15 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         return next;
       });
 
-      showAlert("success", "Успех", "Долг успешно погашен");
+      showAlert("success", t("common.success"), t("crm.cashier.debtPayment.alerts.paidSuccess"));
     } catch (error: any) {
       console.error("Ошибка при погашении долга:", error);
       showAlert(
         "error",
-        "Ошибка",
-        "Не удалось погасить долг: " + (error.message || "Неизвестная ошибка")
+        t("common.error"),
+        t("crm.cashier.debtPayment.alerts.payFailed", {
+          error: error.message || t("common.error"),
+        })
       );
     }
   };
@@ -379,7 +385,9 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
               <ChevronRight size={20} style={{ transform: "rotate(180deg)" }} />
             </button>
             <h2 className="debt-payment-modal__title">
-              Долги: {selectedClient.full_name || selectedClient.name}
+              {t("crm.cashier.debtPayment.debtsTitle", {
+                name: selectedClient.full_name || selectedClient.name,
+              })}
             </h2>
             <button className="debt-payment-modal__close" onClick={onClose}>
               <X size={24} />
@@ -389,7 +397,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
           {cashBoxes && cashBoxes.length > 1 && (
             <div className="debt-payment-modal__cashbox-selector">
               <label className="debt-payment-modal__cashbox-label">
-                Касса:
+                {t("crm.cashier.debtPayment.cashbox")}
               </label>
               <select
                 className="debt-payment-modal__cashbox-select"
@@ -398,7 +406,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
               >
                 {cashBoxes.map((cashbox) => {
                   const cashboxId = cashbox.id || cashbox.uuid || "";
-                  const cashboxName = cashbox.name || "Касса";
+                  const cashboxName = cashbox.name || t("crm.cashier.debtPayment.defaultCashbox");
                   return (
                     <option key={cashboxId} value={cashboxId}>
                       {cashboxName}
@@ -411,21 +419,22 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
 
           <div className="debt-payment-modal__deals">
             {loadingDeals ? (
-              <div className="debt-payment-modal__empty">Загрузка...</div>
+              <div className="debt-payment-modal__empty">{t("crm.cashier.debtPayment.loading")}</div>
             ) : clientDeals.length === 0 ? (
               <div className="debt-payment-modal__empty">
-                Нет активных долгов
+                {t("crm.cashier.debtPayment.noActiveDebts")}
               </div>
             ) : (
               clientDeals.map((deal: any) => (
                 <div key={deal.id} className="debt-payment-modal__deal">
                   <div className="debt-payment-modal__deal-header">
                     <div className="debt-payment-modal__deal-title">
-                      {deal.title || "Долг"}
+                      {deal.title || t("crm.cashier.debtPayment.debt")}
                     </div>
                     <div className="debt-payment-modal__deal-amount">
-                      Остаток: {parseFloat(deal.remaining_debt || 0).toFixed(2)}{" "}
-                      сом
+                      {t("crm.cashier.debtPayment.remaining", {
+                        amount: parseFloat(deal.remaining_debt || 0).toFixed(2),
+                      })}
                     </div>
                   </div>
 
@@ -447,27 +456,31 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
                           >
                             <div className="debt-payment-modal__installment-info">
                               <div className="debt-payment-modal__installment-number">
-                                Платеж #{installment.number}
+                                {t("crm.cashier.debtPayment.paymentNumber", { number: installment.number })}
                               </div>
                               <div className="debt-payment-modal__installment-date">
                                 <Calendar size={14} />
                                 {formatDate(installment.due_date)}
                               </div>
                               <div className="debt-payment-modal__installment-amount">
-                                Сумма:{" "}
+                                {t("crm.cashier.debtPayment.amount")}{" "}
                                 {parseFloat(installment.amount || 0).toFixed(2)}{" "}
-                                сом
+                                {t("common.currencySom")}
                               </div>
                               <div className="debt-payment-modal__installment-status">
                                 {instStatus.label}
                               </div>
                               {isPaid ? (
                                 <div className="debt-payment-modal__installment-paid">
-                                  Оплачено: {formatDate(installment.paid_on)}
+                                  {t("crm.cashier.debtPayment.paidOn", {
+                                    date: formatDate(installment.paid_on),
+                                  })}
                                 </div>
                               ) : (
                                 <div className="debt-payment-modal__installment-remaining">
-                                  Остаток: {remaining.toFixed(2)} сом
+                                  {t("crm.cashier.debtPayment.remainingShort", {
+                                    amount: remaining.toFixed(2),
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -479,7 +492,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
                                   min="0"
                                   step="0.01"
                                   max={remaining}
-                                  placeholder="Сумма"
+                                  placeholder={t("crm.cashier.debtPayment.amountPlaceholder")}
                                   value={
                                     paymentAmounts[
                                       `${deal.id}-${installment.number}`
@@ -501,7 +514,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
                                     handlePayDebt(deal, installment)
                                   }
                                 >
-                                  Погасить
+                                  {t("crm.cashier.debtPayment.pay")}
                                 </button>
                               </div>
                             )}
@@ -520,7 +533,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
               className="debt-payment-modal__close-btn"
               onClick={handleBackToList}
             >
-              НАЗАД
+              {t("crm.cashier.debtPayment.back")}
             </button>
           </div>
 
@@ -529,7 +542,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
             type={alertModal.type}
             title={alertModal.title}
             message={alertModal.message}
-            okText="ОК"
+            okText={t("settings.ok")}
             onClose={closeAlert}
             onConfirm={closeAlert}
           />
@@ -542,7 +555,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
     <div className="debt-payment-modal-overlay" onClick={onClose}>
       <div className="debt-payment-modal" onClick={(e) => e.stopPropagation()}>
         <div className="debt-payment-modal__header">
-          <h2 className="debt-payment-modal__title">Список должников</h2>
+          <h2 className="debt-payment-modal__title">{t("crm.cashier.debtPayment.title")}</h2>
           <button className="debt-payment-modal__close" onClick={onClose}>
             <X size={24} />
           </button>
@@ -552,7 +565,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Введите текст для поиска"
+            placeholder={t("crm.cashier.debtPayment.searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="debt-payment-modal__search-input"
@@ -561,24 +574,26 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
 
         <div className="debt-payment-modal__summary">
           <div className="debt-payment-modal__summary-item">
-            Найдено {filteredDebtors.length}
+            {t("crm.cashier.debtPayment.found", { count: filteredDebtors.length })}
           </div>
           <div className="debt-payment-modal__summary-item">
-            Общий долг:{" "}
-            {totalDebt.toLocaleString("ru-RU", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}{" "}
-            сом
+            {t("crm.cashier.debtPayment.totalDebt")}{" "}
+            {isDebtTotalReliable
+              ? totalDebt.toLocaleString("ru-RU", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              : t("crm.cashier.debtPayment.pending")}{" "}
+            {isDebtTotalReliable ? t("common.currencySom") : ""}
           </div>
         </div>
 
         <div className="debt-payment-modal__list">
           {loading ? (
-            <div className="debt-payment-modal__empty">Загрузка...</div>
+            <div className="debt-payment-modal__empty">{t("crm.cashier.debtPayment.loading")}</div>
           ) : filteredDebtors.length === 0 ? (
             <div className="debt-payment-modal__empty">
-              {searchTerm ? "Должники не найдены" : "Нет должников"}
+              {searchTerm ? t("crm.cashier.debtPayment.noDebtorsFound") : t("crm.cashier.debtPayment.noDebtors")}
             </div>
           ) : (
             filteredDebtors.map((customer: any) => {
@@ -602,7 +617,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
                   </div>
                   <div className="debt-payment-modal__item-content">
                     <div className="debt-payment-modal__item-name">
-                      {customer.full_name || customer.name || "Без имени"}
+                      {customer.full_name || customer.name || t("crm.cashier.debtPayment.noName")}
                     </div>
                     {customer.phone && (
                       <div className="debt-payment-modal__item-phone">
@@ -611,11 +626,12 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
                     )}
                   </div>
                   <div className="debt-payment-modal__item-debt">
-                    {debt.toLocaleString("ru-RU", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{" "}
-                    сом
+                    {isDebtTotalReliable
+                      ? `${debt.toLocaleString("ru-RU", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })} сом`
+                      : "—"}
                   </div>
                 </div>
               );
@@ -625,7 +641,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
 
         <div className="debt-payment-modal__footer">
           <button className="debt-payment-modal__close-btn" onClick={onClose}>
-            ЗАКРЫТЬ [ESC]
+            {t("crm.cashier.debtPayment.close")}
           </button>
         </div>
 
@@ -634,7 +650,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
           type={alertModal.type}
           title={alertModal.title}
           message={alertModal.message}
-          okText="ОК"
+          okText={t("settings.ok")}
           onClose={closeAlert}
           onConfirm={closeAlert}
         />

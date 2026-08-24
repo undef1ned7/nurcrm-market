@@ -7,6 +7,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "../../sell.formatters";
 import type { SellPageVm } from "../../hooks/useSellPage";
 
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export default function SellHistoryToolbar({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     filterField,
     loading,
@@ -30,6 +32,10 @@ export default function SellHistoryToolbar({ vm }: Props) {
     setHistoryView,
   } = vm;
 
+  const selectLabel = allOnPageSelected
+    ? t("crm.sell.deselectAllPage")
+    : t("crm.sell.selectAllPage");
+
   return (
     <div className="sell__history-toolbar">
       <div className="sell__history-toolbarLeft">
@@ -38,16 +44,8 @@ export default function SellHistoryToolbar({ vm }: Props) {
           className={`sell__iconBtn sell__iconBtn--select${allOnPageSelected ? " sell__iconBtn--active" : ""}`}
           onClick={() => toggleSelectAllOnPage(filterField)}
           disabled={filterField.length === 0 || loading}
-          title={
-            allOnPageSelected
-              ? "Снять выбор со страницы"
-              : "Выбрать все на странице"
-          }
-          aria-label={
-            allOnPageSelected
-              ? "Снять выбор со страницы"
-              : "Выбрать все на странице"
-          }
+          title={selectLabel}
+          aria-label={selectLabel}
           aria-pressed={allOnPageSelected}
         >
           {allOnPageSelected ? (
@@ -61,15 +59,15 @@ export default function SellHistoryToolbar({ vm }: Props) {
           <div
             className="sell__history-selectionActions"
             role="group"
-            aria-label="Действия с выбранными продажами"
+            aria-label={t("crm.sell.selectedActions")}
           >
             <button
               type="button"
               className="sell__iconBtn sell__iconBtn--danger"
               onClick={() => void handleBulkDelete()}
               disabled={bulkDeleting}
-              title={`Удалить выбранные (${selectedIds.size})`}
-              aria-label={`Удалить выбранные (${selectedIds.size})`}
+              title={t("crm.sell.deleteSelected", { count: selectedIds.size })}
+              aria-label={t("crm.sell.deleteSelected", { count: selectedIds.size })}
             >
               <Trash2 size={18} strokeWidth={2.2} />
             </button>
@@ -78,8 +76,8 @@ export default function SellHistoryToolbar({ vm }: Props) {
               className="sell__iconBtn sell__iconBtn--muted"
               onClick={clearSelection}
               disabled={bulkDeleting}
-              title="Снять выбор"
-              aria-label="Снять выбор"
+              title={t("crm.sell.deselect")}
+              aria-label={t("crm.sell.deselect")}
             >
               <X size={18} strokeWidth={2.2} />
             </button>
@@ -90,7 +88,7 @@ export default function SellHistoryToolbar({ vm }: Props) {
       <div className="sell__history-toolbarRight">
         <div
           className={`sell__history-stats${loading ? " sell__history-stats--loading" : ""}`}
-          aria-label="Сводка по продажам"
+          aria-label={t("crm.sell.salesSummary")}
         >
           <div className="sell__history-stat">
             <span
@@ -100,7 +98,9 @@ export default function SellHistoryToolbar({ vm }: Props) {
               <Receipt size={18} strokeWidth={2.2} />
             </span>
             <div className="sell__history-stat-body">
-              <span className="sell__history-stat-label">Всего продаж</span>
+              <span className="sell__history-stat-label">
+                {t("crm.sell.totalSales")}
+              </span>
               <strong className="sell__history-stat-value">{count || 0}</strong>
             </div>
           </div>
@@ -112,10 +112,12 @@ export default function SellHistoryToolbar({ vm }: Props) {
               <Banknote size={18} strokeWidth={2.2} />
             </span>
             <div className="sell__history-stat-body">
-              <span className="sell__history-stat-label">Общая сумма</span>
+              <span className="sell__history-stat-label">
+                {t("crm.sell.totalAmount")}
+              </span>
               <strong className="sell__history-stat-value">
                 {listTotalAmount != null
-                  ? `${formatMoney(listTotalAmount)} сом`
+                  ? `${formatMoney(listTotalAmount)} ${t("common.currencySom")}`
                   : "—"}
               </strong>
             </div>
@@ -128,7 +130,9 @@ export default function SellHistoryToolbar({ vm }: Props) {
               <Eye size={18} strokeWidth={2.2} />
             </span>
             <div className="sell__history-stat-body">
-              <span className="sell__history-stat-label">На странице</span>
+              <span className="sell__history-stat-label">
+                {t("crm.sell.onPage")}
+              </span>
               <strong className="sell__history-stat-value">
                 {filterField.length}
               </strong>
@@ -136,11 +140,7 @@ export default function SellHistoryToolbar({ vm }: Props) {
           </div>
         </div>
 
-        <div
-          className="sell__viewToggle"
-          role="group"
-          aria-label="Вид списка"
-        >
+        <div className="sell__viewToggle" role="group" aria-label={t("crm.sell.listView")}>
           <button
             type="button"
             className={`sell__viewBtn ${
@@ -148,7 +148,7 @@ export default function SellHistoryToolbar({ vm }: Props) {
             }`}
             onClick={() => setHistoryView("table")}
           >
-            Таблица
+            {t("common.table")}
           </button>
           <button
             type="button"
@@ -157,7 +157,7 @@ export default function SellHistoryToolbar({ vm }: Props) {
             }`}
             onClick={() => setHistoryView("cards")}
           >
-            Карточки
+            {t("common.cards")}
           </button>
         </div>
       </div>

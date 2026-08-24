@@ -4,6 +4,8 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { translateMenuLabel } from "@shared/lib/i18n/menuLabelKeys";
 
 // Маппинг path (из URL сайдбара) в doc_type для подсветки при создании документа
 const DOC_TYPE_PATH_TO_API = {
@@ -28,7 +30,9 @@ const MenuItem = ({
   closeSidebar,
   iconsOnly = false,
 }) => {
+  const { t } = useTranslation();
   const { label, to, icon, children } = item;
+  const displayLabel = translateMenuLabel(label, t);
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -98,8 +102,8 @@ const MenuItem = ({
     >
       <NavLink
         to={to}
-        title={label}
-        aria-label={label}
+        title={displayLabel}
+        aria-label={displayLabel}
         className={({ isActive }) => {
           const active = isActive || isBrandCategorySection;
           return `sidebar__menu-item ${active ? "sidebar__menu-item--active" : ""}`;
@@ -107,7 +111,7 @@ const MenuItem = ({
         onClick={handleClick}
       >
         {IconComponent}
-        <span className="sidebar__menu-label">{label}</span>
+        <span className="sidebar__menu-label">{displayLabel}</span>
       </NavLink>
       {!iconsOnly && children && (
         <div
@@ -130,12 +134,13 @@ const MenuItem = ({
                 !isMoneyDocument &&
                 childDocType &&
                 createPageDocType === childDocType;
+              const childLabel = translateMenuLabel(child.label, t);
               return (
                 <li key={child.label}>
                   <NavLink
                     to={child.to}
-                    title={child.label}
-                    aria-label={child.label}
+                    title={childLabel}
+                    aria-label={childLabel}
                     className={({ isActive }) =>
                       `sidebar__submenu-item ${
                         isActive || isActiveOnCreatePage
@@ -147,7 +152,7 @@ const MenuItem = ({
                     onClick={closeIfNeeded}
                   >
                     {ChildIcon}
-                    <span className="sidebar__menu-label">{child.label}</span>
+                    <span className="sidebar__menu-label">{childLabel}</span>
                   </NavLink>
                 </li>
               );

@@ -1,10 +1,10 @@
 export const MARKET_ANALYTICS_TIMEOUT_MS = 160000;
 export const START_HIDDEN_SALES_KPI_TITLES = new Set([
-  "Валовая прибыль",
-  "Маржа",
+  "crm.analytics.sales.grossProfit",
+  "crm.analytics.sales.margin",
 ]);
 export const START_HIDDEN_PRODUCTS_KPI_TITLES = new Set([
-  "Товаров с низким остатком",
+  "crm.analytics.products.lowStock",
 ]);
 export const DEFAULT_FILTERS = {
   branch: "",

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { SellPageVm } from "../../hooks/useSellPage";
 
 type Props = {
@@ -5,6 +6,7 @@ type Props = {
 };
 
 export default function SellPagination({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     totalPages,
     currentPage,
@@ -25,11 +27,16 @@ export default function SellPagination({ vm }: Props) {
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1 || loading || !hasPrevPage}
       >
-        Назад
+        {t("common.back")}
       </button>
       <span className="sell__pagination-info">
-        Страница {currentPage} из {totalPages}
-        {count ? ` (${count} записей)` : ""}
+        {t("common.paginationPage", { current: currentPage, total: totalPages })}
+        {count
+          ? ` ${t("common.paginationCount", {
+              count,
+              label: t("crm.sell.recordsCount"),
+            })}`
+          : ""}
       </span>
       <button
         type="button"
@@ -41,7 +48,7 @@ export default function SellPagination({ vm }: Props) {
           (totalPages && currentPage >= totalPages)
         }
       >
-        Вперед
+        {t("common.forward")}
       </button>
     </div>
   );

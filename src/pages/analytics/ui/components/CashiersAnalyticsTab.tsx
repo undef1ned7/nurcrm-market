@@ -1,9 +1,12 @@
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 import { TrendingUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import "../analytics.charts";
 
 export function CashiersAnalyticsTab({ vm }: any) {
+  const { t } = useTranslation();
+  const som = t("common.currencySom");
   const {
     cashierData,
     formatNumber,
@@ -51,13 +54,13 @@ export function CashiersAnalyticsTab({ vm }: any) {
           </div>
 
           <div className="analytics-page__chart-card analytics-page__chart-card--large">
-            <h3 className="analytics-page__chart-title">Продажи по часам</h3>
+            <h3 className="analytics-page__chart-title">{t("crm.analytics.cashiers.salesByHour")}</h3>
             <Line
               data={{
                 labels: cashierData.hourlyChart.labels,
                 datasets: [
                   {
-                    label: "Выручка (сом)",
+                    label: t("crm.analytics.cashiers.revenueChart", { currency: som }),
                     data: cashierData.hourlyChart.data,
                     borderColor: "#f7d617",
                     backgroundColor: "rgba(247, 214, 23, 0.1)",
@@ -92,7 +95,7 @@ export function CashiersAnalyticsTab({ vm }: any) {
 
           <div className="analytics-page__grid">
             <div className="analytics-page__chart-card">
-              <h3 className="analytics-page__chart-title">Способы оплаты</h3>
+              <h3 className="analytics-page__chart-title">{t("crm.analytics.cashiers.paymentMethods")}</h3>
               <Doughnut
                 data={{
                   labels: cashierData.paymentMethods.labels,
@@ -117,14 +120,14 @@ export function CashiersAnalyticsTab({ vm }: any) {
 
             <div className="analytics-page__chart-card">
               <h3 className="analytics-page__chart-title">
-                Транзакции за неделю
+                {t("crm.analytics.cashiers.weeklyTransactions")}
               </h3>
               <Bar
                 data={{
                   labels: cashierData.weeklyTransactions.labels,
                   datasets: [
                     {
-                      label: "Транзакции",
+                      label: t("crm.analytics.cashiers.transactions"),
                       data: cashierData.weeklyTransactions.data,
                       backgroundColor: "#f7d617",
                     },
@@ -154,15 +157,15 @@ export function CashiersAnalyticsTab({ vm }: any) {
           <div className="analytics-page__grid">
             <div className="analytics-page__table-card">
               <h3 className="analytics-page__table-title">
-                Детализация по способам оплаты
+                {t("crm.analytics.cashiers.paymentBreakdown")}
               </h3>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Способ оплаты</th>
-                    <th>Транзакций</th>
-                    <th>Сумма</th>
-                    <th>Доля</th>
+                    <th>{t("crm.analytics.cashiers.paymentMethod")}</th>
+                    <th>{t("crm.analytics.cashiers.transactions")}</th>
+                    <th>{t("crm.analytics.cashiers.amount")}</th>
+                    <th>{t("crm.analytics.cashiers.share")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -170,7 +173,7 @@ export function CashiersAnalyticsTab({ vm }: any) {
                     <tr key={index}>
                       <td>{detail.method}</td>
                       <td>{detail.transactions}</td>
-                      <td>{formatNumber(detail.amount)} сом</td>
+                      <td>{formatNumber(detail.amount)} {som}</td>
                       <td>{detail.share}</td>
                     </tr>
                   ))}
@@ -180,15 +183,15 @@ export function CashiersAnalyticsTab({ vm }: any) {
 
             <div className="analytics-page__table-card">
               <h3 className="analytics-page__table-title">
-                Пиковые часы работы
+                {t("crm.analytics.cashiers.peakHours")}
               </h3>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Время</th>
-                    <th>Транзакций</th>
-                    <th>Выручка</th>
-                    <th>Средний чек</th>
+                    <th>{t("crm.analytics.cashiers.time")}</th>
+                    <th>{t("crm.analytics.cashiers.transactions")}</th>
+                    <th>{t("crm.analytics.cashiers.revenue")}</th>
+                    <th>{t("crm.analytics.cashiers.avgCheck")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -196,8 +199,8 @@ export function CashiersAnalyticsTab({ vm }: any) {
                     <tr key={index}>
                       <td>{hour.time}</td>
                       <td>{hour.transactions}</td>
-                      <td>{formatNumber(hour.revenue)} сом</td>
-                      <td>{formatNumber(hour.avgCheck)} сом</td>
+                      <td>{formatNumber(hour.revenue)} {som}</td>
+                      <td>{formatNumber(hour.avgCheck)} {som}</td>
                     </tr>
                   ))}
                 </tbody>

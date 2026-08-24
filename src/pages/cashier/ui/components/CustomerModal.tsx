@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { X, Search, Plus } from "lucide-react";
 import {
   createClientAsync,
@@ -7,8 +8,20 @@ import {
 } from "@entities/client";
 import "./CustomerModal.scss";
 
-const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
+type CustomerTab = "client" | "suppliers";
+
+const isSupplierType = (type: unknown) =>
+  String(type || "").toLowerCase() === "suppliers";
+
+const CustomerModal = ({
+  onClose,
+  onSelect,
+  customers = [],
+  titleKey = "crm.cashier.payment.customerModalTitle",
+}: any) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
+  const [activeTab, setActiveTab] = useState<CustomerTab>("client");
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -21,11 +34,26 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
     type: "client",
   });
 
-  const filteredCustomers = customers.filter(
-    (customer: any) =>
-      customer.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone?.includes(searchTerm)
+  const tabCustomers = useMemo(
+    () =>
+      customers.filter((customer: any) => {
+        const supplier = isSupplierType(customer?.type);
+        return activeTab === "suppliers" ? supplier : !supplier;
+      }),
+    [customers, activeTab],
   );
+
+  const filteredCustomers = useMemo(() => {
+    const searchLower = searchTerm.trim().toLowerCase();
+    if (!searchLower) return tabCustomers;
+
+    return tabCustomers.filter(
+      (customer: any) =>
+        customer.full_name?.toLowerCase().includes(searchLower) ||
+        customer.name?.toLowerCase().includes(searchLower) ||
+        customer.phone?.includes(searchTerm.trim()),
+    );
+  }, [tabCustomers, searchTerm]);
 
   const getInitials = (name: any) => {
     if (!name) return "?";
@@ -37,14 +65,32 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
   };
 
   const getDebtAmount = (customer: any) => {
-    // Предполагаем, что долг хранится в customer.debt или customer.total_debt
     return customer.debt || customer.total_debt || 0;
+  };
+
+  const handleTabChange = (tab: CustomerTab) => {
+    setActiveTab(tab);
+    setShowCreateForm(false);
+    setCreateError("");
+  };
+
+  const resetCreateForm = () => ({
+    full_name: "",
+    phone: "",
+    email: "",
+    date: new Date().toISOString().split("T")[0],
+    type: activeTab === "suppliers" ? "suppliers" : "client",
+  });
+
+  const handleOpenCreateForm = () => {
+    setNewClient(resetCreateForm());
+    setCreateError("");
+    setShowCreateForm(true);
   };
 
   const handleCreateClient = async () => {
     setCreateError("");
 
-    // Валидация
     if (!newClient.full_name?.trim()) {
       setCreateError("Введите имя клиента");
       return;
@@ -52,29 +98,22 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
 
     setCreating(true);
     try {
-      const result = await dispatch(createClientAsync(newClient)).unwrap();
+      const payload = {
+        ...newClient,
+        type: activeTab === "suppliers" ? "suppliers" : "client",
+      };
+      const result = await dispatch(createClientAsync(payload)).unwrap();
 
       if (result?.id) {
-        // Обновляем список клиентов
         await dispatch(fetchClientsAsync(undefined as any));
 
-        // Автоматически выбираем созданного клиента и закрываем модальное окно
         if (onSelect) {
           onSelect(result);
         }
 
-        // Сбрасываем форму
-        setNewClient({
-          full_name: "",
-          phone: "",
-          email: "",
-          date: new Date().toISOString().split("T")[0],
-          type: "client",
-        });
+        setNewClient(resetCreateForm());
         setShowCreateForm(false);
         setCreateError("");
-
-        // Закрываем модальное окно после создания клиента
         onClose();
       }
     } catch (error: any) {
@@ -83,7 +122,7 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
         error?.detail ||
           error?.message ||
           error?.full_name?.[0] ||
-          "Не удалось создать клиента"
+          "Не удалось создать клиента",
       );
     } finally {
       setCreating(false);
@@ -96,13 +135,48 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
     if (createError) setCreateError("");
   };
 
+  const createLabel =
+    activeTab === "suppliers"
+      ? t("crm.cashier.payment.customerModalCreateSupplier")
+      : t("crm.cashier.payment.customerModalCreateClient");
+
+  const emptyLabel =
+    activeTab === "suppliers"
+      ? t("crm.cashier.payment.customerModalEmptySuppliers")
+      : t("crm.cashier.payment.customerModalEmptyClients");
+
   return (
     <div className="customer-modal-overlay" onClick={onClose}>
       <div className="customer-modal" onClick={(e: any) => e.stopPropagation()}>
         <div className="customer-modal__header">
-          <h2 className="customer-modal__title">Список должников</h2>
+          <h2 className="customer-modal__title">{t(titleKey)}</h2>
           <button className="customer-modal__close" onClick={onClose}>
             <X size={24} />
+          </button>
+        </div>
+
+        <div
+          className="customer-modal__tabs nur-tabs"
+          role="tablist"
+          aria-label={t(titleKey)}
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "client"}
+            className={`nur-tabs__tab${activeTab === "client" ? " is-active" : ""}`}
+            onClick={() => handleTabChange("client")}
+          >
+            {t("crm.cashier.payment.customerModalTabClient")}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "suppliers"}
+            className={`nur-tabs__tab${activeTab === "suppliers" ? " is-active" : ""}`}
+            onClick={() => handleTabChange("suppliers")}
+          >
+            {t("crm.cashier.payment.customerModalTabSupplier")}
           </button>
         </div>
 
@@ -133,22 +207,19 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
               </span>
             </div>
 
-            {/* Кнопка создания клиента */}
             <div className="customer-modal__create-section">
               <button
                 className="customer-modal__create-btn"
-                onClick={() => setShowCreateForm(true)}
+                onClick={handleOpenCreateForm}
               >
                 <Plus size={18} />
-                Создать клиента
+                {createLabel}
               </button>
             </div>
 
             <div className="customer-modal__list">
               {filteredCustomers.length === 0 ? (
-                <div className="customer-modal__empty">
-                  Покупатели не найдены
-                </div>
+                <div className="customer-modal__empty">{emptyLabel}</div>
               ) : (
                 filteredCustomers.map((customer: any) => {
                   const debt = getDebtAmount(customer);
@@ -189,19 +260,15 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
           <div className="customer-modal__create-form-wrapper">
             <div className="customer-modal__create-form">
               <div className="customer-modal__create-form-header">
-                <h3>Новый клиент</h3>
+                <h3>
+                  {activeTab === "suppliers" ? "Новый поставщик" : "Новый клиент"}
+                </h3>
                 <button
                   className="customer-modal__create-form-close"
                   onClick={() => {
                     setShowCreateForm(false);
                     setCreateError("");
-                    setNewClient({
-                      full_name: "",
-                      phone: "",
-                      email: "",
-                      date: new Date().toISOString().split("T")[0],
-                      type: "client",
-                    });
+                    setNewClient(resetCreateForm());
                   }}
                   type="button"
                 >
@@ -267,13 +334,7 @@ const CustomerModal = ({ onClose, onSelect, customers = [] }: any) => {
                   onClick={() => {
                     setShowCreateForm(false);
                     setCreateError("");
-                    setNewClient({
-                      full_name: "",
-                      phone: "",
-                      email: "",
-                      date: new Date().toISOString().split("T")[0],
-                      type: "client",
-                    });
+                    setNewClient(resetCreateForm());
                   }}
                   disabled={creating}
                 >

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useNavigate,
   useParams,
@@ -48,13 +49,16 @@ const CafeKassa = () => {
 };
 
 /* Шапка страницы кассы */
-const HeaderTabs = ({ rightAction, subtitle }: any) => (
+const HeaderTabs = ({ rightAction, subtitle }: any) => {
+  const { t } = useTranslation();
+  return (
   <PageHeader
-    title="Касса"
-    subtitle={subtitle || "Управление кассами и денежными потоками"}
+    title={t("crm.kassa.pageTitle")}
+    subtitle={subtitle || t("crm.kassa.subtitle")}
     actions={rightAction}
   />
-);
+  );
+};
 
 /* ──────────────────────────────── Список касс */
 const VIEW_STORAGE_KEY = "kassa-view-mode";
@@ -66,6 +70,7 @@ const getInitialViewMode = () => {
 };
 
 const CashboxList = () => {
+  const { t } = useTranslation();
   const alert = useAlert();
   const { company } = useUser();
   const [rows, setRows] = useState<any[]>([]);
@@ -95,7 +100,7 @@ const CashboxList = () => {
       const { data } = await api.get("/construction/cashboxes/");
       setRows(asArray(data));
     } catch (e: any) {
-      const errorMessage = validateResErrors(e, "Ошибка при загрузке касс. ")
+      const errorMessage = validateResErrors(e, t("crm.kassa.loadError"))
       setErr(errorMessage);
     } finally {
       setLoading(false);
@@ -120,7 +125,7 @@ const CashboxList = () => {
 
   const onCreate = async () => {
     const title = (name || "").trim();
-    if (!title) return alert("Введите название кассы");
+    if (!title) return alert(t("crm.kassa.enterName"));
     try {
       await api.post("/construction/cashboxes/", {
         name: title,
@@ -130,7 +135,7 @@ const CashboxList = () => {
       setName("");
       load();
     } catch (e: any) {
-      const errorMessage = validateResErrors(e, "Ошибка при создании кассы. ")
+      const errorMessage = validateResErrors(e, t("crm.kassa.createError"))
       alert(errorMessage, true);
     }
   };
@@ -146,8 +151,8 @@ const CashboxList = () => {
           >
             <Plus size={16} />
             {company?.subscription_plan?.name === "Старт"
-              ? "Создать кассу"
-              : "Создать кассу для прочих расходов"}
+              ? t("crm.kassa.createCashboxShort")
+              : t("crm.kassa.createCashbox")}
           </button>
         }
       />
@@ -158,12 +163,12 @@ const CashboxList = () => {
           <input
             type="text"
             className="nur-input kassa-search__input"
-            placeholder="Поиск по названию или отделу…"
+            placeholder={t("crm.kassa.searchPlaceholderExtended")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <StatusChip>Всего: {filtered.length}</StatusChip>
+        <StatusChip>{t("common.total")}: {filtered.length}</StatusChip>
         {!isMobile && (
           <div className="kassa-search__view-toggle">
             <button
@@ -172,10 +177,10 @@ const CashboxList = () => {
               className={`nur-btn nur-btn--sm ${
                 viewMode === "table" ? "nur-btn--primary" : "nur-btn--secondary"
               }`}
-              title="Таблица"
+              title={t("common.table")}
             >
               <Table2 size={16} />
-              Таблица
+              {t("common.table")}
             </button>
             <button
               type="button"
@@ -183,10 +188,10 @@ const CashboxList = () => {
               className={`nur-btn nur-btn--sm ${
                 viewMode === "cards" ? "nur-btn--primary" : "nur-btn--secondary"
               }`}
-              title="Карточки"
+              title={t("common.cards")}
             >
               <LayoutGrid size={16} />
-              Карточки
+              {t("common.cards")}
             </button>
           </div>
         )}
@@ -201,17 +206,17 @@ const CashboxList = () => {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Название отдела</th>
-                  <th>Приход</th>
-                  <th>Расход</th>
-                  <th>Действия</th>
+                  <th>{t("crm.kassa.departmentName")}</th>
+                  <th>{t("crm.kassa.income")}</th>
+                  <th>{t("crm.kassa.expense")}</th>
+                  <th>{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="kassa-table__loading">
-                      Загрузка…
+                      {t("common.loading")}
                     </td>
                   </tr>
                 ) : filtered.length ? (
@@ -235,7 +240,7 @@ const CashboxList = () => {
                             navigate(`${BASE}/${r.id}`);
                           }}
                         >
-                          Открыть
+                          {t("common.open")}
                         </button>
                       </td>
                     </tr>
@@ -243,7 +248,7 @@ const CashboxList = () => {
                 ) : (
                   <tr>
                     <td colSpan={5} className="kassa-table__empty">
-                      Нет данных
+                      {t("common.noData")}
                     </td>
                   </tr>
                 )}
@@ -257,7 +262,7 @@ const CashboxList = () => {
             {loading ? (
               <div className="kassa-cards-loading">Загрузка…</div>
             ) : filtered.length === 0 ? (
-              <div className="kassa-cards-empty">Нет данных</div>
+              <div className="kassa-cards-empty">{t("common.noData")}</div>
             ) : (
               <div className="kassa-cards">
                 {filtered.map((r, i) => (
@@ -274,13 +279,13 @@ const CashboxList = () => {
                     </div>
                     <div className="kassa-card__fields">
                       <div className="kassa-card__field">
-                        <span className="kassa-card__label">Приход</span>
+                        <span className="kassa-card__label">{t("crm.kassa.income")}</span>
                         <span className="kassa-card__value kassa-card__value--income">
                           {money(r.analytics?.income_total || 0)}
                         </span>
                       </div>
                       <div className="kassa-card__field">
-                        <span className="kassa-card__label">Расход</span>
+                        <span className="kassa-card__label">{t("crm.kassa.expense")}</span>
                         <span className="kassa-card__value kassa-card__value--expense">
                           {money(r.analytics?.expense_total || 0)}
                         </span>
@@ -317,27 +322,27 @@ const CashboxList = () => {
               className="kassa-modal__card"
               role="dialog"
               aria-modal="true"
-              aria-label="Создать кассу"
+              aria-label={t("crm.kassa.createModalTitle")}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="kassa-modal__header">
-                <h3 className="kassa-modal__title">Создать кассу</h3>
+                <h3 className="kassa-modal__title">{t("crm.kassa.createModalTitle")}</h3>
                 <button
                   className="kassa-modal__close"
                   onClick={() => setCreateOpen(false)}
-                  aria-label="Закрыть"
+                  aria-label={t("common.close")}
                 >
                   ×
                 </button>
               </div>
               <div className="kassa-modal__section">
                 <label className="nur-label kassa-modal__label">
-                  Название кассы *
+                  {t("crm.kassa.cashboxNameLabel")}
                 </label>
                 <input
                   className="nur-input kassa-modal__input"
                   type="text"
-                  placeholder="Например: касса №1"
+                  placeholder={t("crm.kassa.namePlaceholder")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -345,12 +350,12 @@ const CashboxList = () => {
               </div>
               <div className="kassa-modal__section" style={{ display: "flex" }}>
                 <label className="nur-label kassa-modal__label">
-                  Прочие расходы *
+                  {t("crm.kassa.otherExpenses")}
                 </label>
                 <input
                   className="nur-input kassa-modal__input"
                   type="checkbox"
-                  placeholder="Например: касса №1"
+                  placeholder={t("crm.kassa.namePlaceholder")}
                   style={{ width: "max-content" }}
                   value={checked as any}
                   onChange={(_e) => setChecked(!checked)}
@@ -359,7 +364,7 @@ const CashboxList = () => {
               </div>
               <div className="kassa-modal__footer">
                 <button className="nur-btn nur-btn--primary" onClick={onCreate}>
-                  Сохранить
+                  {t("common.save")}
                 </button>
               </div>
             </div>
@@ -372,6 +377,7 @@ const CashboxList = () => {
 
 /* ──────────────────────────────── Детали кассы */
 const CashboxDetail = ({ id: idProp }: any) => {
+  const { t } = useTranslation();
   const { id: idFromParams } = useParams();
   const id = idProp ?? idFromParams;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -470,7 +476,7 @@ const CashboxDetail = ({ id: idProp }: any) => {
             x.name ||
             x.description ||
             x.note ||
-            (type === "income" ? "Приход" : "Расход"),
+            (type === "income" ? t("crm.kassa.income") : t("crm.kassa.expense")),
           amount: Math.abs(amt),
           created_at:
             x.created_at ||
@@ -485,7 +491,7 @@ const CashboxDetail = ({ id: idProp }: any) => {
       setOps(mapped);
     } catch (e: any) {
       console.error(e);
-      setErr("Не удалось загрузить детали кассы");
+      setErr(t("crm.kassa.detailLoadError"));
     } finally {
       setLoading(false);
     }
@@ -504,18 +510,18 @@ const CashboxDetail = ({ id: idProp }: any) => {
   return (
     <PageShell className="kassa-page">
       <PageHeader
-        title={box?.department_name || box?.name || "Касса"}
-        subtitle="Операции по кассе"
+        title={box?.department_name || box?.name || t("crm.kassa.pageTitle")}
+        subtitle={t("crm.kassa.operationsSubtitle")}
         actions={
           <nav className="kassa-header__nav-tabs">
             <Link className="nur-btn nur-btn--ghost nur-btn--sm" to={BASE}>
-              ← Назад
+              ← {t("common.back")}
             </Link>
             <Link className="nur-btn nur-btn--secondary nur-btn--sm" to={`${BASE}/pay`}>
-              Оплата
+              {t("crm.kassa.payment")}
             </Link>
             <Link className="nur-btn nur-btn--secondary nur-btn--sm" to={`${BASE}/reports`}>
-              Отчёты
+              {t("crm.kassa.reports")}
             </Link>
           </nav>
         }
@@ -528,34 +534,30 @@ const CashboxDetail = ({ id: idProp }: any) => {
             className={`nur-chip ${tab === "expense" ? "nur-chip--primary" : ""}`}
             onClick={() => handleTabChange("expense")}
           >
-            Расход
+            {t("crm.kassa.expense")}
           </button>
           <button
             type="button"
             className={`nur-chip ${tab === "income" ? "nur-chip--primary" : ""}`}
             onClick={() => handleTabChange("income")}
           >
-            Приход
+            {t("crm.kassa.income")}
           </button>
           <button
             type="button"
             className={`nur-chip ${tab === "all" ? "nur-chip--primary" : ""}`}
             onClick={() => handleTabChange("all")}
           >
-            Все
+            {t("crm.kassa.all")}
           </button>
         </div>
         <button
           type="button"
           className="nur-btn nur-btn--primary nur-btn--sm"
-          onClick={() =>
-            alert(
-              "Добавление операции делается через API. Здесь доступен только просмотр."
-            )
-          }
+          onClick={() => alert(t("crm.kassa.addOperationHint"))}
         >
           <Plus size={16} />
-          Добавить операцию
+          {t("crm.kassa.addOperation")}
         </button>
       </FilterBar>
 
@@ -564,10 +566,10 @@ const CashboxDetail = ({ id: idProp }: any) => {
         <table className="nur-table kassa-table">
           <thead>
             <tr>
-              <th>Тип</th>
-              <th>Наименование</th>
-              <th>Сумма</th>
-              <th>Дата создания</th>
+              <th>{t("crm.kassa.type")}</th>
+              <th>{t("common.name")}</th>
+              <th>{t("common.amount")}</th>
+              <th>{t("crm.kassa.createdAt")}</th>
             </tr>
           </thead>
           <tbody>
@@ -586,7 +588,7 @@ const CashboxDetail = ({ id: idProp }: any) => {
             ) : shown.length ? (
               shown.map((o) => (
                 <tr key={o.id}>
-                  <td>{o.type === "income" ? "Приход" : "Расход"}</td>
+                  <td>{o.type === "income" ? t("crm.kassa.income") : t("crm.kassa.expense")}</td>
                   <td>{o.title}</td>
                   <td>{money(o.amount)}</td>
                   <td>{when(o.created_at)}</td>
@@ -595,7 +597,7 @@ const CashboxDetail = ({ id: idProp }: any) => {
             ) : (
               <tr>
                 <td colSpan={4} className="kassa-table__empty">
-                  Нет операций
+                  {t("crm.kassa.noOperations")}
                 </td>
               </tr>
             )}

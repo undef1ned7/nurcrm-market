@@ -6,6 +6,7 @@ import {
   Maximize2,
   Minimize2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import CashierCartsBar from "./CashierCartsBar";
 import {
   cartItemUnitLabel,
@@ -34,6 +35,7 @@ type Props = {
 };
 
 export function CashierCartPanel({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     isCompactCart,
     cartFull,
@@ -125,7 +127,7 @@ export function CashierCartPanel({ vm }: Props) {
               )}
 
               <div className="cashier-page__cart-header">
-                <h2 className="cashier-page__cart-title">Корзина</h2>
+                <h2 className="cashier-page__cart-title">{t("crm.cashier.cart")}</h2>
                 <div className="cashier-page__cart-header-actions">
                   <button
                     type="button"
@@ -133,13 +135,13 @@ export function CashierCartPanel({ vm }: Props) {
                     onClick={() => setCartFull((v) => !v)}
                     title={
                       cartFull
-                        ? "Показать список товаров"
-                        : "Развернуть корзину на весь экран"
+                        ? t("crm.cashier.showProductsList")
+                        : t("crm.cashier.expandCartFullscreen")
                     }
                     aria-label={
                       cartFull
-                        ? "Показать список товаров"
-                        : "Развернуть корзину на весь экран"
+                        ? t("crm.cashier.showProductsList")
+                        : t("crm.cashier.expandCartFullscreen")
                     }
                     aria-pressed={cartFull}
                   >
@@ -174,23 +176,23 @@ export function CashierCartPanel({ vm }: Props) {
                       }
                       setShowDiscountModal(true);
                     }}
-                    title="Добавить общую скидку"
+                    title={t("crm.cashier.addOrderDiscount")}
                   >
-                    Скидка
+                    {t("crm.cashier.discount")}
                   </button>
                 )}
                 <button
                   className="cashier-page__cart-action-btn"
                   onClick={() => setShowCustomServiceModal(true)}
-                  title="Добавить дополнительную услугу"
+                  title={t("crm.cashier.addExtraServiceTitle")}
                 >
-                  Доп. услуга
+                  {t("crm.cashier.extraService")}
                 </button>
               </div>
 
               <div className="cashier-page__cart-items">
                 {cart.length === 0 ? (
-                  <div className="cashier-page__cart-empty">Корзина пуста</div>
+                  <div className="cashier-page__cart-empty">{t("crm.cashier.cartEmpty")}</div>
                 ) : (
                   cart.map((item) => {
                     const cartProduct = item.productId

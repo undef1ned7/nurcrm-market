@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./Warehouse.scss";
@@ -73,6 +74,7 @@ import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { useAlert } from "@shared/hooks/useDialog";
 
 const Warehouse = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const navigate = useNavigate();
   const alert = useAlert();
@@ -295,7 +297,7 @@ const Warehouse = () => {
       setSelectedRows(new Set());
       dispatch(fetchProductsAsync(requestParams));
     } catch (e: any) {
-      const errorMessage = validateResErrors(e, "Ошибка при удалении товаров");
+      const errorMessage = validateResErrors(e, t("crm.warehouse.deleteError"));
       alert(errorMessage, true);
     } finally {
       setBulkDeleting(false);
@@ -335,7 +337,7 @@ const Warehouse = () => {
       } catch (e: any) {
         const errorMessage = validateResErrors(
           e,
-          "Ошибка при изменении товаров",
+          t("crm.warehouse.updateError"),
         );
         alert(errorMessage, true);
       } finally {
@@ -440,7 +442,7 @@ const Warehouse = () => {
           return;
         }
 
-        alert("Товар с таким штрихкодом не найден.", true);
+        alert(t("crm.warehouse.barcodeNotFound"), true);
       } catch (error: any) {
         const ambiguity = getBarcodeAmbiguity(error);
         if (ambiguity) {
@@ -449,7 +451,7 @@ const Warehouse = () => {
         }
         const errorMessage = validateResErrors(
           error,
-          "Ошибка поиска товара по штрихкоду",
+          t("crm.warehouse.barcodeSearchError"),
         );
         alert(errorMessage, true);
       } finally {
@@ -471,8 +473,8 @@ const Warehouse = () => {
   return (
     <PageShell className="warehouse-page">
       <PageHeader
-        title="Склад"
-        subtitle="Управление товарами и запасами"
+        title={t("crm.warehouse.pageTitle")}
+        subtitle={t("crm.warehouse.subtitle")}
         actions={
           <>
             <button
@@ -481,39 +483,41 @@ const Warehouse = () => {
               onClick={handleOpenInventory}
               title={
                 selectedCount > 0
-                  ? "Открыть документы: инвентаризация с выбранными товарами"
-                  : "Открыть раздел актов инвентаризации (Документы)"
+                  ? t("crm.warehouse.inventorySelectedHint")
+                  : t("crm.warehouse.inventoryDocsHint")
               }
               aria-label={
                 selectedCount > 0
-                  ? `Инвентаризация (${selectedCount})`
-                  : "Инвентаризация"
+                  ? t("crm.warehouse.inventoryWithSelected", { count: selectedCount })
+                  : t("crm.warehouse.inventory")
               }
             >
               <ClipboardList size={16} />
               <span className="nur-btn__label">
-                Инвентаризация{selectedCount > 0 ? ` (${selectedCount})` : ""}
+                {selectedCount > 0
+                  ? t("crm.warehouse.inventoryWithSelected", { count: selectedCount })
+                  : t("crm.warehouse.inventory")}
               </span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--secondary"
               onClick={() => navigate("/crm/sklad/mass-scan")}
-              title="Массовое сканирование"
-              aria-label="Массовое сканирование"
+              title={t("crm.warehouse.massScan")}
+              aria-label={t("crm.warehouse.massScan")}
             >
               <ScanBarcode size={16} />
-              <span className="nur-btn__label">Массовое сканирование</span>
+              <span className="nur-btn__label">{t("crm.warehouse.massScan")}</span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--primary"
               onClick={handleCreateProduct}
-              title="Создать товар"
-              aria-label="Создать товар"
+              title={t("crm.warehouse.createProduct")}
+              aria-label={t("crm.warehouse.createProduct")}
             >
               <Plus size={16} />
-              <span className="nur-btn__label">Создать товар</span>
+              <span className="nur-btn__label">{t("crm.warehouse.createProduct")}</span>
             </button>
           </>
         }
@@ -611,9 +615,9 @@ const Warehouse = () => {
       <AlertModal
         open={showDeleteConfirmModal}
         type="warning"
-        title="Подтверждение удаления"
+        title={t("crm.warehouse.deleteConfirmTitle")}
         message={deleteModalMessage}
-        okText="Удалить"
+        okText={t("common.delete")}
         onClose={() => setShowDeleteConfirmModal(false)}
         onConfirm={confirmBulkDelete}
       />

@@ -1,10 +1,13 @@
 import { Line, Bar } from "react-chartjs-2";
 import { TrendingUp, DollarSign, X, Package, BarChart3, ShoppingCart } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import "../analytics.charts";
 
 export function SalesAnalyticsTab({ vm }: any) {
+  const { t } = useTranslation();
+  const som = t("common.currencySom");
   const {
     salesData,
     analyticsData,
@@ -27,8 +30,8 @@ export function SalesAnalyticsTab({ vm }: any) {
           <div className="analytics-page__kpis">
             {salesData.kpis.map((kpi, index) => {
               const Icon = kpi.icon;
-              const isRevenue = kpi.title === "Выручка";
-              const isTx = kpi.title === "Транзакции";
+              const isRevenue = kpi.titleKey === "crm.analytics.sales.revenue";
+              const isTx = kpi.titleKey === "crm.analytics.sales.transactions";
               const clickable = isRevenue || isTx;
               const handleOpen = isRevenue
                 ? () => setShowRevenueModal(true)
@@ -53,9 +56,9 @@ export function SalesAnalyticsTab({ vm }: any) {
                   }
                   title={
                     isRevenue
-                      ? "Себестоимость, валовая прибыль, маржа"
+                      ? t("crm.analytics.sales.revenueTooltip")
                       : isTx
-                        ? "Показать продажи по фильтру"
+                        ? t("crm.analytics.sales.txTooltip")
                         : undefined
                   }
                 >
@@ -99,7 +102,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                   className="analytics-revenue-modal"
                   role="dialog"
                   aria-modal="true"
-                  aria-label="Детализация выручки"
+                  aria-label={t("crm.analytics.sales.revenueDetailAria")}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="analytics-revenue-modal__head">
@@ -109,11 +112,11 @@ export function SalesAnalyticsTab({ vm }: any) {
                       </span>
                       <div>
                         <h3 className="analytics-revenue-modal__title">
-                          Выручка
+                          {t("crm.analytics.sales.revenue")}
                         </h3>
                         <p className="analytics-revenue-modal__subtitle">
-                          {formatNumber(analyticsData?.cards?.revenue || 0)} сом
-                          за период
+                          {formatNumber(analyticsData?.cards?.revenue || 0)} {som}{" "}
+                          {t("crm.analytics.sales.forPeriod")}
                         </p>
                       </div>
                     </div>
@@ -121,7 +124,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                       type="button"
                       className="analytics-revenue-modal__close"
                       onClick={() => setShowRevenueModal(false)}
-                      aria-label="Закрыть"
+                      aria-label={t("common.close")}
                     >
                       <X size={18} />
                     </button>
@@ -133,11 +136,11 @@ export function SalesAnalyticsTab({ vm }: any) {
                         <Package size={18} />
                       </span>
                       <span className="analytics-revenue-modal__tile-label">
-                        Себестоимость
+                        {t("crm.analytics.sales.cost")}
                       </span>
                       <span className="analytics-revenue-modal__tile-value">
                         {formatNumber(analyticsData?.cards?.cogs || 0)}
-                        <em>сом</em>
+                        <em>{som}</em>
                       </span>
                     </div>
 
@@ -146,11 +149,11 @@ export function SalesAnalyticsTab({ vm }: any) {
                         <TrendingUp size={18} />
                       </span>
                       <span className="analytics-revenue-modal__tile-label">
-                        Валовая прибыль
+                        {t("crm.analytics.sales.grossProfit")}
                       </span>
                       <span className="analytics-revenue-modal__tile-value">
                         {formatNumber(analyticsData?.cards?.gross_profit || 0)}
-                        <em>сом</em>
+                        <em>{som}</em>
                       </span>
                     </div>
 
@@ -159,7 +162,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                         <BarChart3 size={18} />
                       </span>
                       <span className="analytics-revenue-modal__tile-label">
-                        Маржа
+                        {t("crm.analytics.sales.margin")}
                       </span>
                       <span className="analytics-revenue-modal__tile-value">
                         {Number(
@@ -194,7 +197,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                   className="analytics-revenue-modal analytics-tx-modal"
                   role="dialog"
                   aria-modal="true"
-                  aria-label="Продажи по фильтру"
+                  aria-label={t("crm.analytics.sales.txModalAria")}
                   onClick={(e) => e.stopPropagation()}
                 >
                 <div className="analytics-revenue-modal__head">
@@ -204,12 +207,14 @@ export function SalesAnalyticsTab({ vm }: any) {
                     </span>
                     <div>
                       <h3 className="analytics-revenue-modal__title">
-                        Транзакции
+                        {t("crm.analytics.sales.transactions")}
                       </h3>
                       <p className="analytics-revenue-modal__subtitle">
                         {txLoading
-                          ? "Загрузка…"
-                          : `Продаж: ${txSales.length}`}
+                          ? t("common.loading")
+                          : t("crm.analytics.sales.txSalesCount", {
+                              count: txSales.length,
+                            })}
                       </p>
                     </div>
                   </div>
@@ -217,7 +222,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                     type="button"
                     className="analytics-revenue-modal__close"
                     onClick={() => setShowTxModal(false)}
-                    aria-label="Закрыть"
+                    aria-label={t("common.close")}
                   >
                     <X size={18} />
                   </button>
@@ -225,22 +230,26 @@ export function SalesAnalyticsTab({ vm }: any) {
 
                 <div className="analytics-tx-modal__body">
                   {txLoading ? (
-                    <div className="analytics-tx-modal__state">Загрузка…</div>
+                    <div className="analytics-tx-modal__state">{t("common.loading")}</div>
                   ) : txError ? (
                     <div className="analytics-tx-modal__state analytics-tx-modal__state--error">
                       {txError}
                     </div>
                   ) : txSales.length === 0 ? (
                     <div className="analytics-tx-modal__state">
-                      Нет продаж по выбранному фильтру
+                      {t("crm.analytics.sales.noSalesByFilter")}
                     </div>
                   ) : (
                     <div className="analytics-tx-modal__list">
                       {txSales.map((s, i) => {
                         const pmLabel =
-                          { cash: "Наличные", card: "Карта", transfer: "Перевод" }[
-                            String(s.payment_method || "")
-                          ] || s.payment_method || "—";
+                          {
+                            cash: t("crm.analytics.sales.cash"),
+                            card: t("crm.analytics.sales.card"),
+                            transfer: t("crm.analytics.sales.transfer"),
+                          }[String(s.payment_method || "")] ||
+                          s.payment_method ||
+                          "—";
                         const dt = s.created_at || s.paid_at;
                         const dtLabel = dt
                           ? new Date(dt).toLocaleString("ru-RU", {
@@ -272,7 +281,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                                 {pmLabel}
                               </span>
                               <span className="analytics-tx-modal__row-total">
-                                {formatNumber(s.total || 0)} сом
+                                {formatNumber(s.total || 0)} {som}
                               </span>
                             </div>
                           </div>
@@ -287,14 +296,14 @@ export function SalesAnalyticsTab({ vm }: any) {
           )}
 
           <div className="analytics-page__chart-card analytics-page__chart-card--fit">
-            <h3 className="analytics-page__chart-title">Динамика продаж</h3>
+            <h3 className="analytics-page__chart-title">{t("crm.analytics.sales.salesDynamics")}</h3>
             <div className="analytics-page__chart-canvas">
             <Line
               data={{
                 labels: salesData.salesChart.labels,
                 datasets: [
                   {
-                    label: "Выручка (сом)",
+                    label: t("crm.analytics.sales.revenueChart", { currency: som }),
                     data: salesData.salesChart.data,
                     borderColor: "#f7d617",
                     // Градиентная заливка под линией (area-график как в дизайне)
@@ -351,14 +360,14 @@ export function SalesAnalyticsTab({ vm }: any) {
           {salesData.paymentMethods.labels.length > 0 && (
             <div className="analytics-page__chart-card">
               <h3 className="analytics-page__chart-title">
-                Продажи по способам оплаты
+                {t("crm.analytics.sales.salesByPayment")}
               </h3>
               <Bar
                 data={{
                   labels: salesData.paymentMethods.labels,
                   datasets: [
                     {
-                      label: "Сумма (сом)",
+                      label: t("crm.analytics.sales.amountChart", { currency: som }),
                       data: salesData.paymentMethods.data,
                       backgroundColor: "#f7d617",
                       borderRadius: 6,
@@ -376,7 +385,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                     tooltip: {
                       callbacks: {
                         label: (item) =>
-                          `${Number(item.raw).toLocaleString("ru-RU")} сом`,
+                          `${Number(item.raw).toLocaleString("ru-RU")} ${som}`,
                       },
                     },
                   },
@@ -402,13 +411,13 @@ export function SalesAnalyticsTab({ vm }: any) {
 
           <div className="analytics-page__grid">
             <div className="analytics-page__table-card">
-              <h3 className="analytics-page__table-title">Топ-5 товаров</h3>
+              <h3 className="analytics-page__table-title">{t("crm.analytics.sales.topProducts")}</h3>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Товар</th>
-                    <th>Продано</th>
-                    <th>Выручка</th>
+                    <th>{t("crm.analytics.sales.goods")}</th>
+                    <th>{t("crm.analytics.sales.sold")}</th>
+                    <th>{t("crm.analytics.sales.revenue")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -416,7 +425,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                     salesData.topProducts.map((product, index) => (
                       <tr key={index}>
                         <td>{product.name}</td>
-                        <td>{product.sold} шт</td>
+                        <td>{t("crm.analytics.sales.unitsPcs", { count: product.sold })}</td>
                         <td>
                           <div className="analytics-page__bar-cell">
                             <div className="analytics-page__bar-track">
@@ -431,7 +440,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                               />
                             </div>
                             <span className="analytics-page__bar-value">
-                              {formatNumber(product.revenue)} сом
+                              {formatNumber(product.revenue)} {som}
                             </span>
                           </div>
                         </td>
@@ -443,7 +452,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                         colSpan={3}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -453,7 +462,7 @@ export function SalesAnalyticsTab({ vm }: any) {
 
             <div className="analytics-page__table-card">
               <div className="analytics-page__table-header">
-                <h3 className="analytics-page__table-title">Документы</h3>
+                <h3 className="analytics-page__table-title">{t("crm.analytics.sales.documents")}</h3>
                 {/* <button className="analytics-page__date-filter">
                   <Calendar size={16} />
                   неделю
@@ -462,10 +471,10 @@ export function SalesAnalyticsTab({ vm }: any) {
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Наименование</th>
-                    <th>Кол-во</th>
-                    <th>Сумма</th>
-                    <th>Склад</th>
+                    <th>{t("crm.analytics.sales.name")}</th>
+                    <th>{t("crm.analytics.sales.qty")}</th>
+                    <th>{t("crm.analytics.sales.amount")}</th>
+                    <th>{t("crm.analytics.sales.warehouseCol")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -505,7 +514,7 @@ export function SalesAnalyticsTab({ vm }: any) {
                         colSpan={4}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}

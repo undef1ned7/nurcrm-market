@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import "./debts.scss";
 import {
@@ -7,6 +8,7 @@ import {
   useCash,
 } from "@entities/cash";
 import { PageShell, PagePanel } from "@shared/ui/page-shell";
+import { useDebouncedValue } from "@shared/hooks/useDebounce";
 
 import {
   listFrom,
@@ -19,6 +21,7 @@ import {
 } from "./helpers";
 
 import { DebtsHeader } from "./components/DebtsHeader";
+import { DebtsPagination } from "./components/DebtsPagination";
 import { Notifications } from "./components/Notifications";
 import { DebtsTable } from "./components/DebtsTable";
 import { NewDebtModal } from "./components/NewDebtModal";
@@ -26,17 +29,31 @@ import { PayDebtModal } from "./components/PayDebtModal";
 import { EditDebtModal } from "./components/EditDebtModal";
 import { useAppDispatch } from "@app/store";
 
-async function fetchDebtsAll() {
-  let url: any = "/main/debts/";
-  const acc: any[] = [];
-  let guard = 0;
-  while (url && guard < 60) {
-    const res = await api.get(url);
-    acc.push(...listFrom(res));
-    url = res?.data?.next || null;
-    guard += 1;
+async function fetchDebtsPage({
+  page,
+  page_size,
+  q,
+  dateFrom,
+  dateTo,
+}: {
+  page: number;
+  page_size: number;
+  q: string;
+  dateFrom: string;
+  dateTo: string;
+}) {
+  const params: any = { page, page_size };
+  const trimmed = String(q || "").trim();
+  if (trimmed) {
+    // на случай разных бэкенд-реализаций отправим и `search`, и `q`
+    params.search = trimmed;
+    params.q = trimmed;
   }
-  return acc;
+  if (dateFrom) params.date_from = dateFrom;
+  if (dateTo) params.date_to = dateTo;
+
+  const res = await api.get("/main/debts/", { params });
+  return res?.data || {};
 }
 
 async function createDebt(payload) {
@@ -54,6 +71,7 @@ async function deleteDebt(id) {
 }
 
 const Debts = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -63,6 +81,16 @@ const Debts = () => {
   const [q, setQ] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  // Пагинация списка долгов (убирает while-loop до 60 страниц)
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+
+  // Дебаунс поискового инпута, чтобы не дергать API на каждый символ
+  const debouncedQ = useDebouncedValue(q, 300, () => {});
 
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -97,24 +125,49 @@ const Debts = () => {
     try {
       setLoading(true);
       setLoadErr("");
-      const data = await fetchDebtsAll();
-      setItems(data);
+      const data = await fetchDebtsPage({
+        page,
+        page_size: PAGE_SIZE,
+        q: debouncedQ,
+        dateFrom,
+        dateTo,
+      });
 
-      const newNotifications = checkNotifications(data);
+      // data в формате DRF: { count, next, previous, results }
+      const nextItems = Array.isArray(data?.results) ? data.results : listFrom({ data });
+      setItems(Array.isArray(nextItems) ? nextItems : []);
+
+      const nextCount =
+        typeof data?.count === "number" ? data.count : Array.isArray(nextItems) ? nextItems.length : 0;
+      setTotalCount(nextCount);
+      setHasNextPage(Boolean(data?.next));
+      setHasPrevPage(Boolean(data?.previous));
+
+      const newNotifications = checkNotifications(nextItems || []);
       setNotifications(newNotifications);
     } catch (e: any) {
       console.error(e);
-      setLoadErr(extractApiErr(e, "Не удалось загрузить долги"));
+      setLoadErr(extractApiErr(e, t("crm.debts.loadError")));
       setItems([]);
+      setTotalCount(0);
+      setHasNextPage(false);
+      setHasPrevPage(false);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
     dispatch(getCashBoxes({} as any) as any);
   }, [dispatch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ, dateFrom, dateTo]);
+
+  useEffect(() => {
+    load();
+  }, [page, debouncedQ, dateFrom, dateTo]);
 
   useEffect(() => {
     if (cashBoxes && cashBoxes.length > 0 && !cashbox) {
@@ -127,7 +180,7 @@ const Debts = () => {
   }, [cashBoxes, cashbox]);
 
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = String(debouncedQ || "").trim().toLowerCase();
     let arr = !s
       ? items
       : items.filter((x) => `${x.name} ${x.phone}`.toLowerCase().includes(s));
@@ -140,7 +193,7 @@ const Debts = () => {
     return [...arr].sort(
       (a: any, b: any) => Number(new Date(b.created_at || 0)) - Number(new Date(a.created_at || 0))
     );
-  }, [items, q, dateFrom, dateTo]);
+  }, [items, debouncedQ, dateFrom, dateTo]);
 
   const openNew = () => {
     setFullName("");
@@ -155,13 +208,13 @@ const Debts = () => {
     e.preventDefault();
     setFormErr("");
 
-    if (!fullName.trim()) return setFormErr("Введите имя");
+    if (!fullName.trim()) return setFormErr(t("crm.debts.enterName"));
     const ph = phoneNorm(phone);
-    if (!ph) return setFormErr("Введите телефон");
+    if (!ph) return setFormErr(t("crm.debts.enterPhone"));
     if (items.some((x) => phoneNorm(x.phone) === ph))
-      return setFormErr("Такой номер телефона уже существует");
+      return setFormErr(t("crm.debts.phoneExists"));
     const a = num(amount);
-    if (!(a > 0)) return setFormErr("Введите сумму долга (> 0)");
+    if (!(a > 0)) return setFormErr(t("crm.debts.enterAmount"));
 
     try {
       setSavingNew(true);
@@ -178,7 +231,7 @@ const Debts = () => {
       setNotifications(newNotifications);
     } catch (e2: any) {
       console.error(e2);
-      setFormErr(extractApiErr(e2, "Не удалось создать долг"));
+      setFormErr(extractApiErr(e2, t("crm.debts.createError")));
     } finally {
       setSavingNew(false);
     }
@@ -195,13 +248,12 @@ const Debts = () => {
     e.preventDefault();
     setPayErr("");
     const amt = num(payAmt);
-    if (!(amt > 0)) return setPayErr("Введите сумму оплаты (> 0)");
+    if (!(amt > 0)) return setPayErr(t("crm.debts.enterPayAmount"));
 
     const current = items.find((x) => x.id === payId);
-    if (!current) return setPayErr("Запись не найдена");
+    if (!current) return setPayErr(t("crm.debts.recordNotFound"));
 
-    if (!cashbox)
-      return setPayErr("Касса не выбрана. Создайте кассу в разделе «Кассы».");
+    if (!cashbox) return setPayErr(t("crm.debts.cashboxRequired"));
 
     const baseDebt = getDebtAmount(current);
     const nextAmount = Math.max(0, baseDebt - amt);
@@ -214,8 +266,8 @@ const Debts = () => {
       await dispatch(
         addCashFlows({
           name: current.name
-            ? `Возврат долга: ${current.name}`
-            : "Возврат долга",
+            ? t("crm.debts.debtReturnName", { name: current.name })
+            : t("crm.debts.debtReturn"),
           amount: String(amt),
           type: "income",
           cashbox,
@@ -225,7 +277,7 @@ const Debts = () => {
       setPayOpen(false);
     } catch (e2: any) {
       console.error(e2);
-      setPayErr(extractApiErr(e2, "Не удалось обновить сумму долга"));
+      setPayErr(extractApiErr(e2, t("crm.debts.updateError")));
     } finally {
       setSavingPay(false);
     }
@@ -245,13 +297,13 @@ const Debts = () => {
     e.preventDefault();
     setEditErr("");
 
-    if (!eFullName.trim()) return setEditErr("Введите имя");
+    if (!eFullName.trim()) return setEditErr(t("crm.debts.enterName"));
     const ph = phoneNorm(ePhone);
-    if (!ph) return setEditErr("Введите телефон");
+    if (!ph) return setEditErr(t("crm.debts.enterPhone"));
     if (items.some((x) => x.id !== editId && phoneNorm(x.phone) === ph))
-      return setEditErr("Такой номер телефона уже существует");
+      return setEditErr(t("crm.debts.phoneExists"));
     const newAmount = num(eAmount);
-    if (!(newAmount > 0)) return setEditErr("Введите сумму долга (> 0)");
+    if (!(newAmount > 0)) return setEditErr(t("crm.debts.enterAmount"));
 
     try {
       setSavingEdit(true);
@@ -271,7 +323,7 @@ const Debts = () => {
       setNotifications(newNotifications);
     } catch (e2: any) {
       console.error(e2);
-      setEditErr(extractApiErr(e2, "Не удалось сохранить изменения"));
+      setEditErr(extractApiErr(e2, t("crm.debts.saveError")));
     } finally {
       setSavingEdit(false);
     }
@@ -326,6 +378,22 @@ const Debts = () => {
           onOpenEdit={openEdit}
         />
       </PagePanel>
+
+      <div style={{ marginTop: 12 }}>
+        <DebtsPagination
+          currentPage={page}
+          totalPages={Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
+          count={totalCount}
+          countLabel={t("crm.debts.countLabel")}
+          loading={loading}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+          onPageChange={(p) => {
+            if (p < 1) return;
+            setPage(p);
+          }}
+        />
+      </div>
 
       <NewDebtModal
         open={isNewOpen}

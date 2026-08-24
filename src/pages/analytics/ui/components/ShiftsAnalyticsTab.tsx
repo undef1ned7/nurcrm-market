@@ -1,4 +1,5 @@
 import { Bar } from "react-chartjs-2";
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import "../analytics.charts";
 import type { AnalyticsVm } from "../hooks/useAnalyticsData";
@@ -8,6 +9,8 @@ type Props = {
 };
 
 export function ShiftsAnalyticsTab({ vm }: Props) {
+  const { t } = useTranslation();
+  const som = t("common.currencySom");
   const {
     shiftsData,
     formatNumber,
@@ -49,13 +52,13 @@ export function ShiftsAnalyticsTab({ vm }: Props) {
           </div>
 
           <div className="analytics-page__chart-card">
-            <h3 className="analytics-page__chart-title">Продажи по сменам</h3>
+            <h3 className="analytics-page__chart-title">{t("crm.analytics.shifts.salesByShift")}</h3>
             <Bar
               data={{
                 labels: shiftsData.shiftsChart.labels,
                 datasets: [
                   {
-                    label: "Выручка (сом)",
+                    label: t("crm.analytics.shifts.revenueChart", { currency: som }),
                     data: shiftsData.shiftsChart.data,
                     backgroundColor: "#f7d617",
                   },
@@ -87,15 +90,15 @@ export function ShiftsAnalyticsTab({ vm }: Props) {
 
           <div className="analytics-page__grid">
             <div className="analytics-page__table-card">
-              <h3 className="analytics-page__table-title">Активные смены</h3>
+              <h3 className="analytics-page__table-title">{t("crm.analytics.shifts.activeShiftsList")}</h3>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Кассир</th>
-                    <th>Касса</th>
-                    <th>Начало смены</th>
-                    <th>Продажи</th>
-                    <th>Статус</th>
+                    <th>{t("crm.analytics.shifts.cashier")}</th>
+                    <th>{t("crm.analytics.shifts.register")}</th>
+                    <th>{t("crm.analytics.shifts.shiftStart")}</th>
+                    <th>{t("crm.analytics.shifts.sales")}</th>
+                    <th>{t("crm.analytics.shifts.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -104,7 +107,7 @@ export function ShiftsAnalyticsTab({ vm }: Props) {
                       <td>{shift.cashier}</td>
                       <td>{shift.register}</td>
                       <td>{shift.start}</td>
-                      <td>{formatNumber(shift.sales)} сом</td>
+                      <td>{formatNumber(shift.sales)} {som}</td>
                       <td>
                         <span className="analytics-page__status analytics-page__status--active">
                           {shift.status}
@@ -118,16 +121,16 @@ export function ShiftsAnalyticsTab({ vm }: Props) {
 
             <div className="analytics-page__table-card">
               <h3 className="analytics-page__table-title">
-                Лучшие кассиры за месяц
+                {t("crm.analytics.shifts.topCashiers")}
               </h3>
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Место</th>
-                    <th>Кассир</th>
-                    <th>Смен</th>
-                    <th>Продажи</th>
-                    <th>Средний чек</th>
+                    <th>{t("crm.analytics.shifts.place")}</th>
+                    <th>{t("crm.analytics.shifts.cashier")}</th>
+                    <th>{t("crm.analytics.shifts.shiftsCount")}</th>
+                    <th>{t("crm.analytics.shifts.sales")}</th>
+                    <th>{t("crm.analytics.cashiers.avgCheck")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -144,8 +147,8 @@ export function ShiftsAnalyticsTab({ vm }: Props) {
                       </td>
                       <td>{cashier.cashier}</td>
                       <td>{cashier.shifts}</td>
-                      <td>{formatNumber(cashier.sales)} сом</td>
-                      <td>{formatNumber(cashier.avgCheck)} сом</td>
+                      <td>{formatNumber(cashier.sales)} {som}</td>
+                      <td>{formatNumber(cashier.avgCheck)} {som}</td>
                     </tr>
                   ))}
                 </tbody>

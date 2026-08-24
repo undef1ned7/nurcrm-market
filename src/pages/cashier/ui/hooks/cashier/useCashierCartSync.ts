@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useStore } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -83,6 +84,7 @@ import type {
 
 
 export function useCashierCartSync(b: any) {
+  const { t } = useTranslation();
   const {
     searchParams, setSearchParams, currentPage, searchTerm,
     debouncedSearchTerm, setDebouncedSearchTerm, debounceTimerRef, setCurrentPage,
@@ -145,6 +147,8 @@ export function useCashierCartSync(b: any) {
   useEffect(() => {
     const params: any = {
         page: currentPage,
+        // Снижаем нагрузку: page_size должен соответствовать UI-страницам.
+        page_size: 100,
     };
     if (debouncedSearchTerm && typeof debouncedSearchTerm === "string") {
       const trimmed = debouncedSearchTerm.trim();
@@ -437,11 +441,7 @@ export function useCashierCartSync(b: any) {
 
       if (newQuantity === 0) {
         if (!canMarketDeleteCartItem) {
-          showAlert(
-            "warning",
-            "Нет доступа",
-            "У вас нет доступа на удаление позиций из корзины",
-          );
+          showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noDeleteAccess"));
           return;
         }
         if (!(await ensureDeleteCode())) return;
@@ -484,11 +484,8 @@ export function useCashierCartSync(b: any) {
       }
     } catch (error: any) {
       console.error("Ошибка при обновлении количества доп. услуги:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        "Ошибка при обновлении количества: " +
-          (error.message || "Неизвестная ошибка"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        t("crm.cashier.cartAlerts.qtyUpdateError", { message: error.message || t("crm.cashier.cartAlerts.unknownError") }),
       );
     }
   };
@@ -503,11 +500,7 @@ export function useCashierCartSync(b: any) {
     cancelPendingDiscountLineInput(cartItem.id);
 
     if (!canMarketDeleteCartItem) {
-      showAlert(
-        "warning",
-        "Нет доступа",
-        "У вас нет доступа на удаление позиций из корзины",
-      );
+      showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noDeleteAccess"));
       return;
     }
 
@@ -546,10 +539,8 @@ export function useCashierCartSync(b: any) {
       });
     } catch (error: any) {
       console.error("Ошибка при удалении доп. услуги:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        "Ошибка при удалении: " + (error.message || "Неизвестная ошибка"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        t("crm.cashier.cartAlerts.deleteError", { message: error.message || t("crm.cashier.cartAlerts.unknownError") }),
       );
     }
   }, [
@@ -574,11 +565,7 @@ export function useCashierCartSync(b: any) {
 
       if (qtyNum === 0) {
         if (!canMarketDeleteCartItem) {
-          showAlert(
-            "warning",
-            "Нет доступа",
-            "У вас нет доступа на удаление позиций из корзины",
-          );
+          showAlert("warning", t("crm.cashier.cartAlerts.noAccess"), t("crm.cashier.cartAlerts.noDeleteAccess"));
           setCartQuantities((prev) => ({
             ...prev,
             [cartItem.id]: formatQuantity(cartItem.quantity || 0),
@@ -603,11 +590,8 @@ export function useCashierCartSync(b: any) {
       await refreshSale();
     } catch (error: any) {
       console.error("Ошибка при обновлении количества доп. услуги:", error);
-      showAlert(
-        "error",
-        "Ошибка",
-        "Ошибка при обновлении количества: " +
-          (error.message || "Неизвестная ошибка"),
+      showAlert("error", t("crm.cashier.cartAlerts.error"),
+        t("crm.cashier.cartAlerts.qtyUpdateError", { message: error.message || t("crm.cashier.cartAlerts.unknownError") }),
       );
     }
   }, [

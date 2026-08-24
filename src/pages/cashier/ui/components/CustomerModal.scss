@@ -50,6 +50,27 @@
     }
   }
 
+  &__tabs.nur-tabs {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    overflow: hidden;
+    padding: 12px 24px 16px;
+    border-bottom: 1px solid var(--nur-border);
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-radius: 0;
+
+    .nur-tabs__tab {
+      flex: 1;
+      min-width: 0;
+      display: inline-flex;
+      justify-content: center;
+    }
+  }
+
   &__search {
     display: flex;
     align-items: center;

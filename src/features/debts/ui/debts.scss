@@ -51,6 +51,32 @@
     flex-wrap: wrap;
   }
 
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+
+  &__pagination-info {
+    font-size: 14px;
+    color: var(--nur-muted);
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+
+  &__pagination-info {
+    font-size: 14px;
+    color: var(--nur-muted);
+  }
+
   &__row--overdue {
     background: var(--nur-danger-soft);
   }

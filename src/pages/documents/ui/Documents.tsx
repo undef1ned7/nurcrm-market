@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   ClipboardList,
@@ -38,6 +39,7 @@ import {
 } from "@shared/ui/page-shell";
 
 const Documents = () => {
+  const { t } = useTranslation();
   const alert = useAlert();
   const dispatch = useDispatch() as any;
   const navigate = useNavigate();
@@ -111,17 +113,17 @@ const Documents = () => {
   // Функция для генерации порядкового номера чека/накладной
   // Используем фиксированный размер страницы (обычно API возвращает 20 элементов)
   const PAGE_SIZE = 100;
-  const getDocumentNumber = useCallback((index, prefix = "ЧЕК") => {
+  const getDocumentNumber = useCallback((index, prefix = t("crm.documents.receiptPrefix")) => {
     const sequentialNumber = (currentPage - 1) * PAGE_SIZE + index + 1;
     return `${prefix}-${String(sequentialNumber).padStart(5, "0")}`;
-  }, [currentPage]);
+  }, [currentPage, t]);
 
   // Маппинг данных из Redux в формат для отображения
   const receiptsData = useMemo(() => {
     if (activeTab !== "receipts") return [];
     return (documents || []).map((sale, index) => ({
       id: sale.id,
-      number: getDocumentNumber(index, "ЧЕК"),
+      number: getDocumentNumber(index, t("crm.documents.receiptPrefix")),
       date: sale.created_at
         ? new Date(sale.created_at).toLocaleString("ru-RU", {
             year: "numeric",
@@ -135,19 +137,19 @@ const Documents = () => {
         sale.client?.full_name ||
         sale.client_name ||
         sale.client ||
-        "Без клиента",
+        t("crm.documents.noClient"),
       products: sale.items?.length || 0,
       amount: sale.total || "0.00",
-      status: sale.status === "paid" ? "Проведен" : "Черновик",
+      status: sale.status === "paid" ? t("crm.documents.statusPosted") : t("crm.documents.statusDraft"),
       statusType: sale.status === "paid" ? "approved" : "draft",
     }));
-  }, [documents, activeTab, getDocumentNumber]);
+  }, [documents, activeTab, getDocumentNumber, t]);
 
   const invoicesData = useMemo(() => {
     if (activeTab !== "invoices") return [];
     return (documents || []).map((sale, index) => ({
       id: sale.id,
-      number: getDocumentNumber(index, "НАКЛ"),
+      number: getDocumentNumber(index, t("crm.documents.invoicePrefix")),
       date: sale.created_at
         ? new Date(sale.created_at).toLocaleDateString("ru-RU", {
             year: "numeric",
@@ -159,13 +161,13 @@ const Documents = () => {
         sale.client?.full_name ||
         sale.client_name ||
         sale.client ||
-        "Без контрагента",
+        t("crm.documents.noCounterparty"),
       positions: sale.items?.length || 0,
       amount: sale.total || "0.00",
-      status: sale.status === "paid" ? "Проведен" : "Черновик",
+      status: sale.status === "paid" ? t("crm.documents.statusPosted") : t("crm.documents.statusDraft"),
       statusType: sale.status === "paid" ? "approved" : "draft",
     }));
-  }, [documents, activeTab, getDocumentNumber]);
+  }, [documents, activeTab, getDocumentNumber, t]);
 
   // Обновление URL страницы для чеков/накладных, сохраняем tab=…
   useEffect(() => {
@@ -257,7 +259,7 @@ const Documents = () => {
       } catch (error: any) {
         const errorMessage = validateResErrors(
           error,
-          "Ошибка при сохранении документа. ",
+          t("crm.documents.saveError"),
         );
         alert(errorMessage, true);
       }
@@ -275,7 +277,7 @@ const Documents = () => {
           const invoiceData = result.payload;
 
           if (!invoiceData) {
-            throw new Error("Нет данных для генерации PDF");
+            throw new Error(t("crm.documents.noPdfData"));
           }
 
           // Генерируем PDF из JSON используя InvoicePdfDocument
@@ -297,7 +299,7 @@ const Documents = () => {
           window.document.body.removeChild(a);
           setTimeout(() => window.URL.revokeObjectURL(url), 1000);
         } else {
-          throw new Error("Не удалось загрузить данные накладной");
+          throw new Error(t("crm.documents.noInvoiceData"));
         }
       } else {
         // Для чека печатаем через USB принтер
@@ -305,7 +307,7 @@ const Documents = () => {
 
         if (!isPrinterConnected) {
           alert(
-            "Принтер не подключен. Пожалуйста, подключите принтер перед печатью.",
+            t("crm.documents.printerDisconnected"),
             true,
           );
           return;
@@ -336,14 +338,14 @@ const Documents = () => {
               receiptStyle: "market",
             });
           } else {
-            throw new Error("Нет данных для печати");
+            throw new Error(t("crm.documents.noPrintData"));
           }
         } else {
-          throw new Error("Не удалось загрузить данные чека для печати");
+          throw new Error(t("crm.documents.noReceiptData"));
         }
       }
     } catch (printError) {
-      const errorMessage = validateResErrors(printError, "Ошибка при печати. ");
+      const errorMessage = validateResErrors(printError, t("crm.documents.printError"));
       alert(errorMessage, true);
     }
   };
@@ -361,19 +363,19 @@ const Documents = () => {
   return (
     <PageShell className="documents">
       <PageHeader
-        title="Документы"
-        subtitle="Чеки, накладные и инвентаризация"
+        title={t("crm.documents.pageTitle")}
+        subtitle={t("crm.documents.subtitle")}
         actions={
           activeTab === "inventory" ? (
             <button
               type="button"
               className="nur-btn nur-btn--primary"
               onClick={() => navigate("/crm/sklad")}
-              title="Создать инвентаризацию"
-              aria-label="Создать инвентаризацию"
+              title={t("crm.documents.createInventory")}
+              aria-label={t("crm.documents.createInventory")}
             >
               <ClipboardList size={18} />
-              <span className="nur-btn__label">Создать инвентаризацию</span>
+              <span className="nur-btn__label">{t("crm.documents.createInventory")}</span>
             </button>
           ) : (
             <button
@@ -381,13 +383,13 @@ const Documents = () => {
               className="nur-btn nur-btn--secondary"
               onClick={() => setShowReconciliationModal(true)}
             >
-              Создать акт сверки
+              {t("crm.documents.createReconciliation")}
             </button>
           )
         }
       />
 
-      <div className="nur-tabs documents__tabs" role="tablist" aria-label="Тип документов">
+      <div className="nur-tabs documents__tabs" role="tablist" aria-label={t("crm.documents.tabsAriaLabel")}>
         <button
           type="button"
           role="tab"
@@ -395,7 +397,7 @@ const Documents = () => {
           className={`nur-tabs__tab${activeTab === "receipts" ? " is-active" : ""}`}
           onClick={() => setActiveTab("receipts")}
         >
-          Чеки
+          {t("crm.documents.receipts")}
         </button>
         <button
           type="button"
@@ -404,7 +406,7 @@ const Documents = () => {
           className={`nur-tabs__tab${activeTab === "invoices" ? " is-active" : ""}`}
           onClick={() => setActiveTab("invoices")}
         >
-          Накладные
+          {t("crm.documents.invoices")}
         </button>
         <button
           type="button"
@@ -413,7 +415,7 @@ const Documents = () => {
           className={`nur-tabs__tab${activeTab === "inventory" ? " is-active" : ""}`}
           onClick={() => setActiveTab("inventory")}
         >
-          Инвентаризация
+          {t("crm.documents.inventory")}
         </button>
       </div>
 
@@ -424,7 +426,7 @@ const Documents = () => {
             <input
               type="text"
               className="nur-input documents__search-input"
-              placeholder="Поиск по номеру или контрагенту..."
+              placeholder={t("crm.documents.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -443,24 +445,24 @@ const Documents = () => {
                   <tr>
                     {activeTab === "receipts" && (
                       <>
-                        <th>Номер</th>
-                        <th>Дата и время</th>
-                        <th>Клиент</th>
-                        <th>Товаров</th>
-                        <th>Сумма</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
+                        <th>{t("crm.documents.number")}</th>
+                        <th>{t("crm.documents.dateTime")}</th>
+                        <th>{t("crm.documents.client")}</th>
+                        <th>{t("crm.documents.products")}</th>
+                        <th>{t("crm.documents.amount")}</th>
+                        <th>{t("crm.documents.status")}</th>
+                        <th>{t("crm.documents.actions")}</th>
                       </>
                     )}
                     {activeTab === "invoices" && (
                       <>
-                        <th>Номер</th>
-                        <th>Дата</th>
-                        <th>Контрагент</th>
-                        <th>Позиций</th>
-                        <th>Сумма</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
+                        <th>{t("crm.documents.number")}</th>
+                        <th>{t("crm.documents.date")}</th>
+                        <th>{t("crm.documents.counterparty")}</th>
+                        <th>{t("crm.documents.positions")}</th>
+                        <th>{t("crm.documents.amount")}</th>
+                        <th>{t("crm.documents.status")}</th>
+                        <th>{t("crm.documents.actions")}</th>
                       </>
                     )}
                   </tr>
@@ -476,8 +478,8 @@ const Documents = () => {
                     <tr>
                       <td colSpan={7}>
                         <EmptyState
-                          title="Документы не найдены"
-                          text="Измените поиск или создайте новый документ."
+                          title={t("crm.documents.notFound")}
+                          text={t("crm.documents.notFoundHint")}
                         />
                       </td>
                     </tr>
@@ -490,7 +492,7 @@ const Documents = () => {
                             <td>{item.date}</td>
                             <td>{item.client}</td>
                             <td>{item.products}</td>
-                            <td>{formatAmount(item.amount)} сом</td>
+                            <td>{formatAmount(item.amount)} {t("common.currencySom")}</td>
                             <td>
                               <StatusChip tone={statusTone(item.statusType)}>
                                 {item.status}
@@ -502,7 +504,7 @@ const Documents = () => {
                                   type="button"
                                   className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
                                   onClick={() => handleView(item)}
-                                  title="Просмотр"
+                                  title={t("common.view")}
                                 >
                                   <Eye size={18} />
                                 </button>
@@ -510,7 +512,7 @@ const Documents = () => {
                                   type="button"
                                   className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
                                   onClick={() => handlePrint(item)}
-                                  title="Печать"
+                                  title={t("common.print")}
                                 >
                                   <Printer size={18} />
                                 </button>
@@ -524,7 +526,7 @@ const Documents = () => {
                             <td>{item.date}</td>
                             <td>{item.counterparty}</td>
                             <td>{item.positions}</td>
-                            <td>{formatAmount(item.amount)} сом</td>
+                            <td>{formatAmount(item.amount)} {t("common.currencySom")}</td>
                             <td>
                               <StatusChip tone={statusTone(item.statusType)}>
                                 {item.status}
@@ -536,7 +538,7 @@ const Documents = () => {
                                   type="button"
                                   className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
                                   onClick={() => handleView(item)}
-                                  title="Просмотр"
+                                  title={t("common.view")}
                                 >
                                   <Eye size={18} />
                                 </button>
@@ -544,7 +546,7 @@ const Documents = () => {
                                   type="button"
                                   className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
                                   onClick={() => handlePrint(item)}
-                                  title="Печать"
+                                  title={t("common.print")}
                                 >
                                   <Printer size={18} />
                                 </button>
@@ -572,11 +574,15 @@ const Documents = () => {
               currentPage === 1 || documentsLoading || !documentsPrevious
             }
           >
-            Назад
+            {t("common.back")}
           </button>
           <span className="documents__pagination-info">
-            Страница {currentPage} из {totalPages || 1}
-            {documentsCount && ` (${documentsCount} документов)`}
+            {t("common.paginationPage", { current: currentPage, total: totalPages || 1 })}
+            {documentsCount &&
+              ` ${t("common.paginationCount", {
+                count: documentsCount,
+                label: t("crm.documents.documentsCount"),
+              })}`}
           </span>
           <button
             type="button"
@@ -588,7 +594,7 @@ const Documents = () => {
               (totalPages && currentPage >= totalPages)
             }
           >
-            Вперед
+            {t("common.forward")}
           </button>
         </div>
       )}

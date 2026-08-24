@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   FaSearch,
@@ -34,6 +35,7 @@ import { SideCart } from "./components/SideCart";
    Page: Catalog
 ======================= */
 const Catalog = () => {
+  const { t } = useTranslation();
   const { slug = "" } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -131,10 +133,9 @@ const Catalog = () => {
         console.error(e);
         const status = e?.response?.status;
         if (status === 404)
-          setCompanyErr("Компания не найдена (404). Проверь slug.");
-        else if (status) setCompanyErr(`Ошибка загрузки компании (${status}).`);
-        else
-          setCompanyErr("Ошибка загрузки компании (проверь baseURL / CORS).");
+          setCompanyErr(t("catalog.companyNotFound"));
+        else if (status) setCompanyErr(t("catalog.companyLoadError", { status }));
+        else setCompanyErr(t("catalog.companyLoadErrorGeneric"));
         setCompany(null);
       })
       .finally(() => {
@@ -186,10 +187,9 @@ const Catalog = () => {
         setItems([]);
         setCount(0);
         const status = e?.response?.status;
-        if (status === 404)
-          setErr("Витрина не найдена (404). Проверь путь API.");
-        else if (status) setErr(`Не удалось загрузить витрину (${status}).`);
-        else setErr("Не удалось загрузить витрину (проверь baseURL / CORS).");
+        if (status === 404) setErr(t("catalog.showcaseNotFound"));
+        else if (status) setErr(t("catalog.showcaseLoadError", { status }));
+        else setErr(t("catalog.showcaseLoadErrorGeneric"));
       })
       .finally(() => {
         if (!alive) return;
@@ -248,14 +248,14 @@ const Catalog = () => {
   );
 
   const brandTitle =
-    company?.name || (companyLoading ? "Загрузка..." : "TechStore");
+    company?.name || (companyLoading ? t("catalog.loading") : "TechStore");
 
   /* cart ops */
   const addToCart = useCallback((item, delta = 1) => {
     const id = String(item?.id || "");
     if (!id) return;
 
-    const title = String(item?.name || item?.title || "Без названия");
+    const title = String(item?.name || item?.title || t("catalog.noTitle"));
     const price = toNum(item?.final_price ?? item?.price);
 
     setCart((prev) => {
@@ -341,13 +341,11 @@ const Catalog = () => {
 
   const checkoutHint = useMemo(() => {
     if (lines.length === 0) return "";
-    if (!showcasePhoneRaw)
-      return "WhatsApp недоступен: в ответе API компании (GET /main/public/companies/{slug}/) нет поля phones_howcase. Добавьте его в сериализатор публичной компании и укажите номер в настройках «Моя компания».";
-    if (!phoneShowcaseDigits)
-      return "WhatsApp недоступен: неверный номер витрины.";
-    if (!String(clientPhone || "").trim()) return "Укажи номер клиента.";
+    if (!showcasePhoneRaw) return t("catalog.whatsappUnavailable");
+    if (!phoneShowcaseDigits) return t("catalog.whatsappInvalidPhone");
+    if (!String(clientPhone || "").trim()) return t("catalog.enterClientPhone");
     return "";
-  }, [lines.length, showcasePhoneRaw, phoneShowcaseDigits, clientPhone]);
+  }, [lines.length, showcasePhoneRaw, phoneShowcaseDigits, clientPhone, t]);
 
   const canCheckout = useMemo(() => {
     if (lines.length === 0) return false;
@@ -367,10 +365,10 @@ const Catalog = () => {
       .join("\n");
 
     const text =
-      `Заказ с витрины: ${company?.name || ""}\n` +
-      `Номер клиента: ${String(clientPhone).trim()}\n\n` +
-      `Товары:\n${linesText}\n\n` +
-      `Итого: ${money(total)} сом`;
+      `${t("catalog.orderFromShowcase", { name: company?.name || "" })}\n` +
+      `${t("catalog.clientPhone", { phone: String(clientPhone).trim() })}\n\n` +
+      `${t("catalog.products")}\n${linesText}\n\n` +
+      `${t("catalog.total", { amount: money(total) })}`;
 
     const url = buildWaLink(phoneShowcaseDigits, text);
     if (!url) return;
@@ -392,10 +390,9 @@ const Catalog = () => {
       <section className="shopfront">
         <div className="shopfront__shell">
           <div className="shopfront__empty">
-            <div className="shopfront__emptyTitle">Slug компании не найден</div>
+            <div className="shopfront__emptyTitle">{t("catalog.slugNotFound")}</div>
             <div className="shopfront__emptyText">
-              Проверь роут: <b>/catalog/:slug</b>. Сейчас URL:{" "}
-              <b>{location.pathname}</b>
+              {t("catalog.slugHint", { path: location.pathname })}
             </div>
           </div>
         </div>
@@ -421,14 +418,14 @@ const Catalog = () => {
               className="sfbar__searchInput"
               value={qState.q}
               onChange={(e) => setQS({ q: e.target.value, page: "" })}
-              placeholder="Поиск товаров..."
+              placeholder={t("catalog.searchPlaceholder")}
             />
             {qState.q ? (
               <button
                 type="button"
                 className="sfbar__clear"
                 onClick={() => setQS({ q: "", page: "" })}
-                aria-label="Clear"
+                aria-label={t("catalog.clearSearch")}
               >
                 <FaTimes />
               </button>
@@ -440,10 +437,10 @@ const Catalog = () => {
               type="button"
               className="sfbar__cartBtn"
               onClick={() => setCartOpen(true)}
-              aria-label="Open cart"
+              aria-label={t("catalog.openCart")}
             >
               <FaShoppingCart />
-              <span>Корзина</span>
+              <span>{t("catalog.cart")}</span>
               {cartCount > 0 ? (
                 <span className="sfbar__cartBadge">{cartCount}</span>
               ) : null}
@@ -458,7 +455,7 @@ const Catalog = () => {
           <div className="shopfront__hero">
             <div className="shopfront__heroContent">
               <h1 className="shopfront__heroTitle">
-                {company.name || "Добро пожаловать"}
+                {company.name || t("catalog.welcome")}
               </h1>
               {company.description && (
                 <p className="shopfront__heroDesc">{company.description}</p>
@@ -472,9 +469,11 @@ const Catalog = () => {
           <div className="sfcats">
             <div className="sfcats__header">
               <div className="sfcats__title">
-                <FaTag /> Категории
+                <FaTag /> {t("catalog.categories")}
               </div>
-              <div className="sfcats__count">{categories.length} категорий</div>
+              <div className="sfcats__count">
+                {t("catalog.categoriesCount", { count: categories.length })}
+              </div>
             </div>
 
             <div className="sfcats__row" aria-label="Categories">
@@ -483,7 +482,7 @@ const Catalog = () => {
                 className={`sfchip ${qState.category ? "" : "sfchip--active"}`}
                 onClick={() => setQS({ category: "", page: "" })}
               >
-                <FaStar /> Все
+                <FaStar /> {t("catalog.all")}
               </button>
 
               {categories.map((c) => (
@@ -505,18 +504,18 @@ const Catalog = () => {
         <div className="sfhead">
           <div className="sfhead__left">
             <div className="sfhead__title">
-              <FaShoppingCart /> Все товары
+              <FaShoppingCart /> {t("catalog.allProducts")}
             </div>
             {qState.q && (
               <div className="sfhead__searchInfo">
-                Результаты поиска: "{qState.q}"
+                {t("catalog.searchResults", { query: qState.q })}
               </div>
             )}
           </div>
           <div className="sfhead__right">
             <div className="sfsort">
               <label className="sfsort__label" htmlFor="sf-sort">
-                Сортировка
+                {t("catalog.sort")}
               </label>
               <select
                 id="sf-sort"
@@ -535,9 +534,9 @@ const Catalog = () => {
               {companyErr ? (
                 <span className="sfhead__err">{companyErr}</span>
               ) : loading ? (
-                "Загрузка..."
+                t("catalog.loading")
               ) : (
-                `${count} ${count === 1 ? "товар" : count < 5 ? "товара" : "товаров"}`
+                `${count} ${count === 1 ? t("catalog.productCount_one") : count < 5 ? t("catalog.productCount_few") : t("catalog.productCount_many")}`
               )}
             </div>
           </div>
@@ -555,7 +554,7 @@ const Catalog = () => {
             <div className="sfgrid__info">
               <div className="sfgrid__loader">
                 <div className="sfgrid__loaderSpinner"></div>
-                <div>Загрузка товаров...</div>
+                <div>{t("catalog.loadingProducts")}</div>
               </div>
             </div>
           ) : null}
@@ -563,11 +562,11 @@ const Catalog = () => {
             <div className="sfgrid__info">
               <div className="sfgrid__empty">
                 <FaShoppingCart />
-                <div className="sfgrid__emptyTitle">Товары не найдены</div>
+                <div className="sfgrid__emptyTitle">{t("catalog.productsNotFound")}</div>
                 <div className="sfgrid__emptyText">
                   {qState.q || qState.category
-                    ? "Попробуйте изменить параметры поиска или выберите другую категорию"
-                    : "В каталоге пока нет товаров"}
+                    ? t("catalog.productsNotFoundFiltered")
+                    : t("catalog.productsEmpty")}
                 </div>
               </div>
             </div>
@@ -586,15 +585,15 @@ const Catalog = () => {
 
         {/* Pagination */}
         {!loading && !err && totalPages > 1 && (
-          <nav className="sfpager" aria-label="Пагинация">
+          <nav className="sfpager" aria-label={t("catalog.pagination")}>
             <button
               type="button"
               className="sfpager__btn sfpager__btn--prev"
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage <= 1}
-              aria-label="Предыдущая страница"
+              aria-label={t("catalog.prevPage")}
             >
-              <FaChevronLeft /> Назад
+              <FaChevronLeft /> {t("catalog.back")}
             </button>
             <ul className="sfpager__list">
               {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -625,7 +624,7 @@ const Catalog = () => {
                         className={`sfpager__btn sfpager__btn--num ${p === currentPage ? "sfpager__btn--active" : ""}`}
                         onClick={() => goToPage(p)}
                         aria-current={p === currentPage ? "page" : undefined}
-                        aria-label={`Страница ${p}`}
+                        aria-label={t("catalog.page", { page: p })}
                       >
                         {p}
                       </button>
@@ -638,9 +637,9 @@ const Catalog = () => {
               className="sfpager__btn sfpager__btn--next"
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage >= totalPages}
-              aria-label="Следующая страница"
+              aria-label={t("catalog.nextPage")}
             >
-              Вперёд <FaChevronRight />
+              {t("catalog.forward")} <FaChevronRight />
             </button>
           </nav>
         )}

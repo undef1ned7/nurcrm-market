@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import type { AnalyticsVm } from "../hooks/useAnalyticsData";
 
@@ -6,6 +8,7 @@ type Props = {
 };
 
 export function FinanceAnalyticsTab({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     financeData,
     openFinanceTable,
@@ -14,7 +17,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
     formatCurrency,
   } = vm;
 
-  const renderFinanceAccordion = (key: any, title: any, tableContent: any) => {
+  const renderFinanceAccordion = (key: string, title: string, tableContent: ReactNode) => {
     const isOpen = openFinanceTable === key;
     return (
       <div className="analytics-page__table-card analytics-page__accordion">
@@ -73,13 +76,13 @@ export function FinanceAnalyticsTab({ vm }: Props) {
           <div className="analytics-page__grid">
             {renderFinanceAccordion(
               "expenseBreakdown",
-              "Статьи расходов",
+              t("crm.analytics.finance.expenseItems"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Статья</th>
-                    <th>Сумма</th>
-                    <th>Операций</th>
+                    <th>{t("crm.analytics.finance.article")}</th>
+                    <th>{t("crm.analytics.sales.amount")}</th>
+                    <th>{t("crm.analytics.finance.operations")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -97,7 +100,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                         colSpan={3}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -107,13 +110,13 @@ export function FinanceAnalyticsTab({ vm }: Props) {
 
             {renderFinanceAccordion(
               "incomeBreakdown",
-              "Источники дохода",
+              t("crm.analytics.finance.incomeSources"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Статья</th>
-                    <th>Сумма</th>
-                    <th>Операций</th>
+                    <th>{t("crm.analytics.finance.article")}</th>
+                    <th>{t("crm.analytics.sales.amount")}</th>
+                    <th>{t("crm.analytics.finance.operations")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -131,7 +134,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                         colSpan={3}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -143,22 +146,22 @@ export function FinanceAnalyticsTab({ vm }: Props) {
           <div className="analytics-page__grid">
             {renderFinanceAccordion(
               "salaryRows",
-              "Зарплата сотрудников (маркет)",
+              t("crm.analytics.finance.employeeSalary"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Сотрудник</th>
-                    <th>Схема</th>
-                    <th>Оклад/мес</th>
+                    <th>{t("crm.analytics.finance.employee")}</th>
+                    <th>{t("crm.analytics.finance.scheme")}</th>
+                    <th>{t("crm.analytics.finance.salaryPerMonth")}</th>
                     <th>%</th>
-                    <th>Дней</th>
-                    <th>Оклад за период</th>
-                    <th>Кассир</th>
-                    <th>Консультант</th>
-                    <th>Комиссия</th>
-                    <th>База %</th>
-                    <th>Бонус %</th>
-                    <th>Итого</th>
+                    <th>{t("crm.analytics.finance.days")}</th>
+                    <th>{t("crm.analytics.finance.salaryForPeriod")}</th>
+                    <th>{t("crm.analytics.finance.cashierCol")}</th>
+                    <th>{t("crm.analytics.finance.consultantCol")}</th>
+                    <th>{t("crm.analytics.finance.commission")}</th>
+                    <th>{t("crm.analytics.finance.percentBase")}</th>
+                    <th>{t("crm.analytics.finance.bonusPercent")}</th>
+                    <th>{t("crm.analytics.finance.total")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -203,7 +206,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                         colSpan={12}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -213,16 +216,16 @@ export function FinanceAnalyticsTab({ vm }: Props) {
 
             {renderFinanceAccordion(
               "expenseItems",
-              "Расходы",
+              t("crm.analytics.finance.expensesList"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Название</th>
-                    <th>Сумма</th>
-                    <th>Касса</th>
-                    <th>Дата</th>
-                    <th>Создал</th>
-                    <th>Комментарий</th>
+                    <th>{t("common.name")}</th>
+                    <th>{t("crm.analytics.sales.amount")}</th>
+                    <th>{t("crm.analytics.filterFields.cashbox")}</th>
+                    <th>{t("crm.analytics.finance.date")}</th>
+                    <th>{t("crm.analytics.finance.createdBy")}</th>
+                    <th>{t("crm.analytics.finance.comment")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -243,7 +246,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                         colSpan={6}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}
@@ -253,13 +256,13 @@ export function FinanceAnalyticsTab({ vm }: Props) {
 
             {renderFinanceAccordion(
               "incomeItems",
-              "Доходы",
+              t("crm.analytics.finance.incomesList"),
               <table className="analytics-page__table">
                 <thead>
                   <tr>
-                    <th>Название</th>
-                    <th>Сумма</th>
-                    <th>Дата</th>
+                    <th>{t("common.name")}</th>
+                    <th>{t("crm.analytics.sales.amount")}</th>
+                    <th>{t("crm.analytics.finance.date")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -277,7 +280,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                         colSpan={3}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
-                        Нет данных
+                        {t("crm.analytics.noData")}
                       </td>
                     </tr>
                   )}

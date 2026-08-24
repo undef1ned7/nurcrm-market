@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, lazy, Suspense, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import "./Clients.scss";
@@ -6,6 +7,7 @@ import api from "@shared/api";
 import { useUser } from "@entities/user";
 import Modal from "@shared/ui/Modal/Modal";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+import { GlossaryText } from "@shared/ui/GlossaryText/GlossaryText";
 import {
   PageShell,
   PageHeader,
@@ -64,11 +66,6 @@ const isInvalidChoiceError = (e) => {
   );
 };
 
-const BASE_TABS = [
-  { key: "clients", label: "Клиенты" },
-  { key: "debtors", label: "Должники" },
-];
-
 const tabKeyFromType = (t) => {
   if (!t) return null;
   const v = String(t).toLowerCase();
@@ -94,27 +91,33 @@ const TYPE_VARIANTS_BY_TAB = {
 };
 
 export default function MarketClients({ forcedTab = null, hideTabs = false }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { company: user } = useUser();
   const sectorName = user?.sector?.name;
+  const isConstruction = sectorName === "Строительная компания";
 
   const TABS = useMemo(() => {
-    const base = [...BASE_TABS];
+    const base = [
+      { key: "clients", label: t("crm.clients.tabs.clients") },
+      { key: "debtors", label: t("crm.clients.tabs.debtors") },
+    ];
     if (sectorName === "Гостиница") {
       base.splice(1, 0, {
         key: "clientsBooking",
-        label: "Клиенты бронирование",
+        label: t("crm.clients.tabs.booking"),
       });
     } else {
       base.push({
         key: "resellers",
-        label:
-          sectorName === "Строительная компания" ? "Подрядчики" : "Реализаторы",
+        label: isConstruction
+          ? t("crm.clients.tabs.contractors")
+          : t("crm.clients.tabs.resellers"),
       });
     }
     return base;
-  }, [sectorName]);
+  }, [sectorName, isConstruction, t]);
 
   const [activeTab, setActiveTab] = useState(forcedTab || "clients");
   useEffect(() => {
@@ -198,7 +201,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
     } catch (e: any) {
       const errorMessage = validateResErrors(
         e,
-        "Ошибка при загрузке списка клиентов. ",
+        t("crm.clients.loadError"),
       );
       setError(errorMessage);
       setRows([]);
@@ -233,15 +236,15 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
     load();
   }, [activeTab]);
 
-  const ctxTypeLabel = (t) => {
-    const v = String(t || "").toLowerCase();
-    if (v === "client") return "Клиент";
-    if (v === "suppliers") return "Поставщик";
+  const ctxTypeLabel = (typeValue) => {
+    const v = String(typeValue || "").toLowerCase();
+    if (v === "client") return t("crm.clients.types.client");
+    if (v === "suppliers") return t("crm.clients.types.supplier");
     if (v === "implementers")
-      return sectorName === "Строительная компания"
-        ? "Подрядчики"
-        : "Реализатор";
-    if (v === "debtor" || v === "debtors") return "Должник";
+      return isConstruction
+        ? t("crm.clients.types.contractor")
+        : t("crm.clients.types.reseller");
+    if (v === "debtor" || v === "debtors") return t("crm.clients.types.debtor");
     return "—";
   };
 
@@ -411,7 +414,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
       resetAddForm();
     } catch (e: any) {
       console.error(e);
-      setAddErr(msgFromError(e, "Не удалось добавить запись"));
+      setAddErr(msgFromError(e, t("crm.clients.addError")));
     } finally {
       setAddSaving(false);
     }
@@ -422,45 +425,46 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
     resetAddForm();
   };
 
-  const resellersTabLabel =
-    sectorName === "Строительная компания" ? "Подрядчики" : "Реализаторы";
+  const resellersTabLabel = isConstruction
+    ? t("crm.clients.tabs.contractors")
+    : t("crm.clients.tabs.resellers");
 
   const createEntityTitle =
     activeTab === "clients"
-      ? "Новый клиент"
+      ? t("crm.clients.newClient").replace(/^\+ /, "")
       : activeTab === "suppliers"
-        ? "Новый поставщик"
-        : sectorName === "Строительная компания"
-          ? "Новый подрядчик"
-          : "Новый реализатор";
+        ? t("crm.clients.newSupplier")
+        : isConstruction
+          ? t("crm.clients.newContractor")
+          : t("crm.clients.newReseller");
 
   const createEntityHint =
     activeTab === "clients"
-      ? "Достаточно указать имя и телефон — карточку можно дополнить позже."
+      ? t("crm.clients.createHint.client")
       : activeTab === "suppliers"
-        ? "Укажите название и контактный телефон поставщика."
-        : sectorName === "Строительная компания"
-          ? "Укажите название и контактный телефон подрядчика."
-          : "Укажите название и контактный телефон реализатора.";
+        ? t("crm.clients.createHint.supplier")
+        : isConstruction
+          ? t("crm.clients.createHint.contractor")
+          : t("crm.clients.createHint.reseller");
 
   const title =
     activeTab === "clients"
-      ? "Клиенты"
+      ? t("crm.clients.pageTitle")
       : activeTab === "suppliers"
-        ? "Поставщики"
+        ? t("crm.clients.suppliers")
         : activeTab === "resellers"
           ? resellersTabLabel
           : activeTab === "clientsBooking"
-            ? "Клиенты бронирование"
+            ? t("crm.clients.tabs.booking")
             : activeTab === "debtors"
-              ? "Должники"
-              : "Клиенты";
+              ? t("crm.clients.tabs.debtors")
+              : t("crm.clients.pageTitle");
 
   // ───────────────────────── clientsBooking рендерит HostelClients
   if (!forcedTab && activeTab === "clientsBooking") {
     return (
       <section className="clients" style={{ display: "block" }}>
-        <nav className="tabs" aria-label="Секции">
+        <nav className="tabs" aria-label={t("crm.clients.tabs.sections")}>
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -475,12 +479,16 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
 
         <header className="header">
           <div>
-            <h2 className="title">{title}</h2>
-            <p className="subtitle">Управление клиентами бронирования</p>
+            <h2 className="title">
+              <GlossaryText>{title}</GlossaryText>
+            </h2>
+            <p className="subtitle">
+              <GlossaryText>{t("crm.clients.bookingSubtitle")}</GlossaryText>
+            </p>
           </div>
         </header>
 
-        <Suspense fallback={<div className="loading">Загрузка…</div>}>
+        <Suspense fallback={<div className="loading">{t("common.loading")}</div>}>
           <HostelClients />
         </Suspense>
       </section>
@@ -490,17 +498,17 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
   // ───────────────────────── остальные вкладки
   const createLabel =
     activeTab === "clients"
-      ? "Новый клиент"
+      ? t("crm.clients.newClient").replace(/^\+ /, "")
       : activeTab === "suppliers"
-        ? "Новый поставщик"
-        : sectorName === "Строительная компания"
-          ? "Новый подрядчик"
-          : "Новый реализатор";
+        ? t("crm.clients.newSupplier")
+        : isConstruction
+          ? t("crm.clients.newContractor")
+          : t("crm.clients.newReseller");
 
   return (
     <PageShell className="clients-page">
       {!hideTabs && (
-        <nav className="clients-tabs" aria-label="Секции">
+        <nav className="clients-tabs" aria-label={t("crm.clients.tabs.sections")}>
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -517,8 +525,12 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
       )}
 
       <PageHeader
-        title={title}
-        subtitle={`Список ${title.toLowerCase()} и быстрый переход в карточку`}
+        title={<GlossaryText>{title}</GlossaryText>}
+        subtitle={
+          <GlossaryText>
+            {t("crm.clients.subtitleList", { entity: title.toLowerCase() })}
+          </GlossaryText>
+        }
         actions={
           activeTab !== "debtors" ? (
             <button
@@ -541,14 +553,15 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
           <input
             type="text"
             className="nur-input clients-search__input"
-            placeholder="Поиск по ФИО или телефону..."
+            placeholder={t("crm.clients.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         <StatusChip>
-          Всего: {rows.length} · Найдено: {filtered.length}
+          {t("crm.clients.total")}: {rows.length} · {t("crm.clients.found")}:{" "}
+          {filtered.length}
         </StatusChip>
 
         <div className="clients-search__view-toggle">
@@ -560,7 +573,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
             }`}
           >
             <Table2 size={16} />
-            Таблица
+            {t("crm.clients.table")}
           </button>
           <button
             type="button"
@@ -570,7 +583,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
             }`}
           >
             <LayoutGrid size={16} />
-            Карточки
+            {t("crm.clients.cards")}
           </button>
         </div>
       </FilterBar>
@@ -585,24 +598,24 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 <thead>
                   <tr>
                     <th>№</th>
-                    <th>ФИО</th>
-                    <th>Телефон</th>
-                    <th>Тип</th>
-                    <th>Дата</th>
-                    <th>Действия</th>
+                    <th>{t("crm.clients.fullName")}</th>
+                    <th>{t("crm.clients.phone")}</th>
+                    <th>{t("crm.clients.type")}</th>
+                    <th>{t("crm.clients.date")}</th>
+                    <th>{t("crm.clients.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
                       <td colSpan={6} className="clients-table__loading">
-                        Загрузка...
+                        {t("crm.clients.loading")}
                       </td>
                     </tr>
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="clients-table__empty">
-                        {search ? "Ничего не найдено" : "Нет данных"}
+                        {search ? t("crm.clients.nothingFound") : t("crm.clients.noData")}
                       </td>
                     </tr>
                   ) : (
@@ -613,14 +626,14 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                         onClick={() => openCard(c)}
                       >
                         <td data-label="№">{index + 1}</td>
-                        <td data-label="ФИО" className="clients-table__name">
+                        <td data-label={t("crm.clients.fullName")} className="clients-table__name">
                           {c.full_name || c.fio || "—"}
                         </td>
-                        <td data-label="Телефон">{c.phone || "—"}</td>
-                        <td data-label="Тип">{ctxTypeLabel(c.type)}</td>
-                        <td data-label="Дата">{c.date || "—"}</td>
+                        <td data-label={t("crm.clients.phone")}>{c.phone || "—"}</td>
+                        <td data-label={t("crm.clients.type")}>{ctxTypeLabel(c.type)}</td>
+                        <td data-label={t("crm.clients.date")}>{c.date || "—"}</td>
                         <td
-                          data-label="Действия"
+                          data-label={t("crm.clients.actions")}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Link
@@ -628,7 +641,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                             state={c}
                             className="clients-table__link"
                           >
-                            Открыть
+                            {t("crm.clients.open")}
                           </Link>
                         </td>
                       </tr>
@@ -662,7 +675,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                     color: "var(--nur-muted)",
                   }}
                 >
-                  {debouncedSearch ? "Ничего не найдено" : "Нет данных"}
+                  {debouncedSearch ? t("crm.clients.nothingFound") : t("crm.clients.noData")}
                 </div>
               ) : (
                 <div className="clients-cards grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -677,25 +690,25 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                         <span className="clients-card__value">{index + 1}</span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">ФИО</span>
+                        <span className="clients-card__label">{t("crm.clients.fullName")}</span>
                         <span className="clients-card__value">
                           {c.full_name || c.fio || "—"}
                         </span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">Телефон</span>
+                        <span className="clients-card__label">{t("crm.clients.phone")}</span>
                         <span className="clients-card__value">
                           {c.phone || "—"}
                         </span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">Тип</span>
+                        <span className="clients-card__label">{t("crm.clients.type")}</span>
                         <span className="clients-card__value">
                           {ctxTypeLabel(c.type)}
                         </span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">Дата</span>
+                        <span className="clients-card__label">{t("crm.clients.date")}</span>
                         <span className="clients-card__value">
                           {c.date || "—"}
                         </span>
@@ -745,29 +758,29 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 id="client-create-main-title"
                 className="clientCreateModal__sectionTitle"
               >
-                Основная информация
+                {t("crm.clients.form.mainInfo")}
               </h4>
               <span className="clientCreateModal__requiredHint">
-                * обязательные поля
+                {t("crm.clients.form.requiredFields")}
               </span>
             </div>
 
             <div className="clientCreateModal__grid clientCreateModal__grid--main">
               <label className="clientCreateModal__field clientCreateModal__field--required">
                 <span className="clientCreateModal__label">
-                  ФИО или название
+                  {t("crm.clients.form.fullNameOrCompany")}
                 </span>
                 <input
                   type="text"
                   value={addFullName}
                   onChange={(e) => setAddFullName(e.target.value)}
-                  placeholder="Иванов Иван"
+                  placeholder={t("crm.clients.form.fullNamePlaceholder")}
                   autoFocus
                 />
               </label>
 
               <label className="clientCreateModal__field clientCreateModal__field--required">
-                <span className="clientCreateModal__label">Телефон</span>
+                <span className="clientCreateModal__label">{t("crm.clients.phone")}</span>
                 <input
                   type="tel"
                   inputMode="tel"
@@ -776,7 +789,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                   placeholder="+996 700 00-00-00"
                 />
                 <span className="clientCreateModal__hint">
-                  Основной номер для связи
+                  {t("crm.clients.form.phoneHint")}
                 </span>
               </label>
 
@@ -792,7 +805,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
 
               <label className="clientCreateModal__field">
                 <span className="clientCreateModal__label">
-                  Дата регистрации
+                  {t("crm.clients.form.registrationDate")}
                 </span>
                 <input
                   type="date"
@@ -811,8 +824,8 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
             aria-controls="client-create-extra-fields"
           >
             <span>
-              Реквизиты и адрес
-              <small>необязательно</small>
+              {t("crm.clients.form.extraToggle")}
+              <small>{t("crm.clients.form.optional")}</small>
             </span>
             <ChevronDown size={18} aria-hidden />
           </button>
@@ -827,24 +840,24 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 id="client-create-extra-title"
                 className="clientCreateModal__sectionTitle"
               >
-                Дополнительные данные
+                {t("crm.clients.form.extraTitle")}
               </h4>
 
               <div className="clientCreateModal__grid">
                 <label className="clientCreateModal__field">
                   <span className="clientCreateModal__label">
-                    ОсОО / компания
+                    {t("crm.clients.form.llc")}
                   </span>
                   <input
                     type="text"
                     value={addLlc}
                     onChange={(e) => setAddLlc(e.target.value)}
-                    placeholder="ОсОО «Пример»"
+                    placeholder={t("crm.clients.form.llcPlaceholder")}
                   />
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">ИНН</span>
+                  <span className="clientCreateModal__label">{t("crm.clients.form.inn")}</span>
                   <input
                     type="text"
                     value={addInn}
@@ -854,7 +867,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">ОКПО</span>
+                  <span className="clientCreateModal__label">{t("crm.clients.form.okpo")}</span>
                   <input
                     type="text"
                     value={addOkpo}
@@ -864,18 +877,18 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">Статус</span>
+                  <span className="clientCreateModal__label">{t("crm.clients.form.status")}</span>
                   <input
                     type="text"
                     value={addStatus}
                     onChange={(e) => setAddStatus(e.target.value)}
-                    placeholder="Например: active"
+                    placeholder={t("crm.clients.form.statusPlaceholder")}
                   />
                 </label>
 
                 <label className="clientCreateModal__field">
                   <span className="clientCreateModal__label">
-                    Расчётный счёт
+                    {t("crm.clients.form.account")}
                   </span>
                   <input
                     type="text"
@@ -886,7 +899,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">БИК</span>
+                  <span className="clientCreateModal__label">{t("crm.clients.form.bik")}</span>
                   <input
                     type="text"
                     value={addBik}
@@ -896,12 +909,12 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field clientCreateModal__field--wide">
-                  <span className="clientCreateModal__label">Адрес</span>
+                  <span className="clientCreateModal__label">{t("crm.clients.form.address")}</span>
                   <input
                     type="text"
                     value={addAddress}
                     onChange={(e) => setAddAddress(e.target.value)}
-                    placeholder="Город, улица, дом"
+                    placeholder={t("crm.clients.form.addressPlaceholder")}
                   />
                 </label>
               </div>
@@ -915,16 +928,16 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
               onClick={handleAddCancel}
               disabled={addSaving}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--primary"
               onClick={handleAddSave}
               disabled={!canSaveAdd}
-              title={!canSaveAdd ? "Заполните имя и телефон" : ""}
+              title={!canSaveAdd ? t("crm.clients.form.fillNamePhone") : ""}
             >
-              {addSaving ? "Сохранение…" : "Создать"}
+              {addSaving ? t("common.saving") : t("common.create")}
             </button>
           </div>
         </div>

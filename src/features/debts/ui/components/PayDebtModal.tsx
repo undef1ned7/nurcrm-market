@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export const PayDebtModal = ({
   open,
   payAmt,
@@ -7,6 +9,7 @@ export const PayDebtModal = ({
   onClose,
   onSubmit,
 }) => {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -19,7 +22,7 @@ export const PayDebtModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="debts-page__modal-title" id="debt-pay-title">
-          Оплатить (уменьшить долг)
+          {t("crm.debts.payModalTitle")}
         </div>
 
         {payErr && (
@@ -29,11 +32,13 @@ export const PayDebtModal = ({
         )}
 
         <form onSubmit={onSubmit}>
-          <label className="nur-label" htmlFor="debt-pay-amt">Сумма оплаты</label>
+          <label className="nur-label" htmlFor="debt-pay-amt">
+            {t("crm.debts.payAmount")}
+          </label>
           <input
             id="debt-pay-amt"
             className="nur-input debts-page__modal-input"
-            placeholder="Только цифры"
+            placeholder={t("crm.debts.digitsOnly")}
             inputMode="numeric"
             pattern="\d*"
             value={payAmt}
@@ -47,14 +52,14 @@ export const PayDebtModal = ({
               onClick={onClose}
               disabled={savingPay}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               className="nur-btn nur-btn--primary"
               disabled={savingPay}
             >
-              {savingPay ? "Провожу…" : "Оплатить"}
+              {savingPay ? t("crm.debts.paying") : t("crm.debts.pay")}
             </button>
           </div>
         </form>

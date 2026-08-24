@@ -1,5 +1,6 @@
 import { Fragment } from "react";
-import { kindTranslate, PAGE_SIZE } from "../../sell.constants";
+import { useTranslation } from "react-i18next";
+import { PAGE_SIZE } from "../../sell.constants";
 import {
   dayKeyOf,
   dayLabelOf,
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export default function SellHistoryTable({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     filterField,
     currentPage,
@@ -34,14 +36,14 @@ export default function SellHistoryTable({ vm }: Props) {
           <tr>
             <th />
             <th>№</th>
-            <th>Статус</th>
-            <th>Товар</th>
-            <th>Оплата</th>
-            <th>Сумма</th>
-            <th>Скидка</th>
-            <th>Позиции</th>
-            <th>Дата</th>
-            <th>Клиент</th>
+            <th>{t("common.status")}</th>
+            <th>{t("crm.sell.product")}</th>
+            <th>{t("crm.sell.payment")}</th>
+            <th>{t("crm.sell.totalAmount")}</th>
+            <th>{t("crm.sell.discount")}</th>
+            <th>{t("crm.sell.positions")}</th>
+            <th>{t("common.date")}</th>
+            <th>{t("crm.sell.client")}</th>
             <th />
           </tr>
         </thead>
@@ -50,7 +52,9 @@ export default function SellHistoryTable({ vm }: Props) {
             const itemsCount = getItemsCount(item);
             const discountTotal = Number(item.discount_total || 0);
             const statusLabel =
-              kindTranslate[item.status] || item.status || "-";
+              t(`crm.sell.status.${item.status}`, {
+                defaultValue: item.status || "-",
+              }) || item.status || "-";
             const statusVariant = getStatusVariant(item.status);
             const saleNo = (currentPage - 1) * PAGE_SIZE + idx + 1;
             const curDay = dayKeyOf(item.created_at);
