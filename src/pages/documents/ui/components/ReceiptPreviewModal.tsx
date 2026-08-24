@@ -6,6 +6,7 @@ import { getReceiptJson } from "@entities/sale";
 import {
   handleCheckoutResponseForPrinting,
   checkPrinterConnection,
+  mapMarketReceiptItem,
 } from "@pages/sell/ui/services/printService";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import ReceiptPdfDocument from "./ReceiptPdfDocument";
@@ -212,40 +213,14 @@ const ReceiptPreviewModal = ({
   };
 
   const resolveMarketPreviewItem = (item: any) => {
-    const qty = parseFloat(item.qty ?? item.quantity) || 1;
-    const price = parseFloat(item.unit_price ?? item.price) || 0;
-    let lineDiscount =
-      parseFloat(
-        item.line_discount ??
-          item.discount_total ??
-          item.line_discount_total ??
-          0,
-      ) || 0;
-    const lineTotalRaw = item.line_total ?? item.total;
-    const lineTotalParsed =
-      lineTotalRaw != null && lineTotalRaw !== ""
-        ? parseFloat(lineTotalRaw)
-        : null;
-    const gross = Math.max(0, qty * price);
-    if (
-      lineDiscount <= 0 &&
-      lineTotalParsed != null &&
-      Number.isFinite(lineTotalParsed) &&
-      gross > lineTotalParsed + 1e-9
-    ) {
-      lineDiscount = gross - lineTotalParsed;
-    }
-    const total =
-      lineTotalParsed != null && Number.isFinite(lineTotalParsed)
-        ? lineTotalParsed
-        : Math.max(0, gross - lineDiscount);
+    const mapped = mapMarketReceiptItem(item);
     return {
       id: item.id,
-      name: item.name || item.product_name || "Товар",
-      qty,
-      price,
-      lineDiscount: Math.max(0, lineDiscount),
-      total,
+      name: mapped.name,
+      qty: mapped.qty,
+      price: mapped.price,
+      lineDiscount: Math.max(0, mapped.line_discount_amount),
+      total: mapped.total,
     };
   };
 

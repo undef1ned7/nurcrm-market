@@ -2,6 +2,13 @@
 
 import { ESC } from "./bytes";
 import { getEncoder, getEscposRuntimeConfig } from "./encoding";
+import { toReceiptNum } from "./receiptDiscount";
+import {
+  mapMarketReceiptItem,
+  mergeEkassaItemsWithPayload,
+  warnIfEkassaDiscountMismatch,
+  type MergeStrategy,
+} from "./receiptItems";
 
 const money = (n: any) => Number(n || 0).toFixed(2);
 function lr(left: any, right: any, width: any = 32) {
@@ -58,10 +65,7 @@ function buildMarketItemLineLeft(price: any, qty: any, lineDiscountAmt: any) {
   return `${base} - ${formatMarketLineDiscountCell(lineDiscountAmt)}`;
 }
 
-const toNum = (v: any) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
+const toNum = toReceiptNum;
 
 /** Колонка «скидка» в строке маркета: «0» или сумма в сомах. */
 function formatMarketLineDiscountCell(lineDiscountAmt: any) {
@@ -108,45 +112,6 @@ function pushMarketItemLineRow(chunks: any, enc: any, width: any, price: any, qt
   chunks.push(enc(lr(left, money(lineTotal), width) + "\n"));
   pushReceiptSizeOff(chunks);
   pushReceiptBoldOff(chunks);
-}
-
-/** Строка чека маркета: скидка как в eKassa (сумма + %), те же поля что при fiscal merge. */
-function mapMarketReceiptItem(it: any) {
-  const qty = toNum(it?.qty ?? it?.quantity) || 1;
-  const unitPrice = toNum(it?.unit_price ?? it?.price);
-  let lineDiscountAmt = toNum(
-    it?.line_discount ?? it?.discount_total ?? it?.line_discount_total,
-  );
-  const lineTotalNum =
-    it?.line_total != null && it?.line_total !== ""
-      ? toNum(it.line_total)
-      : null;
-  const grossLine = Math.max(0, qty * unitPrice);
-  if (
-    lineDiscountAmt <= 0 &&
-    lineTotalNum != null &&
-    grossLine > lineTotalNum + 1e-9
-  ) {
-    lineDiscountAmt = grossLine - lineTotalNum;
-  }
-  const lineDiscountPct =
-    it?.line_discount_pct != null && it?.line_discount_pct !== ""
-      ? toNum(it.line_discount_pct)
-      : lineDiscountAmt > 0 && grossLine > 0
-        ? (lineDiscountAmt / grossLine) * 100
-        : 0;
-  const total =
-    lineTotalNum != null && Number.isFinite(lineTotalNum)
-      ? lineTotalNum
-      : Math.max(0, grossLine - lineDiscountAmt);
-  return {
-    name: String(it?.name ?? it?.product_name ?? "Товар"),
-    qty,
-    price: unitPrice,
-    total,
-    line_discount_pct: lineDiscountPct,
-    line_discount_amount: lineDiscountAmt,
-  };
 }
 
 function resolveMarketOrderDiscount(payload: any, ekassaFields: any) {
@@ -224,40 +189,16 @@ function buildReceiptFromJSON(payload: any, opts: any = {}) {
     (Array.isArray(payload.cart?.items) && payload.cart.items) ||
     null;
 
+  let ekassaMergeStrategies: MergeStrategy[] = [];
   const items = ekassaFields && Array.isArray(f(ekassaFields, "1059"))
-    ? f(ekassaFields, "1059").map((it: any, idx: any) => {
-      const qty = toNum(it?.["1023"]) || 1;
-      // В ответах eKassa для Маркета часто:
-      // 1043 = сумма позиции, 1076 = цена за единицу.
-      const raw1043 = fromTyiyn(it?.["1043"]);
-      const raw1076 = fromTyiyn(it?.["1076"]);
-      const price = raw1076 > 0 ? raw1076 : (qty > 0 ? raw1043 / qty : raw1043);
-      const total = raw1043 > 0 ? raw1043 : price * qty;
-      const base = {
-        name: String(it?.["1030"] || "Товар"),
-        qty,
-        price,
-        total,
-      };
-      let src = payloadItemsForMerge?.[idx];
-      if (!src && payloadItemsForMerge?.length) {
-        const nm = base.name.trim();
-        src =
-          payloadItemsForMerge.find(
-            (x: any) =>
-              String(x?.name ?? "").trim() === nm &&
-              (toNum(x?.qty) || 1) === base.qty,
-          ) || null;
-      }
-      if (!src) return base;
-      const mapped = mapMarketReceiptItem({ ...src, qty, price, unit_price: price });
-      return {
-        ...base,
-        line_discount_pct: mapped.line_discount_pct,
-        line_discount_amount: mapped.line_discount_amount,
-        total: mapped.total,
-      };
-    })
+    ? (() => {
+        const merged = mergeEkassaItemsWithPayload(
+          f(ekassaFields, "1059"),
+          payloadItemsForMerge,
+        );
+        ekassaMergeStrategies = merged.strategies;
+        return merged.items;
+      })()
     : (payloadItemsForMerge || (Array.isArray(payload.items) ? payload.items : [])).map(
         mapMarketReceiptItem,
       );
@@ -287,6 +228,24 @@ function buildReceiptFromJSON(payload: any, opts: any = {}) {
     : Math.max(0, toNum(payload.paid_cash));
   const cashReceived = Math.max(0, toNum(payload.cash_received));
   const change = Math.max(0, toNum(payload.change));
+  if (ekassaFields) {
+    const lineDiscountSum = items.reduce(
+      (s, it) => s + toNum(it.line_discount_amount),
+      0,
+    );
+    const payloadOrderDiscount = toNum(
+      payload?.discount ??
+        payload?.order_discount_total ??
+        payload?.order_discount,
+    );
+    const ekassaImpliedDiscount = Math.max(0, subtotal - total - vat - nsp);
+    warnIfEkassaDiscountMismatch({
+      lineDiscountSum,
+      orderDiscount:
+        payloadOrderDiscount > 0 ? payloadOrderDiscount : ekassaImpliedDiscount,
+      strategies: ekassaMergeStrategies,
+    });
+  }
   const kkm = String(
     ekassaFields
       ? (f(ekassaFields, "1037") ?? payload?.ekassa_fiscal?.kkm_reg_number ?? "")
@@ -503,4 +462,4 @@ function buildReceiptFromJSON(payload: any, opts: any = {}) {
 }
 
 
-export { buildReceiptFromJSON };
+export { buildReceiptFromJSON, mapMarketReceiptItem };

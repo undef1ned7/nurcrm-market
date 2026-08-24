@@ -11,6 +11,8 @@ export {
   setEscposLineHeight,
   setEscposFont,
   setEscposCodepage,
+  exportEscposSettings,
+  importEscposSettings,
 } from "./print/storage";
 
 export { getEscposRuntimeConfig } from "./print/encoding";
@@ -20,6 +22,10 @@ export {
   attachUsbListenersOnce,
   checkPrinterConnection,
 } from "./print/usb";
+
+export { PRINTER_IN_USE_MESSAGE } from "./print/usbLock";
+
+export { mapMarketReceiptItem } from "./print/receiptItems";
 
 export {
   printRussianRawUsb,
