@@ -2,23 +2,30 @@
 
 import { ESC } from "./bytes";
 
-async function ensurePdfJs() {
-  if (typeof window === "undefined") throw new Error("No window");
-  if ((window as any).pdfjsLib) return (window as any).pdfjsLib;
-  await new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    s.onload = resolve;
-    s.onerror = () => reject(new Error("Не удалось загрузить pdf.js"));
-    document.head.appendChild(s);
-  });
-  (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  return (window as any).pdfjsLib;
+type PdfJsModule = typeof import("pdfjs-dist");
+
+let pdfjsPromise: Promise<PdfJsModule> | null = null;
+
+/**
+ * Ленивая загрузка pdf.js из локального `pdfjs-dist` (не CDN).
+ * Worker Vite кладёт в hashed asset того же origin (`?url`) — это отдельный
+ * запрос к нашему хосту, не к cdnjs. На критический путь кассы не попадает:
+ * импорт выполняется только в PDF-фолбэке печати.
+ */
+async function loadPdfJs(): Promise<PdfJsModule> {
+  if (!pdfjsPromise) {
+    pdfjsPromise = (async () => {
+      const pdfjs = await import("pdfjs-dist");
+      const workerUrl = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl.default;
+      return pdfjs;
+    })();
+  }
+  return pdfjsPromise;
 }
 
 export async function pdfBlobToCanvas(pdfBlob: any, targetWidth = 384) {
-  const pdfjsLib = await ensurePdfJs();
+  const pdfjsLib = await loadPdfJs();
   const ab = await pdfBlob.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
   const page = await pdf.getPage(1);

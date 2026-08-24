@@ -72,8 +72,15 @@ export default defineConfig(({ mode }) => {
             }
 
             // @react-pdf/renderer обычно тяжёлый — изолируем в отдельный chunk.
-            if (id.includes("react-pdf") || id.includes("@react-pdf")) {
+            if (
+              id.includes("react-pdf") ||
+              id.includes("@react-pdf")
+            ) {
               return "vendor-pdf";
+            }
+
+            if (id.includes("pdfjs-dist")) {
+              return "vendor-pdfjs";
             }
 
             return "vendor";
