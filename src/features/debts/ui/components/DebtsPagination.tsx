@@ -40,7 +40,9 @@ export function DebtsPagination({
         className="nur-btn nur-btn--secondary nur-btn--sm"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={
-          loading || !hasNextPage || (totalPages && currentPage >= totalPages)
+          Boolean(loading) ||
+          !hasNextPage ||
+          (totalPages > 0 && currentPage >= totalPages)
         }
       >
         Вперед
