@@ -14,6 +14,7 @@ import {
   pdfBlobToCanvas,
 } from "./raster";
 import { safeLsGet } from "./storage";
+import { resolveReceiptStyle } from "./receiptStyle";
 import {
   usbState,
   saveVidPidToLS,
@@ -201,12 +202,12 @@ export function enrichMarketReceiptPayload(payload: any, meta: any = {}) {
 }
 
 function resolveMarketPrintOptions(options: any = {}) {
-  if (options.receiptStyle) return options;
-  const sectorSlug = String(safeLsGet("selectedSector") || "").toLowerCase();
-  if (sectorSlug === "market") {
-    return { ...options, receiptStyle: "market" };
-  }
-  return options;
+  const receiptStyle = resolveReceiptStyle(
+    options?.receiptStyle,
+    safeLsGet("selectedSector"),
+  );
+  if (!receiptStyle) return options;
+  return { ...options, receiptStyle };
 }
 
 export async function handleCheckoutResponseForPrinting(res: any, options: any = {}) {
