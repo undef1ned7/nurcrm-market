@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, RefreshCw, Undo2, Wand2, X } from "lucide-react";
+import { Download, Plus, RefreshCw, Undo2, Wand2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { pdf } from "@react-pdf/renderer";
 import api from "@shared/api";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
@@ -20,6 +21,11 @@ import Pagination from "./components/Pagination";
 import { useAlert } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
+import InvoicePdfDocument from "@pages/documents/ui/components/InvoicePdfDocument";
+import {
+  buildSupplierLabel,
+  downloadBlob,
+} from "./supplierReceipt/supplierReceiptUtils";
 import "./Warehouse.scss";
 import "./SupplierReceiptPage.scss";
 
@@ -141,6 +147,80 @@ const receiptRowTotal = (row: any) => {
   return calcReceiptTotal(row.items);
 };
 
+const receiptSupplierObject = (receipt: any) =>
+  receipt?.supplier && typeof receipt.supplier === "object"
+    ? receipt.supplier
+    : { full_name: receipt?.supplier_name || receipt?.supplierName || "" };
+
+/** Данные для InvoicePdfDocument по уже сохранённому приходу из истории закупок. */
+const buildReceiptInvoiceData = (receipt: any) => {
+  const items = Array.isArray(receipt?.items) ? receipt.items : [];
+  const total = receiptRowTotal(receipt);
+  const createdAt = receipt?.created_at ? new Date(receipt.created_at) : new Date();
+  const number = String(
+    receipt?.number ?? receipt?.receipt_number ?? receipt?.id ?? receipt?.uuid ?? "",
+  );
+  const supplier = receiptSupplierObject(receipt);
+
+  let companyName = "";
+  try {
+    companyName = localStorage.getItem("company_name") || "";
+  } catch {
+    /* keep empty */
+  }
+
+  return {
+    doc_type: "purchase",
+    number,
+    document: {
+      type: "purchase_invoice",
+      doc_type: "purchase",
+      title: "Накладная",
+      number,
+      date: createdAt.toISOString().split("T")[0],
+      datetime: createdAt.toISOString(),
+      created_at: createdAt.toISOString(),
+      discount_percent: 0,
+    },
+    seller: {
+      name: buildSupplierLabel(supplier),
+      address: supplier?.address || "",
+      phone: supplier?.phone || null,
+      email: supplier?.email || null,
+    },
+    buyer: {
+      name: companyName || "Компания",
+      full_name: companyName || "Компания",
+      address: "",
+      phone: null,
+      email: null,
+    },
+    items: items.map((it: any) => {
+      const qty = Number(it.qty || 0);
+      const price = Number(it.purchase_price || 0);
+      const product = it.product && typeof it.product === "object" ? it.product : null;
+      return {
+        id: product?.id ?? it.product ?? "",
+        name: receiptItemLabel(it),
+        article: product?.article || it.article || "",
+        unit: product?.unit || it.unit || "шт",
+        qty: String(qty),
+        unit_price: String(price.toFixed(2)),
+        total: String((qty * price).toFixed(2)),
+        discount_percent: 0,
+        price_before_discount: String(price.toFixed(2)),
+      };
+    }),
+    totals: {
+      subtotal: String(total.toFixed(2)),
+      discount_total: "0.00",
+      tax_total: "0.00",
+      total: String(total.toFixed(2)),
+    },
+    warehouse: companyName || "Склад",
+  };
+};
+
 export default function SupplierReceiptsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -212,6 +292,37 @@ export default function SupplierReceiptsListPage() {
     setDetailReceipt(null);
     setDetailLoading(false);
   };
+
+  const [downloadingInvoice, setDownloadingInvoice] = useState<any>(false);
+
+  const handleDownloadReceiptInvoice = async () => {
+    if (!detailReceipt) return;
+    const items = Array.isArray(detailReceipt.items) ? detailReceipt.items : [];
+    if (!items.length) {
+      alert(t("crm.procurement.noItemsForInvoice"), true);
+      return;
+    }
+
+    setDownloadingInvoice(true);
+    try {
+      const data = buildReceiptInvoiceData(detailReceipt);
+      const blob = await pdf(<InvoicePdfDocument data={data} />).toBlob();
+      const supplierPart = buildSupplierLabel(receiptSupplierObject(detailReceipt))
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-z0-9а-яё_()-]/gi, "")
+        .slice(0, 40);
+      const idPart = String(detailReceipt.id ?? detailReceipt.uuid ?? "").slice(0, 8);
+      downloadBlob(
+        blob,
+        `receipt_invoice_${supplierPart || "supplier"}${idPart ? `_${idPart}` : ""}.pdf`,
+      );
+    } catch (error: any) {
+      alert(validateResErrors(error, t("crm.procurement.invoiceGenerateError")), true);
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
   const emptyFilters = useMemo(
     () => ({
       supplier_id: "",
@@ -274,10 +385,15 @@ export default function SupplierReceiptsListPage() {
       (suppliers || []).map((s: any) => ({
         value: String(s.id || ""),
         label:
-          String(s.full_name || s.name || s.company_name || s.phone || "Без названия").trim() ||
-          "Без названия",
+          String(
+            s.full_name ||
+              s.name ||
+              s.company_name ||
+              s.phone ||
+              t("crm.procurement.noName"),
+          ).trim() || t("crm.procurement.noName"),
       })),
-    [suppliers],
+    [suppliers, t],
   );
 
   const loadSuppliers = async () => {
@@ -290,7 +406,10 @@ export default function SupplierReceiptsListPage() {
       setSuppliers(Array.isArray(rows) ? rows : []);
     } catch (error: any) {
       setSuppliers([]);
-      const errorMessage = validateResErrors(error, "Ошибка загрузки поставщиков");
+      const errorMessage = validateResErrors(
+        error,
+        t("crm.procurement.loadSuppliersError"),
+      );
       alert(errorMessage, true);
     } finally {
       setSuppliersLoading(false);
@@ -323,7 +442,10 @@ export default function SupplierReceiptsListPage() {
       setListNext(null);
       setListPrevious(null);
       setTotalAmount(null);
-      const errorMessage = validateResErrors(error, "Ошибка загрузки списка закупок");
+      const errorMessage = validateResErrors(
+        error,
+        t("crm.procurement.loadListError"),
+      );
       alert(errorMessage, true);
     } finally {
       setLoading(false);
@@ -336,17 +458,18 @@ export default function SupplierReceiptsListPage() {
     alert,
     limit,
     page,
+    t,
   ]);
 
   const handleCreateSupplier = async () => {
     const full_name = String(createSupplierName || "").trim();
     const phone = String(createSupplierPhone || "").trim();
     if (!full_name) {
-      alert("Введите имя поставщика.", true);
+      alert(t("crm.procurement.enterSupplierName"), true);
       return;
     }
     if (!phone) {
-      alert("Введите телефон поставщика.", true);
+      alert(t("crm.procurement.enterSupplierPhone"), true);
       return;
     }
     try {
@@ -365,7 +488,10 @@ export default function SupplierReceiptsListPage() {
       setCreateSupplierName("");
       setCreateSupplierPhone("");
     } catch (error: any) {
-      const errorMessage = validateResErrors(error, "Ошибка создания поставщика");
+      const errorMessage = validateResErrors(
+        error,
+        t("crm.procurement.createSupplierError"),
+      );
       alert(errorMessage, true);
     } finally {
       setCreateSupplierSaving(false);
@@ -398,7 +524,7 @@ export default function SupplierReceiptsListPage() {
 
   const handleApplyFilters = () => {
     if (dateRangeInvalid) {
-      alert("Дата 'до' не может быть раньше даты 'от'.", true);
+      alert(t("crm.procurement.dateRangeError"), true);
       return;
     }
     replaceListSearchParams({
@@ -512,7 +638,7 @@ export default function SupplierReceiptsListPage() {
               </div>
             </div>
             <div className="market-receipt-page__field market-receipt-page__field--date">
-              <label className="nur-label">Дата от</label>
+              <label className="nur-label">{t("crm.procurement.dateFrom")}</label>
               <input
                 className="nur-input"
                 type="date"
@@ -523,7 +649,7 @@ export default function SupplierReceiptsListPage() {
               />
             </div>
             <div className="market-receipt-page__field market-receipt-page__field--date">
-              <label className="nur-label">Дата до</label>
+              <label className="nur-label">{t("crm.procurement.dateTo")}</label>
               <input
                 className="nur-input"
                 type="date"
@@ -534,14 +660,14 @@ export default function SupplierReceiptsListPage() {
               />
             </div>
             <div className="market-receipt-page__field">
-              <label className="nur-label">Поиск</label>
+              <label className="nur-label">{t("crm.procurement.search")}</label>
               <input
                 className="nur-input"
                 value={filtersDraft.search}
                 onChange={(e: any) =>
                   setFiltersDraft((prev: any) => ({ ...prev, search: e.target.value }))
                 }
-                placeholder="Поставщик или товар"
+                placeholder={t("crm.procurement.searchSupplierProduct")}
               />
             </div>
           </FilterBar>
@@ -553,7 +679,7 @@ export default function SupplierReceiptsListPage() {
               onClick={handleApplyFilters}
               disabled={loading || !hasPendingChanges || dateRangeInvalid}
             >
-              Применить
+              {t("crm.procurement.apply")}
             </button>
             <button
               type="button"
@@ -561,7 +687,7 @@ export default function SupplierReceiptsListPage() {
               onClick={handleResetFilters}
               disabled={loading || (!hasAnyFilter && !hasPendingChanges)}
             >
-              Сбросить
+              {t("crm.procurement.reset")}
             </button>
             <button
               type="button"
@@ -570,32 +696,32 @@ export default function SupplierReceiptsListPage() {
               disabled={loading}
             >
               <RefreshCw size={16} />
-              Обновить
+              {t("crm.procurement.refresh")}
             </button>
           </div>
           {dateRangeInvalid && (
             <div className="market-receipt-page__empty">
-              Проверьте диапазон дат: дата окончания раньше даты начала.
+              {t("crm.procurement.dateRangeInvalid")}
             </div>
           )}
 
           {loading ? (
-            <div className="market-receipt-page__empty">Загрузка...</div>
+            <div className="market-receipt-page__empty">{t("common.loading")}</div>
           ) : receipts.length === 0 ? (
             <EmptyState
-              title="Закупки не найдены"
-              text="Измените фильтры или создайте новое оприходование."
+              title={t("crm.procurement.purchasesNotFound")}
+              text={t("crm.procurement.purchasesNotFoundHint")}
             />
           ) : (
             <div className="nur-table-wrap market-receipt-page__table-wrap">
               <table className="nur-table nur-table--clickable market-receipt-page__table">
                 <thead>
                   <tr>
-                    <th>Поставщик</th>
-                    <th>Создал</th>
-                    <th>Дата</th>
-                    <th>Позиций</th>
-                    <th>Сумма</th>
+                    <th>{t("crm.procurement.colSupplier")}</th>
+                    <th>{t("crm.procurement.colCreatedBy")}</th>
+                    <th>{t("crm.procurement.colDate")}</th>
+                    <th>{t("crm.procurement.colItems")}</th>
+                    <th>{t("crm.procurement.colAmount")}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -638,7 +764,7 @@ export default function SupplierReceiptsListPage() {
                               });
                             }}
                           >
-                            Вернуть
+                            {t("crm.procurement.returnBtn")}
                           </button>
                         </td>
                       </tr>
@@ -654,7 +780,7 @@ export default function SupplierReceiptsListPage() {
               currentPage={page}
               totalPages={totalPages}
               count={listCount}
-              countLabel="закупок"
+              countLabel={t("crm.procurement.purchasesCount")}
               loading={loading}
               hasNextPage={Boolean(listNext)}
               hasPrevPage={Boolean(listPrevious)}
@@ -681,35 +807,42 @@ export default function SupplierReceiptsListPage() {
           >
             <div className="market-receipt-page__detail-head">
               <h3 id="receipt-detail-title" className="market-receipt-page__modal-title">
-                Позиции прихода
+                {t("crm.procurement.detailTitle")}
               </h3>
               <button
                 type="button"
                 className="market-receipt-page__detail-close"
                 onClick={closeReceiptDetail}
-                aria-label="Закрыть"
+                aria-label={t("common.close")}
               >
                 <X size={20} />
               </button>
             </div>
             <div className="market-receipt-page__detail-meta">
               <span>
-                <strong>Поставщик:</strong> {detailReceipt.supplier_name || "—"}
+                <strong>{t("crm.procurement.detailSupplier")}</strong>{" "}
+                {detailReceipt.supplier_name || "—"}
               </span>
               <span>
-                <strong>Создал:</strong> {detailReceipt.created_by_name || "—"}
+                <strong>{t("crm.procurement.detailCreatedBy")}</strong>{" "}
+                {detailReceipt.created_by_name || "—"}
               </span>
               <span>
-                <strong>Дата:</strong> {fmtDateTime(detailReceipt.created_at)}
+                <strong>{t("crm.procurement.detailDate")}</strong>{" "}
+                {fmtDateTime(detailReceipt.created_at)}
               </span>
             </div>
             {detailLoading ? (
-              <p className="market-receipt-page__detail-empty">Загрузка позиций…</p>
+              <p className="market-receipt-page__detail-empty">
+                {t("crm.procurement.detailLoadingItems")}
+              </p>
             ) : (() => {
               const items = Array.isArray(detailReceipt.items) ? detailReceipt.items : [];
               if (items.length === 0) {
                 return (
-                  <p className="market-receipt-page__detail-empty">Нет позиций для отображения.</p>
+                  <p className="market-receipt-page__detail-empty">
+                    {t("crm.procurement.detailNoItems")}
+                  </p>
                 );
               }
               return (
@@ -717,11 +850,11 @@ export default function SupplierReceiptsListPage() {
                   <table className="nur-table market-receipt-page__detail-table">
                     <thead>
                       <tr>
-                        <th>№</th>
-                        <th>Наименование</th>
-                        <th>Кол-во</th>
-                        <th>Цена закупки</th>
-                        <th>Сумма</th>
+                        <th>{t("crm.procurement.colNo")}</th>
+                        <th>{t("crm.procurement.colName")}</th>
+                        <th>{t("crm.procurement.colQty")}</th>
+                        <th>{t("crm.procurement.colPurchasePrice")}</th>
+                        <th>{t("crm.procurement.colAmount")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -748,6 +881,22 @@ export default function SupplierReceiptsListPage() {
               <button
                 type="button"
                 className="nur-btn nur-btn--secondary"
+                onClick={handleDownloadReceiptInvoice}
+                disabled={
+                  downloadingInvoice ||
+                  detailLoading ||
+                  !Array.isArray(detailReceipt.items) ||
+                  detailReceipt.items.length === 0
+                }
+              >
+                <Download size={16} />
+                {downloadingInvoice
+                  ? t("crm.procurement.generatingInvoice")
+                  : t("crm.procurement.downloadInvoice")}
+              </button>
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary"
                 onClick={() => {
                   const receiptId = String(detailReceipt.id ?? detailReceipt.uuid ?? "");
                   const supplierId = String(
@@ -758,14 +907,14 @@ export default function SupplierReceiptsListPage() {
                 }}
               >
                 <Undo2 size={16} />
-                Вернуть поставщику
+                {t("crm.procurement.returnToSupplier")}
               </button>
               <button
                 type="button"
                 className="nur-btn nur-btn--secondary"
                 onClick={closeReceiptDetail}
               >
-                Закрыть
+                {t("common.close")}
               </button>
             </div>
           </div>
@@ -776,18 +925,20 @@ export default function SupplierReceiptsListPage() {
         <ReactPortal wrapperId="receipts-list-supplier-modal">
         <div className="market-receipt-page__modal-overlay" onClick={() => setCreateSupplierOpen(false)}>
           <div className="market-receipt-page__modal-card" onClick={(e: any) => e.stopPropagation()}>
-            <h3 className="market-receipt-page__modal-title">Новый поставщик</h3>
+            <h3 className="market-receipt-page__modal-title">
+              {t("crm.procurement.newSupplier")}
+            </h3>
             <div className="market-receipt-page__field">
-              <label className="nur-label">Имя *</label>
+              <label className="nur-label">{t("crm.procurement.nameRequired")}</label>
               <input
                 className="nur-input"
                 value={createSupplierName}
                 onChange={(e: any) => setCreateSupplierName(e.target.value)}
-                placeholder="Название/ФИО"
+                placeholder={t("crm.procurement.supplierNamePlaceholder")}
               />
             </div>
             <div className="market-receipt-page__field">
-              <label className="nur-label">Телефон *</label>
+              <label className="nur-label">{t("crm.procurement.phoneRequired")}</label>
               <input
                 className="nur-input"
                 value={createSupplierPhone}
@@ -802,7 +953,7 @@ export default function SupplierReceiptsListPage() {
                 onClick={() => setCreateSupplierOpen(false)}
                 disabled={createSupplierSaving}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -810,7 +961,7 @@ export default function SupplierReceiptsListPage() {
                 onClick={handleCreateSupplier}
                 disabled={createSupplierSaving}
               >
-                {createSupplierSaving ? "Сохранение..." : "Сохранить"}
+                {createSupplierSaving ? t("common.saving") : t("common.save")}
               </button>
             </div>
           </div>

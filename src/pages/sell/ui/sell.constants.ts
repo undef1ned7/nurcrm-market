@@ -2,6 +2,7 @@ export const kindTranslate = {
   new: "Новый",
   paid: "Оплаченный",
   canceled: "возвращенный",
+  partially_returned: "Частичный возврат",
   debt: "Долг",
 };
 

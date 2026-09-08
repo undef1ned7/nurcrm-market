@@ -6,7 +6,8 @@ import {
   updateProductAsync,
 } from "@entities/product";
 import { createDeal } from "@entities/sale";
-import { addCashFlows } from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import * as utils from "../utils";
 import { useAppDispatch } from "@app/store";
 
@@ -28,8 +29,6 @@ export const useAddProductSubmitFlow = ({
   debtState,
   company,
   pickSupplier,
-  cashData,
-  selectCashBox,
   embedded,
   onEmbeddedSaved,
   returnToPath,
@@ -93,12 +92,20 @@ export const useAddProductSubmitFlow = ({
     }
 
     // Формируем payload используя утилиту (убрано ~150 строк дублирующего кода)
-    const payload = utils.buildProductPayload({
-      newItemData,
-      marketData,
-      itemType,
-      weightProductsCount,
-    });
+    const payload = {
+      ...utils.buildProductPayload({
+        newItemData,
+        marketData,
+        itemType,
+        weightProductsCount,
+      }),
+      ...(debt !== "Долги"
+        ? {
+            payment_mode: debt === "Предоплата" ? "prepayment" : "cash",
+            ...buildExpenseVariableRouting(),
+          }
+        : { payment_mode: "debt" }),
+    };
 
     try {
       let product;
@@ -128,6 +135,8 @@ export const useAddProductSubmitFlow = ({
         itemType === "product" ? purchase_price || "0" : "0";
       const qty = itemType === "product" ? Number(quantity || "0") : 0;
       totalAmount = Number(purchasePrice) * qty;
+
+      let imageUploadWarning: string | null = null;
 
       // Загрузка изображений (после создания товара или при редактировании)
       try {
@@ -168,12 +177,27 @@ export const useAddProductSubmitFlow = ({
                   },
                 );
               });
-              if (uploads.length) await Promise.allSettled(uploads);
+              const uploadResults = await Promise.allSettled(uploads);
+              const failedUploads = uploadResults.filter(
+                (r) => r.status === "rejected",
+              );
+              if (failedUploads.length > 0) {
+                console.warn(
+                  "Загрузка части изображений не удалась:",
+                  failedUploads,
+                );
+                imageUploadWarning =
+                  failedUploads.length === uploadResults.length
+                    ? "Товар сохранён, но не удалось загрузить изображения. Попробуйте добавить фото снова."
+                    : `Товар сохранён, но не удалось загрузить ${failedUploads.length} из ${uploadResults.length} изображений.`;
+              }
             }
           }
         }
       } catch (e: any) {
         console.warn("Загрузка изображений не удалась:", e);
+        imageUploadWarning =
+          "Товар сохранён, но не удалось загрузить изображения. Попробуйте добавить фото снова.";
         // не блокируем основной флоу
       }
 
@@ -223,37 +247,22 @@ export const useAddProductSubmitFlow = ({
           debt === "Предоплата"
             ? Number(amount || "0")
             : qty * Number(purchaseUnitPrice);
-        // Используем selectCashBox если cashData.cashbox пустой
-        const cashboxId = cashData.cashbox || selectCashBox;
-
-        // Создаем денежный поток если есть касса и сумма больше 0
-        if (cashboxId && Number(amountForCash) > 0) {
-          try {
-            await dispatch(
-              addCashFlows({
-                cashbox: cashboxId,
-                type: "expense",
-                name: name || product?.name || "Новый товар",
-                amount: amountForCash,
-                source_cashbox_flow_id: product.id,
-                source_business_operation_id: "Склад",
-                status:
-                  company?.subscription_plan?.name === "Старт"
-                    ? "approved"
-                    : "pending",
-              }),
-            ).unwrap();
-          } catch (cashError: any) {
-            console.warn("Ошибка при создании денежного потока:", cashError);
-            // Не блокируем создание товара, если ошибка с кассой
-          }
-        } else {
-          console.log("CashFlow не создан:", {
-            cashboxId,
-            amountForCash,
-            hasCashbox: !!cashboxId,
-            amountGreaterThanZero: Number(amountForCash) > 0,
-          });
+        if (Number(amountForCash) > 0) {
+          await postCashflowIfNeeded(
+            dispatch,
+            {
+              type: "expense",
+              name: name || product?.name || "Новый товар",
+              amount: amountForCash,
+              source_cashbox_flow_id: product.id,
+              source_business_operation_id: "Склад",
+              status:
+                company?.subscription_plan?.name === "Старт"
+                  ? "approved"
+                  : "pending",
+            },
+            { warnOnFailure: true, failureContext: "product" },
+          );
         }
       }
 
@@ -279,9 +288,13 @@ export const useAddProductSubmitFlow = ({
       });
 
       showAlert(
-        isEditMode ? "Товар успешно обновлен!" : "Товар успешно добавлен!",
-        "success",
-        "Успех",
+        imageUploadWarning
+          ? imageUploadWarning
+          : isEditMode
+            ? "Товар успешно обновлен!"
+            : "Товар успешно добавлен!",
+        imageUploadWarning ? "warning" : "success",
+        imageUploadWarning ? "Внимание" : "Успех",
       );
       setTimeout(() => {
         if (embedded && typeof onEmbeddedSaved === "function") {

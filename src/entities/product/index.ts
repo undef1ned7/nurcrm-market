@@ -8,3 +8,11 @@ export {
   isLocalAdultProduct,
   rememberAdultProduct,
 } from "./lib/isAdultProduct";
+export {
+  daysUntilExpiry,
+  getExpiryDate,
+  getExpiryStatus,
+  translateExpiryStatus,
+  buildProductExpiryLocalNotification,
+  type ProductExpiryStatus,
+} from "./lib/productExpiry";

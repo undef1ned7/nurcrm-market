@@ -10,6 +10,11 @@ import {
 } from "@shared/lib/tools/clientDeals";
 import { handleThunkError } from "@shared/lib/handleThunkError";
 import { serializeApiError } from "@shared/lib/tools/barcodeAmbiguity";
+import {
+  buildCashRoutingPayload,
+  buildPosRoutingFromUser,
+} from "@shared/lib/tools/cashboxResolution";
+import { buildSaleReturnPayload } from "@shared/lib/tools/saleReturn";
 
 // ===== POS продажи (товары) =====
 export const startSale = createAsyncThunk<any, void | any>(
@@ -273,22 +278,37 @@ export const historySellProductDetail = createAsyncThunk<any, void | any>(
 
 export const returnSale = createAsyncThunk<any, void | any>(
   "products/returnSale",
-  async ({ saleId, items, is_defect }: any, { rejectWithValue, getState }) => {
+  async (
+    { saleId, items, is_defect, shiftId, idempotencyKey }: any,
+    { rejectWithValue, getState },
+  ) => {
     try {
-      const role = String((getState() as any)?.user?.profile?.role || "")
+      const state = getState() as any;
+      const role = String(state?.user?.profile?.role || "")
         .trim()
         .toLowerCase();
-      const endpoint =
-        role === "agent"
-          ? `/main/agents/me/sales/${saleId}/return/`
-          : `/main/pos/sales/${saleId}/return/`;
-      const payload: any = {};
-      if (Array.isArray(items) && items.length > 0) {
-        payload.items = items;
-      }
-      if (is_defect === true) {
-        payload.is_defect = true;
-      }
+      const isAgent = role === "agent";
+      const endpoint = isAgent
+        ? `/main/agents/me/sales/${saleId}/return/`
+        : `/main/pos/sales/${saleId}/return/`;
+      // Маршрутизация кассы для компенсирующего движения на бэке
+      // (обратный expense к исходному pos_sale income). Для агентов не шлём —
+      // у их endpoint своя маршрутизация. Старый бэк лишние поля игнорирует.
+      // @see docs/backend/kassa/sale-return-cashflow-backend.md
+      const routing = isAgent
+        ? null
+        : buildPosRoutingFromUser(
+            state?.user?.profile,
+            state?.user?.company,
+            shiftId,
+          );
+      const payload = buildSaleReturnPayload({
+        items,
+        is_defect,
+        isAgent,
+        idempotencyKey,
+        routing,
+      });
       const { data } = await api.post(endpoint, payload);
       return data;
     } catch (error: any) {
@@ -319,6 +339,9 @@ export const productCheckout = createAsyncThunk<any, void | any>(
       payment_method,
       cash_received,
       payments,
+      branch_id,
+      shift_id,
+      cashbox_role,
       consultant_id,
       consultant_commission_enabled,
       consultant_commission_percent,
@@ -335,6 +358,7 @@ export const productCheckout = createAsyncThunk<any, void | any>(
         ...(clientId && { client_id: clientId }),
         ...(hasPayments ? { payments } : payment_method ? { payment_method } : {}),
         ...(cash_received != null && cash_received !== "" ? { cash_received } : {}),
+        ...buildCashRoutingPayload({ branch_id, cashbox_role, shift_id }),
         ...(hasConsultant
           ? {
               consultant_id,

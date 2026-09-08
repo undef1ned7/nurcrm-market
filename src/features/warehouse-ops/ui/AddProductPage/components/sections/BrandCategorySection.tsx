@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import SearchSelect from "@shared/ui/SearchSelect/SearchSelect";
 import {
   FormBlock,
@@ -22,6 +23,8 @@ const BrandCategorySection = ({
   onSubmitBrand,
   isBrandNameTaken,
 }) => {
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.warehouse.addProduct.${k}`) as string;
   const layout = useOptionalProductFormLayout();
   const showCategory = !layout || layout.isVisible("category");
   const showBrand = !layout || layout.isVisible("brand");
@@ -32,7 +35,9 @@ const BrandCategorySection = ({
         <div className="market-product-form__two-columns">
           <FormBlock id="category">
           <div className="market-product-form__form-group">
-            <label className="market-product-form__label">Категория</label>
+            <label className="market-product-form__label">
+              {tp("categoryLabel")}
+            </label>
             <div className="add-product-page__supplier-row">
               <SearchSelect
                 value={newItemData.category_name}
@@ -42,15 +47,15 @@ const BrandCategorySection = ({
                   })
                 }
                 options={categoryOptions}
-                placeholder="Выберите категорию"
-                emptyText="Категории не найдены"
+                placeholder={tp("categorySelectPlaceholder")}
+                emptyText={tp("categoryEmpty")}
               />
               <button
                 className="add-product-page__create-supplier"
                 onClick={() => setShowCategoryInputs(!showCategoryInputs)}
                 type="button"
               >
-                + Создать категорию
+                {tp("createCategory")}
               </button>
             </div>
             {showCategoryInputs && (
@@ -64,14 +69,14 @@ const BrandCategorySection = ({
                     setNewCategory({ ...newCategory, name: e.target.value })
                   }
                   type="text"
-                  placeholder="Название категории"
+                  placeholder={tp("categoryNamePlaceholder")}
                   name="name"
                   value={newCategory.name}
                   required
                 />
                 {isCategoryNameTaken && (
                   <p className="add-product-page__error">
-                    Категория с таким названием уже существует
+                    {tp("categoryTaken")}
                   </p>
                 )}
                 <div className="add-product-page__form-actions">
@@ -83,14 +88,14 @@ const BrandCategorySection = ({
                       setNewCategory({ name: "" });
                     }}
                   >
-                    Отмена
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
                     className="add-product-page__save-btn"
                     disabled={isCategoryNameTaken}
                   >
-                    Создать
+                    {t("common.create")}
                   </button>
                 </div>
               </form>
@@ -100,7 +105,9 @@ const BrandCategorySection = ({
 
           <FormBlock id="brand">
           <div className="market-product-form__form-group">
-            <label className="market-product-form__label">Бренд</label>
+            <label className="market-product-form__label">
+              {tp("brandLabel")}
+            </label>
             <div className="add-product-page__supplier-row">
               <SearchSelect
                 value={newItemData.brand_name}
@@ -110,15 +117,15 @@ const BrandCategorySection = ({
                   })
                 }
                 options={brandOptions}
-                placeholder="Выберите бренд"
-                emptyText="Бренды не найдены"
+                placeholder={tp("brandSelectPlaceholder")}
+                emptyText={tp("brandEmpty")}
               />
               <button
                 className="add-product-page__create-supplier"
                 onClick={() => setShowBrandInputs(!showBrandInputs)}
                 type="button"
               >
-                + Создать бренд
+                {tp("createBrand")}
               </button>
             </div>
             {showBrandInputs && (
@@ -132,14 +139,14 @@ const BrandCategorySection = ({
                     setNewBrand({ ...newBrand, name: e.target.value })
                   }
                   type="text"
-                  placeholder="Название бренда"
+                  placeholder={tp("brandNamePlaceholder")}
                   name="name"
                   value={newBrand.name}
                   required
                 />
                 {isBrandNameTaken && (
                   <p className="add-product-page__error">
-                    Бренд с таким названием уже существует
+                    {tp("brandTaken")}
                   </p>
                 )}
                 <div className="add-product-page__form-actions">
@@ -151,14 +158,14 @@ const BrandCategorySection = ({
                       setNewBrand({ name: "" });
                     }}
                   >
-                    Отмена
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
                     className="add-product-page__save-btn"
                     disabled={isBrandNameTaken}
                   >
-                    Создать
+                    {t("common.create")}
                   </button>
                 </div>
               </form>

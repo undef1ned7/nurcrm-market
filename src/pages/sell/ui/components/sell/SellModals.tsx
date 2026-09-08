@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import AddCashFlowsModal from "@features/kassa/ui/AddCashFlowsModal/AddCashFlowsModal";
 import Modal from "@shared/ui/Modal/Modal";
 import { historySellObjects, historySellProduct } from "@entities/sale";
@@ -12,13 +13,14 @@ type Props = {
 };
 
 export default function SellModals({ vm }: Props) {
+  const { t } = useTranslation();
+  const tf = (k: string): string => t(`crm.sell.modals.filters.${k}`) as string;
   const {
     showAddCashboxModal,
     setShowAddCashboxModal,
     showSellModal,
     setShowSellModal,
     start,
-    selectCashBox,
     showRefundModal,
     setShowRefundModal,
     itemId,
@@ -57,7 +59,6 @@ export default function SellModals({ vm }: Props) {
       {showSellModal && (
         <SellModal
           id={start?.id}
-          selectCashBox={selectCashBox}
           onClose={() => setShowSellModal(false)}
         />
       )}
@@ -110,13 +111,13 @@ export default function SellModals({ vm }: Props) {
         <Modal
           open={showFiltersModal}
           onClose={() => setShowFiltersModal(false)}
-          title="Фильтры"
+          title={tf("title")}
           className="sellFiltersModal"
           contentClassName="sellFiltersModal__content"
         >
           <div className="sellFiltersModal__grid">
             <label className="sellFiltersModal__field">
-              <span>Дата начала</span>
+              <span>{tf("dateStart")}</span>
               <input
                 type="date"
                 className="sell__filter-field"
@@ -125,7 +126,7 @@ export default function SellModals({ vm }: Props) {
               />
             </label>
             <label className="sellFiltersModal__field">
-              <span>Дата конца</span>
+              <span>{tf("dateEnd")}</span>
               <input
                 type="date"
                 className="sell__filter-field"
@@ -134,32 +135,38 @@ export default function SellModals({ vm }: Props) {
               />
             </label>
             <label className="sellFiltersModal__field">
-              <span>Клиент</span>
+              <span>{tf("client")}</span>
               <select
                 className="sell__filter-field"
                 value={clientFilter}
                 onChange={(e: any) => setClientFilter(e.target.value)}
               >
-                <option value="">Все клиенты</option>
+                <option value="">{t("crm.sell.allClients")}</option>
                 {clients.map((client: any) => (
                   <option key={client.id} value={client.id}>
-                    {client.full_name || client.name || client.phone || "Клиент"}
+                    {client.full_name ||
+                      client.name ||
+                      client.phone ||
+                      tf("clientFallback")}
                   </option>
                 ))}
               </select>
             </label>
             <label className="sellFiltersModal__field">
-              <span>Статус</span>
+              <span>{tf("status")}</span>
               <select
                 className="sell__filter-field"
                 value={statusFilter}
                 onChange={(e: any) => setStatusFilter(e.target.value)}
               >
-                <option value="">Все статусы</option>
-                <option value="new">Новый</option>
-                <option value="paid">Оплаченный</option>
-                <option value="debt">Долг</option>
-                <option value="canceled">Отмененный</option>
+                <option value="">{t("crm.sell.allStatuses")}</option>
+                <option value="new">{tf("statusNew")}</option>
+                <option value="paid">{tf("statusPaid")}</option>
+                <option value="debt">{tf("statusDebt")}</option>
+                <option value="partially_returned">
+                  {tf("statusPartiallyReturned")}
+                </option>
+                <option value="canceled">{tf("statusCanceled")}</option>
               </select>
             </label>
           </div>
@@ -174,14 +181,14 @@ export default function SellModals({ vm }: Props) {
                 setStatusFilter("");
               }}
             >
-              Сбросить
+              {t("common.reset")}
             </button>
             <button
               type="button"
               className="sell__header-btn"
               onClick={() => setShowFiltersModal(false)}
             >
-              Применить
+              {t("common.apply")}
             </button>
           </div>
         </Modal>

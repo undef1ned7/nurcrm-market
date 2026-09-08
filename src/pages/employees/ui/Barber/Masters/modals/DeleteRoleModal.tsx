@@ -1,5 +1,6 @@
 import { FaTimes } from "react-icons/fa";
 import { AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import BarberMastersPortal from "./BarberMastersPortal";
 
 const DeleteRoleModal = ({
@@ -8,6 +9,7 @@ const DeleteRoleModal = ({
   doRemoveRole,
   roleDeletingIds,
 }) => {
+  const { t } = useTranslation();
   if (!roleToDelete) return null;
 
   const busy = roleDeletingIds.has(roleToDelete.id);
@@ -32,14 +34,14 @@ const DeleteRoleModal = ({
                 id="barbermasters-delete-role-title"
                 className="barbermasters__modalTitle"
               >
-                Удалить роль
+                {t("crm.employees.deleteRole.title")}
               </h3>
             </div>
             <button
               type="button"
               className="barbermasters__iconBtn"
               onClick={() => !busy && setRoleToDelete(null)}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
               disabled={busy}
             >
               <FaTimes />
@@ -55,11 +57,10 @@ const DeleteRoleModal = ({
             </div>
             <div className="barbermasters__confirmText">
               <p className="barbermasters__confirmLead">
-                Удалить роль «{name}»?
+                {t("crm.employees.deleteRole.lead", { name })}
               </p>
               <p className="barbermasters__confirmHint">
-                Действие необратимо. Сотрудники с этой ролью потеряют связанные
-                права доступа.
+                {t("crm.employees.deleteRole.hint")}
               </p>
             </div>
           </div>
@@ -71,7 +72,7 @@ const DeleteRoleModal = ({
               onClick={() => setRoleToDelete(null)}
               disabled={busy}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               type="button"
@@ -79,7 +80,7 @@ const DeleteRoleModal = ({
               onClick={doRemoveRole}
               disabled={busy}
             >
-              {busy ? "Удаление…" : "Удалить"}
+              {busy ? t("common.deleting") : t("common.delete")}
             </button>
           </div>
         </div>

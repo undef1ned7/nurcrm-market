@@ -59,9 +59,6 @@ export function SupplierReceiptModals({ vm }: Props) {
     totalReceiptAmount,
     paymentType,
     setPaymentType,
-    cashBoxes,
-    selectCashBox,
-    setSelectCashBox,
     prepayment,
     setPrepayment,
     debtMonths,
@@ -306,30 +303,6 @@ export function SupplierReceiptModals({ vm }: Props) {
                       <option value="debt">В долг поставщику</option>
                     </select>
                   </div>
-                  {(paymentType === "full" || paymentType === "prepayment") && (
-                    <div className="market-receipt-page__field">
-                      <label className="market-receipt-page__label">Касса</label>
-                      <select
-                        className="market-receipt-page__qty-input market-receipt-page__qty-input--mobile"
-                        value={selectCashBox}
-                        onChange={(e: any) => setSelectCashBox(e.target.value)}
-                        disabled={submitting || !cashBoxes?.length}
-                      >
-                        {!cashBoxes?.length ? (
-                          <option value="">Нет касс</option>
-                        ) : (
-                          cashBoxes.map((box: any) => {
-                            const boxId = String(box.id || box.uuid || "");
-                            return (
-                              <option key={boxId} value={boxId}>
-                                {box.name || box.title || `Касса #${boxId}`}
-                              </option>
-                            );
-                          })
-                        )}
-                      </select>
-                    </div>
-                  )}
                   {paymentType === "prepayment" && (
                     <div className="market-receipt-page__field">
                       <label className="market-receipt-page__label">Сумма предоплаты</label>

@@ -110,3 +110,21 @@ const fallbackSvg = encodeURIComponent(`
 `);
 export const FALLBACK_IMG = `data:image/svg+xml;charset=utf-8,${fallbackSvg}`;
 
+/**
+ * Список URL картинок товара для слайдера: primary (или image_url) первым,
+ * затем остальные из item.images, без дублей. Пусто, если фото нет вовсе.
+ */
+export const getProductImages = (item: any): string[] => {
+  if (!item) return [];
+  const list = Array.isArray(item.images) ? item.images : [];
+  const urlOf = (img: any) => String(img?.image_url || img?.image || "").trim();
+
+  const primary = list.find((img: any) => img?.is_primary);
+  const ordered = [
+    primary ? urlOf(primary) : String(item.image_url || "").trim(),
+    ...list.map(urlOf),
+  ].filter(Boolean);
+
+  return Array.from(new Set(ordered));
+};
+

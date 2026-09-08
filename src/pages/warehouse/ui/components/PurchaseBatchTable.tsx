@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   formatBatchDateTime,
   formatBatchMoney,
@@ -7,36 +8,39 @@ import {
 const PurchaseBatchTable = ({
   batches = [],
   loading = false,
-  emptyMessage = "История закупок пуста",
+  emptyMessage,
   onReceiptClick,
 }: any) => {
+  const { t } = useTranslation();
   const rows = Array.isArray(batches) ? batches : [];
+  const empty =
+    emptyMessage || t("crm.warehouse.purchaseHistory.emptyDefault");
 
   return (
     <div className="purchase-batch-history__table-wrap">
       <table className="purchase-batch-history__table">
         <thead>
           <tr>
-            <th>Дата</th>
-            <th>Поставщик</th>
-            <th>Кол-во</th>
-            <th>Цена закупки</th>
-            <th>Сумма</th>
-            <th>Сотрудник</th>
-            <th>Документ</th>
+            <th>{t("crm.warehouse.purchaseHistory.colDate")}</th>
+            <th>{t("crm.warehouse.purchaseHistory.colSupplier")}</th>
+            <th>{t("crm.warehouse.purchaseHistory.colQty")}</th>
+            <th>{t("crm.warehouse.purchaseHistory.colPurchasePrice")}</th>
+            <th>{t("crm.warehouse.purchaseHistory.colSum")}</th>
+            <th>{t("crm.warehouse.purchaseHistory.colEmployee")}</th>
+            <th>{t("crm.warehouse.purchaseHistory.colDocument")}</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
               <td colSpan={7} className="purchase-batch-history__empty">
-                Загрузка...
+                {t("common.loading")}
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
               <td colSpan={7} className="purchase-batch-history__empty">
-                {emptyMessage}
+                {empty}
               </td>
             </tr>
           ) : (
@@ -61,7 +65,7 @@ const PurchaseBatchTable = ({
                         className="purchase-batch-history__receipt-link"
                         onClick={() => onReceiptClick(batch)}
                       >
-                        Приход
+                        {t("crm.warehouse.purchaseHistory.receiptLink")}
                       </button>
                     ) : (
                       "—"

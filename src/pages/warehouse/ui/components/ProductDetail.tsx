@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
   X,
   Edit,
@@ -22,11 +23,17 @@ import AddProductModal from "@features/warehouse-ops/ui/AddProduct/AddProductMod
 import MarriageModal from "@features/warehouse-ops/ui/MarriageModal";
 import { deleteProductAsync } from "@entities/product";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
-import { PageShell, PageHeader, PagePanel, StatusChip } from "@shared/ui/page-shell";
+import {
+  PageShell,
+  PageHeader,
+  PagePanel,
+  StatusChip,
+} from "@shared/ui/page-shell";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
-import {useAlert} from "@shared/hooks/useDialog";
+import { useAlert } from "@shared/hooks/useDialog";
 
 const ProductDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const alert = useAlert();
   const navigate = useNavigate();
@@ -45,11 +52,11 @@ const ProductDetail = () => {
       setProduct(response.data);
     } catch (error: any) {
       console.error("Ошибка при загрузке товара:", error);
-      const errorMessage = validateResErrors(error, "Ошибка при загрузке товара. ")
-      alert(
-        errorMessage,
-        true
+      const errorMessage = validateResErrors(
+        error,
+        t("crm.warehouse.detail.loadError"),
       );
+      alert(errorMessage, true);
     } finally {
       setLoading(false);
     }
@@ -81,17 +88,17 @@ const ProductDetail = () => {
 
   const confirmDelete = async () => {
     try {
-      await dispatch((deleteProductAsync(product.id) as any)).unwrap();
+      await dispatch(deleteProductAsync(product.id) as any).unwrap();
       setShowDeleteConfirm(false);
       navigate(-1); // Возвращаемся назад после удаления
     } catch (error: any) {
       console.error("Ошибка при удалении товара:", error);
       setShowDeleteConfirm(false);
-      const errorMessage = validateResErrors(error, "Ошибка при удалении товара. ")
-      alert(
-        errorMessage,
-        true
+      const errorMessage = validateResErrors(
+        error,
+        t("crm.warehouse.detail.deleteError"),
       );
+      alert(errorMessage, true);
     }
   };
 
@@ -138,14 +145,14 @@ const ProductDetail = () => {
 
   const prevImage = () => {
     setCurrentImageIndex(
-      (prev: any) => (prev - 1 + imagesList.length) % imagesList.length
+      (prev: any) => (prev - 1 + imagesList.length) % imagesList.length,
     );
   };
 
   if (loading) {
     return (
       <PageShell className="product-detail">
-        <div className="product-detail-loading">Загрузка...</div>
+        <div className="product-detail-loading">{t("common.loading")}</div>
       </PageShell>
     );
   }
@@ -153,7 +160,9 @@ const ProductDetail = () => {
   if (!product) {
     return (
       <PageShell className="product-detail">
-        <div className="product-detail-error">Товар не найден</div>
+        <div className="product-detail-error">
+          {t("crm.warehouse.detail.notFound")}
+        </div>
       </PageShell>
     );
   }
@@ -161,16 +170,16 @@ const ProductDetail = () => {
   return (
     <PageShell className="product-detail">
       <PageHeader
-        title={product.name || "Товар"}
-        subtitle="Карточка товара на складе"
+        title={product.name || t("crm.warehouse.productAlt")}
+        subtitle={t("crm.warehouse.detail.subtitle")}
         actions={
           <div className="product-detail__header">
             <button
               type="button"
               className="nur-btn nur-btn--ghost nur-btn--sm product-detail__close-btn"
               onClick={() => navigate(-1)}
-              aria-label="Назад"
-              title="Назад"
+              aria-label={t("common.back")}
+              title={t("common.back")}
             >
               <X size={20} />
             </button>
@@ -178,51 +187,57 @@ const ProductDetail = () => {
               type="button"
               className="nur-btn nur-btn--secondary nur-btn--sm"
               onClick={handleEdit}
-              title="Редактировать"
-              aria-label="Редактировать"
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
             >
               <Edit size={16} />
-              <span className="nur-btn__label">Редактировать</span>
+              <span className="nur-btn__label">{t("common.edit")}</span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--secondary nur-btn--sm"
               onClick={handleDuplicate}
-              title="Дублировать"
-              aria-label="Дублировать"
+              title={t("crm.warehouse.detail.duplicate")}
+              aria-label={t("crm.warehouse.detail.duplicate")}
             >
               <Copy size={16} />
-              <span className="nur-btn__label">Дублировать</span>
+              <span className="nur-btn__label">
+                {t("crm.warehouse.detail.duplicate")}
+              </span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--danger nur-btn--sm"
               onClick={handleDelete}
-              title="Удалить"
-              aria-label="Удалить"
+              title={t("common.delete")}
+              aria-label={t("common.delete")}
             >
               <Trash2 size={16} />
-              <span className="nur-btn__label">Удалить</span>
+              <span className="nur-btn__label">{t("common.delete")}</span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--primary nur-btn--sm"
               onClick={() => setShowAddProductModal(true)}
-              title="Добавить"
-              aria-label="Добавить"
+              title={t("crm.clients.details.addBtn")}
+              aria-label={t("crm.clients.details.addBtn")}
             >
               <Plus size={16} />
-              <span className="nur-btn__label">Добавить</span>
+              <span className="nur-btn__label">
+                {t("crm.clients.details.addBtn")}
+              </span>
             </button>
             <button
               type="button"
               className="nur-btn nur-btn--secondary nur-btn--sm"
               onClick={() => setShowMarriageModal(true)}
-              title="Брак"
-              aria-label="Брак"
+              title={t("crm.warehouse.detail.marriage")}
+              aria-label={t("crm.warehouse.detail.marriage")}
             >
               <AlertTriangle size={16} />
-              <span className="nur-btn__label">Брак</span>
+              <span className="nur-btn__label">
+                {t("crm.warehouse.detail.marriage")}
+              </span>
             </button>
           </div>
         }
@@ -230,14 +245,14 @@ const ProductDetail = () => {
 
       <PagePanel className="product-detail__content">
         {/* Image Section */}
-        <div className="block lg:flex gap-3">
-          <div className="product-detail__image-section w-1/2">
+        <div className="product-detail__hero">
+          <div className="product-detail__image-section">
             {hasImages ? (
               <>
                 <div className="product-detail__main-image ">
                   <img
                     src={imagesList[currentImageIndex]?.image_url}
-                    alt={product.name || "Товар"}
+                    alt={product.name || t("crm.warehouse.productAlt")}
                     className="product-detail__image"
                   />
                   {imagesList.length > 1 && (
@@ -258,7 +273,7 @@ const ProductDetail = () => {
                   )}
                   {imagesList[currentImageIndex]?.is_primary && (
                     <div className="product-detail__image-primary-badge">
-                      Главное
+                      {t("crm.warehouse.detail.primaryImage")}
                     </div>
                   )}
                 </div>
@@ -289,10 +304,10 @@ const ProductDetail = () => {
                 )}
               </>
             ) : (
-              <div className="product-detail__image-placeholder w-full max-w-full lg:max-w-[400px]">
+              <div className="product-detail__image-placeholder">
                 <img
                   src={noImage}
-                  alt="Нет изображения"
+                  alt={t("crm.warehouse.detail.noImage")}
                   className="product-detail__placeholder-image"
                 />
               </div>
@@ -300,12 +315,16 @@ const ProductDetail = () => {
           </div>
 
           {/* Product Info */}
-          <div className="product-detail__info-section w-1/2">
-            <StatusChip tone="primary">товар</StatusChip>
+          <div className="product-detail__info-section">
+            <StatusChip tone="primary">
+              {t("crm.warehouse.detail.productChip")}
+            </StatusChip>
             <h2 className="product-detail__name">{product.name || "—"}</h2>
             <div className="product-detail__details">
               <div className="product-detail__detail-item">
-                <span className="product-detail__detail-label">Штрих-код:</span>
+                <span className="product-detail__detail-label">
+                  {t("crm.warehouse.detail.barcodeLabel")}
+                </span>
                 <span className="product-detail__detail-value">
                   {product.barcode || "—"}
                 </span>
@@ -314,7 +333,7 @@ const ProductDetail = () => {
               product.alternate_barcodes.length > 0 ? (
                 <div className="product-detail__detail-item">
                   <span className="product-detail__detail-label">
-                    Доп. штрихкоды:
+                    {t("crm.warehouse.detail.extraBarcodes")}
                   </span>
                   <span className="product-detail__detail-value">
                     {product.alternate_barcodes.filter(Boolean).join(", ")}
@@ -322,17 +341,31 @@ const ProductDetail = () => {
                 </div>
               ) : null}
               <div className="product-detail__detail-item">
-                <span className="product-detail__detail-label">Артикул:</span>
+                <span className="product-detail__detail-label">
+                  {t("crm.warehouse.detail.articleLabel")}
+                </span>
                 <span className="product-detail__detail-value">
                   {product.article || "—"}
                 </span>
               </div>
               <div className="product-detail__detail-item">
                 <span className="product-detail__detail-label">
-                  Код товара:
+                  {t("crm.warehouse.detail.codeLabel")}
                 </span>
                 <span className="product-detail__detail-value">
                   {product.code || "—"}
+                </span>
+              </div>
+              <div className="product-detail__detail-item">
+                <span className="product-detail__detail-label">
+                  {t("crm.warehouse.detail.pluLabel")}
+                </span>
+                <span className="product-detail__detail-value">
+                  {product.plu !== null &&
+                  product.plu !== undefined &&
+                  String(product.plu).trim() !== ""
+                    ? product.plu
+                    : "—"}
                 </span>
               </div>
             </div>
@@ -361,88 +394,107 @@ const ProductDetail = () => {
 
         {/* Tab Content */}
         {/* {activeTab === "info" ? ( */}
-          <div className="product-detail__tab-content">
-            {/* Information Section */}
-            <div className="product-detail__section">
-              <h3 className="product-detail__section-title">Информация</h3>
-              <div className="product-detail__info-list">
-                <div className="product-detail__info-item">
-                  <Calendar className="product-detail__info-icon" size={18} />
-                  <span className="product-detail__info-label">Создан:</span>
-                  <span className="product-detail__info-value">
-                    {formatDate(product.created_at)}
-                  </span>
-                </div>
-                <div className="product-detail__info-item">
-                  <Tag className="product-detail__info-icon" size={18} />
-                  <span className="product-detail__info-label">Категория:</span>
-                  <span className="product-detail__info-value">
-                    {product.category || "—"}
-                  </span>
-                </div>
-                <div className="product-detail__info-item">
-                  <Globe className="product-detail__info-icon" size={18} />
-                  <span className="product-detail__info-label">Страна:</span>
-                  <span className="product-detail__info-value">
-                    {product.country || "—"}
-                  </span>
-                </div>
-                <div className="product-detail__info-item">
-                  <Calendar className="product-detail__info-icon" size={18} />
-                  <span className="product-detail__info-label">
-                    Срок годности:
-                  </span>
-                  <span className="product-detail__info-value">
-                    {product.expiration_date
-                      ? formatDate(product.expiration_date)
-                      : "—"}
-                  </span>
-                </div>
-                <div className="product-detail__info-item">
-                  <Box className="product-detail__info-icon" size={18} />
-                  <span className="product-detail__info-label">Группа:</span>
-                  <span className="product-detail__info-value">
-                    {product.group || "Товары и услуги"}
-                  </span>
-                </div>
-                <div className="product-detail__info-item">
-                  <FileText className="product-detail__info-icon" size={18} />
-                  <span className="product-detail__info-label">Описание:</span>
-                  <span className="product-detail__info-value">
-                    {product.description || "—"}
-                  </span>
-                </div>
+        <div className="product-detail__tab-content">
+          {/* Information Section */}
+          <div className="product-detail__section mt-5">
+            <h3 className="product-detail__section-title">
+              {t("crm.warehouse.detail.sectionInfo")}
+            </h3>
+            <div className="product-detail__info-list">
+              <div className="product-detail__info-item">
+                <Calendar className="product-detail__info-icon" size={18} />
+                <span className="product-detail__info-label">
+                  {t("crm.warehouse.detail.createdLabel")}
+                </span>
+                <span className="product-detail__info-value">
+                  {formatDate(product.created_at)}
+                </span>
+              </div>
+              <div className="product-detail__info-item">
+                <Tag className="product-detail__info-icon" size={18} />
+                <span className="product-detail__info-label">
+                  {t("crm.warehouse.detail.categoryLabel")}
+                </span>
+                <span className="product-detail__info-value">
+                  {product.category || "—"}
+                </span>
+              </div>
+              <div className="product-detail__info-item">
+                <Globe className="product-detail__info-icon" size={18} />
+                <span className="product-detail__info-label">
+                  {t("crm.warehouse.detail.countryLabel")}
+                </span>
+                <span className="product-detail__info-value">
+                  {product.country || "—"}
+                </span>
+              </div>
+              <div className="product-detail__info-item">
+                <Calendar className="product-detail__info-icon" size={18} />
+                <span className="product-detail__info-label">
+                  {t("crm.warehouse.detail.shelfLifeLabel")}
+                </span>
+                <span className="product-detail__info-value">
+                  {product.expiration_date
+                    ? formatDate(product.expiration_date)
+                    : "—"}
+                </span>
+              </div>
+              <div className="product-detail__info-item">
+                <Box className="product-detail__info-icon" size={18} />
+                <span className="product-detail__info-label">
+                  {t("crm.warehouse.detail.groupLabel")}
+                </span>
+                <span className="product-detail__info-value">
+                  {product.group || t("crm.warehouse.detail.groupDefault")}
+                </span>
+              </div>
+              <div className="product-detail__info-item">
+                <FileText className="product-detail__info-icon" size={18} />
+                <span className="product-detail__info-label">
+                  {t("crm.warehouse.detail.descriptionLabel")}
+                </span>
+                <span className="product-detail__info-value">
+                  {product.description || "—"}
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* Prices Section */}
-            <div className="product-detail__section">
-              <h3 className="product-detail__section-title">ЦЕНЫ</h3>
-              <table className="product-detail__prices-table overflow-auto">
-                <thead>
-                  <tr>
-                    <th>Цена продажи</th>
-                    <th>
-                      Цена закупки
-                      <span className="product-detail__price-hint">
-                        (последняя партия)
-                      </span>
-                    </th>
-                    {/* <th>Себестоимость</th> */}
-                    <th>Наценка</th>
-                    {/* <th>Маржинальность</th> */}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>{formatPrice(product.price)} сом</td>
-                    <td>{formatPrice(product.purchase_price)} сом</td>
-                    {/* <td>
+          {/* Prices Section */}
+          <div className="product-detail__section">
+            <h3 className="product-detail__section-title">
+              {t("crm.warehouse.detail.pricesTitle")}
+            </h3>
+            <table className="product-detail__prices-table overflow-auto">
+              <thead>
+                <tr>
+                  <th>{t("crm.warehouse.detail.sellPrice")}</th>
+                  <th>
+                    {t("crm.warehouse.detail.purchasePrice")}
+                    <span className="product-detail__price-hint">
+                      {t("crm.warehouse.detail.lastBatch")}
+                    </span>
+                  </th>
+                  {/* <th>Себестоимость</th> */}
+                  <th>{t("crm.warehouse.detail.markup")}</th>
+                  {/* <th>Маржинальность</th> */}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    {formatPrice(product.price)} {t("common.currencySom")}
+                  </td>
+                  <td>
+                    {formatPrice(product.purchase_price)}{" "}
+                    {t("common.currencySom")}
+                  </td>
+                  {/* <td>
                       {formatPrice(product.purchase_price)} сом
                       <span className="product-detail__help-icon">?</span>
                     </td> */}
-                    <td>{product.markup_percent}%</td>
-                    {/* <td>
+                  <td>{product.markup_percent}%</td>
+                  {/* <td>
                       {product.price
                         ? `${Math.round(
                             ((product.price -
@@ -454,19 +506,19 @@ const ProductDetail = () => {
                           )}%`
                         : "—"}
                     </td> */}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-            <PurchaseBatchHistory
-              productId={product.id}
-              productName={product.name}
-              batches={product.purchase_batches}
-            />
+          <PurchaseBatchHistory
+            productId={product.id}
+            productName={product.name}
+            batches={product.purchase_batches}
+          />
 
-            {/* Warehouse Section */}
-            {/* <div className="product-detail__section">
+          {/* Warehouse Section */}
+          {/* <div className="product-detail__section">
               <h3 className="product-detail__section-title">СКЛАД</h3>
               <table className="product-detail__warehouse-table">
                 <thead>
@@ -526,9 +578,9 @@ const ProductDetail = () => {
                 </tbody>
               </table>
             </div> */}
-          </div>
+        </div>
         {/* ) : ( */}
-          {/* <MovementHistory productId={id} productCode={product.code} /> */}
+        {/* <MovementHistory productId={id} productCode={product.code} /> */}
         {/* )} */}
       </PagePanel>
 
@@ -559,9 +611,9 @@ const ProductDetail = () => {
       <AlertModal
         open={showDeleteConfirm}
         type="warning"
-        title="Подтверждение удаления"
-        message="Вы уверены, что хотите удалить этот товар? Это действие нельзя отменить."
-        okText="Удалить"
+        title={t("crm.warehouse.detail.deleteConfirmTitle")}
+        message={t("crm.warehouse.detail.deleteConfirmMessage")}
+        okText={t("common.delete")}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={confirmDelete}
       />

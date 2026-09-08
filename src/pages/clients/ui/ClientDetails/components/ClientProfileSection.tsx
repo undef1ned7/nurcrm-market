@@ -7,6 +7,8 @@ import {
   ReceiptText,
 } from "lucide-react";
 
+import { useTranslation } from "react-i18next";
+
 import { toIsoDate10 } from "../clientDetails.helpers";
 import type { ClientRecord } from "../clientDetails.types";
 
@@ -42,12 +44,13 @@ export function ClientProfileSection({
   profileSnapshot,
   requisites,
 }: ClientProfileSectionProps) {
+  const { t } = useTranslation();
   return (
     <div className="cdx__grid">
       <div className="cdx__card">
         <div className="cdx__card-head">
           <h2 className="cdx__card-title">
-            <UserIcon /> Информация о клиенте
+            <UserIcon /> {t("crm.clients.details.clientInfo")}
           </h2>
         </div>
         <div className="cdx__card-body cdx__card-body--profile">
@@ -73,7 +76,10 @@ export function ClientProfileSection({
             </div>
           </div>
 
-          <div className="cdx__profile-snapshot" aria-label="Сводка по клиенту">
+          <div
+            className="cdx__profile-snapshot"
+            aria-label={t("crm.clients.details.clientSummary")}
+          >
             {profileSnapshot.map((item) => (
               <div key={item.label} className="cdx__profile-snapshot-item">
                 <div className="cdx__profile-snapshot-label">{item.label}</div>
@@ -92,7 +98,7 @@ export function ClientProfileSection({
                 <Phone />
               </span>
               <div className="cdx__contact-body">
-                <div className="cdx__contact-label">Телефон</div>
+                <div className="cdx__contact-label">{t("common.phone")}</div>
                 <div className="cdx__contact-value">
                   {client?.phone ? (
                     <a href={`tel:${String(client.phone).replace(/\D/g, "")}`}>
@@ -122,7 +128,9 @@ export function ClientProfileSection({
                 <IdCard />
               </span>
               <div className="cdx__contact-body">
-                <div className="cdx__contact-label">Тип клиента</div>
+                <div className="cdx__contact-label">
+                  {t("crm.clients.details.clientType")}
+                </div>
                 <div className="cdx__contact-value">{clientTypeLabel}</div>
               </div>
             </div>
@@ -132,7 +140,9 @@ export function ClientProfileSection({
                 <CalendarDays />
               </span>
               <div className="cdx__contact-body">
-                <div className="cdx__contact-label">Дата регистрации</div>
+                <div className="cdx__contact-label">
+                  {t("crm.clients.details.registrationDate")}
+                </div>
                 <div className="cdx__contact-value">
                   {toIsoDate10(client?.date) || "—"}
                 </div>
@@ -145,7 +155,7 @@ export function ClientProfileSection({
       <div className="cdx__card">
         <div className="cdx__card-head">
           <h2 className="cdx__card-title">
-            <ReceiptText /> Реквизиты
+            <ReceiptText /> {t("crm.clients.details.requisitesTitle")}
           </h2>
         </div>
         <div className="cdx__card-body">

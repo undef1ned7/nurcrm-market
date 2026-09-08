@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import CountryField from "../CountryField";
 import PricingSection from "../PricingSection";
 import {
@@ -32,6 +33,8 @@ const ProductWarehouseSection = ({
   debtMonths,
   setDebtMonths,
 }) => {
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.warehouse.addProduct.${k}`) as string;
   const layout = useOptionalProductFormLayout();
   const showWarehouseCard =
     !layout ||
@@ -62,11 +65,13 @@ const ProductWarehouseSection = ({
 
           {showWarehouseCard ? (
           <div className="market-product-form__section">
-            <h3 className="market-product-form__section-title">Склад</h3>
+            <h3 className="market-product-form__section-title">
+              {tp("warehouseTitle")}
+            </h3>
             <FormBlock id="supplier">
             <div className="market-product-form__form-group">
               <label className="market-product-form__label">
-                Выберите поставщика
+                {tp("supplierSelectLabel")}
               </label>
               <div className="add-product-page__supplier-row">
                 <select
@@ -75,7 +80,7 @@ const ProductWarehouseSection = ({
                   onChange={handleChange}
                   name="client"
                 >
-                  <option value="">Выберите поставщика</option>
+                  <option value="">{tp("supplierSelectLabel")}</option>
                   {filterClient.map((client, idx) => (
                     <option key={client.id || idx} value={client.id}>
                       {client.full_name}
@@ -87,7 +92,7 @@ const ProductWarehouseSection = ({
                   onClick={() => setShowInputs(!showInputs)}
                   type="button"
                 >
-                  + Создать поставщика
+                  {tp("createSupplier")}
                 </button>
               </div>
               {showInputs && (
@@ -101,7 +106,7 @@ const ProductWarehouseSection = ({
                       setState({ ...state, [e.target.name]: e.target.value })
                     }
                     type="text"
-                    placeholder="ФИО"
+                    placeholder={tp("supplierFullName")}
                     name="full_name"
                     value={state.full_name}
                   />
@@ -112,7 +117,7 @@ const ProductWarehouseSection = ({
                     }
                     type="text"
                     name="llc"
-                    placeholder="ОсОО"
+                    placeholder={tp("supplierLlc")}
                     value={state.llc}
                   />
                   <input
@@ -122,7 +127,7 @@ const ProductWarehouseSection = ({
                     }
                     type="text"
                     name="inn"
-                    placeholder="ИНН"
+                    placeholder={tp("supplierInn")}
                     value={state.inn}
                   />
                   <input
@@ -132,7 +137,7 @@ const ProductWarehouseSection = ({
                     }
                     type="text"
                     name="okpo"
-                    placeholder="ОКПО"
+                    placeholder={tp("supplierOkpo")}
                     value={state.okpo}
                   />
                   <input
@@ -142,7 +147,7 @@ const ProductWarehouseSection = ({
                     }
                     type="text"
                     name="score"
-                    placeholder="Р/СЧЁТ"
+                    placeholder={tp("supplierScore")}
                     value={state.score}
                   />
                   <input
@@ -152,7 +157,7 @@ const ProductWarehouseSection = ({
                     }
                     type="text"
                     name="bik"
-                    placeholder="БИК"
+                    placeholder={tp("supplierBik")}
                     value={state.bik}
                   />
                   <input
@@ -162,7 +167,7 @@ const ProductWarehouseSection = ({
                     }
                     type="text"
                     name="address"
-                    placeholder="Адрес"
+                    placeholder={tp("supplierAddress")}
                     value={state.address}
                   />
                   <input
@@ -172,7 +177,7 @@ const ProductWarehouseSection = ({
                     }
                     type="text"
                     name="phone"
-                    placeholder="Телефон"
+                    placeholder={tp("supplierPhone")}
                     value={state.phone}
                   />
                   <input
@@ -182,7 +187,7 @@ const ProductWarehouseSection = ({
                     }
                     type="email"
                     name="email"
-                    placeholder="Почта"
+                    placeholder={tp("supplierEmail")}
                     value={state.email}
                   />
                   <div className="add-product-page__form-actions">
@@ -206,13 +211,13 @@ const ProductWarehouseSection = ({
                         });
                       }}
                     >
-                      Отмена
+                      {t("common.cancel")}
                     </button>
                     <button
                       type="submit"
                       className="add-product-page__save-btn"
                     >
-                      Создать
+                      {t("common.create")}
                     </button>
                   </div>
                 </form>
@@ -227,7 +232,7 @@ const ProductWarehouseSection = ({
                 checked={showDebtForm}
                 onChange={(e) => setShowDebtForm(e.target.checked)}
               />
-              Добавить долг по этому товару
+              {tp("addDebtForProduct")}
             </label>
 
             {/* Форма долга */}
@@ -235,7 +240,7 @@ const ProductWarehouseSection = ({
               <div className="add-product-page__debt-form">
                 {!newItemData.client && (
                   <p className="add-product-page__error">
-                    Выберите поставщика в форме выше!
+                    {tp("selectSupplierAbove")}
                   </p>
                 )}
                 {company?.subscription_plan?.name === "Старт" &&
@@ -243,7 +248,7 @@ const ProductWarehouseSection = ({
                     <>
                       <div className="market-product-form__form-group">
                         <label className="market-product-form__label">
-                          Телефон поставщика
+                          {tp("supplierPhoneLabel")}
                         </label>
                         <input
                           type="text"
@@ -255,7 +260,7 @@ const ProductWarehouseSection = ({
                       </div>
                       <div className="market-product-form__form-group">
                         <label className="market-product-form__label">
-                          Дата оплаты
+                          {tp("paymentDate")}
                         </label>
                         <input
                           type="date"
@@ -269,23 +274,23 @@ const ProductWarehouseSection = ({
                   )}
                 <div className="market-product-form__form-group">
                   <label className="market-product-form__label">
-                    Тип оплаты
+                    {tp("paymentType")}
                   </label>
                   <select
                     value={debt}
                     onChange={(e) => setDebt(e.target.value)}
                     className="market-product-form__input"
                   >
-                    <option value="">Тип оплаты</option>
-                    <option value="Предоплата">Предоплата</option>
-                    <option value="Долги">Долг</option>
+                    <option value="">{tp("paymentType")}</option>
+                    <option value="Предоплата">{tp("prepayment")}</option>
+                    <option value="Долги">{tp("debtOption")}</option>
                   </select>
                 </div>
                 {debt === "Предоплата" && (
                   <>
                     <div className="market-product-form__form-group">
                       <label className="market-product-form__label">
-                        Сумма предоплаты
+                        {tp("prepaymentAmount")}
                       </label>
                       <input
                         type="text"
@@ -310,7 +315,7 @@ const ProductWarehouseSection = ({
                 {debt === "Долги" && (
                   <div className="market-product-form__form-group">
                     <label className="market-product-form__label">
-                      Срок долга (мес.)
+                      {tp("debtTermMonths")}
                     </label>
                     <input
                       type="text"
@@ -327,7 +332,7 @@ const ProductWarehouseSection = ({
             <FormBlock id="minStock">
             <div className="market-product-form__form-group">
               <label className="market-product-form__label">
-                Минимальный остаток
+                {tp("minStockLabel")}
               </label>
               <input
                 type="text"
@@ -345,7 +350,7 @@ const ProductWarehouseSection = ({
           <FormBlock id="expiry">
           <div className="market-product-form__section">
             <h3 className="market-product-form__section-title">
-              Срок годности
+              {tp("shelfLifeTitle")}
             </h3>
             <div className="market-product-form__form-group">
               <input

@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Handshake, X, Trash2, Info } from "lucide-react";
 import {
   toDecimalString,
@@ -26,6 +27,7 @@ export default function DealFormModal({
   onError,
 }) {
   const confirm = useConfirm();
+  const { t } = useTranslation();
   const { mode } = useContext(ThemeModeContext);
   const [dealName, setDealName] = useState("");
   const [dealBudget, setDealBudget] = useState("");
@@ -120,8 +122,8 @@ export default function DealFormModal({
     if (!canSaveDeal) {
       onError?.(
         isDebtSelected && !paymentsExist
-          ? "Заполните название, сумму и срок долга (дней)"
-          : "Заполните название и корректную сумму",
+          ? t("crm.clients.details.fillDealDebtFields")
+          : t("crm.clients.details.fillDealFields"),
       );
       return;
     }
@@ -150,13 +152,13 @@ export default function DealFormModal({
       onClose?.();
     } catch (e) {
       console.error(e);
-      onError?.(msgFromError(e, "Не удалось сохранить сделку"));
+      onError?.(msgFromError(e, t("crm.clients.details.saveDealError")));
     }
   };
 
   const handleDelete = async () => {
     if (!editingDeal) return;
-    confirm("Удалить сделку?", async (ok) => {
+    confirm(t("crm.clients.details.deleteDealConfirm"), async (ok) => {
       if (!ok) return;
       try {
         await deleteDealApi(editingDeal.id);
@@ -164,7 +166,7 @@ export default function DealFormModal({
         onClose?.();
       } catch (e) {
         console.error(e);
-        onError?.(msgFromError(e, "Не удалось удалить сделку"));
+        onError?.(msgFromError(e, t("crm.clients.details.deleteDealError")));
       }
     });
   };
@@ -185,19 +187,21 @@ export default function DealFormModal({
             </span>
             <div className="cmx__heading-text">
               <h3 className="cmx__title">
-                {editingDeal ? "Редактировать сделку" : "Новая сделка"}
+                {editingDeal
+                  ? t("crm.clients.details.editDealTitle")
+                  : t("crm.clients.details.newDealTitle")}
               </h3>
               <p className="cmx__subtitle">
                 {editingDeal
-                  ? "Измените параметры сделки клиента"
-                  : "Заполните данные новой сделки"}
+                  ? t("crm.clients.details.editDealSubtitle")
+                  : t("crm.clients.details.newDealSubtitle")}
               </p>
             </div>
           </div>
           <button
             className="cmx__close"
             onClick={() => onClose?.()}
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
           >
             <X />
           </button>
@@ -207,24 +211,22 @@ export default function DealFormModal({
           {paymentsExist && (
             <div className="cmx__note">
               <Info />
-              <span>
-                По сделке уже есть платежи — можно изменить только название и
-                комментарий.
-              </span>
+              <span>{t("crm.clients.details.dealHasPaymentsNote")}</span>
             </div>
           )}
 
           <div className="cmx__grid">
             <label className="cmx__field cmx__field--full">
               <span className="cmx__label">
-                Название сделки <b className="cmx__req">*</b>
+                {t("crm.clients.details.dealTitle")}{" "}
+                <b className="cmx__req">*</b>
               </span>
               <input
                 type="text"
                 className="cmx__input"
                 value={dealName}
                 onChange={(e) => setDealName(e.target.value)}
-                placeholder="Например: Продажа напитков"
+                placeholder={t("crm.clients.details.dealTitlePlaceholder")}
               />
             </label>
 
@@ -232,7 +234,7 @@ export default function DealFormModal({
               <>
                 <label className="cmx__field">
                   <span className="cmx__label">
-                    Сумма <b className="cmx__req">*</b>
+                    {t("common.amount")} <b className="cmx__req">*</b>
                   </span>
                   <input
                     type="number"
@@ -256,16 +258,23 @@ export default function DealFormModal({
 
                 <label className="cmx__field">
                   <span className="cmx__label">
-                    Тип <b className="cmx__req">*</b>
+                    {t("crm.clients.details.dealTypeLabel")}{" "}
+                    <b className="cmx__req">*</b>
                   </span>
                   <select
                     className="cmx__select"
                     value={dealStatus}
                     onChange={(e) => setDealStatus(e.target.value)}
                   >
-                    <option>Продажа</option>
-                    <option>Долг</option>
-                    <option>Предоплата</option>
+                    <option value="Продажа">
+                      {t("crm.clients.details.sale")}
+                    </option>
+                    <option value="Долг">
+                      {t("crm.clients.details.debt")}
+                    </option>
+                    <option value="Предоплата">
+                      {t("crm.clients.details.prepayment")}
+                    </option>
                   </select>
                 </label>
               </>
@@ -275,7 +284,8 @@ export default function DealFormModal({
               <>
                 <label className="cmx__field">
                   <span className="cmx__label">
-                    Срок долга (дней) <b className="cmx__req">*</b>
+                    {t("crm.clients.details.debtDaysLabel")}{" "}
+                    <b className="cmx__req">*</b>
                   </span>
                   <input
                     type="number"
@@ -285,12 +295,14 @@ export default function DealFormModal({
                     className="cmx__input"
                     value={dealDebtDays}
                     onChange={(e) => setDealDebtDays(e.target.value)}
-                    placeholder="Например: 30"
+                    placeholder={t("crm.clients.details.debtDaysPlaceholder")}
                   />
                 </label>
 
                 <label className="cmx__field">
-                  <span className="cmx__label">Предоплата</span>
+                  <span className="cmx__label">
+                    {t("crm.clients.details.prepayment")}
+                  </span>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -307,7 +319,9 @@ export default function DealFormModal({
                 </label>
 
                 <label className="cmx__field cmx__field--full">
-                  <span className="cmx__label">Дата первого платежа</span>
+                  <span className="cmx__label">
+                    {t("crm.clients.details.firstPaymentDate")}
+                  </span>
                   <input
                     type="date"
                     className="cmx__input"
@@ -315,7 +329,7 @@ export default function DealFormModal({
                     onChange={(e) => setDealFirstDueDate(e.target.value)}
                   />
                   <span className="cmx__hint">
-                    Если не указана — сегодня + срок в днях
+                    {t("crm.clients.details.firstDueDateHint")}
                   </span>
                 </label>
               </>
@@ -323,7 +337,9 @@ export default function DealFormModal({
 
             {!paymentsExist && isPrepaymentSelected && (
               <label className="cmx__field cmx__field--full">
-                <span className="cmx__label">Сумма предоплаты</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.prepaymentAmount")}
+                </span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -343,13 +359,15 @@ export default function DealFormModal({
             )}
 
             <label className="cmx__field cmx__field--full">
-              <span className="cmx__label">Комментарий</span>
+              <span className="cmx__label">
+                {t("crm.clients.details.comment")}
+              </span>
               <textarea
                 className="cmx__textarea"
                 rows={2}
                 value={dealNote}
                 onChange={(e) => setDealNote(e.target.value)}
-                placeholder="Необязательно"
+                placeholder={t("crm.clients.details.optionalPlaceholder")}
               />
             </label>
           </div>
@@ -362,7 +380,7 @@ export default function DealFormModal({
                 className="cmx__btn cmx__btn--danger"
                 onClick={handleDelete}
               >
-                <Trash2 /> Удалить
+                <Trash2 /> {t("common.delete")}
               </button>
             )}
           </div>
@@ -371,14 +389,16 @@ export default function DealFormModal({
               className="cmx__btn cmx__btn--ghost"
               onClick={() => onClose?.()}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               className="cmx__btn cmx__btn--primary"
               onClick={handleSave}
               disabled={!canSaveDeal}
             >
-              {editingDeal ? "Сохранить" : "Добавить"}
+              {editingDeal
+                ? t("common.save")
+                : t("crm.clients.details.addBtn")}
             </button>
           </div>
         </div>

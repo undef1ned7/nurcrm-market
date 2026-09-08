@@ -1,4 +1,8 @@
+import { useTranslation } from "react-i18next";
+import { accessLabel } from "../accessLabelI18n";
+
 export function AccessItem({ accessType, checked, onToggle, tone = "success" }) {
+  const { t } = useTranslation();
   return (
     <label
       className={`access-list-item access-list-item--${tone}${
@@ -10,8 +14,7 @@ export function AccessItem({ accessType, checked, onToggle, tone = "success" }) 
         checked={checked}
         onChange={() => onToggle(accessType.backendKey)}
       />
-      <span>{accessType.label}</span>
+      <span>{accessLabel(accessType.label, t)}</span>
     </label>
   );
 }
-

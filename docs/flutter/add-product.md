@@ -4,6 +4,7 @@
 
 **Веб-экран:** `/crm/sklad/add-product` и `/crm/sklad/add-product/:id`  
 **Веб-код:** `src/features/warehouse-ops/ui/AddProductPage/`  
+**Архитектура веб-экрана:** [docs/market/add-product-page.md](../market/add-product-page.md)  
 **Заголовок:** «Создание товара» / «Редактирование товара»  
 **Валюта в UI:** COM (сом)  
 **Таймзона бизнеса:** Asia/Bishkek, UTC+6
@@ -14,7 +15,7 @@
 - [adult-products-backend.md](../backend/adult-products-backend.md) — флаг 18+
 - [alternate-barcodes.md](../backend/alternate-barcodes.md) — доп. штрихкоды
 - [scales-weight-products.md](../backend/scales-weight-products.md) — весовые товары / PLU
-- [debt-installment-schedule-backend.md](../backend/debt-installment-schedule-backend.md) — сделки-долги
+- [debt-installment-schedule-backend.md](../backend/kassa/debt-installment-schedule-backend.md) — сделки-долги
 
 ---
 

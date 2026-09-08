@@ -240,6 +240,30 @@
     }
   }
 
+  &__info-item {
+    &--warning {
+      .close-shift-page__info-label,
+      .close-shift-page__info-value {
+        color: var(--nur-warning, #d97706);
+      }
+    }
+  }
+
+  &__hint {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--nur-text-muted, #64748b);
+
+    &--warning {
+      background: rgba(217, 119, 6, 0.1);
+      border: 1px solid rgba(217, 119, 6, 0.25);
+      color: var(--nur-warning, #b45309);
+    }
+  }
+
   &__error {
     display: flex;
     align-items: center;

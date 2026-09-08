@@ -2,23 +2,30 @@
 
 import { ESC } from "./bytes";
 
-async function ensurePdfJs() {
-  if (typeof window === "undefined") throw new Error("No window");
-  if ((window as any).pdfjsLib) return (window as any).pdfjsLib;
-  await new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    s.onload = resolve;
-    s.onerror = () => reject(new Error("Не удалось загрузить pdf.js"));
-    document.head.appendChild(s);
-  });
-  (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  return (window as any).pdfjsLib;
+type PdfJsModule = typeof import("pdfjs-dist");
+
+let pdfjsPromise: Promise<PdfJsModule> | null = null;
+
+/**
+ * Ленивая загрузка pdf.js из локального `pdfjs-dist` (не CDN).
+ * Worker Vite кладёт в hashed asset того же origin (`?url`) — это отдельный
+ * запрос к нашему хосту, не к cdnjs. На критический путь кассы не попадает:
+ * импорт выполняется только в PDF-фолбэке печати.
+ */
+async function loadPdfJs(): Promise<PdfJsModule> {
+  if (!pdfjsPromise) {
+    pdfjsPromise = (async () => {
+      const pdfjs = await import("pdfjs-dist");
+      const workerUrl = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl.default;
+      return pdfjs;
+    })();
+  }
+  return pdfjsPromise;
 }
 
 export async function pdfBlobToCanvas(pdfBlob: any, targetWidth = 384) {
-  const pdfjsLib = await ensurePdfJs();
+  const pdfjsLib = await loadPdfJs();
   const ab = await pdfBlob.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
   const page = await pdf.getPage(1);
@@ -27,6 +34,7 @@ export async function pdfBlobToCanvas(pdfBlob: any, targetWidth = 384) {
   const scaled = page.getViewport({ scale });
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("2D canvas context is not available");
   canvas.width = Math.round(scaled.width);
   canvas.height = Math.round(scaled.height);
   await page.render({ canvasContext: ctx, viewport: scaled }).promise;
@@ -54,7 +62,12 @@ export function canvasToRasterBytes(canvas: any, threshold = 180) {
   return { raster, w, h, bytesPerLine };
 }
 
-export function buildEscPosForRaster(raster: any, bytesPerLine: any, h: any) {
+export function buildEscPosForRaster(
+  raster: Uint8Array,
+  bytesPerLine: number,
+  h: number,
+  opts: { includeCut?: boolean } = {},
+) {
   const xL = bytesPerLine & 0xff;
   const xH = (bytesPerLine >> 8) & 0xff;
   const yL = h & 0xff;
@@ -63,17 +76,13 @@ export function buildEscPosForRaster(raster: any, bytesPerLine: any, h: any) {
   const init = ESC(0x1b, 0x40);
   const alignLeft = ESC(0x1b, 0x61, 0x00);
   const header = ESC(0x1d, 0x76, 0x30, 0x00, xL, xH, yL, yH);
-
-  // компактная подача + рез
-  const feedAndCut = new Uint8Array([0x1b, 0x64, 0x01, 0x1d, 0x56, 0x00]);
-
+  const includeCut = opts.includeCut !== false;
+  const tail = includeCut
+    ? new Uint8Array([0x1b, 0x64, 0x01, 0x1d, 0x56, 0x00])
+    : new Uint8Array(0);
 
   const total = new Uint8Array(
-    init.length +
-    alignLeft.length +
-    header.length +
-    raster.length +
-    feedAndCut.length
+    init.length + alignLeft.length + header.length + raster.length + tail.length,
   );
   let o = 0;
   total.set(init, o);
@@ -84,6 +93,6 @@ export function buildEscPosForRaster(raster: any, bytesPerLine: any, h: any) {
   o += header.length;
   total.set(raster, o);
   o += raster.length;
-  total.set(feedAndCut, o);
+  if (tail.length) total.set(tail, o);
   return total;
 }

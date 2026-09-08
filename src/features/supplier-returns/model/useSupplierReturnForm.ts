@@ -89,13 +89,6 @@ export function useSupplierReturnForm() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (cashBoxes?.length && !cashboxId) {
-      const first = cashBoxes[0];
-      setCashboxId(String(first?.id || first?.uuid || ""));
-    }
-  }, [cashBoxes, cashboxId]);
-
-  useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
@@ -298,12 +291,6 @@ export function useSupplierReturnForm() {
       if (!isQtyAllowed(item.qty, item.product.isWeight)) {
         return `${item.product.productName}: некорректное количество`;
       }
-    }
-    if (compensation === "cash" && totalAmount > 0) {
-      if (!Array.isArray(cashBoxes) || cashBoxes.length === 0) {
-        return "Нет доступных касс. Создайте кассу в разделе «Кассы».";
-      }
-      if (!cashboxId) return "Выберите кассу для прихода денег";
     }
     if (reason === "other" && !comment.trim()) {
       return "Для причины «Другое» укажите комментарий";

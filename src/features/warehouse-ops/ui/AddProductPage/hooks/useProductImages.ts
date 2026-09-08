@@ -1,82 +1,153 @@
-import { useState, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
+import { prepareImageForCropper } from "@shared/ui/ImageCropperModal";
+
+type ProductImageItem = {
+  file: File | null;
+  alt: string;
+  is_primary: boolean;
+  preview: string;
+  id?: string | number;
+};
+
+type CropSession = {
+  src: string;
+  revoke: () => void;
+  fileName: string;
+  sourceMimeType: string;
+};
+
+const toFileArray = (files: FileList | File[] | File | null | undefined): File[] => {
+  if (!files) return [];
+  if (files instanceof FileList) return Array.from(files);
+  if (Array.isArray(files)) return files.filter((f) => f instanceof File);
+  if (files instanceof File) return [files];
+  return [];
+};
 
 /**
- * Хук для управления изображениями товара
- * @returns {Object} Состояние и методы для работы с изображениями
+ * Product images state + sequential crop queue for new local files.
  */
 export const useProductImages = () => {
-  const [images, setImages] = useState<any[]>([]);
-  const fileInputRef = useRef<any>(null);
+  const [images, setImages] = useState<ProductImageItem[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const queueRef = useRef<File[]>([]);
+  const busyRef = useRef(false);
+  const [cropSession, setCropSession] = useState<CropSession | null>(null);
+
+  const appendCroppedImage = useCallback((file: File) => {
+    setImages((prev) => [
+      ...prev,
+      {
+        file,
+        alt: "",
+        is_primary: prev.length === 0,
+        preview: URL.createObjectURL(file),
+      },
+    ]);
+  }, []);
+
+  const openNextInQueue = useCallback(async () => {
+    if (busyRef.current) return;
+    const next = queueRef.current.shift();
+    if (!next) {
+      setCropSession(null);
+      return;
+    }
+
+    busyRef.current = true;
+    try {
+      const prepared = await prepareImageForCropper(next);
+      setCropSession({
+        src: prepared.src,
+        revoke: prepared.revoke,
+        fileName: prepared.fileName,
+        sourceMimeType: prepared.sourceMimeType,
+      });
+    } catch (err) {
+      console.warn("Failed to prepare image for cropper:", err);
+      busyRef.current = false;
+      await openNextInQueue();
+    }
+  }, []);
+
+  const closeCropSession = useCallback(() => {
+    setCropSession((prev) => {
+      prev?.revoke();
+      return null;
+    });
+    busyRef.current = false;
+  }, []);
 
   /**
-   * Добавляет новые изображения
-   * @param {FileList|Array} files - Список файлов
+   * Enqueue local image files for cropping (input / drag&drop).
+   * Server images (with id) are never passed here.
    */
-  const addImages = (files) => {
-    const fileArray = files instanceof FileList ? Array.from(files) : (Array.isArray(files) ? files : []);
-    const newImages = fileArray.map((file, idx) => ({
-      file,
-      alt: "",
-      is_primary: images.length === 0 && idx === 0,
-      preview: URL.createObjectURL(file),
-    }));
-    setImages((prev) => [...prev, ...newImages]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const addImages = useCallback(
+    (files: FileList | File[] | File | null | undefined) => {
+      const fileArray = toFileArray(files).filter((f) =>
+        String(f.type || "").startsWith("image/"),
+      );
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      if (fileArray.length === 0) return;
+
+      queueRef.current.push(...fileArray);
+      if (!busyRef.current && !cropSession) {
+        void openNextInQueue();
+      }
+    },
+    [cropSession, openNextInQueue],
+  );
+
+  const handleCropComplete = useCallback(
+    (croppedFile: File) => {
+      appendCroppedImage(croppedFile);
+      closeCropSession();
+      void openNextInQueue();
+    },
+    [appendCroppedImage, closeCropSession, openNextInQueue],
+  );
+
+  const handleCropCancel = useCallback(() => {
+    closeCropSession();
+    void openNextInQueue();
+  }, [closeCropSession, openNextInQueue]);
+
+  const removeImage = (index: number) => {
+    setImages((current) => {
+      const image = current[index];
+      if (image?.preview && String(image.preview).startsWith("blob:")) {
+        URL.revokeObjectURL(image.preview);
+      }
+      const newImages = current.filter((_, i) => i !== index);
+      if (
+        image?.is_primary &&
+        newImages.length > 0 &&
+        !newImages.some((p) => p.is_primary)
+      ) {
+        newImages[0] = { ...newImages[0], is_primary: true };
+      }
+      return newImages;
+    });
   };
 
-  /**
-   * Удаляет изображение по индексу
-   * @param {number} index - Индекс изображения
-   */
-  const removeImage = (index) => {
-    const image = images[index];
-    // revokeObjectURL только для blob-URL (свои файлы); для HTTP-URL (из API) не вызывать — иначе исключение и setImages не выполнится
-    if (image?.preview && String(image.preview).startsWith("blob:")) {
-      URL.revokeObjectURL(image.preview);
-    }
-    const newImages = images.filter((_, i) => i !== index);
-    // Если удалили главное, назначаем первое как главное
-    if (
-      image?.is_primary &&
-      newImages.length > 0 &&
-      !newImages.some((p) => p.is_primary)
-    ) {
-      newImages[0] = { ...newImages[0], is_primary: true };
-    }
-    setImages(newImages);
-  };
-
-  /**
-   * Устанавливает главное изображение
-   * @param {number} index - Индекс изображения
-   */
-  const setPrimaryImage = (index) => {
+  const setPrimaryImage = (index: number) => {
     setImages((prev) =>
       prev.map((it, i) => ({
         ...it,
         is_primary: i === index,
-      }))
+      })),
     );
   };
 
-  /**
-   * Обновляет alt текст изображения
-   * @param {number} index - Индекс изображения
-   * @param {string} alt - Новый alt текст
-   */
-  const updateImageAlt = (index, alt) => {
+  const updateImageAlt = (index: number, alt: string) => {
     setImages((prev) =>
-      prev.map((it, i) => (i === index ? { ...it, alt } : it))
+      prev.map((it, i) => (i === index ? { ...it, alt } : it)),
     );
   };
 
-  /**
-   * Загружает изображения из API (для режима редактирования)
-   * @param {Array} apiImages - Массив изображений из API
-   */
-  const loadImagesFromAPI = (apiImages) => {
+  const loadImagesFromAPI = (apiImages: any[]) => {
     if (apiImages && apiImages.length > 0) {
       const loadedImages = apiImages.map((img) => ({
         file: null,
@@ -89,16 +160,15 @@ export const useProductImages = () => {
     }
   };
 
-  /**
-   * Очищает все изображения
-   */
   const clearImages = () => {
-    images.forEach((img) => {
-      if (img.preview && img.file) {
-        URL.revokeObjectURL(img.preview);
-      }
+    setImages((current) => {
+      current.forEach((img) => {
+        if (img.preview && img.file) {
+          URL.revokeObjectURL(img.preview);
+        }
+      });
+      return [];
     });
-    setImages([]);
   };
 
   return {
@@ -111,6 +181,13 @@ export const useProductImages = () => {
     updateImageAlt,
     loadImagesFromAPI,
     clearImages,
+    imageCropper: {
+      open: Boolean(cropSession),
+      imageSrc: cropSession?.src || "",
+      fileName: cropSession?.fileName || "image.jpg",
+      sourceMimeType: cropSession?.sourceMimeType,
+      onCropComplete: handleCropComplete,
+      onClose: handleCropCancel,
+    },
   };
 };
-

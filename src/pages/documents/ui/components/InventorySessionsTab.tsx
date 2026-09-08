@@ -211,6 +211,68 @@ const InventorySessionsTab = () => {
     return "—";
   };
 
+  const renderSessionActions = (row: any) => (
+    <div className="documents__actions">
+      <button
+        type="button"
+        className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+        title="Подробнее"
+        aria-label="Подробнее"
+        onClick={() => void openDetail(row.id)}
+      >
+        <Eye size={18} />
+      </button>
+    </div>
+  );
+
+  const renderSessionCard = (row: any) => (
+    <article key={row.id} className="nur-card-list__item inventory-sessions__card">
+      <div className="inventory-sessions__card-head">
+        <strong className="inventory-sessions__card-title">
+          {formatDt(row.created_at)}
+        </strong>
+        <StatusChip tone={statusTone(row.status)}>
+          {statusLabel(row.status)}
+        </StatusChip>
+      </div>
+      <div className="nur-card-list__row">
+        <span className="nur-card-list__label">Примечание</span>
+        <span className="nur-card-list__value inventory-sessions__card-note">
+          {row.note?.trim() ? row.note : "—"}
+        </span>
+      </div>
+      <div className="nur-card-list__row">
+        <span className="nur-card-list__label">Позиций</span>
+        <span className="nur-card-list__value">{itemsCount(row)}</span>
+      </div>
+      <div className="nur-card-list__row">
+        <span className="nur-card-list__label">Проведён</span>
+        <span className="nur-card-list__value">{formatDt(row.applied_at)}</span>
+      </div>
+      <div className="inventory-sessions__card-actions">
+        {renderSessionActions(row)}
+      </div>
+    </article>
+  );
+
+  const renderSessionsBody = () => {
+    if (loading) {
+      return <LoadingState rows={4} />;
+    }
+
+    if (sessions.length === 0) {
+      return (
+        <EmptyState
+          icon={<ClipboardList size={22} />}
+          title="Актов инвентаризации пока нет"
+          text="Создайте акт через склад: отметьте товары и нажмите «Инвентаризация»."
+        />
+      );
+    }
+
+    return sessions.map((row: any) => renderSessionCard(row));
+  };
+
   return (
     <div className="inventory-sessions">
       <div className="inventory-sessions__toolbar">
@@ -242,7 +304,7 @@ const InventorySessionsTab = () => {
       ) : null}
 
       <PagePanel flush className="inventory-sessions__panel">
-        <div className="nur-table-wrap">
+        <div className="nur-table-wrap nur-table-wrap--responsive inventory-sessions__table-wrap">
           <table className="nur-table nur-table--dense">
             <thead>
               <tr>
@@ -290,24 +352,16 @@ const InventorySessionsTab = () => {
                     </td>
                     <td>{itemsCount(row)}</td>
                     <td>{formatDt(row.applied_at)}</td>
-                    <td>
-                      <div className="documents__actions">
-                        <button
-                          type="button"
-                          className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
-                          title="Подробнее"
-                          aria-label="Подробнее"
-                          onClick={() => void openDetail(row.id)}
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </div>
-                    </td>
+                    <td>{renderSessionActions(row)}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="nur-card-list nur-card-list--responsive inventory-sessions__card-list">
+          {renderSessionsBody()}
         </div>
 
         {totalPages > 1 ? (

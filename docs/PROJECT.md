@@ -4,6 +4,12 @@
 
 **Читать первым:** этот файл → `src/ARCHITECTURE.md` → нужный ТЗ в `docs/market/` (фронт) или `docs/backend/` (контракты API).
 
+Ключевые экраны:
+
+- Касса: `docs/market/` + `src/pages/cashier`
+- Товар / склад (AddProductPage): [`docs/market/add-product-page.md`](./market/add-product-page.md)
+- Печать чека: [`docs/market/receipt-printing.md`](./market/receipt-printing.md)
+
 ---
 
 ## 1. Что это за продукт
@@ -300,12 +306,14 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 ### Склад
 
 - Page: `src/pages/warehouse/`
-- Add product: `@features/add-product`, `@features/warehouse-ops`
+- Add product: `@features/add-product` → `@features/warehouse-ops/ui/AddProductPage`
+- Подробно: [`docs/market/add-product-page.md`](./market/add-product-page.md) (веб), [`docs/flutter/add-product.md`](./flutter/add-product.md) (паритет API)
 - Entity: `@entities/product`, `@entities/warehouse`
 - Barcode helpers: `@entities/product/lib/marketWarehouseBarcodeScan.ts`, `tools/marketWarehouseBarcodeScan.js`
 
 ### Печать / ESC-POS / денежный ящик
 
+- Подробно: [`docs/market/receipt-printing.md`](./market/receipt-printing.md)
 - `src/pages/sell/ui/services/printService.ts` + `print/`
 - Настройки UI: `/crm/pos-print-settings`
 - localStorage ключи `escpos_*`; ящик — `escpos_drawer_*` (ТЗ модуль 5)
@@ -315,6 +323,7 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 
 - Features: `@features/kassa`, `@features/kassa-worker`, `@features/debts`, `@features/open-shift`
 - Pages: `shifts`, entities `cash`, `shift`
+- **Auto income/expense:** целевой путь — создание на бэке внутри checkout/pay/закупок ([`docs/backend/kassa/auto-cashflows-backend.md`](./backend/kassa/auto-cashflows-backend.md)). Флаг FE: `VITE_BE_CASHFLOWS=true` отключает legacy `POST /construction/cashflows/` после бизнес-операций (`postCashflowIfNeeded`). Ручной ввод в `/crm/kassa` всегда через FE POST.
 
 ### Auth / register
 
@@ -380,10 +389,12 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 | `tz-aug-2026-detailed.md` | **Актуальное** ТЗ авг 2026: 5 модулей (массовый приход, уведомления, 2-й экран, F3 hotkeys, денежный ящик) |
 | `tz-aug-2026-fe-be-split.md` | Краткий FE/BE сплит (черновик; приоритет у detailed) |
 | `tz-perf-fixes-aug-2026.md` | Perf: lazy PDF, узкие селекторы, долги N+1, page_size, chunks |
+| `receipt-printing.md` | Печать кассового чека: WebUSB, ESC/POS, JSON/PDF, eKassa, ящик |
+| `add-product-page.md` | Экран создания/редактирования товара: архитектура, хуки, submit, раскладка |
 
 ### Бэкенд — `docs/backend/`
 
-Индекс: `docs/backend/README.md`. Сюда вынесены все контракты API.
+Индекс: `docs/backend/README.md`. Касса (деньги, смены, закупки): `docs/backend/kassa/README.md`.
 
 | Файл | Содержание |
 |------|------------|
@@ -394,7 +405,8 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 | `cashier-settings.md` | Код удаления из корзины + max скидка |
 | `alternate-barcodes.md` | Доп. штрихкоды товара |
 | `analytics.md` | Фильтр аналитики по datetime (BE timezone) |
-| `scales-weight-products.md` | Весовые товары / весы |
+| [`market/scales-and-plu.md`](./market/scales-and-plu.md) | **Весы и PLU** — полная документация (фронт + API + QA) |
+| `scales-weight-products.md` | Весовые товары / весы (контракт бэкенда) |
 | `bulk_update_products.md` | Массовое изменение brand/category/supplier |
 | `receipt-price-edit-discount.md` | Ручная цена ≠ discount в чеке |
 | `shift-payment-breakdown-backend.md` | Закрытие смены: `payment_breakdown` |
@@ -450,20 +462,21 @@ Offline: interceptor может подставить `getOfflineFallback` (cafe 
 | Задача | С чего начать |
 |--------|----------------|
 | Баг/фича кассы | `pages/cashier`, `features/create-sale`, `entities/sale` |
-| Склад / товар / barcode | `pages/warehouse`, `entities/product`, `features/add-product` |
-| Печать чека / ящик | `pages/sell/ui/services/print*`, `pages/settings` (PosPrintSettings) |
+| Склад / товар / barcode | `docs/market/add-product-page.md`, `pages/warehouse`, `entities/product`, `features/add-product` |
+| Печать чека / ящик | `docs/market/receipt-printing.md`, `pages/sell/ui/services/print*`, `PosPrintSettings` |
 | Меню / навигация | `widgets/sidebar/ui/config` |
 | Новый CRM route | `app/router/routes/marketRoutes` или `commonRoutes` + lazy page |
 | Auth | `features/auth`, `entities/user`, `shared/api/authInterceptors` |
 | Уведомления | `entities/notification`, `widgets/notification-modal` |
 | Клиенты / KPI | `pages/clients/ClientDetails` + `docs/backend/client-kpis-backend.md` + `docs/flutter/client-debt-and-kpis.md` |
-| Долги | `features/debts`, касса default v2: `pages/cashier` + `docs/backend/debt-installment-schedule-backend.md` |
+| Долги | `features/debts`, касса default v2: `pages/cashier` + `docs/backend/kassa/debt-installment-schedule-backend.md` |
 | Аналитика | `pages/analytics`, `entities/analytics` |
 | Права доступа | profile permissions + `permission` в menu config + Auth/Protected |
 | Perf | `docs/market/tz-perf-fixes-aug-2026.md` |
 | ТЗ авг 2026 | `docs/market/tz-aug-2026-detailed.md` |
-| Закрытие смены / способы оплаты | `pages/cashier/CloseShiftPage`, `entities/shift/lib/paymentBreakdown`, `docs/backend/shift-payment-breakdown-backend.md` |
-| Закупки / возврат поставщику | `pages/warehouse/SupplierReceiptsListPage`, `features/supplier-returns`, `docs/backend/procurement-history-returns-backend.md` |
+| Закрытие смены / способы оплаты | `pages/cashier/CloseShiftPage`, `entities/shift/lib/paymentBreakdown`, `docs/backend/kassa/shift-payment-breakdown-backend.md` |
+| Auto cashflows (income/expense на бэке) | `VITE_BE_CASHFLOWS`, `postCashflowIfNeeded`, `docs/backend/kassa/auto-cashflows-backend.md` |
+| Закупки / возврат поставщику | `pages/warehouse/SupplierReceiptsListPage`, `features/supplier-returns`, `docs/backend/kassa/procurement-history-returns-backend.md` |
 
 ---
 

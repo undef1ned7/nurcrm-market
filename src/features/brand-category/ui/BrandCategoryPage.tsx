@@ -159,7 +159,9 @@ const ItemsTable = ({ items, onEdit, startIndex = 0 }: any) => {
   );
 };
 
-const ItemsCards = ({ items, onEdit, startIndex = 0 }: any) => (
+const ItemsCards = ({ items, onEdit, startIndex = 0 }: any) => {
+  const { t } = useTranslation();
+  return (
   <div className="brand-category-page__cards">
     {items.map((item, idx) => (
       <article
@@ -178,14 +180,15 @@ const ItemsCards = ({ items, onEdit, startIndex = 0 }: any) => (
             e.stopPropagation();
             onEdit(item);
           }}
-          aria-label="Редактировать"
+          aria-label={t("crm.brandCategory.editAria")}
         >
           <Pencil size={15} />
         </button>
       </article>
     ))}
   </div>
-);
+  );
+};
 
 const BrandCategoryPagination = ({
   currentPage,
@@ -197,6 +200,7 @@ const BrandCategoryPagination = ({
   hasPrevPage,
   onPageChange,
 }: any) => {
+  const { t } = useTranslation();
   const pages = useMemo(() => {
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -219,17 +223,17 @@ const BrandCategoryPagination = ({
   return (
     <nav
       className="brand-category-page__pagination"
-      aria-label="Навигация по страницам"
+      aria-label={t("crm.brandCategory.paginationAria")}
     >
       <button
         type="button"
         className="brand-category-page__pagination-btn brand-category-page__pagination-btn--nav"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1 || loading || !hasPrevPage}
-        aria-label="Предыдущая страница"
+        aria-label={t("crm.brandCategory.prevPageAria")}
       >
         <ChevronLeft size={18} />
-        Назад
+        {t("common.back")}
       </button>
 
       <div className="brand-category-page__pagination-pages">
@@ -252,7 +256,7 @@ const BrandCategoryPagination = ({
               }`}
               onClick={() => onPageChange(page)}
               disabled={loading || page === currentPage}
-              aria-label={`Страница ${page}`}
+              aria-label={t("crm.brandCategory.page", { page })}
               aria-current={page === currentPage ? "page" : undefined}
             >
               {page}
@@ -276,9 +280,9 @@ const BrandCategoryPagination = ({
         className="brand-category-page__pagination-btn brand-category-page__pagination-btn--nav"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={loading || !hasNextPage || currentPage >= totalPages}
-        aria-label="Следующая страница"
+        aria-label={t("crm.brandCategory.nextPageAria")}
       >
-        Вперёд
+        {t("common.forward")}
         <ChevronRight size={18} />
       </button>
     </nav>
@@ -350,7 +354,9 @@ export default function BrandCategoryPage() {
     [totalCount],
   );
 
-  const countLabel = isBrandsTab ? "брендов" : "категорий";
+  const countLabel = isBrandsTab
+    ? t("crm.brandCategory.brandsCount")
+    : t("crm.brandCategory.categoriesCount");
   const rowStartIndex = (currentPage - 1) * PAGE_SIZE;
 
   const handlePageChange = useCallback(
@@ -447,7 +453,7 @@ export default function BrandCategoryPage() {
 
   const handleSubmit = async (name) => {
     const { type, mode, item } = modalCfg;
-    if (!name.trim()) return alert("Введите название");
+    if (!name.trim()) return alert(t("crm.brandCategory.enterName"));
     try {
       if (type === "brand") {
         if (mode === "add") await dispatch(createBrandAsync({ name })).unwrap();
@@ -467,14 +473,14 @@ export default function BrandCategoryPage() {
       }
       setModalCfg(null);
     } catch (e: any) {
-      alert(validateResErrors(e, "Ошибка при сохранении. "));
+      alert(validateResErrors(e, t("crm.brandCategory.saveError")));
       console.error(e);
     }
   };
 
   const handleDelete = async () => {
     const { type, item } = modalCfg;
-    confirm("Удалить?", async (result) => {
+    confirm(t("crm.brandCategory.deleteConfirmShort"), async (result) => {
       if (!result) return;
       try {
         if (type === "brand") {
@@ -486,7 +492,7 @@ export default function BrandCategoryPage() {
         }
         setModalCfg(null);
       } catch (e: any) {
-        alert(validateResErrors(e, "Ошибка при удалении. "));
+        alert(validateResErrors(e, t("crm.brandCategory.deleteError")));
       }
     });
   };
@@ -508,20 +514,20 @@ export default function BrandCategoryPage() {
 
   const tabMeta = isBrandsTab
     ? {
-        title: "Бренды",
-        subtitle: "Справочник брендов для товаров",
+        title: t("crm.brandCategory.brands"),
+        subtitle: t("crm.brandCategory.subtitle"),
         icon: Tag,
-        createLabel: "Добавить бренд",
-        emptyText: "Брендов пока нет",
-        searchPlaceholder: "Поиск по брендам",
+        createLabel: t("crm.brandCategory.addBrandTitle"),
+        emptyText: t("crm.brandCategory.emptyBrands"),
+        searchPlaceholder: t("crm.brandCategory.searchBrands"),
       }
     : {
-        title: "Категории",
-        subtitle: "Справочник категорий для товаров",
+        title: t("crm.brandCategory.categories"),
+        subtitle: t("crm.brandCategory.subtitleCategories"),
         icon: FolderOpen,
-        createLabel: "Добавить категорию",
-        emptyText: "Категорий пока нет",
-        searchPlaceholder: "Поиск по категориям",
+        createLabel: t("crm.brandCategory.addCategoryTitle"),
+        emptyText: t("crm.brandCategory.emptyCategories"),
+        searchPlaceholder: t("crm.brandCategory.searchCategories"),
       };
 
   const TabIcon = tabMeta.icon;
@@ -546,7 +552,10 @@ export default function BrandCategoryPage() {
         }
       />
 
-      <nav className="brand-category-page__tabs" aria-label="Разделы">
+      <nav
+        className="brand-category-page__tabs"
+        aria-label={t("crm.brandCategory.sectionsAria")}
+      >
         <button
           type="button"
           className={`brand-category-page__tab${
@@ -555,7 +564,7 @@ export default function BrandCategoryPage() {
           onClick={() => setActiveTab(TABS.BRANDS)}
         >
           <Tag size={16} />
-          Бренды
+          {t("crm.brandCategory.brands")}
         </button>
         <button
           type="button"
@@ -565,7 +574,7 @@ export default function BrandCategoryPage() {
           onClick={() => setActiveTab(TABS.CATEGORIES)}
         >
           <FolderOpen size={16} />
-          Категории
+          {t("crm.brandCategory.categories")}
         </button>
       </nav>
 
@@ -583,7 +592,7 @@ export default function BrandCategoryPage() {
               type="button"
               className="nur-btn nur-btn--ghost nur-btn--sm brand-category-page__search-clear"
               onClick={() => setSearch("")}
-              aria-label="Очистить поиск"
+              aria-label={t("crm.brandCategory.clearSearchAria")}
             >
               <X size={16} />
             </button>
@@ -592,13 +601,13 @@ export default function BrandCategoryPage() {
 
         <div className="brand-category-page__toolbar-meta">
           <span className="nur-chip">
-            Всего: {totalCount}
+            {t("crm.brandCategory.totalLabel")}: {totalCount}
           </span>
 
           <div
             className="brand-category-page__view-toggle"
             role="group"
-            aria-label="Режим отображения"
+            aria-label={t("crm.brandCategory.viewModeAria")}
           >
             <button
               type="button"
@@ -610,7 +619,7 @@ export default function BrandCategoryPage() {
               onClick={() => setViewMode(VIEW_MODES.TABLE)}
             >
               <Table2 size={16} />
-              Список
+              {t("crm.brandCategory.list")}
             </button>
             <button
               type="button"
@@ -622,7 +631,7 @@ export default function BrandCategoryPage() {
               onClick={() => setViewMode(VIEW_MODES.CARDS)}
             >
               <LayoutGrid size={16} />
-              Карточки
+              {t("crm.brandCategory.cards")}
             </button>
           </div>
         </div>
@@ -630,7 +639,7 @@ export default function BrandCategoryPage() {
 
       <PagePanel className="brand-category-page__content" flush>
         {loading ? (
-          <p className="brand-category-page__status">Загрузка…</p>
+          <p className="brand-category-page__status">{t("common.loading")}</p>
         ) : error ? (
           <p className="brand-category-page__status brand-category-page__status--error">
             {String(error?.message || error)}
@@ -683,9 +692,9 @@ export default function BrandCategoryPage() {
           title={
             modalCfg.mode === "add"
               ? modalCfg.type === "brand"
-                ? "Новый бренд"
-                : "Новая категория"
-              : `Редактирование: ${modalCfg.item?.name || ""}`
+                ? t("crm.brandCategory.newBrand")
+                : t("crm.brandCategory.newCategory")
+              : `${t("common.edit")}: ${modalCfg.item?.name || ""}`
           }
           initial={modalCfg.item}
           onSubmit={handleSubmit}

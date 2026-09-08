@@ -1,6 +1,6 @@
 import { CalendarDays, Pencil, ReceiptText } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-import { kindLabel } from "../clientDetails.helpers";
 import type { DealRecord } from "../clientDetails.types";
 import { getDealDateISO, getDebtProgress } from "../clientDetails.utils";
 
@@ -19,20 +19,32 @@ export function DealsSection({
   onDealClick,
   onEditDeal,
 }: DealsSectionProps) {
+  const { t } = useTranslation();
+  const kindLabel = (kind: unknown) => {
+    const map: Record<string, string> = {
+      sale: t("crm.clients.details.sale"),
+      debt: t("crm.clients.details.debt"),
+      prepayment: t("crm.clients.details.prepayment"),
+      amount: t("common.amount"),
+    };
+    return map[String(kind || "")] || String(kind || "") || "—";
+  };
   return (
     <div className="cdx__deals">
       <div className="cdx__deals-head">
         <h3 className="cdx__deals-title">
-          <ReceiptText /> Сделки
+          <ReceiptText /> {t("crm.clients.details.dealsTitle")}
         </h3>
         <span className="cdx__deals-count">{filteredDeals.length}</span>
       </div>
 
       <div className="cdx__deals-body">
-        {dealsLoading && <div className="cdx__state">Загрузка…</div>}
+        {dealsLoading && (
+          <div className="cdx__state">{t("common.loading")}</div>
+        )}
         {dealsErr && <div className="cdx__alert">{dealsErr}</div>}
         {!dealsLoading && !dealsErr && filteredDeals.length === 0 && (
-          <div className="cdx__state">Сделок нет</div>
+          <div className="cdx__state">{t("crm.clients.details.noDeals")}</div>
         )}
 
         {filteredDeals.map((deal) => {
@@ -40,8 +52,8 @@ export function DealsSection({
           const debtProgress = isDebt ? getDebtProgress(deal) : null;
           const debtStatusLabel =
             isDebt && Number(deal.prepayment || 0) !== 0
-              ? "Предоплата"
-              : "Долг";
+              ? t("crm.clients.details.prepayment")
+              : t("crm.clients.details.debt");
           const dealDate = getDealDateISO(deal);
 
           return (
@@ -72,18 +84,24 @@ export function DealsSection({
                       {dealDate}
                     </span>
                   )}
-                  <span className="cdx__deal-meta-item">Нет задач</span>
+                  <span className="cdx__deal-meta-item">
+                    {t("crm.clients.details.noTasks")}
+                  </span>
                 </div>
               </div>
 
               <div className="cdx__deal-money">
                 <div className="cdx__deal-amount">
                   {Number(deal.amount || 0).toFixed(2)}
-                  <span className="cdx__deal-amount-cur">сом</span>
+                  <span className="cdx__deal-amount-cur">
+                    {t("common.currencySom")}
+                  </span>
                 </div>
                 {isDebt && (
                   <div className="cdx__deal-remaining">
-                    Остаток: {Number(deal.remaining_debt || 0).toFixed(2)} сом
+                    {t("crm.clients.details.remainderLabel")}:{" "}
+                    {Number(deal.remaining_debt || 0).toFixed(2)}{" "}
+                    {t("common.currencySom")}
                   </div>
                 )}
               </div>
@@ -93,8 +111,10 @@ export function DealsSection({
                   <>
                     <div className="cdx__progress-top">
                       <span className="cdx__progress-label">
-                        Оплачено {debtProgress!.paid.toFixed(2)} из{" "}
-                        {debtProgress!.total.toFixed(2)}
+                        {t("crm.clients.details.paidOf", {
+                          paid: debtProgress!.paid.toFixed(2),
+                          total: debtProgress!.total.toFixed(2),
+                        })}
                       </span>
                       <span className="cdx__progress-pct">
                         {debtProgress!.percent}%
@@ -126,7 +146,7 @@ export function DealsSection({
                   onClick={() => onEditDeal(deal)}
                   className="cdx__btn cdx__btn--secondary"
                 >
-                  <Pencil /> Редактировать
+                  <Pencil /> {t("common.edit")}
                 </button>
               </div>
             </div>

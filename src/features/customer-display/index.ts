@@ -7,11 +7,14 @@ export {
 export {
   CUSTOMER_DISPLAY_PATH,
   getCustomerDisplaySlidesText,
+  getCustomerDisplayTheme,
   getCustomerDisplayWelcome,
   isCustomerDisplayEnabled,
   openCustomerDisplayWindow,
   setCustomerDisplayEnabled,
   setCustomerDisplaySlides,
+  setCustomerDisplayTheme,
   setCustomerDisplayWelcome,
 } from "./model/settings";
 export type { CustomerDisplayMessage, CustomerDisplayPhase } from "./model/types";
+export type { CustomerDisplayTheme } from "./model/settings";

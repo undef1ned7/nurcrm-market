@@ -574,6 +574,7 @@ const Warehouse = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             count={count}
+            countLabel={t("crm.warehouse.pluralProducts")}
             loading={loading}
             hasNextPage={hasNextPage}
             hasPrevPage={hasPrevPage}

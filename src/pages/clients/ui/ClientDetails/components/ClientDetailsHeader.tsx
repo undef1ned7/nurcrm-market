@@ -4,6 +4,7 @@ import {
   FileSpreadsheet,
   Pencil,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface ClientDetailsHeaderProps {
   clientName: string;
@@ -29,6 +30,7 @@ export function ClientDetailsHeader({
   onReconciliation,
   onEditClient,
 }: ClientDetailsHeaderProps) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="cdx__topbar">
@@ -38,7 +40,7 @@ export function ClientDetailsHeader({
             onClick={onBack}
             className="cdx__btn cdx__btn--ghost"
           >
-            <ArrowLeft /> Назад
+            <ArrowLeft /> {t("crm.clients.details.back")}
           </button>
 
           <div className="cdx__identity">
@@ -65,21 +67,21 @@ export function ClientDetailsHeader({
             className="cdx__btn cdx__btn--primary"
             onClick={onAddDeal}
           >
-            <Plus /> Добавить сделку
+            <Plus /> {t("crm.clients.details.addDeal")}
           </button>
           <button
             type="button"
             className="cdx__btn cdx__btn--secondary"
             onClick={onReconciliation}
           >
-            <FileSpreadsheet /> Акт сверки
+            <FileSpreadsheet /> {t("crm.clients.details.reconciliation")}
           </button>
           <button
             type="button"
             className="cdx__btn cdx__btn--secondary"
             onClick={onEditClient}
           >
-            <Pencil /> Редактировать клиента
+            <Pencil /> {t("crm.clients.details.editClientLong")}
           </button>
         </div>
       </div>

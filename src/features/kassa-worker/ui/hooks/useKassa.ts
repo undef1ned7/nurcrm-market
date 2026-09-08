@@ -1,17 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useUser } from "@entities/user";
 import { isMarketSectorName } from "@shared/lib/subscriptionPlan";
-import { addCashFlows } from "@entities/cash";
+import {
+  addCashFlows,
+  isCashFlowChangeRequestsEnabled,
+  useCashFlowRealtimeEvent,
+} from "@entities/cash";
 import useResize from "@shared/hooks/useResize";
 import { useAlert } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import api from "@shared/api";
 import { useAppDispatch } from "@app/store";
 import {
+  fetchCashboxDailyReport,
+  fetchCashboxMonthlyReport,
+  shouldWarnReportTruncated,
+} from "@entities/cash/lib/cashboxReportsApi";
+import type { CashboxReportViewModel } from "@entities/cash/lib/cashboxReports.types";
+import {
   CASHFLOWS_PAGE_SIZE,
-  REPORT_PAGE_SIZE,
-  REPORT_MAX_PAGES,
   isApprovedFlow,
   dayKeyOf,
   dayLabelOf,
@@ -21,6 +30,7 @@ export function useKassa() {
   const { id } = useParams();
   const dispatch = useAppDispatch();
   const alert = useAlert();
+  const { t } = useTranslation();
   const cashboxId = id;
   const { company } = useUser();
   const { profile } = useUser();
@@ -35,7 +45,7 @@ export function useKassa() {
   // НОВОЕ СОСТОЯНИЕ ДЛЯ ФИЛЬТРАЦИИ ПОТОКОВ
   const [activeFlowType, setActiveFlowType] = useState("all"); // 'all', 'income', 'expense', "pending", "reports"
   const [reportType, setReportType] = useState("monthly"); // 'monthly', 'daily'
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportData, setReportData] = useState<CashboxReportViewModel | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
@@ -45,6 +55,9 @@ export function useKassa() {
   ); // YYYY-MM-DD
 
   const [showFilter, setShowFilter] = useState(false);
+  // Заявка на редактирование/отмену движения: { mode: "edit" | "cancel", flow } | null
+  const [flowChange, setFlowChange] = useState<any>(null);
+  const canRequestFlowChange = isCashFlowChangeRequestsEnabled();
   const [showAddCashboxModal, setShowAddCashboxModal] = useState(false);
   const [selectedCashbox, setSelectedCashbox] = useState<any>(null);
   const [showEditCashboxModal, setShowEditCashboxModal] = useState(false);
@@ -88,7 +101,7 @@ export function useKassa() {
 
   const fetchCashboxDetails = useCallback(async (idToFetch) => {
     if (!idToFetch) {
-      setError("ID кассы не указан в URL.");
+      setError(t("crm.kassa.worker.errNoId"));
       setLoading(false);
       return;
     }
@@ -104,21 +117,21 @@ export function useKassa() {
       setCashboxDetails(data);
       setSelectedCashbox(data);
     } catch (err: any) {
-      const errorMessage = validateResErrors(err, "Ошибка при загрузке данных кассы. ")
+      const errorMessage = validateResErrors(err, t("crm.kassa.worker.errLoadDetails"))
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [company?.subscription_plan?.name]);
+  }, [company?.subscription_plan?.name, t]);
 
   useEffect(() => {
     if (cashboxId) {
       fetchCashboxDetails(cashboxId);
     } else {
-      setError("ID кассы не указан в URL.");
+      setError(t("crm.kassa.worker.errNoId"));
       setLoading(false);
     }
-  }, [cashboxId, fetchCashboxDetails]);
+  }, [cashboxId, fetchCashboxDetails, t]);
 
   const loadCashflowsPage = useCallback(
     async (page) => {
@@ -155,7 +168,7 @@ export function useKassa() {
             (count == null && flows.length === CASHFLOWS_PAGE_SIZE),
         );
       } catch (err: any) {
-        const errorMessage = validateResErrors(err, "Ошибка при загрузке потоков. ");
+        const errorMessage = validateResErrors(err, t("crm.kassa.worker.errLoadFlows"));
         alert(errorMessage, true);
         setFlowsList([]);
         setFlowsTotalCount(null);
@@ -164,7 +177,7 @@ export function useKassa() {
         setFlowsLoading(false);
       }
     },
-    [cashboxId, debouncedFilterSearch, activeFlowType, alert],
+    [cashboxId, debouncedFilterSearch, activeFlowType, alert, t],
   );
 
   useEffect(() => {
@@ -186,7 +199,7 @@ export function useKassa() {
 
   const handleAddCashbox = async () => {
     if (!newCashbox.name || !newCashbox.amount) {
-      alert("Пожалуйста, заполните все поля.", true);
+      alert(t("crm.kassa.worker.errFillFields"), true);
       return;
     }
     try {
@@ -206,7 +219,7 @@ export function useKassa() {
       setShowAddCashboxModal(false);
       setNewCashbox({ name: "", amount: 0, status: "", type: "expense" });
     } catch (err: any) {
-      const errorMessage = validateResErrors(err, 'Не удалось добавить операцию по кассе. Пожалуйста, проверьте данные и попробуйте еще раз.')
+      const errorMessage = validateResErrors(err, t("crm.kassa.worker.errAddOp"))
       alert(errorMessage, true)
     }
   };
@@ -228,10 +241,20 @@ export function useKassa() {
       setSelectedCashbox(updatedCashbox);
       fetchCashboxDetails(cashboxId);
     } catch (err: any) {
-      const errorMessage = validateResErrors(err, "Не удалось обновить кассу. Пожалуйста, проверьте данные и попробуйте еще раз.")
+      const errorMessage = validateResErrors(err, t("crm.kassa.worker.errUpdateCashbox"))
       setError(errorMessage);
     }
   };
+
+  const openFlowChange = useCallback((mode, flow) => {
+    if (!flow?.id) return;
+    setFlowChange({ mode, flow });
+  }, []);
+  const closeFlowChange = useCallback(() => setFlowChange(null), []);
+  const reloadAfterFlowChange = useCallback(() => {
+    void fetchCashboxDetails(cashboxId);
+    void loadCashflowsPage(flowsPage);
+  }, [fetchCashboxDetails, cashboxId, loadCashflowsPage, flowsPage]);
 
   // Статус фильтрует сервер (?status=approved); клиентский фильтр — страховка от "true"
   const filteredCashflows = flowsList.filter(isApprovedFlow);
@@ -244,155 +267,74 @@ export function useKassa() {
     setShowFilter(false);
   };
 
-  // Загрузка всех страниц для отчётов (с защитой от бесконечного цикла)
-  const fetchAllCashflows = async (baseParams) => {
-    const allFlows: any[] = [];
-    let page = 1;
-    let guard = 0;
-    let truncated = false;
-
-    while (guard < REPORT_MAX_PAGES) {
-      const { data } = await api.get("/construction/cashflows/", {
-        params: { ...baseParams, page, page_size: REPORT_PAGE_SIZE },
-      });
-      const flows = Array.isArray(data) ? data : data?.results || [];
-      allFlows.push(...flows);
-      guard += 1;
-
-      const hasNext =
-        Boolean(data?.next) ||
-        (typeof data?.count === "number" &&
-          page * REPORT_PAGE_SIZE < data.count) ||
-        (typeof data?.count !== "number" && flows.length === REPORT_PAGE_SIZE);
-
-      if (!hasNext) break;
-      page += 1;
-      if (guard >= REPORT_MAX_PAGES) truncated = true;
-    }
-
-    return { flows: allFlows, truncated };
-  };
-
-  const fetchMonthlyReport = async () => {
+  const loadReport = useCallback(async () => {
     if (!cashboxId) return;
     setReportLoading(true);
+    setError(null);
     try {
-      const [year, month] = selectedMonth.split("-");
-      // Период и статус фильтрует сервер (date_from/date_to включительно)
-      const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-      const params: any = {
-        cashbox: cashboxId,
-        status: "approved",
-        date_from: `${selectedMonth}-01`,
-        date_to: `${selectedMonth}-${String(lastDay).padStart(2, "0")}`,
-      };
-      const { flows, truncated } = await fetchAllCashflows(params);
-      if (truncated) {
-        alert(
-          "Загружены не все операции за период (лимит отчёта). Уточните период или обратитесь к администратору.",
-          true,
-        );
+      const report =
+        reportType === "monthly"
+          ? await fetchCashboxMonthlyReport(cashboxId, selectedMonth)
+          : await fetchCashboxDailyReport(cashboxId, selectedDate);
+
+      if (shouldWarnReportTruncated(report)) {
+        alert(t("crm.kassa.worker.warnReportTruncated"), true);
       }
 
-      // Группировка по дням
-      const dailyGroups: any = {};
-      flows.forEach((flow) => {
-        const date = new Date(flow.created_at).toISOString().split("T")[0];
-        if (!dailyGroups[date]) {
-          dailyGroups[date] = { income: 0, expense: 0, flows: [] as any[] };
-        }
-        if (flow.type === "income") {
-          dailyGroups[date].income += parseFloat(flow.amount) || 0;
-        } else {
-          dailyGroups[date].expense += parseFloat(flow.amount) || 0;
-        }
-        dailyGroups[date].flows.push(flow);
-      });
-
-      const totalIncome = flows
-        .filter((f) => f.type === "income")
-        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
-      const totalExpense = flows
-        .filter((f) => f.type === "expense")
-        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
-
-      setReportData({
-        type: "monthly",
-        month: selectedMonth,
-        totalIncome,
-        totalExpense,
-        net: totalIncome - totalExpense,
-        dailyGroups,
-        flows,
-      });
+      setReportData(report);
     } catch (err: any) {
-      console.error("Failed to fetch monthly report:", err);
-      setError(`Не удалось загрузить ежемесячный отчет: ${err.message}`);
-    } finally {
-      setReportLoading(false);
-    }
-  };
-
-  const fetchDailyReport = async () => {
-    if (!cashboxId) return;
-    setReportLoading(true);
-    try {
-      // Период и статус фильтрует сервер (date_from/date_to включительно)
-      const params: any = {
-        cashbox: cashboxId,
-        status: "approved",
-        date_from: selectedDate,
-        date_to: selectedDate,
-      };
-      const { flows, truncated } = await fetchAllCashflows(params);
-      if (truncated) {
-        alert(
-          "Загружены не все операции за период (лимит отчёта). Уточните период или обратитесь к администратору.",
-          true,
-        );
-      }
-
-      const totalIncome = flows
-        .filter((f) => f.type === "income")
-        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
-      const totalExpense = flows
-        .filter((f) => f.type === "expense")
-        .reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
-
-      setReportData({
-        type: "daily",
-        date: selectedDate,
-        totalIncome,
-        totalExpense,
-        net: totalIncome - totalExpense,
-        flows,
-      });
-    } catch (err: any) {
-      console.error("Failed to fetch daily report:", err);
-      const errorMessage = validateResErrors(err, "Не удалось загрузить дневной отчет. ")
+      console.error("Failed to fetch cashbox report:", err);
+      const errorMessage = validateResErrors(
+        err,
+        reportType === "monthly"
+          ? t("crm.kassa.worker.errLoadMonthly")
+          : t("crm.kassa.worker.errLoadDaily"),
+      );
       setError(errorMessage);
+      setReportData(null);
     } finally {
       setReportLoading(false);
     }
-  };
+  }, [
+    alert,
+    cashboxId,
+    reportType,
+    selectedDate,
+    selectedMonth,
+    t,
+  ]);
 
   useEffect(() => {
     if (activeFlowType === "reports" && cashboxId) {
-      if (reportType === "monthly") {
-        fetchMonthlyReport();
-      } else {
-        fetchDailyReport();
-      }
+      void loadReport();
     }
-     
-  }, [activeFlowType, reportType, selectedMonth, selectedDate, cashboxId]);
+  }, [activeFlowType, cashboxId, loadReport]);
+
+  // Другой владелец одобрил edit/cancel-заявку по этой кассе (на другом
+  // устройстве/вкладке) — подхватываем свежие суммы без ручного релоада.
+  // @see docs/backend/kassa/cashflow-edit-cancel-request-backend.md §11 (R8)
+  const cashFlowRealtimeEvent = useCashFlowRealtimeEvent();
+  const lastRealtimeVersionRef = useRef(cashFlowRealtimeEvent.version);
+  useEffect(() => {
+    if (cashFlowRealtimeEvent.version === lastRealtimeVersionRef.current) return;
+    lastRealtimeVersionRef.current = cashFlowRealtimeEvent.version;
+    if (
+      cashFlowRealtimeEvent.cashboxId &&
+      cashboxId &&
+      String(cashFlowRealtimeEvent.cashboxId) !== String(cashboxId)
+    ) {
+      return; // событие по другой кассе
+    }
+    reloadAfterFlowChange();
+    if (activeFlowType === "reports" && cashboxId) void loadReport();
+  }, [cashFlowRealtimeEvent, cashboxId, activeFlowType, reloadAfterFlowChange, loadReport]);
 
 
   useEffect(() => {
     if (error) {
-      alert(validateResErrors(error, 'Не удалось загрузить данные кассы. Пожалуйста, попробуйте еще раз.'), true)
+      alert(validateResErrors(error, t("crm.kassa.worker.errLoadDataRetry")), true)
     }
-  }, [error, alert])
+  }, [error, alert, t])
 
   // if (error) {
   //   return (
@@ -439,6 +381,11 @@ export function useKassa() {
     handleAddCashbox,
     handleEditCashbox,
     handleResetFilters,
+    canRequestFlowChange,
+    flowChange,
+    openFlowChange,
+    closeFlowChange,
+    reloadAfterFlowChange,
     loading,
     newCashbox,
     setNewCashbox,

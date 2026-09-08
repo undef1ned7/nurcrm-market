@@ -3,7 +3,8 @@
 **Экран:** `/crm/market/cashier` → оплата → «Отсрочка»  
 **Фронт:** `src/pages/cashier/ui/` + `src/entities/sale/lib/buildDebtSchedule.ts`  
 **Переключатель:** `GET/PATCH /main/pos/cashier-settings/` → `debt_schedule_version`  
-**Статус:** фронт готов. **Бэкенд:** нет поля / `null` / не передали → **v1**. **Фронт nur-market:** касса читает поле из настроек; нет поля → **v2**. Версию меняют в Настройки → Касса.
+**Implementation guide (BE):** [debt-v2-backend-implementation.md](./debt-v2-backend-implementation.md) — алгоритм, баг stage, pytest, чек-лист  
+**Статус:** фронт готов. **Бэкенд v2 на stage не работает** (2026-08-31) — см. [debt-v2-backend-implementation.md](./debt-v2-backend-implementation.md). **Default BE:** нет поля / `null` / не передали → **v1**. **Фронт nur-market:** касса читает поле из настроек; нет поля → **v2**. Версию меняют в Настройки → Касса.
 
 Связанные эндпоинты:
 

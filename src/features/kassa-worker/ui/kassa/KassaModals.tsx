@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import PendingModal from "@features/kassa/ui/PendingModal/PendingModal";
@@ -7,7 +8,10 @@ const KassaModals = ({
   handleAddCashbox, showEditCashboxModal, setShowEditCashboxModal,
   selectedCashbox, setSelectedCashbox, handleEditCashbox,
   showPending, setShowPending, cashboxDetails, fetchCashboxDetails, id,
-}) => (
+}) => {
+  const { t } = useTranslation();
+  const tw = (k: string): string => t(`crm.kassa.worker.${k}`) as string;
+  return (
   <>
       {showAddCashboxModal && (
         <ReactPortal wrapperId="kassa-add-operation-modal">
@@ -20,11 +24,11 @@ const KassaModals = ({
               className="vitrina__modal vitrina__modal--add"
               role="dialog"
               aria-modal="true"
-              aria-label="Добавление операции"
+              aria-label={tw("addOperationTitle")}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="vitrina__modal-header">
-                <h3>Добавление операции</h3>
+                <h3>{tw("addOperationTitle")}</h3>
                 <X
                   className="vitrina__close-icon"
                   size={20}
@@ -32,11 +36,11 @@ const KassaModals = ({
                 />
               </div>
               <div className="vitrina__modal-section">
-                <label>Наименование</label>
+                <label>{tw("nameLabel")}</label>
                 <input
                   required
                   type="text"
-                  placeholder="Например, Закупка материалов"
+                  placeholder={tw("namePlaceholderOp")}
                   className="vitrina__modal-input"
                   value={newCashbox.name}
                   onChange={(e) =>
@@ -45,10 +49,10 @@ const KassaModals = ({
                 />
               </div>
               <div className="vitrina__modal-section">
-                <label>Сумма</label>
+                <label>{t("common.amount")}</label>
                 <input
                   type="text"
-                  placeholder="Например, 10000"
+                  placeholder={tw("amountPlaceholder")}
                   className="vitrina__modal-input"
                   value={newCashbox.amount}
                   onChange={(e) =>
@@ -60,7 +64,7 @@ const KassaModals = ({
                 />
               </div>
               <div className="vitrina__modal-section">
-                <label>Тип операции</label>
+                <label>{tw("operationType")}</label>
                 <select
                   className="vitrina__modal-input"
                   value={newCashbox.type}
@@ -68,8 +72,8 @@ const KassaModals = ({
                     setNewCashbox({ ...newCashbox, type: e.target.value })
                   }
                 >
-                  <option value="expense">Расход</option>
-                  <option value="income">Приход</option>
+                  <option value="expense">{t("crm.kassa.expense")}</option>
+                  <option value="income">{t("crm.kassa.income")}</option>
                 </select>
               </div>
               <div className="vitrina__modal-footer">
@@ -77,13 +81,13 @@ const KassaModals = ({
                   className="vitrina__button vitrina__button--cancel"
                   onClick={() => setShowAddCashboxModal(false)}
                 >
-                  Отмена
+                  {t("common.cancel")}
                 </button>
                 <button
                   className="vitrina__button vitrina__button--save"
                   onClick={handleAddCashbox}
                 >
-                  Добавить
+                  {tw("addBtn")}
                 </button>
               </div>
             </div>
@@ -102,11 +106,11 @@ const KassaModals = ({
               className="vitrina__modal vitrina__modal--edit"
               role="dialog"
               aria-modal="true"
-              aria-label="Редактирование кассы"
+              aria-label={tw("editCashboxTitle")}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="vitrina__modal-header">
-                <h3>Редактирование кассы</h3>
+                <h3>{tw("editCashboxTitle")}</h3>
                 <X
                   className="vitrina__close-icon"
                   size={20}
@@ -123,7 +127,7 @@ const KassaModals = ({
                 />
               </div>
               <div className="vitrina__modal-section">
-                <label>Название</label>
+                <label>{t("common.name")}</label>
                 <input
                   type="text"
                   value={selectedCashbox.title || ""}
@@ -141,7 +145,7 @@ const KassaModals = ({
                   className="vitrina__button vitrina__button--save"
                   onClick={handleEditCashbox}
                 >
-                  Сохранить изменения
+                  {tw("saveChanges")}
                 </button>
               </div>
             </div>
@@ -156,6 +160,7 @@ const KassaModals = ({
         />
       )}
   </>
-);
+  );
+};
 
 export default KassaModals;

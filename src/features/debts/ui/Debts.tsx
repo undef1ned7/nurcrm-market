@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import "./debts.scss";
 import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
+  postCashflowIfNeeded,
 } from "@entities/cash";
+import { useUser } from "@entities/user";
+import { buildPosRoutingFromUser } from "@shared/lib/tools/cashboxResolution";
 import { PageShell, PagePanel } from "@shared/ui/page-shell";
 import { useDebouncedValue } from "@shared/hooks/useDebounce";
 
@@ -18,7 +18,10 @@ import {
   getDebtAmount,
   phoneNorm,
   num,
+  resolveDebtPaymentMethod,
+  debtPaymentMethodLabel,
 } from "./helpers";
+import type { DebtPayMethod } from "./helpers";
 
 import { DebtsHeader } from "./components/DebtsHeader";
 import { DebtsPagination } from "./components/DebtsPagination";
@@ -28,6 +31,7 @@ import { NewDebtModal } from "./components/NewDebtModal";
 import { PayDebtModal } from "./components/PayDebtModal";
 import { EditDebtModal } from "./components/EditDebtModal";
 import { useAppDispatch } from "@app/store";
+import { notify } from "@shared/lib/notifications";
 
 async function fetchDebtsPage({
   page,
@@ -103,6 +107,8 @@ const Debts = () => {
   const [payOpen, setPayOpen] = useState(false);
   const [payId, setPayId] = useState<any>(null);
   const [payAmt, setPayAmt] = useState("");
+  const [payMethod, setPayMethod] = useState<DebtPayMethod>("cash");
+  const [payBank, setPayBank] = useState("mbank");
   const [payErr, setPayErr] = useState("");
   const [savingPay, setSavingPay] = useState(false);
 
@@ -115,11 +121,10 @@ const Debts = () => {
   const [editErr, setEditErr] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
-  const { list: cashBoxes } = useCash();
-  const [cashbox, setCashbox] = useState("");
   const [confirmId, setConfirmId] = useState<any>(null);
 
   const dispatch = useAppDispatch();
+  const { profile, company } = useUser();
 
   const load = async () => {
     try {
@@ -158,26 +163,12 @@ const Debts = () => {
   };
 
   useEffect(() => {
-    dispatch(getCashBoxes({} as any) as any);
-  }, [dispatch]);
-
-  useEffect(() => {
     setPage(1);
   }, [debouncedQ, dateFrom, dateTo]);
 
   useEffect(() => {
     load();
   }, [page, debouncedQ, dateFrom, dateTo]);
-
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !cashbox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setCashbox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, cashbox]);
 
   const filtered = useMemo(() => {
     const s = String(debouncedQ || "").trim().toLowerCase();
@@ -240,6 +231,8 @@ const Debts = () => {
   const openPay = (id) => {
     setPayId(id);
     setPayAmt("");
+    setPayMethod("cash");
+    setPayBank("mbank");
     setPayErr("");
     setPayOpen(true);
   };
@@ -250,30 +243,42 @@ const Debts = () => {
     const amt = num(payAmt);
     if (!(amt > 0)) return setPayErr(t("crm.debts.enterPayAmount"));
 
+    if (payMethod === "transfer" && !payBank)
+      return setPayErr(t("crm.debts.bankRequired"));
+
     const current = items.find((x) => x.id === payId);
     if (!current) return setPayErr(t("crm.debts.recordNotFound"));
 
-    if (!cashbox) return setPayErr(t("crm.debts.cashboxRequired"));
-
     const baseDebt = getDebtAmount(current);
     const nextAmount = Math.max(0, baseDebt - amt);
+    const paymentMethod = resolveDebtPaymentMethod(payMethod, payBank);
+    const methodLabel = debtPaymentMethodLabel(payMethod, payBank);
 
     try {
       setSavingPay(true);
-      const updated = await updateDebt(payId, { amount: String(nextAmount) });
+      const updated = await updateDebt(payId, {
+        amount: String(nextAmount),
+        payment_method: paymentMethod,
+        ...buildPosRoutingFromUser(profile, company),
+      });
       setItems((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
 
-      await dispatch(
-        addCashFlows({
-          name: current.name
-            ? t("crm.debts.debtReturnName", { name: current.name })
-            : t("crm.debts.debtReturn"),
+      await postCashflowIfNeeded(
+        dispatch,
+        {
+          name: `${
+            current.name
+              ? t("crm.debts.debtReturnName", { name: current.name })
+              : t("crm.debts.debtReturn")
+          } (${methodLabel})`,
           amount: String(amt),
           type: "income",
-          cashbox,
-        })
-      ).unwrap();
+          payment_method: paymentMethod,
+        },
+        { warnOnFailure: true, failureContext: "debt" },
+      );
 
+      notify.success(t("notifications.debts.paySuccess", { amount: amt }));
       setPayOpen(false);
     } catch (e2: any) {
       console.error(e2);
@@ -341,6 +346,7 @@ const Debts = () => {
       setNotifications(newNotifications);
     } catch (e: any) {
       console.error(e);
+      notify.error(extractApiErr(e, t("notifications.debts.deleteFailed")));
     } finally {
       setConfirmId(null);
     }
@@ -415,6 +421,10 @@ const Debts = () => {
         open={payOpen}
         payAmt={payAmt}
         setPayAmt={setPayAmt}
+        payMethod={payMethod}
+        setPayMethod={setPayMethod}
+        payBank={payBank}
+        setPayBank={setPayBank}
         payErr={payErr}
         savingPay={savingPay}
         onClose={() => setPayOpen(false)}

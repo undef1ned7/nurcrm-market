@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
 import "../Warehouse.scss";
@@ -17,6 +18,7 @@ const BulkEditModal = ({
   suppliers = [],
   suppliersLoading = false,
 }: any) => {
+  const { t } = useTranslation();
   const [fields, setFields] = useState({
     brand_name: { enabled: false, value: "" },
     category_name: { enabled: false, value: "" },
@@ -36,8 +38,8 @@ const BulkEditModal = ({
                 supplier.company_name ||
                 supplier.phone ||
                 supplier.email ||
-                "Без названия",
-            ).trim() || "Без названия",
+                t("crm.warehouse.noTitle"),
+            ).trim() || t("crm.warehouse.noTitle"),
         }))
         .filter((option: any) => option.value && option.label),
     [suppliers],
@@ -63,11 +65,11 @@ const BulkEditModal = ({
     });
 
     if (Object.keys(changes).length === 0) {
-      setError("Отметьте хотя бы одно поле для изменения");
+      setError(t("crm.warehouse.bulkEdit.selectAtLeastOne"));
       return;
     }
     if (Object.values(changes).some((value: any) => !String(value).trim())) {
-      setError("Выберите значение для каждого отмеченного поля");
+      setError(t("crm.warehouse.bulkEdit.selectValueForEach"));
       return;
     }
 
@@ -82,14 +84,14 @@ const BulkEditModal = ({
       >
         <div className="warehouse-filter-modal__header">
           <h3 className="warehouse-filter-modal__title">
-            Изменить выбранные товары
+            {t("crm.warehouse.bulkEdit.title")}
           </h3>
           <button className="warehouse-filter-modal__close" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
         <p className="warehouse-filter-modal__subtitle">
-          Выбрано товаров: {selectedCount}. Изменятся только отмеченные поля.
+          {t("crm.warehouse.bulkEdit.subtitle", { count: selectedCount })}
         </p>
 
         <div className="warehouse-filter-modal__content">
@@ -100,7 +102,7 @@ const BulkEditModal = ({
                 checked={fields.brand_name.enabled}
                 onChange={() => toggleField("brand_name")}
               />
-              <span>Бренд</span>
+              <span>{t("crm.warehouse.bulkEdit.brand")}</span>
             </label>
             <select
               className="warehouse-filter-modal__select"
@@ -108,7 +110,9 @@ const BulkEditModal = ({
               disabled={!fields.brand_name.enabled}
               onChange={(e: any) => changeValue("brand_name", e.target.value)}
             >
-              <option value="">Выбрать бренд</option>
+              <option value="">
+                {t("crm.warehouse.bulkEdit.chooseBrand")}
+              </option>
               {brands.map((brand: any) => (
                 <option key={brand.id} value={brand.name}>
                   {brand.name}
@@ -124,7 +128,7 @@ const BulkEditModal = ({
                 checked={fields.category_name.enabled}
                 onChange={() => toggleField("category_name")}
               />
-              <span>Категория</span>
+              <span>{t("crm.warehouse.bulkEdit.category")}</span>
             </label>
             <select
               className="warehouse-filter-modal__select"
@@ -132,7 +136,9 @@ const BulkEditModal = ({
               disabled={!fields.category_name.enabled}
               onChange={(e: any) => changeValue("category_name", e.target.value)}
             >
-              <option value="">Выбрать категорию</option>
+              <option value="">
+                {t("crm.warehouse.bulkEdit.chooseCategory")}
+              </option>
               {categories.map((category: any) => (
                 <option key={category.id} value={category.name}>
                   {category.name}
@@ -148,7 +154,7 @@ const BulkEditModal = ({
                 checked={fields.client.enabled}
                 onChange={() => toggleField("client")}
               />
-              <span>Поставщик</span>
+              <span>{t("crm.warehouse.bulkEdit.supplier")}</span>
             </label>
             {fields.client.enabled ? (
               <SearchableCombobox
@@ -157,14 +163,14 @@ const BulkEditModal = ({
                 options={supplierOptions}
                 placeholder={
                   suppliersLoading
-                    ? "Загрузка поставщиков..."
-                    : "Выберите поставщика"
+                    ? t("crm.warehouse.bulkEdit.loadingSuppliers")
+                    : t("crm.warehouse.bulkEdit.chooseSupplier")
                 }
                 classNamePrefix="searchableCombo"
               />
             ) : (
               <select className="warehouse-filter-modal__select" disabled>
-                <option>Выберите поставщика</option>
+                <option>{t("crm.warehouse.bulkEdit.chooseSupplier")}</option>
               </select>
             )}
           </div>
@@ -183,7 +189,7 @@ const BulkEditModal = ({
             onClick={onClose}
             disabled={saving}
           >
-            Отменить
+            {t("crm.warehouse.filter.cancel")}
           </button>
           <button
             type="button"
@@ -191,7 +197,7 @@ const BulkEditModal = ({
             onClick={handleApply}
             disabled={saving}
           >
-            {saving ? "Сохранение..." : "Применить"}
+            {saving ? t("common.saving") : t("crm.warehouse.filter.apply")}
           </button>
         </div>
       </div>

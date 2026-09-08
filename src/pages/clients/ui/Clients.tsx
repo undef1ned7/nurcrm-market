@@ -199,10 +199,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
 
       setRows(list);
     } catch (e: any) {
-      const errorMessage = validateResErrors(
-        e,
-        t("crm.clients.loadError"),
-      );
+      const errorMessage = validateResErrors(e, t("crm.clients.loadError"));
       setError(errorMessage);
       setRows([]);
     } finally {
@@ -488,7 +485,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
           </div>
         </header>
 
-        <Suspense fallback={<div className="loading">{t("common.loading")}</div>}>
+        <Suspense
+          fallback={<div className="loading">{t("common.loading")}</div>}
+        >
           <HostelClients />
         </Suspense>
       </section>
@@ -508,7 +507,10 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
   return (
     <PageShell className="clients-page">
       {!hideTabs && (
-        <nav className="clients-tabs" aria-label={t("crm.clients.tabs.sections")}>
+        <nav
+          className="clients-tabs"
+          aria-label={t("crm.clients.tabs.sections")}
+        >
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -591,7 +593,11 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
       {error && <div className="clients-error">{error}</div>}
 
       <PagePanel flush>
-        <div className="clients-table-container">
+        <div
+          className={`clients-table-container${
+            viewMode === "cards" ? " clients-table-container--cards" : ""
+          }`}
+        >
           {viewMode === "table" && (
             <div className="nur-table-wrap">
               <table className="nur-table clients-table">
@@ -615,7 +621,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="clients-table__empty">
-                        {search ? t("crm.clients.nothingFound") : t("crm.clients.noData")}
+                        {search
+                          ? t("crm.clients.nothingFound")
+                          : t("crm.clients.noData")}
                       </td>
                     </tr>
                   ) : (
@@ -626,12 +634,21 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                         onClick={() => openCard(c)}
                       >
                         <td data-label="№">{index + 1}</td>
-                        <td data-label={t("crm.clients.fullName")} className="clients-table__name">
+                        <td
+                          data-label={t("crm.clients.fullName")}
+                          className="clients-table__name"
+                        >
                           {c.full_name || c.fio || "—"}
                         </td>
-                        <td data-label={t("crm.clients.phone")}>{c.phone || "—"}</td>
-                        <td data-label={t("crm.clients.type")}>{ctxTypeLabel(c.type)}</td>
-                        <td data-label={t("crm.clients.date")}>{c.date || "—"}</td>
+                        <td data-label={t("crm.clients.phone")}>
+                          {c.phone || "—"}
+                        </td>
+                        <td data-label={t("crm.clients.type")}>
+                          {ctxTypeLabel(c.type)}
+                        </td>
+                        <td data-label={t("crm.clients.date")}>
+                          {c.date || "—"}
+                        </td>
                         <td
                           data-label={t("crm.clients.actions")}
                           onClick={(e) => e.stopPropagation()}
@@ -675,7 +692,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                     color: "var(--nur-muted)",
                   }}
                 >
-                  {debouncedSearch ? t("crm.clients.nothingFound") : t("crm.clients.noData")}
+                  {debouncedSearch
+                    ? t("crm.clients.nothingFound")
+                    : t("crm.clients.noData")}
                 </div>
               ) : (
                 <div className="clients-cards grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -690,25 +709,33 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                         <span className="clients-card__value">{index + 1}</span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">{t("crm.clients.fullName")}</span>
+                        <span className="clients-card__label">
+                          {t("crm.clients.fullName")}
+                        </span>
                         <span className="clients-card__value">
                           {c.full_name || c.fio || "—"}
                         </span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">{t("crm.clients.phone")}</span>
+                        <span className="clients-card__label">
+                          {t("crm.clients.phone")}
+                        </span>
                         <span className="clients-card__value">
                           {c.phone || "—"}
                         </span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">{t("crm.clients.type")}</span>
+                        <span className="clients-card__label">
+                          {t("crm.clients.type")}
+                        </span>
                         <span className="clients-card__value">
                           {ctxTypeLabel(c.type)}
                         </span>
                       </div>
                       <div className="clients-card__field">
-                        <span className="clients-card__label">{t("crm.clients.date")}</span>
+                        <span className="clients-card__label">
+                          {t("crm.clients.date")}
+                        </span>
                         <span className="clients-card__value">
                           {c.date || "—"}
                         </span>
@@ -758,7 +785,7 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 id="client-create-main-title"
                 className="clientCreateModal__sectionTitle"
               >
-                {t("crm.clients.form.mainInfo")}
+                {t("crm.clients.form.mainInfo")} вфы
               </h4>
               <span className="clientCreateModal__requiredHint">
                 {t("crm.clients.form.requiredFields")}
@@ -780,7 +807,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
               </label>
 
               <label className="clientCreateModal__field clientCreateModal__field--required">
-                <span className="clientCreateModal__label">{t("crm.clients.phone")}</span>
+                <span className="clientCreateModal__label">
+                  {t("crm.clients.phone")}
+                </span>
                 <input
                   type="tel"
                   inputMode="tel"
@@ -857,7 +886,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">{t("crm.clients.form.inn")}</span>
+                  <span className="clientCreateModal__label">
+                    {t("crm.clients.form.inn")}
+                  </span>
                   <input
                     type="text"
                     value={addInn}
@@ -867,7 +898,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">{t("crm.clients.form.okpo")}</span>
+                  <span className="clientCreateModal__label">
+                    {t("crm.clients.form.okpo")}
+                  </span>
                   <input
                     type="text"
                     value={addOkpo}
@@ -877,7 +910,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">{t("crm.clients.form.status")}</span>
+                  <span className="clientCreateModal__label">
+                    {t("crm.clients.form.status")}
+                  </span>
                   <input
                     type="text"
                     value={addStatus}
@@ -899,7 +934,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field">
-                  <span className="clientCreateModal__label">{t("crm.clients.form.bik")}</span>
+                  <span className="clientCreateModal__label">
+                    {t("crm.clients.form.bik")}
+                  </span>
                   <input
                     type="text"
                     value={addBik}
@@ -909,7 +946,9 @@ export default function MarketClients({ forcedTab = null, hideTabs = false }) {
                 </label>
 
                 <label className="clientCreateModal__field clientCreateModal__field--wide">
-                  <span className="clientCreateModal__label">{t("crm.clients.form.address")}</span>
+                  <span className="clientCreateModal__label">
+                    {t("crm.clients.form.address")}
+                  </span>
                   <input
                     type="text"
                     value={addAddress}

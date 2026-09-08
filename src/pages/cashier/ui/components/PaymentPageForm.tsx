@@ -77,6 +77,8 @@ type Props = {
   change: number;
   withoutCheck: boolean;
   onWithoutCheckChange: (checked: boolean) => void;
+  skipDrawerOpen: boolean;
+  onSkipDrawerOpenChange: (checked: boolean) => void;
   onAcceptPayment: () => void;
   onCancel: () => void;
   consultant: PaymentConsultantVm;
@@ -137,6 +139,8 @@ export function PaymentPageForm({
   change,
   withoutCheck,
   onWithoutCheckChange,
+  skipDrawerOpen,
+  onSkipDrawerOpenChange,
   onAcceptPayment,
   onCancel,
   consultant,
@@ -379,15 +383,29 @@ export function PaymentPageForm({
         )}
 
         <div className="payment-page__actions">
-          <label className="flex items-center gap-2" htmlFor="withoutCheck">
-            {t("crm.cashier.payment.withoutCheck")}
-            <input
-              id="withoutCheck"
-              type="checkbox"
-              checked={withoutCheck}
-              onChange={(e) => onWithoutCheckChange(e.target.checked)}
-            />
-          </label>
+          <div className="payment-page__action-options">
+            <label className="flex items-center gap-2" htmlFor="withoutCheck">
+              {t("crm.cashier.payment.withoutCheck")}
+              <input
+                id="withoutCheck"
+                type="checkbox"
+                checked={withoutCheck}
+                onChange={(e) => onWithoutCheckChange(e.target.checked)}
+              />
+            </label>
+            {!withoutCheck ? (
+              <label className="flex items-center gap-2" htmlFor="skipDrawerOpen">
+                {t("crm.cashier.payment.skipDrawer")}
+                <input
+                  id="skipDrawerOpen"
+                  type="checkbox"
+                  checked={skipDrawerOpen}
+                  onChange={(e) => onSkipDrawerOpenChange(e.target.checked)}
+                />
+              </label>
+            ) : null}
+          </div>
+
           <button
             type="button"
             className="payment-page__accept-btn"

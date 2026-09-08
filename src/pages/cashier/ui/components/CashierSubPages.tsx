@@ -150,6 +150,7 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
           }
         }}
         saleId={currentSale?.id}
+        shiftId={openShiftId}
         customers={clients}
         sale={currentSale}
       />

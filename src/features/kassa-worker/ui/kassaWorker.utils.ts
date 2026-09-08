@@ -1,6 +1,4 @@
 export const CASHFLOWS_PAGE_SIZE = 100;
-export const REPORT_PAGE_SIZE = 200;
-export const REPORT_MAX_PAGES = 100;
 
 export const isApprovedFlow = (flow: any) =>
   flow.status === "true" ||

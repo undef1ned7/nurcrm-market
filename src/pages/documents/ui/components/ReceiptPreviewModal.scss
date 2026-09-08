@@ -13,7 +13,7 @@
 }
 
 .receipt-preview-modal {
-  background: var(--nur-surface);
+  background: var(--nur-surface-2);
   border-radius: 16px;
   width: min(600px, 100%);
   max-height: calc(100dvh - 32px);
@@ -57,12 +57,14 @@
     padding: 24px;
     overflow-y: auto;
     flex: 1;
+    background: var(--nur-surface-3);
   }
 
   &__receipt {
-    background: var(--nur-surface);
-    border: 2px solid var(--nur-border);
+    background: var(--nur-surface-2);
+    border: 1px solid var(--nur-border-strong);
     border-radius: 8px;
+    box-shadow: var(--nur-shadow-sm);
     padding: 24px;
     font-family: "Courier New", monospace;
     font-size: 14px;
@@ -90,7 +92,7 @@
 
   &__divider {
     height: 1px;
-    background: #d1d5db;
+    background: var(--nur-border-strong);
     margin: 12px 0;
     border: none;
   }
@@ -142,7 +144,7 @@
   }
 
   &__items-table {
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--nur-border-strong);
     border-radius: 4px;
     overflow: hidden;
     margin-bottom: 4px;
@@ -160,7 +162,7 @@
       align-items: center;
       padding: 4px 6px;
       min-width: 0;
-      border-right: 1px solid #d1d5db;
+      border-right: 1px solid var(--nur-border-strong);
       word-break: break-word;
 
       &:last-child {
@@ -173,7 +175,7 @@
     font-weight: 700;
     margin-bottom: 0;
     background: var(--nur-surface-3);
-    border-bottom: 1px solid #d1d5db;
+    border-bottom: 1px solid var(--nur-border-strong);
 
     > span {
       justify-content: center;
@@ -242,7 +244,7 @@
       font-size: 11px;
       margin-bottom: 8px;
       padding-bottom: 6px;
-      border-bottom: 1px dashed #d1d5db;
+      border-bottom: 1px dashed var(--nur-border-strong);
     }
   }
 
@@ -267,13 +269,13 @@
 
   &__divider {
     height: 1px;
-    background: #d1d5db;
+    background: var(--nur-border-strong);
     margin: 12px 0;
     border: none;
 
     &--dashed {
       background: none;
-      border-top: 1px dashed #d1d5db;
+      border-top: 1px dashed var(--nur-border-strong);
     }
   }
 
@@ -384,7 +386,7 @@
     gap: 8px;
     padding: 12px 24px;
     background: var(--nur-text);
-    color: white;
+    color: var(--nur-surface);
     border: none;
     border-radius: 8px;
     font-size: 14px;
@@ -393,7 +395,7 @@
     transition: background 0.2s;
 
     &:hover:not(:disabled) {
-      background: #1f2937;
+      background: var(--nur-text-2);
     }
 
     &:disabled {

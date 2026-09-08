@@ -17,7 +17,9 @@ import {
 import {
   updateCashFlows,
   bulkUpdateCashFlowsStatus,
+  useCashFlowRealtimeEvent,
 } from "@entities/cash";
+import { shouldPostCashflowFallback } from "@shared/lib/tools/backendCashflows";
 import api from "@shared/api";
 import "./Pending.scss";
 import { useLocation, useParams } from "react-router-dom";
@@ -145,6 +147,37 @@ const Pending = () => {
   const mapType = (t) =>
     t === "income" ? "Приход" : t === "expense" ? "Расход" : "—";
 
+  // Заявка на редактирование/отмену движения (cashflow-edit-cancel-request):
+  // подпись «было → станет» для владельца. Обычные заявки не затрагивает.
+  const requestKindLabel = (k) =>
+    k === "edit" ? "Изменение" : k === "cancel" ? "Отмена" : null;
+
+  const renderRequestInfo = (item) => {
+    const label = requestKindLabel(item?.request_kind);
+    if (!label) return null;
+    const target = item?.target_flow || {};
+    const proposed = item?.proposed || {};
+    return (
+      <div className="pending-table__request-info">
+        <span className="pending-table__request-kind">{label}</span>
+        {item.request_kind === "edit" ? (
+          <span className="pending-table__request-diff">
+            {mapType(target.type)} · {target.name ?? "—"} · {target.amount ?? "—"} →{" "}
+            {mapType(proposed.type ?? target.type)} · {proposed.name ?? target.name ?? "—"} ·{" "}
+            {proposed.amount ?? target.amount ?? "—"}
+          </span>
+        ) : (
+          <span className="pending-table__request-diff">
+            сторно: {mapType(target.type)} · {target.name ?? "—"} · {target.amount ?? "—"}
+          </span>
+        )}
+        {item.reason ? (
+          <span className="pending-table__request-reason">Причина: {item.reason}</span>
+        ) : null}
+      </div>
+    );
+  };
+
   const rowNumber = (idx) => (page - 1) * CASHFLOWS_PAGE_SIZE + idx + 1;
 
   // чистим выбранные, если список изменился
@@ -161,6 +194,24 @@ const Pending = () => {
 
   // перезагрузка текущей страницы списка
   const refresh = () => loadCashFlows(page);
+
+  // Заявка на редактирование/отмену движения одобрена/отклонена (или создана)
+  // на другом устройстве/вкладке — подхватываем список без ручного обновления.
+  // @see docs/backend/kassa/cashflow-edit-cancel-request-backend.md §11 (R8)
+  const cashFlowRealtimeEvent = useCashFlowRealtimeEvent();
+  const lastRealtimeVersionRef = useRef(cashFlowRealtimeEvent.version);
+  useEffect(() => {
+    if (cashFlowRealtimeEvent.version === lastRealtimeVersionRef.current) return;
+    lastRealtimeVersionRef.current = cashFlowRealtimeEvent.version;
+    if (
+      cashFlowRealtimeEvent.cashboxId &&
+      cashboxId &&
+      String(cashFlowRealtimeEvent.cashboxId) !== String(cashboxId)
+    ) {
+      return; // событие по другой кассе
+    }
+    void loadCashFlows(page);
+  }, [cashFlowRealtimeEvent, cashboxId, page, loadCashFlows]);
 
   const applyRejectSideEffects = (item) => {
     if (item.source_business_operation_id === "Склад") {
@@ -217,7 +268,10 @@ const Pending = () => {
         }),
       ).unwrap();
 
-      applyRejectSideEffects(item);
+      // When BE owns cashflows, reject cascade (sale/product rollback) is server-side.
+      if (shouldPostCashflowFallback()) {
+        applyRejectSideEffects(item);
+      }
 
       await refresh();
       setSelected((prev) => {
@@ -299,8 +353,10 @@ const Pending = () => {
       }));
       await dispatch(bulkUpdateCashFlowsStatus(items)).unwrap();
 
-      for (const item of selectedItems) {
-        applyRejectSideEffects(item);
+      if (shouldPostCashflowFallback()) {
+        for (const item of selectedItems) {
+          applyRejectSideEffects(item);
+        }
       }
 
       await refresh();
@@ -573,7 +629,10 @@ const Pending = () => {
                           />
                         </td>
                         <td>{rowNumber(idx)}</td>
-                        <td className="pending-table__name">{item.name}</td>
+                        <td className="pending-table__name">
+                          {item.name}
+                          {renderRequestInfo(item)}
+                        </td>
                         <td>{mapType(item.type)}</td>
                         <td>{item.cashbox_name || "—"}</td>
                         <td>
@@ -680,6 +739,7 @@ const Pending = () => {
                         <div className="pending-card__body">
                           <div className="pending-card__num">#{rowNumber(idx)}</div>
                           <div className="pending-card__name">{item.name}</div>
+                          {renderRequestInfo(item)}
                           <div className="pending-card__meta">
                             <span>Тип: {mapType(item.type)}</span>
                             <span>Касса: {item.cashbox_name || "—"}</span>

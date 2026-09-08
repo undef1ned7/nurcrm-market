@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useOutletContext, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import api from "@shared/api";
 import { productSearchHaystackLower } from "@shared/lib/tools/productBarcode";
@@ -30,6 +31,7 @@ import type {
 import { computeDatePreset, getDealDateISO, inRange } from "../clientDetails.utils";
 
 export function useClientDetailsData() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { state } = useLocation();
   const { clients = [], setClients = () => {} } =
@@ -116,11 +118,11 @@ export function useClientDetailsData() {
         }
       } catch (e) {
         console.error(e);
-        setClientErr("Не удалось загрузить клиента");
+        setClientErr(t("crm.clients.details.loadClientError"));
       }
     };
     void fetchClient();
-  }, [client, id, setClients]);
+  }, [client, id, setClients, t]);
 
   const loadKpis = useCallback(async (clientId: string | number) => {
     setKpisLoading(true);
@@ -145,7 +147,7 @@ export function useClientDetailsData() {
       setDeals(list);
     } catch (e) {
       console.error(e);
-      setDealsErr(msgFromError(e, "Не удалось загрузить сделки"));
+      setDealsErr(msgFromError(e, t("crm.clients.details.loadDealsError")));
     } finally {
       setDealsLoading(false);
     }
@@ -172,12 +174,12 @@ export function useClientDetailsData() {
       console.error(e);
       setSupplierProducts([]);
       setSupplierProductsErr(
-        msgFromError(e, "Не удалось загрузить товары поставщика"),
+        msgFromError(e, t("crm.clients.details.loadProductsError")),
       );
     } finally {
       setSupplierProductsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const loadSupplierPurchases = useCallback(async (supplierId: unknown) => {
     const normalizedSupplierId = String(supplierId || "").trim();
@@ -216,13 +218,13 @@ export function useClientDetailsData() {
       } else {
         console.error(e);
         setSupplierPurchasesErr(
-          msgFromError(e, "Не удалось загрузить историю закупок"),
+          msgFromError(e, t("crm.clients.details.loadPurchasesError")),
         );
       }
     } finally {
       setSupplierPurchasesLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const loadClientSales = useCallback(async (clientId: unknown) => {
     const cid = String(clientId || "").trim();
@@ -264,11 +266,13 @@ export function useClientDetailsData() {
     } catch (e) {
       console.error(e);
       setClientSales([]);
-      setClientSalesErr(msgFromError(e, "Не удалось загрузить историю продаж"));
+      setClientSalesErr(
+        msgFromError(e, t("crm.clients.details.loadSalesError")),
+      );
     } finally {
       setClientSalesLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (client?.id) void loadDeals(client.id);

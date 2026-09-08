@@ -1,8 +1,12 @@
+import { useTranslation } from "react-i18next";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 const KassaReportsSection = ({
   reportType, setReportType, selectedMonth, setSelectedMonth,
   selectedDate, setSelectedDate, reportLoading, reportData,
-}: any) => (
+}: any) => {
+  const { t } = useTranslation();
+  const tw = (k: string): string => t(`crm.kassa.worker.${k}`) as string;
+  return (
         <div className="cashbox-reports">
           <div className="cashbox-reports__tabs">
             <button
@@ -10,21 +14,21 @@ const KassaReportsSection = ({
                 }`}
               onClick={() => setReportType("monthly")}
             >
-              Ежемесячный отчет
+              {tw("monthlyReport")}
             </button>
             <button
               className={`cashbox-reports__tab ${reportType === "daily" ? "cashbox-reports__tab--active" : ""
                 }`}
               onClick={() => setReportType("daily")}
             >
-              Дневной отчет
+              {tw("dailyReport")}
             </button>
           </div>
 
           <div className="cashbox-reports__filters">
             {reportType === "monthly" ? (
               <div className="cashbox-reports__filter-group">
-                <label htmlFor="month-select">Выберите месяц:</label>
+                <label htmlFor="month-select">{tw("pickMonth")}</label>
                 <input
                   id="month-select"
                   type="month"
@@ -35,7 +39,7 @@ const KassaReportsSection = ({
               </div>
             ) : (
               <div className="cashbox-reports__filter-group">
-                <label htmlFor="date-select">Выберите дату:</label>
+                <label htmlFor="date-select">{tw("pickDate")}</label>
                 <input
                   id="date-select"
                   type="date"
@@ -49,7 +53,7 @@ const KassaReportsSection = ({
 
           {reportLoading ? (
             <div style={{ padding: "20px", textAlign: "center" }}>
-              Загрузка отчета...
+              {tw("reportLoading")}
             </div>
           ) : reportData ? (
             <DataContainer>
@@ -58,7 +62,7 @@ const KassaReportsSection = ({
                 <div className="cashbox-reports__summary">
                   <div className="cashbox-reports__summary-item">
                     <span className="cashbox-reports__summary-label">
-                      Приход:
+                      {tw("incomeColon")}
                     </span>
                     <span className="cashbox-reports__summary-value cashbox-reports__summary-value--income">
                       {reportData.totalIncome.toFixed(2)} сом
@@ -66,14 +70,16 @@ const KassaReportsSection = ({
                   </div>
                   <div className="cashbox-reports__summary-item">
                     <span className="cashbox-reports__summary-label">
-                      Расход:
+                      {tw("expenseColon")}
                     </span>
                     <span className="cashbox-reports__summary-value cashbox-reports__summary-value--expense">
                       {reportData.totalExpense.toFixed(2)} сом
                     </span>
                   </div>
                   <div className="cashbox-reports__summary-item">
-                    <span className="cashbox-reports__summary-label">Итого:</span>
+                    <span className="cashbox-reports__summary-label">
+                      {tw("totalLabel")}
+                    </span>
                     <span
                       className={`cashbox-reports__summary-value ${reportData.net >= 0
                         ? "cashbox-reports__summary-value--income"
@@ -100,34 +106,42 @@ const KassaReportsSection = ({
                               })}
                             </h4>
                             <div className="cashbox-reports__day-totals">
-                              <span>Приход: {data.income.toFixed(2)} сом</span>
-                              <span>Расход: {data.expense.toFixed(2)} сом</span>
                               <span>
-                                Итого: {(data.income - data.expense).toFixed(2)}{" "}
-                                сом
+                                {tw("incomeColon")} {data.income.toFixed(2)} сом
+                              </span>
+                              <span>
+                                {tw("expenseColon")} {data.expense.toFixed(2)} сом
+                              </span>
+                              <span>
+                                {tw("totalLabel")}{" "}
+                                {(data.income - data.expense).toFixed(2)} сом
                               </span>
                             </div>
                           </div>
                           <table className="nur-table kassa-table">
                             <thead>
                               <tr>
-                                <th>Тип</th>
-                                <th>Наименование</th>
-                                <th>Сумма</th>
-                                <th>Время</th>
+                                <th>{t("crm.kassa.type")}</th>
+                                <th>{tw("nameLabel")}</th>
+                                <th>{t("common.amount")}</th>
+                                <th>{tw("time")}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {data.flows.map((flow) => (
                                 <tr key={flow.id}>
-                                  <td data-label="Тип">
-                                    {flow.type === "income" ? "Приход" : "Расход"}
+                                  <td data-label={t("crm.kassa.type")}>
+                                    {flow.type === "income"
+                                      ? t("crm.kassa.income")
+                                      : t("crm.kassa.expense")}
                                   </td>
-                                  <td data-label="Наименование">
+                                  <td data-label={tw("nameLabel")}>
                                     {flow.name || flow.title}
                                   </td>
-                                  <td data-label="Сумма">{flow.amount}</td>
-                                  <td data-label="Время">
+                                  <td data-label={t("common.amount")}>
+                                    {flow.amount}
+                                  </td>
+                                  <td data-label={tw("time")}>
                                     {new Date(flow.created_at).toLocaleTimeString(
                                       "ru-RU",
                                       {
@@ -149,23 +163,27 @@ const KassaReportsSection = ({
                       <table className="nur-table kassa-table">
                         <thead>
                           <tr>
-                            <th>Тип</th>
-                            <th>Наименование</th>
-                            <th>Сумма</th>
-                            <th>Время</th>
+                            <th>{t("crm.kassa.type")}</th>
+                            <th>{tw("nameLabel")}</th>
+                            <th>{t("common.amount")}</th>
+                            <th>{tw("time")}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {reportData.flows.map((flow) => (
                             <tr key={flow.id}>
-                              <td data-label="Тип">
-                                {flow.type === "income" ? "Приход" : "Расход"}
+                              <td data-label={t("crm.kassa.type")}>
+                                {flow.type === "income"
+                                  ? t("crm.kassa.income")
+                                  : t("crm.kassa.expense")}
                               </td>
-                              <td data-label="Наименование">
+                              <td data-label={tw("nameLabel")}>
                                 {flow.name || flow.title}
                               </td>
-                              <td data-label="Сумма">{flow.amount}</td>
-                              <td data-label="Время">
+                              <td data-label={t("common.amount")}>
+                                {flow.amount}
+                              </td>
+                              <td data-label={tw("time")}>
                                 {new Date(flow.created_at).toLocaleTimeString(
                                   "ru-RU",
                                   {
@@ -180,7 +198,7 @@ const KassaReportsSection = ({
                       </table>
                     ) : (
                       <p style={{ padding: "20px", textAlign: "center" }}>
-                        Нет операций за выбранную дату
+                        {tw("noOpsForDate")}
                       </p>
                     )}
                   </div>
@@ -190,10 +208,11 @@ const KassaReportsSection = ({
 
           ) : (
             <div style={{ padding: "20px", textAlign: "center" }}>
-              Выберите период для просмотра отчета
+              {tw("pickPeriod")}
             </div>
           )}
         </div>
-);
+  );
+};
 
 export default KassaReportsSection;

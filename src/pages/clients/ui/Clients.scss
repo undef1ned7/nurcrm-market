@@ -833,52 +833,46 @@
   .clients-table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+
+    .nur-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  .clients-table-container--cards {
+    overflow: visible;
+
+    .nur-table-wrap {
+      overflow: visible;
+    }
   }
 
   .clients-table {
-    min-width: auto;
+    min-width: 640px;
 
     thead {
-      display: none;
+      display: table-header-group;
     }
 
     tbody {
       tr {
-        display: block;
-        margin-bottom: 16px;
-        border: 1px solid var(--nur-border);
-        border-radius: 12px;
-        padding: 12px;
-        background: var(--nur-bg);
+        display: table-row;
+        margin-bottom: 0;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: transparent;
       }
 
       td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 0;
+        display: table-cell;
+        padding: 12px 16px;
         border-bottom: 1px solid var(--nur-border);
-        text-align: right;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        &[data-label="Действия"] {
-          &::before {
-            display: none;
-          }
-        }
+        text-align: left;
 
         &::before {
-          content: attr(data-label);
-          font-weight: 600;
-          text-align: left;
-          margin-right: 12px;
-          flex-shrink: 0;
-          color: var(--nur-muted);
-          font-size: 12px;
-          min-width: 100px;
+          display: none;
         }
       }
     }
@@ -886,6 +880,10 @@
 
   .clients-cards {
     grid-template-columns: 1fr;
+  }
+
+  .clients-table-container--cards .clients-cards {
+    padding: 12px;
   }
 
   .clientCreateModal {
@@ -958,26 +956,6 @@
 
     &__subtitle {
       font-size: 12px;
-    }
-  }
-
-  .clients-table {
-    min-width: auto;
-
-    tbody {
-      tr {
-        padding: 10px;
-      }
-
-      td {
-        padding: 6px 0;
-        font-size: 13px;
-
-        &::before {
-          font-size: 11px;
-          min-width: 80px;
-        }
-      }
     }
   }
 

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Package, Scan } from "lucide-react";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
@@ -30,8 +31,10 @@ const AddProductPage = ({
     forceProductOnly,
   });
   const { profile } = useUser();
+  const { t } = useTranslation();
   const role = String(profile?.role || "").toLowerCase();
   const canCustomizeForm = role === "owner" || role === "admin";
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
 
   return (
     <ProductFormLayoutProvider
@@ -44,7 +47,7 @@ const AddProductPage = ({
         images: p.images,
         showDebtForm: p.showDebtForm,
       }}
-      onSaveError={(message) => p.showAlert(message, "error", "Ошибка")}
+      onSaveError={(message) => p.showAlert(message, "error", tp("errorTitle"))}
     >
     <>
       <AlertModal
@@ -57,11 +60,9 @@ const AddProductPage = ({
       />
       <PageShell className="add-product-page">
         <PageHeader
-          title={p.isEditMode ? "Редактирование товара" : "Создание товара"}
+          title={p.isEditMode ? tp("editTitle") : tp("createTitle")}
           subtitle={
-            p.isEditMode
-              ? "Измените информацию о товаре"
-              : "Заполните информацию о новом товаре"
+            p.isEditMode ? tp("editSubtitle") : tp("createSubtitle")
           }
           actions={
             <div className="add-product-page__layout-actions">
@@ -72,7 +73,7 @@ const AddProductPage = ({
                 onClick={p.handleReturn}
               >
                 <ArrowLeft size={20} />
-                Вернуться к складу
+                {tp("backToWarehouse")}
               </button>
             </div>
           }
@@ -81,7 +82,7 @@ const AddProductPage = ({
         <PagePanel className="add-product-page__content">
           {p.isEditMode && p.loadingProduct && (
             <div style={{ textAlign: "center", padding: "40px" }}>
-              <p>Загрузка данных товара...</p>
+              <p>{tp("loadingProduct")}</p>
             </div>
           )}
 
@@ -94,7 +95,7 @@ const AddProductPage = ({
                 onClick={() => p.setActiveTab(0)}
               >
                 <Package size={18} />
-                Ввод вручную
+                {tp("tabManual")}
               </button>
               <button
                 className={`add-product-page__tab  text-[12px] md:text-[14px] py-2.5 px-3 md:py-3 md:px-6 ${
@@ -103,7 +104,7 @@ const AddProductPage = ({
                 onClick={() => p.setActiveTab(1)}
               >
                 <Scan size={18} />
-                Сканирование
+                {tp("tabScan")}
               </button>
             </div>
           )}
@@ -113,32 +114,28 @@ const AddProductPage = ({
               {!p.scannedProduct && (
                 <div className="add-product-page__scan-box">
                   <Scan size={48} />
-                  <h3>Сканирование товара</h3>
-                  <p>
-                    Отсканируйте штрих-код товара для автоматического добавления
-                    в склад
-                  </p>
+                  <h3>{tp("scanTitle")}</h3>
+                  <p>{tp("scanHint")}</p>
                 </div>
               )}
               <AddProductBarcode
                 onClose={p.handleReturn}
                 onShowSuccessAlert={(productName) => {
                   p.showAlert(
-                    `Товар "${productName}" успешно добавлен!`,
+                    tp("productAddedSuccess", { name: productName }),
                     "success",
-                    "Успех",
+                    tp("successTitle"),
                   );
                   setTimeout(() => {
                     p.handleReturn();
                   }, 1500);
                 }}
                 onShowErrorAlert={(errorMsg) => {
-                  p.showAlert(errorMsg, "error", "Ошибка");
+                  p.showAlert(errorMsg, "error", tp("errorTitle"));
                 }}
                 onShowSupplierCreated={(message) => {
-                  p.showAlert(message, "success", "Успех");
+                  p.showAlert(message, "success", tp("successTitle"));
                 }}
-                selectCashBox={p.selectCashBox}
               />
             </div>
           ) : !p.loadingProduct ? (
@@ -153,9 +150,9 @@ const AddProductPage = ({
               handleMarketDataChange={p.handleMarketDataChange}
               onAdultEnabled={() =>
                 p.showAlert(
-                  "Этот товар предназначен для совершеннолетних",
+                  tp("adultAlertText"),
                   "info",
-                  "Товар 18+",
+                  tp("adultAlertTitle"),
                 )
               }
               handlePromotionStockChange={p.handlePromotionStockChange}
@@ -179,6 +176,7 @@ const AddProductPage = ({
               _setImages={p.setImages}
               fileInputRef={p.fileInputRef}
               addImages={p.addImages}
+              imageCropper={p.imageCropper}
               removeImage={p.removeImage}
               setPrimaryImage={p.setPrimaryImage}
               isEditMode={p.isEditMode}

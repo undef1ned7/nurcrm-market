@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, ChevronDown } from "lucide-react";
 import { countries } from "@shared/config/data/countries";
 
 const CountryField = ({ country, onChange }: any) => {
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.warehouse.addProduct.${k}`) as string;
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearchTerm, setCountrySearchTerm] = useState("");
   const countryDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -46,7 +49,7 @@ const CountryField = ({ country, onChange }: any) => {
   return (
     <div className="market-product-form__section">
       <h3 className="market-product-form__section-title">
-        Страна производства товара
+        {tp("countryTitle")}
       </h3>
       <div
         className="market-product-form__country-wrapper"
@@ -63,7 +66,7 @@ const CountryField = ({ country, onChange }: any) => {
               </span>
             ) : (
               <span className="market-product-form__country-placeholder">
-                Выберите страну
+                {tp("countrySelect")}
               </span>
             )}
           </div>
@@ -80,7 +83,7 @@ const CountryField = ({ country, onChange }: any) => {
               <Search size={18} />
               <input
                 type="text"
-                placeholder="Поиск страны..."
+                placeholder={tp("countrySearchPlaceholder")}
                 value={countrySearchTerm}
                 onChange={(e) => setCountrySearchTerm(e.target.value)}
                 autoFocus
@@ -106,7 +109,7 @@ const CountryField = ({ country, onChange }: any) => {
                 ))
               ) : (
                 <div className="market-product-form__country-no-results">
-                  Страна не найдена
+                  {tp("countryNotFound")}
                 </div>
               )}
             </div>

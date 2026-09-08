@@ -1,10 +1,12 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ITEM_TYPES } from "../constants";
 
 /**
  * Компонент выбора типа товара (Товар/Услуга/Комплект)
  */
 const ProductTypeSelector = ({ itemType, setItemType, isEditMode = false }) => {
+  const { t } = useTranslation();
   if (isEditMode) return null;
 
   return (
@@ -17,9 +19,11 @@ const ProductTypeSelector = ({ itemType, setItemType, isEditMode = false }) => {
         }`}
         onClick={() => setItemType(ITEM_TYPES.PRODUCT)}
       >
-        <h3 className="text-center">Товар</h3>
+        <h3 className="text-center">
+          {t("crm.warehouse.addProduct.typeProduct")}
+        </h3>
         <p className="text-center">
-          Продукт, имеющий остаток, который необходимо восполнять
+          {t("crm.warehouse.addProduct.typeProductDesc")}
         </p>
       </button>
       <button
@@ -30,8 +34,12 @@ const ProductTypeSelector = ({ itemType, setItemType, isEditMode = false }) => {
         }`}
         onClick={() => setItemType(ITEM_TYPES.SERVICE)}
       >
-        <h3 className="text-center">Услуга</h3>
-        <p className="text-center">Продукт, не имеющий остатка на складе</p>
+        <h3 className="text-center">
+          {t("crm.warehouse.addProduct.typeService")}
+        </h3>
+        <p className="text-center">
+          {t("crm.warehouse.addProduct.typeServiceDesc")}
+        </p>
       </button>
       <button
         className={`market-product-form__type-card ${
@@ -41,9 +49,11 @@ const ProductTypeSelector = ({ itemType, setItemType, isEditMode = false }) => {
         }`}
         onClick={() => setItemType(ITEM_TYPES.KIT)}
       >
-        <h3 className="text-center">Комплект</h3>
+        <h3 className="text-center">
+          {t("crm.warehouse.addProduct.typeKit")}
+        </h3>
         <p className="text-center">
-          Продукт, состоящий из нескольких других
+          {t("crm.warehouse.addProduct.typeKitDesc")}
         </p>
       </button>
     </div>

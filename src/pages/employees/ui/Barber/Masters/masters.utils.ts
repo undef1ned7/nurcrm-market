@@ -89,16 +89,23 @@ export const focusFirstInvalid = (errs: any) => {
   }
 };
 
-export const validateEmployee = (form: any, employees: any, isEdit = false, editId: any = null) => {
+export const validateEmployee = (
+  form: any,
+  employees: any,
+  isEdit = false,
+  editId: any = null,
+  t: (k: string) => string = (k) => k,
+) => {
+  const tv = (k: string) => t(`crm.employees.validate.${k}`);
   const alerts: any[] = [];
   const errs: any = {};
   const email = normalizeEmail(form.email);
   if (!email) {
     errs.email = true;
-    alerts.push("Укажите Email.");
+    alerts.push(tv("emailRequired"));
   } else if (!emailRx.test(email)) {
     errs.email = true;
-    alerts.push("Email указан неверно.");
+    alerts.push(tv("emailInvalid"));
   } else {
     const exists = employees.some(
       (u) =>
@@ -106,28 +113,28 @@ export const validateEmployee = (form: any, employees: any, isEdit = false, edit
     );
     if (exists) {
       errs.email = true;
-      alerts.push("Сотрудник с таким Email уже существует.");
+      alerts.push(tv("emailExists"));
     }
   }
   const first = String(form.first_name || "").trim();
   const last = String(form.last_name || "").trim();
   if (!first) {
     errs.first_name = true;
-    alerts.push("Укажите имя.");
+    alerts.push(tv("firstNameRequired"));
   } else if (first.length < 2) {
     errs.first_name = true;
-    alerts.push("Имя: минимум 2 символа.");
+    alerts.push(tv("firstNameMin"));
   }
   if (!last) {
     errs.last_name = true;
-    alerts.push("Укажите фамилию.");
+    alerts.push(tv("lastNameRequired"));
   } else if (last.length < 2) {
     errs.last_name = true;
-    alerts.push("Фамилия: минимум 2 символа.");
+    alerts.push(tv("lastNameMin"));
   }
   if (!form.roleChoice) {
     errs.roleChoice = true;
-    alerts.push("Выберите роль.");
+    alerts.push(tv("roleRequired"));
   }
   return { errs, alerts };
 };

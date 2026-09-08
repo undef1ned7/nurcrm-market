@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import BarberMastersPortal from "./BarberMastersPortal";
@@ -6,11 +7,12 @@ import BarberMastersPortal from "./BarberMastersPortal";
 const listFrom = (data: any) =>
   Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
 
-const PAY_SCHEMES = [
-  { value: "salary", label: "Оклад" },
-  { value: "percent", label: "Процент от продаж" },
-  { value: "salary_plus_percent", label: "Оклад + процент от продаж" },
-];
+const PAY_SCHEME_VALUES = ["salary", "percent", "salary_plus_percent"] as const;
+const PAY_SCHEME_KEY: Record<string, string> = {
+  salary: "schemeSalary",
+  percent: "schemePercent",
+  salary_plus_percent: "schemeSalaryPlusPercent",
+};
 
 const parseNum = (v: any) => {
   const n = Number(String(v || "").replace(",", "."));
@@ -44,8 +46,8 @@ async function fetchProfilesForUser(userId) {
   return acc;
 }
 
-const branchLabel = (p: any) => {
-  if (p?.branch == null && p?.branch_name == null) return "Общий (все филиалы)";
+const branchLabel = (p: any, commonAllBranches: string) => {
+  if (p?.branch == null && p?.branch_name == null) return commonAllBranches;
   return p?.branch_name || p?.branch?.name || String(p.branch || "—");
 };
 
@@ -55,6 +57,8 @@ const MarketSaleEmployeePayProfileModal = ({
   onClose,
   employeeDisplayName,
 }: any) => {
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.employees.payProfile.${k}`) as string;
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -98,13 +102,15 @@ const MarketSaleEmployeePayProfileModal = ({
       if (list.length) applyProfile(list[0]);
       else applyProfile(null);
     } catch (e: any) {
-      setError(validateResErrors(e, "Не удалось загрузить профиль ЗП"));
+      setError(
+        validateResErrors(e, t("crm.employees.payProfile.errLoadSalary")),
+      );
       setProfiles([]);
       applyProfile(null);
     } finally {
       setLoading(false);
     }
-  }, [employee?.id, applyProfile]);
+  }, [employee?.id, applyProfile, t]);
 
   useEffect(() => {
     if (open && employee?.id) load();
@@ -150,22 +156,22 @@ const MarketSaleEmployeePayProfileModal = ({
       const percentNum = parseNum(percentRaw);
 
       if (payScheme === "salary" && monthlyNum <= 0) {
-        setError("Для схемы «Оклад» укажите monthly_base_salary > 0.");
+        setError(tp("errSchemeSalary"));
         setSaving(false);
         return;
       }
       if (payScheme === "percent" && percentNum <= 0) {
-        setError("Для схемы «Процент от продаж» укажите sales_percent > 0.");
+        setError(tp("errSchemePercent"));
         setSaving(false);
         return;
       }
       if (payScheme === "salary_plus_percent" && (monthlyNum <= 0 || percentNum <= 0)) {
-        setError("Для схемы «Оклад + процент» заполните оба поля больше 0.");
+        setError(tp("errSchemeBoth"));
         setSaving(false);
         return;
       }
       if (percentNum > 100) {
-        setError("Процент от продаж не может быть больше 100.");
+        setError(tp("errPercentMax"));
         setSaving(false);
         return;
       }
@@ -188,7 +194,7 @@ const MarketSaleEmployeePayProfileModal = ({
       }
       await load();
     } catch (err: any) {
-      setError(validateResErrors(err, "Не удалось сохранить профиль ЗП"));
+      setError(validateResErrors(err, tp("errSaveSalary")));
     } finally {
       setSaving(false);
     }
@@ -203,7 +209,7 @@ const MarketSaleEmployeePayProfileModal = ({
       setDeleteConfirm(false);
       await load();
     } catch (err: any) {
-      setError(validateResErrors(err, "Не удалось удалить профиль"));
+      setError(validateResErrors(err, tp("errDeleteProfile")));
     } finally {
       setSaving(false);
     }
@@ -226,13 +232,13 @@ const MarketSaleEmployeePayProfileModal = ({
       >
         <header className="barbermasters__modalHeader">
           <h3 id="market-employee-pay-title" className="barbermasters__modalTitle">
-            Зарплата по продажам
+            {tp("marketTitle")}
           </h3>
           <button
             type="button"
             className="barbermasters__iconBtn"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
           >
             ×
           </button>
@@ -244,7 +250,8 @@ const MarketSaleEmployeePayProfileModal = ({
               <div className="barbermasters__employeeCard">
                 <div className="barbermasters__employeeInfo">
                   <div className="barbermasters__employeeName">
-                    {employeeDisplayName || "Сотрудник"}
+                    {employeeDisplayName ||
+                      t("crm.employees.accessModal.employeeFallback")}
                   </div>
                   <div className="barbermasters__employeeMeta">
                     {employee.email || employee.id}
@@ -253,11 +260,13 @@ const MarketSaleEmployeePayProfileModal = ({
               </div>
             </div>
 
-            {loading ? <div className="barbermasters__help">Загрузка…</div> : null}
+            {loading ? (
+              <div className="barbermasters__help">{t("common.loading")}</div>
+            ) : null}
 
             {profiles.length > 1 ? (
               <div className="barbermasters__field barbermasters__field--full">
-                <label className="barbermasters__label">Профиль</label>
+                <label className="barbermasters__label">{tp("profile")}</label>
                 <select
                   className="barbermasters__input"
                   value={selectedId || ""}
@@ -266,7 +275,7 @@ const MarketSaleEmployeePayProfileModal = ({
                 >
                   {profiles.map((p: any) => (
                     <option key={p.id} value={p.id}>
-                      {branchLabel(p)}
+                      {branchLabel(p, tp("commonAllBranches"))}
                     </option>
                   ))}
                 </select>
@@ -275,7 +284,7 @@ const MarketSaleEmployeePayProfileModal = ({
 
             <div className="barbermasters__field barbermasters__field--full">
               <label className="barbermasters__label">
-                Схема начисления <span className="barbermasters__req">*</span>
+                {tp("scheme")} <span className="barbermasters__req">*</span>
               </label>
               <select
                 className="barbermasters__input"
@@ -283,9 +292,9 @@ const MarketSaleEmployeePayProfileModal = ({
                 onChange={(e: any) => setPayScheme(e.target.value)}
                 disabled={saving || loading}
               >
-                {PAY_SCHEMES.map((x: any) => (
-                  <option key={x.value} value={x.value}>
-                    {x.label}
+                {PAY_SCHEME_VALUES.map((v) => (
+                  <option key={v} value={v}>
+                    {tp(PAY_SCHEME_KEY[v])}
                   </option>
                 ))}
               </select>
@@ -294,7 +303,8 @@ const MarketSaleEmployeePayProfileModal = ({
             {!percentOnly ? (
               <div className="barbermasters__field barbermasters__field--full">
                 <label className="barbermasters__label">
-                  Оклад в месяц <span className="barbermasters__req">*</span>
+                  {tp("monthlyBase")}{" "}
+                  <span className="barbermasters__req">*</span>
                 </label>
                 <input
                   className="barbermasters__input"
@@ -311,7 +321,8 @@ const MarketSaleEmployeePayProfileModal = ({
             {!salaryOnly ? (
               <div className="barbermasters__field barbermasters__field--full">
                 <label className="barbermasters__label">
-                  Процент от личных продаж <span className="barbermasters__req">*</span>
+                  {tp("personalSalesPercent")}{" "}
+                  <span className="barbermasters__req">*</span>
                 </label>
                 <input
                   className="barbermasters__input"
@@ -322,9 +333,7 @@ const MarketSaleEmployeePayProfileModal = ({
                   placeholder="0"
                   disabled={saving || loading}
                 />
-                <div className="barbermasters__help">
-                  Для отчета используется период из аналитики (tab=salary).
-                </div>
+                <div className="barbermasters__help">{tp("marketHint")}</div>
               </div>
             ) : null}
 
@@ -339,7 +348,11 @@ const MarketSaleEmployeePayProfileModal = ({
               className="barbermasters__btn barbermasters__btn--primary"
               disabled={saving || loading}
             >
-              {saving ? "Сохранение…" : selectedId ? "Сохранить" : "Создать профиль"}
+              {saving
+                ? t("common.saving")
+                : selectedId
+                  ? t("common.save")
+                  : tp("createProfile")}
             </button>
             {selectedId ? (
               deleteConfirm ? (
@@ -350,7 +363,7 @@ const MarketSaleEmployeePayProfileModal = ({
                     onClick={handleDelete}
                     disabled={saving}
                   >
-                    {saving ? "Удаление…" : "Подтвердить удаление"}
+                    {saving ? t("common.deleting") : tp("confirmDelete")}
                   </button>
                   <button
                     type="button"
@@ -358,7 +371,7 @@ const MarketSaleEmployeePayProfileModal = ({
                     onClick={() => setDeleteConfirm(false)}
                     disabled={saving}
                   >
-                    Отмена
+                    {t("common.cancel")}
                   </button>
                 </>
               ) : (
@@ -368,7 +381,7 @@ const MarketSaleEmployeePayProfileModal = ({
                   onClick={() => setDeleteConfirm(true)}
                   disabled={saving}
                 >
-                  Удалить профиль
+                  {tp("deleteProfile")}
                 </button>
               )
             ) : null}
@@ -378,7 +391,7 @@ const MarketSaleEmployeePayProfileModal = ({
               onClick={onClose}
               disabled={saving}
             >
-              Закрыть
+              {t("common.close")}
             </button>
           </div>
         </form>

@@ -1,5 +1,6 @@
 import { FileText, Receipt } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
@@ -115,11 +116,12 @@ async function handleCheckoutResponseForPrinting(res: any) {
    B) Компонент SellDetail
    ============================================================ */
 
-const kindTranslate = {
-  new: "Новый",
-  paid: "Оплаченный",
-  canceled: "Возвращённый",
-  debt: "Долг",
+const STATUS_KEY: Record<string, string> = {
+  new: "statusNew",
+  paid: "statusPaid",
+  canceled: "statusCanceled",
+  partially_returned: "statusPartiallyReturned",
+  debt: "statusDebt",
 };
 
 const formatMoney = (value: any) => {
@@ -150,6 +152,7 @@ const getStatusVariant = (status: any) => {
   const s = String(status || "").toLowerCase();
   if (s === "paid") return "paid";
   if (s === "canceled" || s === "cancelled") return "canceled";
+  if (s === "partially_returned") return "canceled";
   if (s === "debt") return "debt";
   return "new";
 };
@@ -174,6 +177,9 @@ const getLineTotal = (product: any) => {
 };
 
 const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
+  const { t } = useTranslation();
+  const ts = (k: string): string =>
+    t(`crm.sell.modals.saleDetail.${k}`) as string;
   const dispatch = useDispatch() as any;
   const navigate = useNavigate();
   const { id: routeId } = useParams();
@@ -229,15 +235,13 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
       await handleCheckoutResponseForPrinting(res);
     } catch (e: any) {
       console.error("Печать чека не удалась:", e);
-      alert(
-        "Не удалось распечатать чек. Проверьте WinUSB и формат ответа (JSON/PDF)."
-      );
+      alert(ts("errPrint"));
     }
   };
 
   const handleDownloadInvoice = async () => {
     if (!item?.id) {
-      alert("ID продажи не найден");
+      alert(ts("errSaleId"));
       return;
     }
 
@@ -274,17 +278,15 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
       }
     } catch (err: any) {
       console.error("Скачивание накладной не удалось:", err);
-      alert(
-        err?.message ||
-          err?.detail ||
-          "Не удалось скачать накладную. Попробуйте позже."
-      );
+      alert(err?.message || err?.detail || ts("errInvoice"));
     }
   };
 
   const statusVariant = getStatusVariant(filterField?.status);
-  const statusLabel =
-    (kindTranslate as any)[filterField?.status] || filterField?.status || "—";
+  const statusKey = STATUS_KEY[filterField?.status as string];
+  const statusLabel = statusKey
+    ? ts(statusKey)
+    : filterField?.status || "—";
   const items = Array.isArray(filterField?.items) ? filterField.items : [];
   const subtotal = Number(filterField?.subtotal || 0);
   const discountTotal = Number(filterField?.discount_total || 0);
@@ -295,37 +297,37 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
     <Modal
       open
       onClose={onClose}
-      title="Детали продажи"
+      title={ts("title")}
       className="sellDetailModal"
       contentClassName="sellDetailModal__content"
       wrapperId="sell-detail-modal"
     >
       <div className="sellDetail">
         {loading ? (
-          <div className="sellDetail__loading">Загрузка данных о продаже...</div>
+          <div className="sellDetail__loading">{ts("loading")}</div>
         ) : (
           <>
             <div className="sellDetail__meta">
               <div className="sellDetail__metaCard">
-                <span className="sellDetail__metaLabel">Клиент</span>
+                <span className="sellDetail__metaLabel">{ts("client")}</span>
                 <span className="sellDetail__metaValue">
-                  {filterField?.client_name || "Без клиента"}
+                  {filterField?.client_name || ts("noClient")}
                 </span>
               </div>
               <div className="sellDetail__metaCard">
-                <span className="sellDetail__metaLabel">Статус</span>
+                <span className="sellDetail__metaLabel">{ts("status")}</span>
                 <span className={`sellBadge sellBadge--${statusVariant}`}>
                   {statusLabel}
                 </span>
               </div>
               <div className="sellDetail__metaCard">
-                <span className="sellDetail__metaLabel">Дата</span>
+                <span className="sellDetail__metaLabel">{ts("date")}</span>
                 <span className="sellDetail__metaValue">
                   {formatDateTime(filterField?.created_at)}
                 </span>
               </div>
               <div className="sellDetail__metaCard">
-                <span className="sellDetail__metaLabel">Кассир</span>
+                <span className="sellDetail__metaLabel">{ts("cashier")}</span>
                 <span className="sellDetail__metaValue">
                   {filterField?.user_display ||
                     filterField?.cashier_name ||
@@ -335,7 +337,7 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
               </div>
               {filterField?.cashbox_name && (
                 <div className="sellDetail__metaCard">
-                  <span className="sellDetail__metaLabel">Касса</span>
+                  <span className="sellDetail__metaLabel">{ts("cashbox")}</span>
                   <span className="sellDetail__metaValue">
                     {filterField.cashbox_name}
                   </span>
@@ -343,21 +345,24 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
               )}
             </div>
 
-            <section className="sellDetail__section" aria-label="Позиции продажи">
+            <section
+              className="sellDetail__section"
+              aria-label={ts("positionsAria")}
+            >
               <h4 className="sellDetail__sectionTitle">
-                Позиции
+                {ts("positions")}
                 <span className="sellDetail__sectionCount">{items.length}</span>
               </h4>
 
               {items.length === 0 ? (
-                <div className="sellDetail__empty">Нет позиций в продаже</div>
+                <div className="sellDetail__empty">{ts("noPositions")}</div>
               ) : (
                 <div className="sellDetail__items">
                   <div className="sellDetail__itemsHead" aria-hidden>
-                    <span>Товар</span>
-                    <span>Кол-во</span>
-                    <span>Цена</span>
-                    <span>Сумма</span>
+                    <span>{ts("colProduct")}</span>
+                    <span>{ts("colQty")}</span>
+                    <span>{ts("colPrice")}</span>
+                    <span>{ts("colSum")}</span>
                   </div>
                   {items.map((product: any, idx: any) => {
                     const name =
@@ -396,25 +401,28 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
               )}
             </section>
 
-            <section className="sellDetail__totals" aria-label="Итоги продажи">
+            <section
+              className="sellDetail__totals"
+              aria-label={ts("totalsAria")}
+            >
               <div className="sellDetail__totalRow">
-                <span>Промежуточный итог</span>
+                <span>{ts("subtotal")}</span>
                 <span>{formatMoney(subtotal)} сом</span>
               </div>
               {discountTotal > 0 && (
                 <div className="sellDetail__totalRow sellDetail__totalRow--discount">
-                  <span>Скидка</span>
+                  <span>{ts("discount")}</span>
                   <span>−{formatMoney(discountTotal)} сом</span>
                 </div>
               )}
               {taxTotal > 0 && (
                 <div className="sellDetail__totalRow">
-                  <span>Налог</span>
+                  <span>{ts("tax")}</span>
                   <span>{formatMoney(taxTotal)} сом</span>
                 </div>
               )}
               <div className="sellDetail__totalRow sellDetail__totalRow--final">
-                <span>Итого к оплате</span>
+                <span>{ts("grandTotal")}</span>
                 <strong>{formatMoney(total)} сом</strong>
               </div>
             </section>
@@ -426,7 +434,7 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
                 onClick={handlePrintReceipt}
               >
                 <Receipt size={18} strokeWidth={2.2} aria-hidden />
-                Печать чека
+                {ts("printReceipt")}
               </button>
               <button
                 type="button"
@@ -434,7 +442,7 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
                 onClick={handleDownloadInvoice}
               >
                 <FileText size={18} strokeWidth={2.2} aria-hidden />
-                Скачать накладную
+                {ts("downloadInvoice")}
               </button>
             </div>
           </>

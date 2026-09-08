@@ -1,6 +1,6 @@
 /** Печать чеков и обработка checkout-ответа */
 
-import { ESC, chunkBytes } from "./bytes";
+import { ESC } from "./bytes";
 import { getEscposRuntimeConfig } from "./encoding";
 import { buildReceiptFromJSON } from "./formatters";
 import {
@@ -13,7 +13,14 @@ import {
   buildEscPosForRaster,
   pdfBlobToCanvas,
 } from "./raster";
-import { safeLsGet } from "./storage";
+import {
+  buildMarketReceiptLayout,
+  renderReceiptLayoutToCanvas,
+} from "./receiptLayout";
+import { buildEscPosQr } from "./receiptQr";
+import { isGraphicReceiptMode, safeLsGet } from "./storage";
+import { resolveReceiptStyle } from "./receiptStyle";
+import { isOpaquePrintPayload, isPrintFormatError } from "./printErrors";
 import {
   usbState,
   saveVidPidToLS,
@@ -21,7 +28,16 @@ import {
   openUsbDevice,
   ensureUsbReadyAuto,
 } from "./usb";
-import { getDrawerSettings, parseEscPosCommand } from "./drawer";
+import { transferEscPosBytes } from "./usbTransfer";
+import {
+  applyDrawerToChunks,
+  applyDrawerToEscPosBuffer,
+  buildDrawerKickPayload,
+  getDrawerSettings,
+  type DrawerAt,
+} from "./drawer";
+
+export { isOpaquePrintPayload, isPrintFormatError };
 
 async function ensureUsbPrinter(options: any = {}) {
   if (!("usb" in navigator)) throw new Error("WebUSB не поддерживается");
@@ -34,16 +50,22 @@ async function ensureUsbPrinter(options: any = {}) {
     dev = await requestUsbDevice();
     saveVidPidToLS(dev);
   }
+  if (usbState.dev === dev && usbState.outEP != null) {
+    saveVidPidToLS(dev);
+    return { dev, outEP: usbState.outEP };
+  }
   const { outEP } = await openUsbDevice(dev);
   saveVidPidToLS(dev);
   return { dev, outEP };
 }
 
-async function sendEscPosBytes(bytes: Uint8Array, options: any = {}) {
+async function sendEscPosBytes(
+  bytes: Uint8Array,
+  options: any = {},
+  transferOpts: { rasterPrefix?: boolean; skipWake?: boolean } = {},
+) {
   const { dev, outEP } = await ensureUsbPrinter(options);
-  for (const chunk of chunkBytes(bytes)) {
-    await (dev as any).transferOut(outEP, chunk);
-  }
+  await transferEscPosBytes(dev, outEP, bytes, usbState, transferOpts);
 }
 
 export async function kickCashDrawer(
@@ -54,76 +76,119 @@ export async function kickCashDrawer(
     Array.isArray(bytes) && bytes.length > 0
       ? bytes
       : getDrawerSettings().bytes;
-  const validated = parseEscPosCommand(cmd.join(","));
-  await sendEscPosBytes(new Uint8Array(validated), options);
+  await sendEscPosBytes(buildDrawerKickPayload(cmd), options, {
+    skipWake: true,
+  });
 }
 
-async function withCashDrawerKick<T>(
-  printFn: () => Promise<T>,
-  options: any = {},
-): Promise<T> {
+function resolveDrawerPrintOptions(options: any = {}) {
+  if (options?.skipDrawer) return options;
   const settings = getDrawerSettings();
-  if (!settings.enabled) return printFn();
-
-  const kickQuietly = async () => {
-    try {
-      await kickCashDrawer(settings.bytes, {
-        interactive: options?.interactive,
-      });
-    } catch (error) {
-      console.warn("[PrintService] Не удалось открыть денежный ящик:", error);
-    }
+  if (!settings.enabled) return options;
+  return {
+    ...options,
+    drawerKickBytes: settings.bytes,
+    drawerAt: (settings.when === "before" ? "start" : "end") as DrawerAt,
   };
+}
 
-  if (settings.when === "before") {
-    await kickQuietly();
-    return printFn();
-  }
-
-  const result = await printFn();
-  await kickQuietly();
-  return result;
+function resolveUseGraphicPrint(options: any = {}) {
+  if (options?.graphic === false) return false;
+  if (options?.graphic === true) return true;
+  if (options?.receiptStyle !== "market") return false;
+  return isGraphicReceiptMode();
 }
 
 async function printReceiptFromPdfUSB(pdfBlob: any, options: any = {}) {
-  const { dev, outEP } = await ensureUsbPrinter(options);
-
-  // печатаем на ширину принтера
   const isMarket = options?.receiptStyle === "market";
   const cfg = getEscposRuntimeConfig({ marketDefault: isMarket });
   const canvas = await pdfBlobToCanvas(pdfBlob, cfg.dotsPerLine);
   const { raster, bytesPerLine, h } = canvasToRasterBytes(canvas);
-  const escpos = buildEscPosForRaster(raster, bytesPerLine, h);
+  const escpos = applyDrawerToEscPosBuffer(
+    buildEscPosForRaster(raster, bytesPerLine, h),
+    options.drawerAt as DrawerAt | undefined,
+    options.drawerKickBytes,
+  );
+  await sendEscPosBytes(escpos, options, { rasterPrefix: true });
+}
 
-  for (const part of chunkBytes(escpos)) {
-    await (dev as any).transferOut(outEP, part);
+async function printReceiptJSONGraphicViaUSB(payload: any, options: any = {}) {
+  const isMarket = options?.receiptStyle === "market";
+  const cfg = getEscposRuntimeConfig({ marketDefault: isMarket });
+
+  const layout = buildMarketReceiptLayout(payload, {
+    receiptStyle: options?.receiptStyle,
+    width: cfg.charsPerLine,
+    dotsPerLine: cfg.dotsPerLine,
+    charsPerLine: cfg.charsPerLine,
+  });
+  const canvas = renderReceiptLayoutToCanvas(layout, {
+    dotsPerLine: cfg.dotsPerLine,
+    charsPerLine: cfg.charsPerLine,
+    lineDotHeight: cfg.lineDotHeight,
+  });
+  const { raster, bytesPerLine, h } = canvasToRasterBytes(canvas);
+  const rasterEsc = buildEscPosForRaster(raster, bytesPerLine, h, {
+    includeCut: false,
+  });
+
+  const tailParts: Uint8Array[] = [];
+  if (layout.qrLink) {
+    tailParts.push(ESC(0x1b, 0x61, 0x01));
+    tailParts.push(new TextEncoder().encode("Проверка чека\n"));
+    tailParts.push(...buildEscPosQr(layout.qrLink));
+    tailParts.push(new TextEncoder().encode("\n"));
+    tailParts.push(ESC(0x1b, 0x61, 0x00));
+  }
+  tailParts.push(ESC(0x1b, 0x64, 0x06));
+  tailParts.push(ESC(0x1d, 0x56, 0x00));
+
+  const tailLen = tailParts.reduce((n, p) => n + p.length, 0);
+  const all = new Uint8Array(rasterEsc.length + tailLen);
+  all.set(rasterEsc, 0);
+  let offset = rasterEsc.length;
+  for (const part of tailParts) {
+    all.set(part, offset);
+    offset += part.length;
+  }
+
+  const escpos = applyDrawerToEscPosBuffer(
+    all,
+    options.drawerAt as DrawerAt | undefined,
+    options.drawerKickBytes,
+  );
+  await sendEscPosBytes(escpos, options, { rasterPrefix: true });
+}
+
+async function printReceiptJSONTextViaUSB(payload: any, options: any = {}) {
+  const isMarket = options?.receiptStyle === "market";
+  const cfg = getEscposRuntimeConfig({ marketDefault: isMarket });
+  const parts = applyDrawerToChunks(
+    buildReceiptFromJSON(payload, {
+      width: cfg.charsPerLine,
+      codepage: cfg.codepage,
+      encoder: cfg.encoder,
+      receiptStyle: options?.receiptStyle,
+    }),
+    options.drawerAt as DrawerAt | undefined,
+    options.drawerKickBytes,
+  );
+  for (const data of parts) {
+    await sendEscPosBytes(data, options);
   }
 }
 
 async function printReceiptJSONViaUSB(payload: any, options: any = {}) {
-  const { dev, outEP } = await ensureUsbPrinter(options);
-
-  const isMarket = options?.receiptStyle === "market";
-  const cfg = getEscposRuntimeConfig({ marketDefault: isMarket });
-  const parts = buildReceiptFromJSON(payload, {
-    width: cfg.charsPerLine,
-    codepage: cfg.codepage,
-    encoder: cfg.encoder,
-    receiptStyle: options?.receiptStyle,
-  });
-  for (const data of parts) {
-    for (const chunk of chunkBytes(data)) {
-      await (dev as any).transferOut(outEP, chunk);
-    }
+  if (resolveUseGraphicPrint(options)) {
+    await printReceiptJSONGraphicViaUSB(payload, options);
+    return;
   }
+  await printReceiptJSONTextViaUSB(payload, options);
 }
 
 /* ---------- Минимальная печать PC866 (XP-N160II) ---------- */
 export async function printRussianRawUsb(text: any = "Привет, мир!", options: any = {}) {
-  const { dev, outEP } = await ensureUsbPrinter(options);
-
   const cfg = getEscposRuntimeConfig();
-  // ESC/POS: init, international USA (см. ESC R в buildReceiptFromJSON), codepage, text, cut
   const init = ESC(0x1b, 0x40);
   const intl = ESC(0x1b, 0x52, 0x00);
   const cp = ESC(0x1b, 0x74, cfg.codepage);
@@ -131,7 +196,7 @@ export async function printRussianRawUsb(text: any = "Привет, мир!", op
   const cut = ESC(0x1d, 0x56, 0x00);
 
   const data = new Uint8Array(
-    init.length + intl.length + cp.length + body.length + cut.length
+    init.length + intl.length + cp.length + body.length + cut.length,
   );
   let o = 0;
   data.set(init, o);
@@ -144,9 +209,7 @@ export async function printRussianRawUsb(text: any = "Привет, мир!", op
   o += body.length;
   data.set(cut, o);
 
-  for (const chunk of chunkBytes(data)) {
-    await (dev as any).transferOut(outEP, chunk);
-  }
+  await sendEscPosBytes(data, options);
 }
 
 const toNum = (v: any) => {
@@ -155,6 +218,7 @@ const toNum = (v: any) => {
 };
 
 export function enrichMarketReceiptPayload(payload: any, meta: any = {}) {
+  if (isOpaquePrintPayload(payload)) return payload;
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     return payload;
   }
@@ -201,20 +265,19 @@ export function enrichMarketReceiptPayload(payload: any, meta: any = {}) {
 }
 
 function resolveMarketPrintOptions(options: any = {}) {
-  if (options.receiptStyle) return options;
-  const sectorSlug = String(safeLsGet("selectedSector") || "").toLowerCase();
-  if (sectorSlug === "market") {
-    return { ...options, receiptStyle: "market" };
-  }
-  return options;
+  const receiptStyle = resolveReceiptStyle(
+    options?.receiptStyle,
+    safeLsGet("selectedSector"),
+  );
+  if (!receiptStyle) return options;
+  return { ...options, receiptStyle };
 }
 
 export async function handleCheckoutResponseForPrinting(res: any, options: any = {}) {
-  const printOptions = resolveMarketPrintOptions(options);
-  return withCashDrawerKick(
-    () => printCheckoutPayload(res, printOptions),
-    printOptions,
+  const printOptions = resolveDrawerPrintOptions(
+    resolveMarketPrintOptions(options),
   );
+  return printCheckoutPayload(res, printOptions);
 }
 
 async function printCheckoutPayload(res: any, printOptions: any = {}) {
@@ -262,7 +325,6 @@ async function printCheckoutPayload(res: any, printOptions: any = {}) {
       await printReceiptFromPdfUSB(parsed.pdfBlob, printOptions);
       return;
     }
-    // не PDF и не JSON — сохраним как файл (фолбэк)
     const url = URL.createObjectURL(printable);
     const a = document.createElement("a");
     a.href = url;

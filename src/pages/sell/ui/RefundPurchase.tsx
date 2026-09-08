@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import {
   historySellProductDetail,
@@ -6,10 +6,12 @@ import {
 } from "@entities/sale";
 import { useUser } from "@entities/user";
 import {
+  buildSaleReturnSignature,
   isReturnableSaleStatus,
   normalizeSaleStatus,
 } from "@shared/lib/tools/saleReturn";
 import Modal from "@shared/ui/Modal/Modal";
+import { kindTranslate } from "./sell.constants";
 
 const extractApiError = (errorLike: any) => {
   const value =
@@ -84,7 +86,25 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
   const saleItems = useMemo(() => {
     if (!Array.isArray(currentItem?.items)) return [];
     return currentItem.items.map((saleItem: any, index: any) => {
-      const maxQuantity = Number(saleItem?.quantity ?? saleItem?.qty ?? 0) || 0;
+      const soldQuantity = Number(saleItem?.quantity ?? saleItem?.qty ?? 0) || 0;
+      // Часть могла быть возвращена ранее (sale.status = partially_returned).
+      const returnedQuantity =
+        Number(
+          saleItem?.returned_qty ??
+            saleItem?.returned_quantity ??
+            saleItem?.refunded_qty ??
+            0,
+        ) || 0;
+      const explicitRemaining =
+        saleItem?.returnable_qty ??
+        saleItem?.returnable_quantity ??
+        saleItem?.available_qty ??
+        null;
+      const remainingQuantity =
+        explicitRemaining != null
+          ? Number(explicitRemaining) || 0
+          : Math.max(0, soldQuantity - returnedQuantity);
+      const unitPrice = Number(saleItem?.unit_price ?? saleItem?.price ?? 0) || 0;
       return {
         id: saleItem?.id ?? saleItem?.sale_item_id ?? `sale-item-${index}`,
         name:
@@ -94,13 +114,15 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
           saleItem?.display_name ??
           saleItem?.object_name ??
           `Позиция ${index + 1}`,
-        quantity: maxQuantity,
-        unitPrice: Number(saleItem?.unit_price ?? saleItem?.price ?? 0) || 0,
+        quantity: remainingQuantity,
+        soldQuantity,
+        returnedQuantity,
+        unitPrice,
         total:
           Number(
             saleItem?.line_total ??
               saleItem?.total ??
-              maxQuantity * (Number(saleItem?.unit_price ?? saleItem?.price ?? 0) || 0),
+              remainingQuantity * unitPrice,
           ) || 0,
         unit: saleItem?.unit ?? saleItem?.unit_name ?? "шт",
       };
@@ -124,7 +146,12 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
 
   const partialCount = partialItems.length;
   const isReturnableStatus = isReturnableSaleStatus(currentItem?.status);
-  const statusLabel = normalizeSaleStatus(currentItem?.status) || currentItem?.status || "—";
+  const normalizedStatus = normalizeSaleStatus(currentItem?.status);
+  const statusLabel =
+    kindTranslate[normalizedStatus as keyof typeof kindTranslate] ||
+    normalizedStatus ||
+    currentItem?.status ||
+    "—";
 
   const formatMoney = (value: any) =>
     Number(value || 0).toLocaleString("ru-RU", {
@@ -135,7 +162,7 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
   const validateCommon = useCallback(() => {
     if (!currentItem?.id) return "Не найден идентификатор продажи.";
     if (!isReturnableStatus) {
-      return "Возврат возможен только для оплаченных или долговых продаж.";
+      return "Возврат возможен только для оплаченных, долговых или частично возвращённых продаж.";
     }
     return "";
   }, [currentItem?.id, isReturnableStatus]);
@@ -163,15 +190,30 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
     return "";
   }, [isAgent, partialItems, saleItems, validateCommon]);
 
+  // Ключ операции возврата: держится стабильным для одного и того же выбора
+  // позиций, чтобы повторный клик / ретрай после сетевой ошибки не создал
+  // второе компенсирующее движение в кассе на бэке.
+  const idempotencyRef = useRef<{ signature: string; key: string } | null>(null);
+
   const performReturn = useCallback(
     async (itemsForReturn) => {
       setError("");
       setSubmitting(true);
       try {
-        const payload = itemsForReturn?.length
-          ? { saleId: currentItem.id, items: itemsForReturn }
-          : { saleId: currentItem.id };
+        const signature = buildSaleReturnSignature(currentItem.id, itemsForReturn);
+        if (idempotencyRef.current?.signature !== signature) {
+          idempotencyRef.current = {
+            signature,
+            key: (globalThis as any)?.crypto?.randomUUID?.() ?? signature,
+          };
+        }
+        const payload: any = {
+          saleId: currentItem.id,
+          idempotencyKey: idempotencyRef.current.key,
+        };
+        if (itemsForReturn?.length) payload.items = itemsForReturn;
         const returnedSale = await dispatch(returnSale(payload)).unwrap();
+        idempotencyRef.current = null;
         onChanged?.(returnedSale);
         if (!onChanged) onClose?.();
       } catch (e: any) {
@@ -276,6 +318,9 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
                       <div className="sellReturn__itemName">{saleItem.name}</div>
                       <div className="sellReturn__itemMeta">
                         {formatMoney(saleItem.unitPrice)} сом x {saleItem.quantity}
+                        {saleItem.returnedQuantity > 0 && (
+                          <> · возвращено {saleItem.returnedQuantity} из {saleItem.soldQuantity}</>
+                        )}
                       </div>
                     </div>
                     <div className="sellReturn__itemAvailable">

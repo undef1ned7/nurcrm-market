@@ -1,8 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { Check, SlidersHorizontal } from "lucide-react";
 import { useOptionalProductFormLayout } from "./ProductFormLayoutContext";
 
 export function LayoutHeaderActions() {
   const layout = useOptionalProductFormLayout();
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.warehouse.addProduct.${k}`) as string;
   if (!layout?.canCustomize) return null;
 
   if (layout.isCustomizing) {
@@ -14,7 +17,7 @@ export function LayoutHeaderActions() {
         disabled={layout.saving}
       >
         <Check size={18} />
-        Готово
+        {tp("done")}
       </button>
     );
   }
@@ -26,7 +29,7 @@ export function LayoutHeaderActions() {
       onClick={layout.startCustomize}
     >
       <SlidersHorizontal size={18} />
-      Настроить форму
+      {tp("configureForm")}
     </button>
   );
 }

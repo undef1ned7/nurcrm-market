@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import UniversalModal from "@shared/ui/legacy-production/ProductionAgents/UniversalModal/UniversalModal";
 
 const DiscountModal = ({
@@ -12,6 +13,9 @@ const DiscountModal = ({
   setMode, // опционально, если нужно менять режим из модалки
   maxPercent = null, // максимальная скидка в % (null — без ограничения)
 }: any) => {
+  const { t } = useTranslation();
+  const td = (k: string, o?: any): string =>
+    t(`crm.sell.modals.discount.${k}`, o) as string;
   const handleClose = useCallback(() => {
     onClose();
     setDiscountValue("");
@@ -44,7 +48,7 @@ const DiscountModal = ({
   return (
     <UniversalModal
       onClose={handleClose}
-      title={"Общая скидка"}
+      title={td("title")}
     >
       <div className="start__discount min-w-75">
         <div style={{ marginBottom: "10px", display: "flex", gap: "8px" }}>
@@ -55,7 +59,7 @@ const DiscountModal = ({
             }`}
             onClick={() => setMode && setMode("amount")}
           >
-            Сумма
+            {td("modeAmount")}
           </button>
           <button
             type="button"
@@ -64,11 +68,13 @@ const DiscountModal = ({
             }`}
             onClick={() => setMode && setMode("percent")}
           >
-            Процент
+            {td("modePercent")}
           </button>
         </div>
         <div>
-          <label>{mode === "percent" ? "Скидка, %" : "Сумма скидки"}</label>
+          <label>
+            {mode === "percent" ? td("labelPercent") : td("labelAmount")}
+          </label>
           <input
             className="sell__header-input"
             type="number"
@@ -83,19 +89,19 @@ const DiscountModal = ({
             onChange={(e) => setDiscountValue(e.target.value)}
             placeholder={
               mode === "percent"
-                ? "Введите скидку в %"
-                : "Введите сумму скидки"
+                ? td("placeholderPercent")
+                : td("placeholderAmount")
             }
             autoFocus
           />
           {currentSubtotal && mode === "amount" && (
             <p style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>
-              Сумма без скидки: {currentSubtotal}
+              {td("subtotalWithout", { sum: currentSubtotal })}
             </p>
           )}
           {maxPercent != null && (
             <p style={{ fontSize: "12px", color: "#b45309", marginTop: "5px" }}>
-              Максимальная скидка: {maxPercent}%
+              {td("maxDiscount", { percent: maxPercent })}
             </p>
           )}
         </div>
@@ -112,7 +118,7 @@ const DiscountModal = ({
             type="button"
             onClick={handleClose}
           >
-            Отмена
+            {t("common.cancel")}
           </button>
           <button
             className="start__total-pay"
@@ -120,7 +126,7 @@ const DiscountModal = ({
             type="button"
             onClick={handleApply}
           >
-            Применить
+            {t("common.apply")}
           </button>
         </div>
       </div>

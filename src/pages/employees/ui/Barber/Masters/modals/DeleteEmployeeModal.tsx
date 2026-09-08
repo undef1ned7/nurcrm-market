@@ -1,5 +1,6 @@
 import { FaTimes } from "react-icons/fa";
 import { AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import BarberMastersPortal from "./BarberMastersPortal";
 
 const DeleteEmployeeModal = ({
@@ -9,6 +10,7 @@ const DeleteEmployeeModal = ({
   empDeletingIds,
   fullName,
 }) => {
+  const { t } = useTranslation();
   if (!empToDelete) return null;
 
   const name = fullName(empToDelete) || empToDelete.email || "—";
@@ -33,14 +35,14 @@ const DeleteEmployeeModal = ({
                 id="barbermasters-delete-employee-title"
                 className="barbermasters__modalTitle"
               >
-                Удалить сотрудника
+                {t("crm.employees.deleteEmployee.title")}
               </h3>
             </div>
             <button
               type="button"
               className="barbermasters__iconBtn"
               onClick={() => !busy && setEmpToDelete(null)}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
               disabled={busy}
             >
               <FaTimes />
@@ -56,10 +58,10 @@ const DeleteEmployeeModal = ({
             </div>
             <div className="barbermasters__confirmText">
               <p className="barbermasters__confirmLead">
-                Удалить «{name}»?
+                {t("crm.employees.deleteEmployee.lead", { name })}
               </p>
               <p className="barbermasters__confirmHint">
-                Действие необратимо. Доступ сотрудника к системе будет закрыт.
+                {t("crm.employees.deleteEmployee.hint")}
               </p>
             </div>
           </div>
@@ -71,7 +73,7 @@ const DeleteEmployeeModal = ({
               onClick={() => setEmpToDelete(null)}
               disabled={busy}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               type="button"
@@ -79,7 +81,7 @@ const DeleteEmployeeModal = ({
               onClick={doRemoveEmployee}
               disabled={busy}
             >
-              {busy ? "Удаление…" : "Удалить"}
+              {busy ? t("common.deleting") : t("common.delete")}
             </button>
           </div>
         </div>

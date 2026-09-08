@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { FaTimes } from "react-icons/fa";
 import AccessList from "@widgets/department-details/ui/AccessList";
 import BarberMastersPortal from "./BarberMastersPortal";
@@ -19,13 +20,16 @@ const EmployeeAccessModal = ({
   canSellWholesale = false,
   onCanSellWholesaleChange,
 }) => {
+  const { t } = useTranslation();
+  const tm = (k: string, o?: any): string =>
+    t(`crm.employees.accessModal.${k}`, o) as string;
   if (!accessModalOpen || !accessModalEmployee) return null;
 
   const showWarehouseWholesaleSection = isWarehouseSector && isOwnerOrAdmin;
   const employeeName =
     accessModalEmployee.first_name && accessModalEmployee.last_name
       ? `${accessModalEmployee.first_name} ${accessModalEmployee.last_name}`
-      : accessModalEmployee.email || "Сотрудник";
+      : accessModalEmployee.email || tm("employeeFallback");
 
   return (
     <BarberMastersPortal wrapperId="barbermasters-employeeaccessmodal">
@@ -39,13 +43,13 @@ const EmployeeAccessModal = ({
         >
           <div className="barbermasters__modalHeader">
             <h3 className="barbermasters__modalTitle">
-              Управление доступами: {employeeName}
+              {tm("title", { name: employeeName })}
             </h3>
             <button
               type="button"
               className="barbermasters__iconBtn"
               onClick={() => !empSaving && setAccessModalOpen(false)}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
               disabled={empSaving}
             >
               <FaTimes />
@@ -56,17 +60,17 @@ const EmployeeAccessModal = ({
             {showWarehouseWholesaleSection && (
               <div className="barbermasters__accessWarehouse">
                 <h4 className="barbermasters__accessWarehouse-title">
-                  Агент склада
+                  {t("crm.employees.warehouseAgent")}
                 </h4>
 
                 {warehouseMembershipLoading ? (
                   <div className="barbermasters__accessWarehouse-muted">
-                    Загрузка настроек агента…
+                    {tm("loadingAgentSettings")}
                   </div>
                 ) : warehouseMembership ? (
                   <>
                     <label className="barbermasters__label">
-                      Оптовые продажи
+                      {tm("wholesaleSales")}
                     </label>
                     <div className="barbermasters__seg">
                       <button
@@ -77,7 +81,7 @@ const EmployeeAccessModal = ({
                         onClick={() => onCanSellWholesaleChange?.(false)}
                         disabled={empSaving}
                       >
-                        Оптовая цена
+                        {tm("wholesalePrice")}
                       </button>
                       <button
                         type="button"
@@ -87,18 +91,16 @@ const EmployeeAccessModal = ({
                         onClick={() => onCanSellWholesaleChange?.(true)}
                         disabled={empSaving}
                       >
-                        Цена агента
+                        {tm("agentPrice")}
                       </button>
                     </div>
                     <div className="barbermasters__help">
-                      Сохраняется вместе с доступами. Агент сможет создавать
-                      продажи с переключателем «Опт».
+                      {tm("wholesaleHelp")}
                     </div>
                   </>
                 ) : (
                   <div className="barbermasters__accessWarehouse-muted">
-                    Сотрудник ещё не назначен агентом склада. Сначала нажмите
-                    «Агент склада» в карточке сотрудника.
+                    {tm("notAgentYet")}
                   </div>
                 )}
               </div>

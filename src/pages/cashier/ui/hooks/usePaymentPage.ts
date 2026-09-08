@@ -6,9 +6,11 @@ import {
   getProductCheckout,
   createDeal,
 } from "@entities/sale";
-import { addCashFlows, getCashBoxes, useCash } from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
 import { useUser } from "@entities/user";
+import { buildPosRoutingFromUser } from "@shared/lib/tools/cashboxResolution";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+import { notify } from "@shared/lib/notifications";
 import { validateSplitAmounts } from "@shared/lib/tools/marketCashierSplitPayment";
 import {
   checkPrinterConnection,
@@ -60,10 +62,10 @@ export function usePaymentPage({
   saleId,
   consultantDraft,
   onConsultantDraftChange,
+  shiftId,
 }: PaymentPageProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch() as any;
-  const { list: cashBoxes } = useCash();
   const { company, profile } = useUser();
   const { debtScheduleVersion } = useMarketCashierSettings();
   const isDebtScheduleV2 = debtScheduleVersion === "v2";
@@ -81,6 +83,13 @@ export function usePaymentPage({
   const [withoutCheck, setWithoutCheck] = useState(() => {
     try {
       return localStorage.getItem("market_withoutCheck") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [skipDrawerOpen, setSkipDrawerOpen] = useState(() => {
+    try {
+      return localStorage.getItem("market_skipDrawer") === "true";
     } catch {
       return false;
     }
@@ -111,7 +120,6 @@ export function usePaymentPage({
     total,
     cartId: saleId,
   });
-  const [selectCashBox, setSelectCashBox] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [splitOnlineBank, setSplitOnlineBank] = useState("");
   const [splitOnlineAmount, setSplitOnlineAmount] = useState("");
@@ -374,6 +382,15 @@ export function usePaymentPage({
     }
   }, []);
 
+  const handleSkipDrawerOpenChange = useCallback((checked: boolean) => {
+    setSkipDrawerOpen(checked);
+    try {
+      localStorage.setItem("market_skipDrawer", String(checked));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const readAmountReceived = useCallback(() => {
     const raw =
       amountReceivedInputRef.current?.value ??
@@ -605,6 +622,7 @@ export function usePaymentPage({
           clientId: selectedCustomer?.id || null,
           payment_method: checkoutPayments ? null : paymentMethodApi,
           payments: checkoutPayments,
+          ...buildPosRoutingFromUser(profile, company, shiftId),
           cash_received:
             paymentMethod === "split" || paymentMethod === "deferred"
               ? checkoutCashReceived
@@ -741,8 +759,7 @@ export function usePaymentPage({
 
         if (
           paymentMethod === "deferred" &&
-          deferredPrepaymentValue > 0 &&
-          selectCashBox
+          deferredPrepaymentValue > 0
         ) {
           const prepayMethodLabel =
             deferredPrepaymentMethod === "cashless"
@@ -750,9 +767,9 @@ export function usePaymentPage({
                   ?.name || t("crm.cashier.paymentAlerts.cashless")
               : t("crm.cashier.paymentAlerts.cash");
           try {
-            await dispatch(
-              addCashFlows({
-                cashbox: selectCashBox,
+            await postCashflowIfNeeded(
+              dispatch,
+              {
                 type: "income",
                 name: `Предоплата (${prepayMethodLabel})`,
                 amount: deferredPrepaymentValue.toFixed(2),
@@ -763,27 +780,16 @@ export function usePaymentPage({
                   company?.subscription_plan?.name === "Старт"
                     ? "approved"
                     : "pending",
-              }),
-            ).unwrap();
+              },
+              { warnOnFailure: true, failureContext: "sale" },
+            );
           } catch (cashError) {
-            console.warn(
-              "Ошибка при создании денежного потока предоплаты:",
-              cashError,
-            );
-            showAlert(
-              "warning",
-              "Предупреждение",
-              validateResErrors(
-                cashError,
-                "Оплата оформлена, но не удалось записать предоплату в кассу. ",
-              ),
-            );
+            void cashError;
           }
         }
 
-        if (paymentMethod !== "deferred" && selectCashBox && total > 0) {
+        if (paymentMethod !== "deferred" && total > 0) {
           const flowBase = {
-            cashbox: selectCashBox,
             type: "income",
             source_cashbox_flow_id:
               result.payload?.sale_id || result.payload?.id,
@@ -796,35 +802,40 @@ export function usePaymentPage({
           try {
             if (paymentMethod === "split" && splitParts) {
               if (splitParts.online > 0) {
-                await dispatch(
-                  addCashFlows({
+                await postCashflowIfNeeded(
+                  dispatch,
+                  {
                     ...flowBase,
                     name: t("crm.cashier.paymentAlerts.saleOnline"),
                     amount: splitParts.online,
-                  }),
-                ).unwrap();
+                  },
+                  { warnOnFailure: true, failureContext: "sale" },
+                );
               }
               if (splitParts.transfer > 0) {
-                await dispatch(
-                  addCashFlows({
+                await postCashflowIfNeeded(
+                  dispatch,
+                  {
                     ...flowBase,
                     name: t("crm.cashier.paymentAlerts.saleCash"),
                     amount: splitParts.transfer,
-                  }),
-                ).unwrap();
+                  },
+                  { warnOnFailure: true, failureContext: "sale" },
+                );
               }
             } else {
-              await dispatch(
-                addCashFlows({
+              await postCashflowIfNeeded(
+                dispatch,
+                {
                   ...flowBase,
                   name: t("crm.cashier.paymentAlerts.sale"),
                   amount: total,
-                }),
-              ).unwrap();
+                },
+                { warnOnFailure: true, failureContext: "sale" },
+              );
             }
           } catch (cashError) {
-            console.warn("Ошибка при создании денежного потока:", cashError);
-            showAlert("warning", t("crm.cashier.paymentAlerts.warning"), validateResErrors(cashError, t("crm.cashier.paymentAlerts.incomeCashFailed")));
+            void cashError;
           }
         }
 
@@ -838,7 +849,9 @@ export function usePaymentPage({
                 result.payload,
                 splitParts,
               );
-              let ok = await printReceiptSmart(printPayload);
+              let ok = await printReceiptSmart(printPayload, {
+                skipDrawer: skipDrawerOpen,
+              });
               if (!ok) {
                 const receiptResult = await dispatch(
                   getProductCheckout(saleIdForReceipt),
@@ -852,11 +865,14 @@ export function usePaymentPage({
                       receiptResult.payload,
                       splitParts,
                     ),
+                    { skipDrawer: skipDrawerOpen },
                   );
                 }
               }
               if (!ok) {
-                showAlert("warning", t("crm.cashier.paymentAlerts.print"), t("crm.cashier.paymentAlerts.printFailed"));
+                notify.warning(t("crm.cashier.paymentAlerts.printFailed"), {
+                  title: t("crm.cashier.paymentAlerts.print"),
+                });
               }
             } else {
               const receiptResult = await dispatch(
@@ -865,19 +881,22 @@ export function usePaymentPage({
               if (
                 receiptResult.type === "products/getProductCheckout/fulfilled"
               ) {
-                const ok = await printReceiptSmart(receiptResult.payload);
+                const ok = await printReceiptSmart(receiptResult.payload, {
+                  skipDrawer: skipDrawerOpen,
+                });
                 if (!ok) {
-                  showAlert(
-                    "warning",
-                    "Печать",
+                  notify.warning(
                     "Не удалось распечатать чек. Вы можете выбрать принтер и распечатать из окна успешной оплаты.",
+                    { title: t("crm.cashier.paymentAlerts.print") },
                   );
                 }
               }
             }
           } catch (receiptError) {
             console.warn("Не удалось получить чек для печати:", receiptError);
-            showAlert("warning", t("crm.cashier.paymentAlerts.print"), t("crm.cashier.paymentAlerts.printFailedRetry"));
+            notify.warning(t("crm.cashier.paymentAlerts.printFailedRetry"), {
+              title: t("crm.cashier.paymentAlerts.print"),
+            });
           }
         }
 
@@ -890,6 +909,7 @@ export function usePaymentPage({
             result.payload,
             splitParts,
           ),
+          skipDrawer: skipDrawerOpen,
         });
       } else {
         showAlert(
@@ -925,7 +945,8 @@ export function usePaymentPage({
     paymentMethod,
     readAmountReceived,
     saleId,
-    selectCashBox,
+    shiftId,
+    profile,
     selectedBank,
     scheduleCount,
     scheduleUnit,
@@ -936,6 +957,7 @@ export function usePaymentPage({
     splitTransferAmount,
     total,
     withoutCheck,
+    skipDrawerOpen,
   ]);
 
   const handleCloseSuccess = useCallback(() => {
@@ -953,7 +975,9 @@ export function usePaymentPage({
     setPrinting(true);
     try {
       if (receiptData.checkoutResponse) {
-        const ok = await printReceiptSmart(receiptData.checkoutResponse);
+        const ok = await printReceiptSmart(receiptData.checkoutResponse, {
+          skipDrawer: receiptData.skipDrawer === true,
+        });
         if (!ok) {
           showAlert(
             "error",
@@ -966,7 +990,9 @@ export function usePaymentPage({
           getProductCheckout(receiptData.saleId),
         );
         if (receiptResult.type === "products/getProductCheckout/fulfilled") {
-          const ok = await printReceiptSmart(receiptResult.payload);
+          const ok = await printReceiptSmart(receiptResult.payload, {
+            skipDrawer: receiptData.skipDrawer === true,
+          });
           if (!ok) {
             showAlert(
               "error",
@@ -1018,20 +1044,6 @@ export function usePaymentPage({
     paymentMethod === "cash" && amountReceived
       ? Math.max(0, (parseFloat(amountReceived) || 0) - total)
       : 0;
-
-  useEffect(() => {
-    dispatch(getCashBoxes(undefined as any));
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectCashBox]);
 
   useEffect(() => {
     if (paymentMethod === "cashless" || paymentMethod === "cash") {
@@ -1150,6 +1162,8 @@ export function usePaymentPage({
     change,
     withoutCheck,
     handleWithoutCheckChange,
+    skipDrawerOpen,
+    handleSkipDrawerOpenChange,
     handleAcceptPayment,
     showCustomerModal,
     setShowCustomerModal,

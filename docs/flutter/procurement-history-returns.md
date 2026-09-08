@@ -7,7 +7,7 @@
 - `/crm/market/procurement/return?supplier_id=&receipt_id=` — возврат из прихода
 
 **Веб-код:** `src/pages/warehouse/ui/SupplierReceiptsListPage.tsx`, `src/features/supplier-returns/`  
-**Бэкенд-док:** [procurement-history-returns-backend.md](../backend/procurement-history-returns-backend.md)
+**Бэкенд-док:** [procurement-history-returns-backend.md](../backend/kassa/procurement-history-returns-backend.md)
 
 **Статус:** веб готов. История приходов — `GET /main/suppliers/receipts/`. Возвраты: при `404`/`405` — fallback (PATCH остатка + cashflow + localStorage). После API fallback отключается сам.
 

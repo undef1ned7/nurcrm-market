@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { UserCog, X, Trash2 } from "lucide-react";
 import { msgFromError, toIsoDate10 } from "../clientDetails.helpers";
 import api from "@shared/api";
@@ -15,6 +16,7 @@ export default function ClientEditModal({
   onDeleted,
 }: any) {
   const { mode } = useContext(ThemeModeContext);
+  const { t } = useTranslation();
   const [editFio, setEditFio] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -95,7 +97,7 @@ export default function ClientEditModal({
   const handleSave = async () => {
     if (!client?.id) return;
     if (!requiredOk) {
-      setSaveClientErr("Заполните обязательные поля");
+      setSaveClientErr(t("crm.clients.details.fillRequired"));
       return;
     }
     try {
@@ -135,7 +137,9 @@ export default function ClientEditModal({
       onClose?.();
     } catch (e: any) {
       console.error(e);
-      setSaveClientErr(msgFromError(e, "Не удалось сохранить клиента"));
+      setSaveClientErr(
+        msgFromError(e, t("crm.clients.details.saveClientError")),
+      );
     } finally {
       setSavingClient(false);
     }
@@ -145,7 +149,7 @@ export default function ClientEditModal({
     if (!client?.id) return;
     setConfirmDialog({
       open: true,
-      message: "Удалить клиента? Действие необратимо.",
+      message: t("crm.clients.details.deleteClientConfirm"),
       onConfirm: async () => {
         try {
           await deleteClientApi(client.id);
@@ -153,7 +157,9 @@ export default function ClientEditModal({
           onDeleted?.(client.id);
         } catch (e: any) {
           console.error(e);
-          setSaveClientErr(msgFromError(e, "Не удалось удалить клиента"));
+          setSaveClientErr(
+            msgFromError(e, t("crm.clients.details.deleteClientError")),
+          );
           setConfirmDialog({ open: false, message: "", onConfirm: null });
         }
       },
@@ -175,13 +181,19 @@ export default function ClientEditModal({
               <UserCog />
             </span>
             <div className="cmx__heading-text">
-              <h3 className="cmx__title">Редактировать клиента</h3>
+              <h3 className="cmx__title">
+                {t("crm.clients.details.editClientLong")}
+              </h3>
               <p className="cmx__subtitle">
-                Контактные данные и платёжные реквизиты
+                {t("crm.clients.details.editClientSubtitle")}
               </p>
             </div>
           </div>
-          <button className="cmx__close" onClick={onClose} aria-label="Закрыть">
+          <button
+            className="cmx__close"
+            onClick={onClose}
+            aria-label={t("common.close")}
+          >
             <X />
           </button>
         </div>
@@ -190,18 +202,20 @@ export default function ClientEditModal({
           {saveClientErr && <div className="cmx__alert">{saveClientErr}</div>}
 
           <div>
-            <div className="cmx__section-title">Контакты</div>
+            <div className="cmx__section-title">
+              {t("crm.clients.details.contactsSection")}
+            </div>
             <div className="cmx__grid">
               <label className="cmx__field">
                 <span className="cmx__label">
-                  ФИО <b className="cmx__req">*</b>
+                  {t("crm.clients.fullName")} <b className="cmx__req">*</b>
                 </span>
                 <input
                   type="text"
                   className="cmx__input"
                   value={editFio}
                   onChange={(e: any) => setEditFio(e.target.value)}
-                  placeholder="Иванов Иван"
+                  placeholder={t("crm.clients.details.fullNamePlaceholder")}
                   autoFocus
                   required
                 />
@@ -209,7 +223,7 @@ export default function ClientEditModal({
 
               <label className="cmx__field">
                 <span className="cmx__label">
-                  Телефон <b className="cmx__req">*</b>
+                  {t("common.phone")} <b className="cmx__req">*</b>
                 </span>
                 <input
                   type="text"
@@ -233,7 +247,7 @@ export default function ClientEditModal({
               </label>
 
               <label className="cmx__field">
-                <span className="cmx__label">Дата</span>
+                <span className="cmx__label">{t("common.date")}</span>
                 <input
                   type="date"
                   className="cmx__input"
@@ -241,12 +255,12 @@ export default function ClientEditModal({
                   onChange={(e: any) => setEditDate(e.target.value)}
                 />
                 <span className="cmx__hint">
-                  Например: <b>21.08.2025</b> (сохранится как 2025-08-21)
+                  {t("crm.clients.details.dateHint")}
                 </span>
               </label>
 
               <label className="cmx__field">
-                <span className="cmx__label">Статус</span>
+                <span className="cmx__label">{t("common.status")}</span>
                 <input
                   type="text"
                   className="cmx__input"
@@ -259,71 +273,85 @@ export default function ClientEditModal({
           </div>
 
           <div>
-            <div className="cmx__section-title">Реквизиты</div>
+            <div className="cmx__section-title">
+              {t("crm.clients.details.requisitesTitle")}
+            </div>
             <div className="cmx__grid">
               <label className="cmx__field">
-                <span className="cmx__label">ОсОО</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.llc")}
+                </span>
                 <input
                   type="text"
                   className="cmx__input"
                   value={editLlc}
                   onChange={(e: any) => setEditLlc(e.target.value)}
-                  placeholder="ОсОО"
+                  placeholder={t("crm.clients.details.llcPlaceholder")}
                 />
               </label>
 
               <label className="cmx__field">
-                <span className="cmx__label">ИНН</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.inn")}
+                </span>
                 <input
                   type="text"
                   className="cmx__input"
                   value={editInn}
                   onChange={(e: any) => setEditInn(e.target.value)}
-                  placeholder="ИНН"
+                  placeholder={t("crm.clients.details.innPlaceholder")}
                 />
               </label>
 
               <label className="cmx__field">
-                <span className="cmx__label">ОКПО</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.okpo")}
+                </span>
                 <input
                   type="text"
                   className="cmx__input"
                   value={editOkpo}
                   onChange={(e: any) => setEditOkpo(e.target.value)}
-                  placeholder="ОКПО"
+                  placeholder={t("crm.clients.details.okpoPlaceholder")}
                 />
               </label>
 
               <label className="cmx__field">
-                <span className="cmx__label">Счет</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.account")}
+                </span>
                 <input
                   type="text"
                   className="cmx__input"
                   value={editScore}
                   onChange={(e: any) => setEditScore(e.target.value)}
-                  placeholder="Расчетный счет"
+                  placeholder={t("crm.clients.details.accountPlaceholder")}
                 />
               </label>
 
               <label className="cmx__field">
-                <span className="cmx__label">БИК</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.bik")}
+                </span>
                 <input
                   type="text"
                   className="cmx__input"
                   value={editBik}
                   onChange={(e: any) => setEditBik(e.target.value)}
-                  placeholder="БИК"
+                  placeholder={t("crm.clients.details.bikPlaceholder")}
                 />
               </label>
 
               <label className="cmx__field cmx__field--full">
-                <span className="cmx__label">Адрес</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.address")}
+                </span>
                 <input
                   type="text"
                   className="cmx__input"
                   value={editAddress}
                   onChange={(e: any) => setEditAddress(e.target.value)}
-                  placeholder="Адрес"
+                  placeholder={t("crm.clients.details.addressPlaceholder")}
                 />
               </label>
             </div>
@@ -337,7 +365,7 @@ export default function ClientEditModal({
               onClick={handleDelete}
               disabled={savingClient}
             >
-              <Trash2 /> Удалить
+              <Trash2 /> {t("common.delete")}
             </button>
           </div>
           <div className="cmx__footer-right">
@@ -346,15 +374,17 @@ export default function ClientEditModal({
               onClick={onClose}
               disabled={savingClient}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               className="cmx__btn cmx__btn--primary"
               onClick={handleSave}
               disabled={!requiredOk || savingClient}
-              title={!requiredOk ? "Заполните обязательные поля" : ""}
+              title={
+                !requiredOk ? t("crm.clients.details.fillRequiredTitle") : ""
+              }
             >
-              {savingClient ? "Сохранение…" : "Сохранить"}
+              {savingClient ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </div>
@@ -364,7 +394,7 @@ export default function ClientEditModal({
           type="info"
           title=""
           message={confirmDialog.message}
-          okText="Подтвердить"
+          okText={t("crm.clients.details.confirm")}
           onClose={() =>
             setConfirmDialog({ open: false, message: "", onConfirm: null })
           }

@@ -13,19 +13,11 @@ import WarehouseAgentModal from "./modals/WarehouseAgentModal";
 import RoleSelect from "./RoleSelect";
 import MastersPager from "./MastersPager";
 import { useMastersPage } from "./hooks/useMastersPage";
-import {
-  resolveEmployeeRoleLabel,
-} from "./resolveEmployeeRoleLabel";
-import {
-  employPayrollDetailPath,
-} from "./saleEmployeePayroll";
+import { resolveEmployeeRoleLabel } from "./resolveEmployeeRoleLabel";
+import { employPayrollDetailPath } from "./saleEmployeePayroll";
 import { fullName, BARBER_CAN_VIEW_CLIENT_DOCUMENTS } from "./masters.utils";
 import { MARKET_START_EMPLOYEE_LIMIT_MESSAGE } from "@shared/lib/subscriptionPlan";
-import {
-  PageShell,
-  PageHeader,
-  FilterBar,
-} from "@shared/ui/page-shell";
+import { PageShell, PageHeader, FilterBar } from "@shared/ui/page-shell";
 import "./Masters.scss";
 
 const Masters = () => {
@@ -48,7 +40,9 @@ const Masters = () => {
               aria-label={t("crm.employees.addRole")}
             >
               <FaPlus />
-              <span className="nur-btn__label">{t("crm.employees.addRole")}</span>
+              <span className="nur-btn__label">
+                {t("crm.employees.addRole")}
+              </span>
             </button>
           ) : (
             <button
@@ -69,7 +63,6 @@ const Masters = () => {
           )
         }
       />
-
       <FilterBar className="barbermasters__toolbar">
         <div className="barbermasters__tabs">
           <button
@@ -118,13 +111,13 @@ const Masters = () => {
           />
         </div>
       </FilterBar>
-
       {!!m.error && <div className="barbermasters__alert">{m.error}</div>}
       {!!m.pageNotice && (
         <div className="barbermasters__alert">{m.pageNotice}</div>
       )}
-      {m.loading && <div className="barbermasters__alert">{t("common.loading")}</div>}
-
+      {m.loading && (
+        <div className="barbermasters__alert">{t("common.loading")}</div>
+      )}
       {!m.loading && m.tab === "roles" && (
         <>
           <div className="barbermasters__list">
@@ -142,7 +135,9 @@ const Masters = () => {
                     </div>
                     {r._sys && (
                       <div className="barbermasters__meta">
-                        <span className="bm-item">{t("crm.employees.systemRole")}</span>
+                        <span className="bm-item">
+                          {t("crm.employees.systemRole")}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -185,7 +180,9 @@ const Masters = () => {
               </article>
             ))}
             {m.rolesForList.length === 0 && (
-              <div className="barbermasters__alert">{t("crm.employees.noRoles")}</div>
+              <div className="barbermasters__alert">
+                {t("crm.employees.noRoles")}
+              </div>
             )}
           </div>
 
@@ -198,7 +195,6 @@ const Masters = () => {
           )}
         </>
       )}
-
       {!m.loading && m.tab === "masters" && (
         <>
           <div className="barbermasters__list">
@@ -352,10 +348,14 @@ const Masters = () => {
               );
             })}
             {m.filteredEmployees.length === 0 && m.employees.length > 0 && (
-              <div className="barbermasters__alert">{t("crm.employees.notFound")}</div>
+              <div className="barbermasters__alert">
+                {t("crm.employees.notFound")}
+              </div>
             )}
             {!m.loading && m.employees.length === 0 && (
-              <div className="barbermasters__alert">{t("crm.employees.noEmployees")}</div>
+              <div className="barbermasters__alert">
+                {t("crm.employees.noEmployees")}
+              </div>
             )}
           </div>
 
@@ -368,7 +368,6 @@ const Masters = () => {
           )}
         </>
       )}
-
       <RoleCreateModal
         roleCreateOpen={m.roleCreateOpen}
         roleCreateSaving={m.roleCreateSaving}
@@ -454,7 +453,6 @@ const Masters = () => {
         canSellWholesale={m.accessModalCanSellWholesale}
         onCanSellWholesaleChange={m.setAccessModalCanSellWholesale}
       />
-
       <WarehouseAgentModal
         open={m.warehouseAgentModalOpen}
         employee={m.warehouseAgentEmployee}
@@ -476,7 +474,6 @@ const Masters = () => {
         onSubmit={m.submitWarehouseAgent}
         onClose={m.closeWarehouseAgentModal}
       />
-
       {m.openLogin && null}
     </PageShell>
   );

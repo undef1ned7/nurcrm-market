@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import {
   normalizeLowStockStatusType,
+  normalizeExpiryStatusType,
   barPercentOfMax,
   sortStockList,
 } from "../../analytics.utils";
@@ -50,6 +51,19 @@ export function useAnalyticsTabData({
       String(status || t("crm.analytics.warehouse.statusLow")).trim() ||
       t("crm.analytics.warehouse.statusLow")
     );
+  };
+
+  const translateExpiryStatus = (status: string) => {
+    const normalized = String(status || "")
+      .trim()
+      .toLowerCase();
+    if (["expired", "просрочен"].includes(normalized)) {
+      return t("crm.analytics.products.statusExpired");
+    }
+    if (["critical", "истекает"].includes(normalized)) {
+      return t("crm.analytics.products.statusExpiringSoon");
+    }
+    return String(status || t("crm.analytics.products.statusExpiringSoon")).trim();
   };
 
   const salesPaymentLabels = useMemo(
@@ -644,6 +658,14 @@ export function useAnalyticsTabData({
         anchorKey: "lowStockProducts",
       },
       {
+        titleKey: "crm.analytics.products.expiringProducts",
+        title: t("crm.analytics.products.expiringProducts"),
+        value: "0",
+        icon: Calendar,
+        color: "#f7d617",
+        anchorKey: "expiringProducts",
+      },
+      {
         titleKey: "crm.analytics.products.rejected",
         title: t("crm.analytics.products.rejected"),
         value: "0",
@@ -669,6 +691,7 @@ export function useAnalyticsTabData({
         categories: [],
         brands: [],
         lowStockProducts: [],
+        expiringProducts: [],
       };
     }
 
@@ -691,10 +714,16 @@ export function useAnalyticsTabData({
         },
         {
           ...baseKpis[3],
-          value: formatNumber(cards.rejected_products_count || 0),
+          value: formatNumber(
+            cards.expiring_products_count ?? cards.expiring_soon_count ?? 0,
+          ),
         },
         {
           ...baseKpis[4],
+          value: formatNumber(cards.rejected_products_count || 0),
+        },
+        {
+          ...baseKpis[5],
           value: formatNumber(cards.sales_lines_missing_product_count || 0),
         },
       ]),
@@ -707,6 +736,12 @@ export function useAnalyticsTabData({
           ...item,
           status: translateLowStock(item.status),
           statusType: normalizeLowStockStatusType(item.status),
+        })) || [],
+      expiringProducts:
+        (tables.expiring_products || []).map((item: any) => ({
+          ...item,
+          status: translateExpiryStatus(item.status),
+          statusType: normalizeExpiryStatusType(item.status),
         })) || [],
     };
   }, [analyticsData, activeTab, isStartTariff, t, som]);
@@ -907,6 +942,19 @@ export function useAnalyticsTabData({
     };
   }, [analyticsData, activeTab, t]);
 
+  const isOtherCategory = (value: unknown) =>
+    ["прочее", "прочие расходы", "other"].includes(
+      String(value || "").trim().toLowerCase(),
+    );
+
+  const itemCategory = (item: any) =>
+    item?.category ??
+    item?.business_operation ??
+    item?.business_operation_name ??
+    item?.source_business_operation_id ??
+    item?.article ??
+    item?.name;
+
   const financeData = useMemo(() => {
     const kpiDefs = [
       {
@@ -920,6 +968,13 @@ export function useAnalyticsTabData({
         title: t("crm.analytics.finance.expense"),
         currency: som,
         icon: DollarSign,
+      },
+      {
+        titleKey: "crm.analytics.finance.otherExpenses",
+        title: t("crm.analytics.finance.otherExpenses"),
+        currency: som,
+        icon: HelpCircle,
+        anchorKey: "otherExpenseItems",
       },
       {
         titleKey: "crm.analytics.finance.netFlow",
@@ -941,12 +996,28 @@ export function useAnalyticsTabData({
         incomeBreakdown: [],
         expenseItems: [],
         incomeItems: [],
+        otherExpenseItems: [],
         salaryRows: [],
       };
     }
 
     const cards = analyticsData.cards || {};
     const tables = analyticsData.tables || {};
+
+    const expenseItems = tables.expense_items || [];
+    const otherExpenseItems = expenseItems.filter((item: any) =>
+      isOtherCategory(itemCategory(item)),
+    );
+    const otherExpenseBreakdownRow = (tables.expense_breakdown || []).find(
+      (row: any) => isOtherCategory(row?.name),
+    );
+    const otherExpenseTotal =
+      cards.other_expense_total ??
+      otherExpenseBreakdownRow?.total ??
+      otherExpenseItems.reduce(
+        (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
+        0,
+      );
 
     return {
       kpis: [
@@ -962,11 +1033,16 @@ export function useAnalyticsTabData({
         },
         {
           ...kpiDefs[2],
-          value: formatNumber(cards.net_flow || "0"),
+          value: formatNumber(otherExpenseTotal || "0"),
           color: "#f7d617",
         },
         {
           ...kpiDefs[3],
+          value: formatNumber(cards.net_flow || "0"),
+          color: "#f7d617",
+        },
+        {
+          ...kpiDefs[4],
           value: formatNumber(
             (cards.income_count || 0) + (cards.expense_count || 0),
           ),
@@ -975,8 +1051,9 @@ export function useAnalyticsTabData({
       ],
       expenseBreakdown: tables.expense_breakdown || [],
       incomeBreakdown: tables.income_breakdown || [],
-      expenseItems: tables.expense_items || [],
+      expenseItems,
       incomeItems: tables.income_items || [],
+      otherExpenseItems,
       salaryRows: Array.isArray(salaryAnalyticsRows) ? salaryAnalyticsRows : [],
     };
   }, [analyticsData, activeTab, salaryAnalyticsRows, t, som]);

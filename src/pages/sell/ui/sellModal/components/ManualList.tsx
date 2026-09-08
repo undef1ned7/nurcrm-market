@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ListOrdered, Plus, Tags, X } from "lucide-react";
 /* =========================
    3) ManualList
@@ -16,6 +17,7 @@ export const ManualList = React.memo(function ManualList({
   addOne,
   isOutOfStock,
 }: any) {
+  const { t } = useTranslation();
   const list = Array.isArray(items)
     ? items
     : Array.isArray(items?.results)
@@ -31,7 +33,7 @@ export const ManualList = React.memo(function ManualList({
     <div className="sell__manual">
       <input
         type="text"
-        placeholder="Введите название товара"
+        placeholder={t("crm.sell.modals.manualList.searchProduct")}
         className="add-modal__input"
         name="search"
         onChange={onSearch}
@@ -48,7 +50,9 @@ export const ManualList = React.memo(function ManualList({
               <div className="sell__list-row">
                 {isOutOfStock(p) ? (
                   <div className="sell__empty">
-                    <span className="sell__badge--danger">Нет в наличии</span>
+                    <span className="sell__badge--danger">
+                      {t("crm.sell.modals.manualList.outOfStock")}
+                    </span>
                   </div>
                 ) : inline.id === pid && inline.field === "quantity" ? (
                   <>
@@ -56,7 +60,7 @@ export const ManualList = React.memo(function ManualList({
                       type="number"
                       value={quantity}
                       onChange={(e: any) => setQuantity(e.target.value)}
-                      placeholder="Количество"
+                      placeholder={t("common.quantity")}
                     />
                     <button type="button" onClick={() => saveInline(pid)}>
                       <Check />
@@ -74,7 +78,7 @@ export const ManualList = React.memo(function ManualList({
                       type="number"
                       value={discount}
                       onChange={(e: any) => setDiscount(e.target.value)}
-                      placeholder="Скидка (сом)"
+                      placeholder={t("crm.sell.modals.manualList.discountSom")}
                     />
                     <button type="button" onClick={() => saveInline(pid)}>
                       <Check />

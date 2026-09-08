@@ -8,10 +8,9 @@ import InvoicePdfDocument from "@pages/documents/ui/components/InvoicePdfDocumen
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
+  postCashflowIfNeeded,
 } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import { useUser } from "@entities/user";
 import { createDeal } from "@entities/sale";
 import {
@@ -52,7 +51,6 @@ export function useSupplierReceipt() {
   const location = useLocation();
   const alert = useAlert();
   const confirm = useConfirm();
-  const { list: cashBoxes } = useCash();
   const { company } = useUser();
   const pendingDraftRef = useRef(readProcurementDraft(location.state));
   const appliedDraftRef = useRef(false);
@@ -82,7 +80,6 @@ export function useSupplierReceipt() {
   const [priceByProductId, setPriceByProductId] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
-  const [selectCashBox, setSelectCashBox] = useState("");
   const [paymentType, setPaymentType] = useState("full");
   const [prepayment, setPrepayment] = useState("");
   const [debtMonths, setDebtMonths] = useState("1");
@@ -228,16 +225,9 @@ export function useSupplierReceipt() {
 
   useEffect(() => {
     void loadSuppliers();
-    dispatch(getCashBoxes(undefined as any));
     // intentionally once on mount to avoid refetch loops from unstable hook refs
      
   }, []);
-
-  useEffect(() => {
-    if (!cashBoxes?.length || selectCashBox) return;
-    const firstId = cashBoxes[0]?.id || cashBoxes[0]?.uuid || "";
-    if (firstId) setSelectCashBox(String(firstId));
-  }, [cashBoxes, selectCashBox]);
 
   useEffect(() => {
     const draft = pendingDraftRef.current;
@@ -643,21 +633,6 @@ export function useSupplierReceipt() {
 
     if (
       totalReceiptAmount > 0 &&
-      (paymentType === "full" || paymentType === "prepayment") &&
-      cashExpenseAmount > 0
-    ) {
-      if (!Array.isArray(cashBoxes) || cashBoxes.length === 0) {
-        alert("Нет доступных касс. Создайте кассу в разделе «Кассы».", true);
-        return;
-      }
-      if (!selectCashBox) {
-        alert("Выберите кассу для списания расхода.", true);
-        return;
-      }
-    }
-
-    if (
-      totalReceiptAmount > 0 &&
       (paymentType === "debt" || paymentType === "prepayment") &&
       (!debtMonths || Number(debtMonths) <= 0)
     ) {
@@ -680,6 +655,9 @@ export function useSupplierReceipt() {
               : paymentType === "prepayment"
                 ? "prepayment"
                 : "cash",
+          ...(paymentType === "cash" || paymentType === "prepayment"
+            ? buildExpenseVariableRouting()
+            : {}),
         },
       );
       receiptPosted = true;
@@ -729,30 +707,22 @@ export function useSupplierReceipt() {
         }
       }
 
-      if (cashExpenseAmount > 0 && selectCashBox) {
-        try {
-          await dispatch(
-            addCashFlows({
-              cashbox: selectCashBox,
-              type: "expense",
-              name: `Закупка: ${supplierLabel}`,
-              amount: Number(cashExpenseAmount).toFixed(2),
-              ...(receiptId != null && { source_cashbox_flow_id: receiptId }),
-              source_business_operation_id: "Закупки",
-              status:
-                company?.subscription_plan?.name === "Старт"
-                  ? "approved"
-                  : "pending",
-            }),
-          ).unwrap();
-        } catch (cashError) {
-          sideEffectWarnings.push(
-            validateResErrors(
-              cashError,
-              "Товары оприходованы, но не удалось записать расход в кассу. ",
-            ),
-          );
-        }
+      if (cashExpenseAmount > 0) {
+        await postCashflowIfNeeded(
+          dispatch,
+          {
+            type: "expense",
+            name: `Закупка: ${supplierLabel}`,
+            amount: Number(cashExpenseAmount).toFixed(2),
+            ...(receiptId != null && { source_cashbox_flow_id: receiptId }),
+            source_business_operation_id: "Закупки",
+            status:
+              company?.subscription_plan?.name === "Старт"
+                ? "approved"
+                : "pending",
+          },
+          { warnOnFailure: true, failureContext: "purchase" },
+        );
       }
 
       setCompletedReceiptSnapshot({
@@ -783,7 +753,6 @@ export function useSupplierReceipt() {
     }
   }, [
     alert,
-    cashBoxes,
     cashExpenseAmount,
     company?.subscription_plan?.name,
     debtMonths,
@@ -794,7 +763,6 @@ export function useSupplierReceipt() {
     prepayment,
     receiptItems,
     receiptItemsForPdf,
-    selectCashBox,
     selectedSupplier,
     selectedSupplierId,
     totalReceiptAmount,
@@ -838,8 +806,6 @@ export function useSupplierReceipt() {
     priceByProductId,
     submitting,
     downloadingInvoice,
-    selectCashBox,
-    setSelectCashBox,
     paymentType,
     setPaymentType,
     prepayment,
@@ -871,7 +837,6 @@ export function useSupplierReceipt() {
     handleCloseSuccessModal,
     handleConfirmReceipt,
     paymentSummaryDebt,
-    cashBoxes,
     alert,
   };
 }

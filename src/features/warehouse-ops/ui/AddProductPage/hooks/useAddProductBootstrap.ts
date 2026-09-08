@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "@shared/api";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { fetchClientsAsync } from "@entities/client";
-import { getCashBoxes } from "@entities/cash";
 import { fetchProductsAsync, isAdultProduct } from "@entities/product";
 import * as utils from "../utils";
 import { useAppDispatch } from "@app/store";
@@ -22,10 +21,6 @@ export const useAddProductBootstrap = ({
   setImages,
   setInitialProductImageIds,
   showAlert,
-  cashBoxes,
-  selectCashBox,
-  setSelectCashBox,
-  setCashData,
   newItemData,
   itemType,
   marketData,
@@ -47,7 +42,6 @@ export const useAddProductBootstrap = ({
 
   useEffect(() => {
     dispatch(fetchClientsAsync({} as any) as any);
-    dispatch(getCashBoxes({} as any) as any);
     const productsRequest = dispatch(fetchProductsAsync({ page_size: 100 }));
     return () => {
       productsRequest.abort();
@@ -276,26 +270,6 @@ export const useAddProductBootstrap = ({
     }
   }, [location.state, isEditMode, navigate, location.pathname, setImages]);
 
-  // Автоматически выбираем первую кассу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectCashBox]);
-
-  useEffect(() => {
-    setCashData((prev) => ({
-      ...prev,
-      cashbox: selectCashBox,
-      name: newItemData.name,
-      amount: newItemData.price,
-    }));
-  }, [newItemData, selectCashBox]);
-
   // Генерируем EAN-13 штрих-код автоматически при загрузке (только для создания)
   useEffect(() => {
     if (!isEditMode && !newItemData.barcode) {
@@ -307,15 +281,8 @@ export const useAddProductBootstrap = ({
     }
   }, [isEditMode, newItemData.barcode]);
 
-  // Генерируем ПЛУ автоматически если пустой
-  useEffect(() => {
-    if (!newItemData.plu) {
-      setNewItemData((prev) => ({
-        ...prev,
-        plu: "0001",
-      }));
-    }
-  }, [newItemData.plu]);
+  // ПЛУ не заполняем автоматически: пустое значение = «код не задан».
+  // Автогенерация для весовых товаров происходит ниже и в buildProductPayload.
 
   // Генерируем код товара на основе count из API (только для создания)
   // Всегда синхронизируем с count при изменении, чтобы после загрузки API (обновление страницы) код был правильным

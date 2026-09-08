@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { HelpCircle } from "lucide-react";
 import { FormBlock } from "../../formLayout";
 
 const PluCodeSection = ({ itemType, marketData, handleMarketDataChange }) => {
   const [showPluTooltip, setShowPluTooltip] = useState(false);
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.warehouse.addProduct.${k}`) as string;
   if (
     !(
       (itemType === "product" && marketData.isWeightProduct) ||
@@ -17,13 +20,13 @@ const PluCodeSection = ({ itemType, marketData, handleMarketDataChange }) => {
         <div className="market-product-form__section">
           <div className="market-product-form__form-group">
             <label className="market-product-form__label">
-              Добавить PLU код
+              {tp("pluAddLabel")}
             </label>
             <div className="market-product-form__plu-input-wrapper">
               <input
                 type="text"
                 className="market-product-form__input"
-                placeholder="Введите PLU код"
+                placeholder={tp("pluPlaceholder")}
                 value={marketData.plu}
                 onChange={(e) => handleMarketDataChange("plu", e.target.value)}
               />
@@ -38,13 +41,7 @@ const PluCodeSection = ({ itemType, marketData, handleMarketDataChange }) => {
                 </button>
                 {showPluTooltip && (
                   <div className="market-product-form__tooltip">
-                    <p>
-                      PLU код применяется в весах с печатью этикетки содержащей
-                      информацию о весе товара. Формат штрих-кода для настройки
-                      весов: undefined PPPPP WWWWW S где: PPPPP - PLU код
-                      товара; WWWWW - вес товара в тысячных единицах; S -
-                      контрольная сумма
-                    </p>
+                    <p>{tp("pluTooltip")}</p>
                   </div>
                 )}
               </div>

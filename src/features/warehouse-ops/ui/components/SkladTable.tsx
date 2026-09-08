@@ -1,4 +1,5 @@
 import { CheckCircle2, AlertCircle } from "lucide-react";
+import { getExpiryStatus } from "@entities/product";
 
 /**
  * Компонент таблицы товаров
@@ -12,10 +13,18 @@ const SkladTable = ({
   toggleRow,
   toggleSelectAllOnPage,
 }) => {
-  // Определяем статус товара
+  // Определяем статус товара (срок годности приоритетнее остатка)
   const getProductStatus = (item) => {
+    const expiry = getExpiryStatus(item);
+    if (expiry === "expired") {
+      return { text: "Просрочен", color: "#ff5a5a", icon: "error" };
+    }
     if (item.quantity === 0) {
       return { text: "Нет в наличии", color: "#ff5a5a", icon: "error" };
+    } else if (expiry === "critical") {
+      return { text: "Истекает срок", color: "#ff5a5a", icon: "warning" };
+    } else if (expiry === "warning") {
+      return { text: "Скоро истекает", color: "#ff9500", icon: "warning" };
     } else if (item.quantity < 20) {
       return { text: "Заканчивается", color: "#ff9500", icon: "warning" };
     } else {

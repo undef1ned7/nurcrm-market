@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   DEFAULT_DRAWER_CMD,
+  exportEscposSettings,
   getDrawerSettings,
+  importEscposSettings,
+  ensurePrinterConnectedInteractively,
+  attachUsbListenersOnce,
   kickCashDrawer,
   printRussianRawUsb,
   saveDrawerSettings,
@@ -12,6 +16,8 @@ import {
   setEscposDotsPerLine,
   setEscposFont,
   setEscposLineHeight,
+  setEscposReceiptMode,
+  getReceiptPrintMode,
 } from "@pages/sell/ui/services/printService";
 import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
 import "./Settings.scss";
@@ -37,11 +43,12 @@ export default function PosPrintSettings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [dotsPerLine, setDotsPerLine] = useState(576);
-  const [charsPerLine, setCharsPerLine] = useState(64);
+  const [dotsPerLine, setDotsPerLine] = useState(384);
+  const [charsPerLine, setCharsPerLine] = useState(42);
   const [font, setFont] = useState("B"); // A | B
   const [lineHeight, setLineHeight] = useState(22);
   const [codepage, setCodepage] = useState(17);
+  const [receiptMode, setReceiptMode] = useState<"graphic" | "text">("graphic");
   const [drawerEnabled, setDrawerEnabled] = useState(false);
   const [drawerWhen, setDrawerWhen] = useState<"before" | "after">("after");
   const [drawerCmd, setDrawerCmd] = useState(DEFAULT_DRAWER_CMD);
@@ -50,10 +57,12 @@ export default function PosPrintSettings() {
   const [testing, setTesting] = useState(false);
   const [testingDrawer, setTestingDrawer] = useState(false);
   const [msg, setMsg] = useState<any>(null); // {type, text}
+  const [drawerMsg, setDrawerMsg] = useState<any>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
+  const hydrateFromStorage = useCallback(() => {
     const f = String(readString("escpos_font", "B")).toUpperCase() === "A" ? "A" : "B";
-    const dpl = readNumber("escpos_dpl", 576);
+    const dpl = readNumber("escpos_dpl", 384);
     const charDotWidth = f === "B" ? 9 : 12;
     const cplDefault = Math.floor(dpl / charDotWidth);
     const cpl = readNumber("escpos_cpl", cplDefault);
@@ -65,6 +74,7 @@ export default function PosPrintSettings() {
     setCharsPerLine(cpl);
     setLineHeight(lh);
     setCodepage(cp);
+    setReceiptMode(getReceiptPrintMode());
 
     const drawer = getDrawerSettings();
     setDrawerEnabled(drawer.enabled);
@@ -72,19 +82,29 @@ export default function PosPrintSettings() {
     setDrawerCmd(drawer.command);
   }, []);
 
+  useEffect(() => {
+    hydrateFromStorage();
+    attachUsbListenersOnce();
+  }, [hydrateFromStorage]);
+
   const presets = useMemo(
     () => [
-      { id: "80", label: "80 мм (обычно 576 точек)", dpl: 576 },
-      { id: "58", label: "58 мм (обычно 384 точки)", dpl: 384 },
-      { id: "44", label: "44 мм (обычно 320 точек)", dpl: 320 },
-      { id: "38", label: "38 мм (обычно 288 точек)", dpl: 288 },
+      { id: "80", label: "80 мм печать (обычно 576 точек)", dpl: 576 },
+      {
+        id: "48",
+        label: "48 мм печать / ~58 мм бумага (384 точки)",
+        dpl: 384,
+        cpl: 42,
+      },
+      { id: "44", label: "44 мм печать (обычно 320 точек)", dpl: 320 },
+      { id: "38", label: "38 мм печать (обычно 288 точек)", dpl: 288 },
       { id: "custom", label: "Вручную", dpl: null },
     ],
-    []
+    [],
   );
   const selectedPreset = useMemo(() => {
     if (dotsPerLine === 576) return "80";
-    if (dotsPerLine === 384) return "58";
+    if (dotsPerLine === 384) return "48";
     if (dotsPerLine === 320) return "44";
     if (dotsPerLine === 288) return "38";
     return "custom";
@@ -98,10 +118,12 @@ export default function PosPrintSettings() {
         const f = font === "A" ? "A" : "B";
         const charDotWidth = f === "B" ? 9 : 12;
         setDotsPerLine(preset.dpl);
-        setCharsPerLine(Math.floor(preset.dpl / charDotWidth));
+        setCharsPerLine(
+          preset.cpl ?? Math.floor(preset.dpl / charDotWidth),
+        );
       }
     },
-    [font, presets]
+    [font, presets],
   );
 
   const save = useCallback(async () => {
@@ -119,6 +141,7 @@ export default function PosPrintSettings() {
       setEscposLineHeight(lh);
       setEscposFont(f);
       if (Number.isFinite(cp) && cp >= 0 && cp <= 255) setEscposCodepage(cp);
+      setEscposReceiptMode(receiptMode);
 
       saveDrawerSettings({
         enabled: drawerEnabled,
@@ -141,13 +164,14 @@ export default function PosPrintSettings() {
     lineHeight,
     font,
     codepage,
+    receiptMode,
     drawerEnabled,
     drawerWhen,
     drawerCmd,
   ]);
 
   const testDrawer = useCallback(async () => {
-    setMsg(null);
+    setDrawerMsg(null);
     setTestingDrawer(true);
     try {
       saveDrawerSettings({
@@ -155,13 +179,19 @@ export default function PosPrintSettings() {
         when: drawerWhen,
         command: drawerCmd,
       });
-      await kickCashDrawer(undefined, { interactive: true });
-      setMsg({
+      const connected = await ensurePrinterConnectedInteractively();
+      if (!connected) {
+        throw new Error(
+          "Принтер не подключён. Разрешите USB-устройство в диалоге браузера или закройте другую вкладку с принтером.",
+        );
+      }
+      await kickCashDrawer(undefined, { interactive: false });
+      setDrawerMsg({
         type: "success",
-        text: "Команда открытия ящика отправлена на принтер",
+        text: "Команда открытия ящика отправлена на принтер. Если ящик не открылся — проверьте кабель RJ11 в разъём DK и попробуйте pin 5: 27, 112, 1, 25, 250",
       });
     } catch (e: any) {
-      setMsg({
+      setDrawerMsg({
         type: "error",
         text:
           e?.message ||
@@ -185,12 +215,58 @@ export default function PosPrintSettings() {
     }
   }, []);
 
-  const msgClassName = useMemo(() => {
-    if (!msg) return "";
-    if (msg.type === "success") return "settings__notice settings__notice--success";
-    if (msg.type === "error") return "settings__notice settings__notice--error";
+  const exportSettings = useCallback(() => {
+    setMsg(null);
+    try {
+      const dumped = exportEscposSettings();
+      const blob = new Blob([JSON.stringify(dumped, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `escpos-printer-settings-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setMsg({ type: "success", text: t("settings.print.alerts.posExportOk") });
+    } catch (e: any) {
+      setMsg({
+        type: "error",
+        text: e?.message || t("settings.print.alerts.posExportFailed"),
+      });
+    }
+  }, [t]);
+
+  const importSettingsFromFile = useCallback(
+    async (file: File | undefined) => {
+      if (!file) return;
+      setMsg(null);
+      try {
+        const text = await file.text();
+        const { applied } = importEscposSettings(text);
+        hydrateFromStorage();
+        setMsg({
+          type: "success",
+          text: t("settings.print.alerts.posImportOk", { count: applied.length }),
+        });
+      } catch (e: any) {
+        setMsg({
+          type: "error",
+          text: e?.message || t("settings.print.alerts.posImportFailed"),
+        });
+      } finally {
+        if (importInputRef.current) importInputRef.current.value = "";
+      }
+    },
+    [hydrateFromStorage, t],
+  );
+
+  const noticeClassName = useCallback((notice: { type?: string } | null) => {
+    if (!notice) return "";
+    if (notice.type === "success") return "settings__notice settings__notice--success";
+    if (notice.type === "error") return "settings__notice settings__notice--error";
     return "settings__notice settings__notice--info";
-  }, [msg]);
+  }, []);
 
   return (
     <PageShell className="settings">
@@ -222,11 +298,34 @@ export default function PosPrintSettings() {
             чеков (WebUSB / ESC/POS).
           </p>
 
-          {msg && <div className={msgClassName}>{msg.text}</div>}
+          {msg && <div className={noticeClassName(msg)}>{msg.text}</div>}
+
+          <div className="settings__form-group">
+            <div className="nur-label">{t("settings.print.receiptModeTitle")}</div>
+            <div className="settings__segmented">
+              <button
+                type="button"
+                className={`settings__segBtn ${receiptMode === "graphic" ? "settings__segBtn--active" : ""}`}
+                onClick={() => setReceiptMode("graphic")}
+              >
+                {t("settings.print.receiptModeGraphic")}
+              </button>
+              <button
+                type="button"
+                className={`settings__segBtn ${receiptMode === "text" ? "settings__segBtn--active" : ""}`}
+                onClick={() => setReceiptMode("text")}
+              >
+                {t("settings.print.receiptModeText")}
+              </button>
+            </div>
+            <div className="settings__fieldHint">
+              {t("settings.print.receiptModeHint")}
+            </div>
+          </div>
 
           <div className="settings__form-group nur-field">
             <label className="nur-label" htmlFor="pos-paper-width">
-              Ширина бумаги
+              Ширина печати
             </label>
             <select
               id="pos-paper-width"
@@ -244,7 +343,7 @@ export default function PosPrintSettings() {
 
           <div className="settings__form-group nur-field">
             <label className="nur-label" htmlFor="pos-dpl">
-              DOTS_PER_LINE (точек по ширине, для PDF/картинок)
+              DOTS_PER_LINE (точек по ширине печати, 48 мм = 384)
             </label>
             <input
               id="pos-dpl"
@@ -387,7 +486,7 @@ export default function PosPrintSettings() {
                 Открывать денежный ящик при печати чека
               </span>
               <p className="settings__prefHint">
-                По умолчанию выключено. Включайте после проверки кнопкой ниже.
+                По умолчанию включено для кассы (после печати чека). ESC-команда настраивается ниже.
               </p>
             </div>
             <label className="settings__switch">
@@ -409,14 +508,28 @@ export default function PosPrintSettings() {
               <button
                 type="button"
                 className={`settings__segBtn ${drawerWhen === "before" ? "settings__segBtn--active" : ""}`}
-                onClick={() => setDrawerWhen("before")}
+                onClick={() => {
+                  setDrawerWhen("before");
+                  saveDrawerSettings({
+                    enabled: drawerEnabled,
+                    when: "before",
+                    command: drawerCmd,
+                  });
+                }}
               >
                 До печати чека
               </button>
               <button
                 type="button"
                 className={`settings__segBtn ${drawerWhen === "after" ? "settings__segBtn--active" : ""}`}
-                onClick={() => setDrawerWhen("after")}
+                onClick={() => {
+                  setDrawerWhen("after");
+                  saveDrawerSettings({
+                    enabled: drawerEnabled,
+                    when: "after",
+                    command: drawerCmd,
+                  });
+                }}
               >
                 После печати чека
               </button>
@@ -437,11 +550,16 @@ export default function PosPrintSettings() {
               spellCheck={false}
             />
             <div className="settings__fieldHint">
-              Стандарт: <code>{DEFAULT_DRAWER_CMD}</code> ({`ESC p m t1 t2`} /
-              0x1B 0x70 0x00 0x19 0xFA). Можно указать hex, например{" "}
+              Стандарт (pin 2): <code>{DEFAULT_DRAWER_CMD}</code> ({`ESC p m t1 t2`} /
+              0x1B 0x70 0x00 0x19 0xFA). Если не срабатывает — pin 5:{" "}
+              <code>27, 112, 1, 25, 250</code>. Можно указать hex, например{" "}
               <code>0x1B, 0x70, 0x00, 0x19, 0xFA</code>.
             </div>
           </div>
+
+          {drawerMsg && (
+            <div className={noticeClassName(drawerMsg)}>{drawerMsg.text}</div>
+          )}
 
           <div className="settings__actions">
             <button
@@ -451,6 +569,41 @@ export default function PosPrintSettings() {
               disabled={testingDrawer}
             >
               {testingDrawer ? t("settings.print.posTesting") : t("settings.print.posTestDrawer")}
+            </button>
+          </div>
+        </div>
+      </PagePanel>
+
+      <PagePanel>
+        <div className="settings__section settings__tab-content--print" style={{ marginBottom: 0 }}>
+          <h2 className="settings__section-title">
+            <span className="settings__emoji" aria-hidden>
+              💾
+            </span>{" "}
+            {t("settings.print.backupTitle")}
+          </h2>
+          <p className="settings__mutedText">{t("settings.print.backupHint")}</p>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => importSettingsFromFile(e.target.files?.[0])}
+          />
+          <div className="settings__actions">
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={exportSettings}
+            >
+              {t("settings.print.posExport")}
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => importInputRef.current?.click()}
+            >
+              {t("settings.print.posImport")}
             </button>
           </div>
         </div>

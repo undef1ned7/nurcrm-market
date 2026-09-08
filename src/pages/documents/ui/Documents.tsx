@@ -360,6 +360,86 @@ const Documents = () => {
   const statusTone = (statusType) =>
     statusType === "approved" ? "success" : "warning";
 
+  const renderDocumentActions = (item) => (
+    <div className="documents__actions">
+      <button
+        type="button"
+        className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+        onClick={() => handleView(item)}
+        title={t("common.view")}
+      >
+        <Eye size={18} />
+      </button>
+      <button
+        type="button"
+        className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
+        onClick={() => handlePrint(item)}
+        title={t("common.print")}
+      >
+        <Printer size={18} />
+      </button>
+    </div>
+  );
+
+  const renderDocumentCard = (item) => {
+    const isReceipt = activeTab === "receipts";
+
+    return (
+      <article key={item.id} className="nur-card-list__item documents__card">
+        <div className="documents__card-head">
+          <strong className="documents__card-title">{item.number}</strong>
+          <StatusChip tone={statusTone(item.statusType)}>{item.status}</StatusChip>
+        </div>
+        <div className="nur-card-list__row">
+          <span className="nur-card-list__label">
+            {isReceipt ? t("crm.documents.dateTime") : t("crm.documents.date")}
+          </span>
+          <span className="nur-card-list__value">{item.date}</span>
+        </div>
+        <div className="nur-card-list__row">
+          <span className="nur-card-list__label">
+            {isReceipt ? t("crm.documents.client") : t("crm.documents.counterparty")}
+          </span>
+          <span className="nur-card-list__value">
+            {isReceipt ? item.client : item.counterparty}
+          </span>
+        </div>
+        <div className="nur-card-list__row">
+          <span className="nur-card-list__label">
+            {isReceipt ? t("crm.documents.products") : t("crm.documents.positions")}
+          </span>
+          <span className="nur-card-list__value">
+            {isReceipt ? item.products : item.positions}
+          </span>
+        </div>
+        <div className="nur-card-list__row">
+          <span className="nur-card-list__label">{t("crm.documents.amount")}</span>
+          <span className="nur-card-list__value">
+            {formatAmount(item.amount)} {t("common.currencySom")}
+          </span>
+        </div>
+        <div className="documents__card-actions">{renderDocumentActions(item)}</div>
+      </article>
+    );
+  };
+
+  const renderDocumentsBody = () => {
+    if (documentsLoading) {
+      return <LoadingState rows={4} />;
+    }
+
+    if (getCurrentData().length === 0) {
+      return (
+        <EmptyState
+          title={t("crm.documents.notFound")}
+          text={t("crm.documents.notFoundHint")}
+        />
+      );
+    }
+
+    return getCurrentData().map((item) => renderDocumentCard(item));
+  };
+
   return (
     <PageShell className="documents">
       <PageHeader
@@ -439,7 +519,7 @@ const Documents = () => {
           <InventorySessionsTab />
         ) : (
           <PagePanel flush className="documents__panel">
-            <div className="nur-table-wrap">
+            <div className="nur-table-wrap nur-table-wrap--responsive documents__table-wrap">
               <table className="nur-table nur-table--dense">
                 <thead>
                   <tr>
@@ -498,26 +578,7 @@ const Documents = () => {
                                 {item.status}
                               </StatusChip>
                             </td>
-                            <td>
-                              <div className="documents__actions">
-                                <button
-                                  type="button"
-                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
-                                  onClick={() => handleView(item)}
-                                  title={t("common.view")}
-                                >
-                                  <Eye size={18} />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
-                                  onClick={() => handlePrint(item)}
-                                  title={t("common.print")}
-                                >
-                                  <Printer size={18} />
-                                </button>
-                              </div>
-                            </td>
+                            <td>{renderDocumentActions(item)}</td>
                           </>
                         )}
                         {activeTab === "invoices" && (
@@ -532,26 +593,7 @@ const Documents = () => {
                                 {item.status}
                               </StatusChip>
                             </td>
-                            <td>
-                              <div className="documents__actions">
-                                <button
-                                  type="button"
-                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
-                                  onClick={() => handleView(item)}
-                                  title={t("common.view")}
-                                >
-                                  <Eye size={18} />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="nur-btn nur-btn--ghost nur-btn--sm documents__action-btn"
-                                  onClick={() => handlePrint(item)}
-                                  title={t("common.print")}
-                                >
-                                  <Printer size={18} />
-                                </button>
-                              </div>
-                            </td>
+                            <td>{renderDocumentActions(item)}</td>
                           </>
                         )}
                       </tr>
@@ -559,6 +601,10 @@ const Documents = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="nur-card-list nur-card-list--responsive documents__card-list">
+              {renderDocumentsBody()}
             </div>
           </PagePanel>
         )}

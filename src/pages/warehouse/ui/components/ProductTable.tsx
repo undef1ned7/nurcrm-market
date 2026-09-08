@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { GripVertical } from "lucide-react";
 import { formatPrice, formatStock, getPrimaryImage } from "../utils";
 import noImage from "./placeholder.png";
@@ -19,6 +20,7 @@ const ProductRow = React.memo(
     onProductDragStart,
     isOutOfStock,
   }: any) => {
+    const { t } = useTranslation();
     const outOfStock = isOutOfStock?.(product) ?? false;
     return (
       <tr
@@ -49,15 +51,15 @@ const ProductRow = React.memo(
                 }}
                 onMouseDown={(e: any) => e.stopPropagation()}
                 onClick={(e: any) => e.stopPropagation()}
-                title="Перетащить"
-                aria-label="Перетащить"
+                title={t("crm.warehouse.dragTitle")}
+                aria-label={t("crm.warehouse.dragTitle")}
               >
                 <GripVertical size={16} />
               </button>
             )}
             <img
               src={primaryImage?.image_url || noImage}
-              alt={product.name || "Товар"}
+              alt={product.name || t("crm.warehouse.productAlt")}
               className="warehouse-table__product-image"
               loading="lazy"
               decoding="async"
@@ -72,6 +74,13 @@ const ProductRow = React.memo(
 
         <td>{product.code || "—"}</td>
         <td>{product.article || "—"}</td>
+        <td>
+          {product.plu !== null &&
+          product.plu !== undefined &&
+          String(product.plu).trim() !== ""
+            ? product.plu
+            : "—"}
+        </td>
         <td>{product.unit || "—"}</td>
         <td>{formatPrice(product.price)}</td>
         <td>{formatPrice(product.discount_percent || 0)}</td>
@@ -85,6 +94,7 @@ const ProductRow = React.memo(
     // Кастомное сравнение для оптимизации ререндеров
     return (
       prevProps.product.id === nextProps.product.id &&
+      prevProps.product.plu === nextProps.product.plu &&
       prevProps.isSelected === nextProps.isSelected &&
       prevProps.rowNumber === nextProps.rowNumber &&
       prevProps.primaryImage?.image_url === nextProps.primaryImage?.image_url &&
@@ -113,6 +123,7 @@ const ProductTable = ({
   onProductDragStart,
   isOutOfStock,
 }: any) => {
+  const { t } = useTranslation();
   // Мемоизация вычислений для всех товаров (критическая оптимизация)
   const primaryImagesMap = useMemo(() => {
     const map = new Map();
@@ -139,8 +150,8 @@ const ProductTable = ({
         <table className="nur-table warehouse-table min-w-[1100px]">
           <tbody>
             <tr>
-              <td colSpan={9} className="warehouse-table__loading">
-                Загрузка...
+              <td colSpan={10} className="warehouse-table__loading">
+                {t("common.loading")}
               </td>
             </tr>
           </tbody>
@@ -155,8 +166,8 @@ const ProductTable = ({
         <table className="nur-table warehouse-table min-w-[1100px]">
           <tbody>
             <tr>
-              <td colSpan={9} className="warehouse-table__empty">
-                Товары не найдены
+              <td colSpan={10} className="warehouse-table__empty">
+                {t("crm.warehouse.productsNotFound")}
               </td>
             </tr>
           </tbody>
@@ -169,7 +180,9 @@ const ProductTable = ({
     <div className="nur-table-wrap warehouse-table-wrap relative">
       {loading && products.length > 0 && (
         <div className="warehouse-table__loading-overlay">
-          <div className="warehouse-table__loading-text">Загрузка...</div>
+          <div className="warehouse-table__loading-text">
+            {t("common.loading")}
+          </div>
         </div>
       )}
       <table className="nur-table nur-table--clickable warehouse-table min-w-[1100px]">
@@ -183,14 +196,15 @@ const ProductTable = ({
                 disabled={loading}
               />
             </th>
-            <th>№</th>
-            <th>Название</th>
-            <th>Код</th>
-            <th>Артикул</th>
-            <th>Ед. изм.</th>
-            <th>Цена продажи</th>
-            <th>Скидка</th>
-            <th>Остатки</th>
+            <th>{t("crm.warehouse.colNo")}</th>
+            <th>{t("crm.warehouse.name")}</th>
+            <th>{t("crm.warehouse.colCode")}</th>
+            <th>{t("crm.warehouse.colArticle")}</th>
+            <th>{t("crm.warehouse.colPlu")}</th>
+            <th>{t("crm.warehouse.colUnit")}</th>
+            <th>{t("crm.warehouse.sellPrice")}</th>
+            <th>{t("crm.warehouse.discount")}</th>
+            <th>{t("crm.warehouse.stockLabel")}</th>
           </tr>
         </thead>
         <tbody>

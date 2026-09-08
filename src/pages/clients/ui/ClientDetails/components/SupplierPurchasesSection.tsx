@@ -1,4 +1,5 @@
 import { Package, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import type { SupplierPurchase } from "../clientDetails.types";
 
@@ -26,15 +27,16 @@ export function SupplierPurchasesSection({
   purchases,
   totals,
 }: SupplierPurchasesSectionProps) {
+  const { t } = useTranslation();
   return (
     <div className="cdx__card">
       <div className="cdx__supplier-head">
         <div>
           <h3 className="cdx__card-title">
-            <Package /> История закупок
+            <Package /> {t("crm.clients.details.sphTitle")}
           </h3>
           <div className="cdx__supplier-subtitle">
-            Сколько и когда закуплено у этого поставщика
+            {t("crm.clients.details.sphSubtitle")}
           </div>
         </div>
         <div className="cdx__supplier-actions">
@@ -45,22 +47,24 @@ export function SupplierPurchasesSection({
             disabled={!clientId || loading}
           >
             <RefreshCw />
-            {loading ? "Обновляем..." : "Обновить"}
+            {loading
+              ? t("crm.clients.details.refreshing")
+              : t("common.refresh")}
           </button>
         </div>
       </div>
 
       <div className="cdx__supplier-summary">
         <div className="cdx__supplier-chip">
-          Закупок: <b>{totals.count}</b>
+          {t("crm.clients.details.sphCount")}: <b>{totals.count}</b>
         </div>
         <div className="cdx__supplier-chip">
-          На сумму:{" "}
+          {t("crm.clients.details.sphSum")}:{" "}
           <b>
             {totals.amount.toLocaleString("ru-RU", {
               maximumFractionDigits: 2,
             })}{" "}
-            сом
+            {t("common.currencySom")}
           </b>
         </div>
       </div>
@@ -73,25 +77,23 @@ export function SupplierPurchasesSection({
 
       {apiMissing ? (
         <div className="cdx__state">
-          История закупок станет доступна после обновления сервера
+          {t("crm.clients.details.sphApiMissing")}
         </div>
       ) : loading ? (
-        <div className="cdx__state">Загрузка…</div>
+        <div className="cdx__state">{t("common.loading")}</div>
       ) : purchases.length === 0 ? (
-        <div className="cdx__state">
-          Закупок у этого поставщика пока не было
-        </div>
+        <div className="cdx__state">{t("crm.clients.details.sphEmpty")}</div>
       ) : (
         <div className="cdx__supplier-table-wrap">
           <table className="cdx__supplier-table">
             <thead>
               <tr>
-                <th>Дата</th>
-                <th>Товар</th>
-                <th>Кол-во</th>
-                <th>Ед.</th>
-                <th>Сумма</th>
-                <th>Оплата</th>
+                <th>{t("common.date")}</th>
+                <th>{t("crm.clients.details.colProduct")}</th>
+                <th>{t("crm.clients.details.colQty")}</th>
+                <th>{t("crm.clients.details.colUnitShort")}</th>
+                <th>{t("common.amount")}</th>
+                <th>{t("crm.clients.details.colPayment")}</th>
               </tr>
             </thead>
             <tbody>
@@ -113,15 +115,15 @@ export function SupplierPurchasesSection({
                     ).toLocaleString("ru-RU", {
                       maximumFractionDigits: 2,
                     })}{" "}
-                    сом
+                    {t("common.currencySom")}
                   </td>
                   <td>
                     {row?.payment_type === "debt"
-                      ? "Долг"
+                      ? t("crm.clients.details.debt")
                       : row?.payment_type === "prepayment"
-                        ? "Предоплата"
+                        ? t("crm.clients.details.prepayment")
                         : row?.payment_type
-                          ? "Оплачено"
+                          ? t("crm.clients.details.paymentPaid")
                           : "—"}
                   </td>
                 </tr>

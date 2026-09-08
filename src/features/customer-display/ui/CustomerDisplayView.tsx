@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { subscribeCustomerDisplay } from "../lib/channel";
 import {
   getCustomerDisplaySlides,
+  getCustomerDisplayTheme,
   getCustomerDisplayWelcome,
 } from "../model/settings";
 import type { CustomerDisplayMessage } from "../model/types";
@@ -34,6 +35,17 @@ export function CustomerDisplayView({
     null,
   );
   const [slideIndex, setSlideIndex] = useState(0);
+  const [theme, setTheme] = useState(getCustomerDisplayTheme);
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "market_customer_display_theme") {
+        setTheme(getCustomerDisplayTheme());
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   useEffect(() => {
     return subscribeCustomerDisplay((next) => {
@@ -102,7 +114,7 @@ export function CustomerDisplayView({
 
   return (
     <div
-      className={`customer-display customer-display--${message.type}${
+      className={`customer-display customer-display--${message.type} customer-display--${theme}${
         ageCheck ? " customer-display--age-check" : ""
       }`}
     >

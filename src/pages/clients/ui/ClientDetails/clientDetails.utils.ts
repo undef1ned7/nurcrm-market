@@ -73,12 +73,19 @@ export function getDebtProgress(deal: DealRecord | null | undefined): DebtProgre
   };
 }
 
-export function saleStatusRu(s: unknown): { label: string; mod: string } {
+type TFunc = (key: string) => string;
+
+export function saleStatusLabel(
+  s: unknown,
+  t: TFunc,
+): { label: string; mod: string } {
   const v = String(s || "").toLowerCase();
   if (["canceled", "cancelled", "refunded", "returned"].includes(v)) {
-    return { label: "Отменена", mod: "debt" };
+    return { label: t("crm.clients.details.saleStatusCancelled"), mod: "debt" };
   }
-  if (v === "paid") return { label: "Оплачена", mod: "status" };
+  if (v === "paid") {
+    return { label: t("crm.clients.details.saleStatusPaid"), mod: "status" };
+  }
   return { label: (s as string) || "—", mod: "neutral" };
 }
 

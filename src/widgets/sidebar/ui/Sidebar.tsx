@@ -128,6 +128,7 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
 
   return (
     <aside
+      id="app-sidebar"
       className={`sidebar ${isOpen ? "sidebar--visible" : "sidebar--collapsed"}`}
       aria-label="Основная навигация"
     >
@@ -168,7 +169,7 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
           <button
             className="sidebar__close-btn"
             onClick={toggleSidebar}
-            aria-label="Свернуть меню"
+            aria-label={t("crm.nav.chrome.collapseMenu")}
             type="button"
           >
             <X size={18} />

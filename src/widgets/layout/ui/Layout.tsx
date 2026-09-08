@@ -53,6 +53,11 @@ const Layout = () => {
   });
 
   const [hideAnnouncement, setHideAnnouncement] = useState(false);
+  const [isMobileLayout, setIsMobileLayout] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 768px)").matches
+      : false,
+  );
   const location = useLocation();
 
   const isHidden = useMemo(() => {
@@ -102,6 +107,14 @@ const Layout = () => {
     rootBlock.addEventListener("scroll", scrollHandle);
     return () => rootBlock.removeEventListener("scroll", scrollHandle);
   }, [rootBlock, scrollHandle]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const sync = () => setIsMobileLayout(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -171,7 +184,7 @@ const Layout = () => {
             />
           )}
 
-          {isSidebarOpen && !isHidden && (
+          {isSidebarOpen && !isHidden && isMobileLayout && (
             <div
               className="sidebar-overlay"
               onClick={closeSidebar}
@@ -204,7 +217,12 @@ const Layout = () => {
               </div>
             )}
 
-            {!isHidden && <Header />}
+            {!isHidden && (
+              <Header
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={toggleSidebar}
+              />
+            )}
 
             <main id="main-content" className="content_content" tabIndex={-1}>
               <div

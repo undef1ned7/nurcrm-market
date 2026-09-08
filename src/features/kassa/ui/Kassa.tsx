@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useNavigate,
@@ -22,6 +22,12 @@ import {
   PagePanel,
   StatusChip,
 } from "@shared/ui/page-shell";
+import Reports from "./Reports/Reports";
+import {
+  isCashFlowChangeRequestsEnabled,
+  useCashFlowRealtimeEvent,
+} from "@entities/cash";
+import FlowChangeRequestModal from "./FlowChangeRequestModal/FlowChangeRequestModal";
 
 /* Base path */
 const BASE = "/crm/kassa";
@@ -43,6 +49,7 @@ const CafeKassa = () => {
   if (normalized !== baseNorm) {
     const afterBase = normalized.slice(baseNorm.length + 1);
     const idSegment = afterBase.split("/")[0];
+    if (idSegment === "reports") return <Reports />;
     if (idSegment) return <CashboxDetail id={idSegment} />;
   }
   return <CashboxList />;
@@ -387,6 +394,10 @@ const CashboxDetail = ({ id: idProp }: any) => {
   const [tab, setTab] = useState(tabFromUrl || "all");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  // Заявка на редактирование/отмену движения: { mode, flow } | null
+  const [flowChange, setFlowChange] = useState<any>(null);
+  const canRequestFlowChange = isCashFlowChangeRequestsEnabled();
+  const flowColSpan = canRequestFlowChange ? 5 : 4;
 
   // Синхронизация tab с URL параметром
   useEffect(() => {
@@ -471,6 +482,9 @@ const CashboxDetail = ({ id: idProp }: any) => {
         return {
           id: x.id || x.uuid || `${i}`,
           type,
+          name: x.name || x.title || x.description || x.note || "",
+          status: x.status,
+          cashbox: x.cashbox || x.cashbox_id || null,
           title:
             x.title ||
             x.name ||
@@ -500,6 +514,24 @@ const CashboxDetail = ({ id: idProp }: any) => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Другой владелец одобрил edit/cancel-заявку по этой кассе (на другом
+  // устройстве/вкладке) — подхватываем свежие суммы без ручного релоада.
+  // @see docs/backend/kassa/cashflow-edit-cancel-request-backend.md §11 (R8)
+  const cashFlowRealtimeEvent = useCashFlowRealtimeEvent();
+  const lastRealtimeVersionRef = useRef(cashFlowRealtimeEvent.version);
+  useEffect(() => {
+    if (cashFlowRealtimeEvent.version === lastRealtimeVersionRef.current) return;
+    lastRealtimeVersionRef.current = cashFlowRealtimeEvent.version;
+    if (
+      cashFlowRealtimeEvent.cashboxId &&
+      id &&
+      String(cashFlowRealtimeEvent.cashboxId) !== String(id)
+    ) {
+      return; // событие по другой кассе
+    }
+    void load();
+  }, [cashFlowRealtimeEvent, id, load]);
 
   const shown = useMemo(() => {
     if (tab === "income") return ops.filter((o) => o.type === "income");
@@ -570,18 +602,19 @@ const CashboxDetail = ({ id: idProp }: any) => {
               <th>{t("common.name")}</th>
               <th>{t("common.amount")}</th>
               <th>{t("crm.kassa.createdAt")}</th>
+              {canRequestFlowChange && <th>{t("common.actions")}</th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={4} className="kassa-table__loading">
+                <td colSpan={flowColSpan} className="kassa-table__loading">
                   Загрузка…
                 </td>
               </tr>
             ) : err ? (
               <tr>
-                <td colSpan={4} className="kassa__alert kassa__alert--error">
+                <td colSpan={flowColSpan} className="kassa__alert kassa__alert--error">
                   {err}
                 </td>
               </tr>
@@ -592,11 +625,31 @@ const CashboxDetail = ({ id: idProp }: any) => {
                   <td>{o.title}</td>
                   <td>{money(o.amount)}</td>
                   <td>{when(o.created_at)}</td>
+                  {canRequestFlowChange && (
+                    <td>
+                      <div className="kassa-row-actions">
+                        <button
+                          type="button"
+                          className="nur-btn nur-btn--secondary nur-btn--sm"
+                          onClick={() => setFlowChange({ mode: "edit", flow: o })}
+                        >
+                          {t("common.edit")}
+                        </button>
+                        <button
+                          type="button"
+                          className="nur-btn nur-btn--danger nur-btn--sm"
+                          onClick={() => setFlowChange({ mode: "cancel", flow: o })}
+                        >
+                          {t("common.cancel")}
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="kassa-table__empty">
+                <td colSpan={flowColSpan} className="kassa-table__empty">
                   {t("crm.kassa.noOperations")}
                 </td>
               </tr>
@@ -605,6 +658,18 @@ const CashboxDetail = ({ id: idProp }: any) => {
         </table>
         </div>
       </PagePanel>
+
+      {flowChange && (
+        <FlowChangeRequestModal
+          mode={flowChange.mode}
+          flow={flowChange.flow}
+          onClose={() => setFlowChange(null)}
+          onSubmitted={() => {
+            setFlowChange(null);
+            load();
+          }}
+        />
+      )}
     </PageShell>
   );
 };

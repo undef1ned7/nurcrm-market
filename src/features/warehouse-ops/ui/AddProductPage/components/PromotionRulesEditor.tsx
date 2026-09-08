@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const MAX_TIERS = 30;
 
@@ -13,6 +14,8 @@ const PromotionRulesEditor = ({
   errorText,
   compact,
 }) => {
+  const { t } = useTranslation();
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
   const addTier = () => {
     if (tiers.length >= MAX_TIERS) return;
     onTiersChange([
@@ -48,39 +51,38 @@ const PromotionRulesEditor = ({
             checked={Boolean(stock)}
             onChange={(e) => onStockChange(e.target.checked)}
           />
-          <span>Акционный товар</span>
+          <span>{tp("promoItem")}</span>
         </label>
         <p className="promotion-rules-editor__hint">
-          Скидка по ступеням от суммы строки в чеке (цена × количество). Если
-          включено — укажите хотя бы одну ступень.
+          {tp("promoHint")}
         </p>
       </div>
 
       {stock && (
         <div className="promotion-rules-editor__table-wrap">
           <div className="promotion-rules-editor__head">
-            <span>Ступени скидки (до {MAX_TIERS})</span>
+            <span>{tp("tiersHead", { max: MAX_TIERS })}</span>
             <button
               type="button"
               className="promotion-rules-editor__add-btn"
               onClick={addTier}
               disabled={tiers.length >= MAX_TIERS}
             >
-              + Ступень
+              {tp("addTier")}
             </button>
           </div>
           {tiers.length === 0 && (
             <p className="promotion-rules-editor__empty">
-              Нет ступеней — нажмите «+ Ступень» или включите акцию заново.
+              {tp("tiersEmpty")}
             </p>
           )}
           {tiers.length > 0 && (
             <div className="promotion-rules-editor__table">
               <div className="promotion-rules-editor__row promotion-rules-editor__row--header">
                 <span>#</span>
-                <span>Сумма строки от (сом)</span>
-                <span>Скидка %</span>
-                <span>Лимит шт. (необяз.)</span>
+                <span>{tp("colAmountFrom")}</span>
+                <span>{tp("colDiscountPct")}</span>
+                <span>{tp("colLimitPcs")}</span>
                 <span />
               </div>
               {tiers.map((tier, index) => (
@@ -107,7 +109,7 @@ const PromotionRulesEditor = ({
                   <input
                     type="text"
                     className="promotion-rules-editor__input"
-                    placeholder="без лимита"
+                    placeholder={tp("tierLimitPlaceholder")}
                     value={tier.promo_quantity}
                     onChange={(e) =>
                       updateTier(tier.id, "promo_quantity", e.target.value)
@@ -117,7 +119,7 @@ const PromotionRulesEditor = ({
                     type="button"
                     className="promotion-rules-editor__remove"
                     onClick={() => removeTier(tier.id)}
-                    title="Удалить ступень"
+                    title={tp("removeTier")}
                   >
                     ×
                   </button>

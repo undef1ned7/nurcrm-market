@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   FaArrowLeft,
   FaCalculator,
@@ -54,8 +55,12 @@ const normalizeEmployee = (e: any = {}) => ({
 const fullName = (e: any) =>
   [e?.last_name || "", e?.first_name || ""].filter(Boolean).join(" ").trim();
 
-const ruLabelSys = (c: any) =>
-  c === "owner" ? "Владелец" : c === "admin" ? "Администратор" : c || "";
+const sysRoleLabel = (c: any, t: any) =>
+  c === "owner"
+    ? t("crm.employees.owner")
+    : c === "admin"
+      ? t("crm.employees.admin")
+      : c || "";
 
 const sysCodeFromName = (n: any) => {
   const l = String(n || "")
@@ -99,7 +104,7 @@ const fmtMoney = (n: any) =>
     maximumFractionDigits: 2,
   });
 
-const formatPeriodRu = (from: any, to: any) => {
+const formatPeriod = (from: any, to: any) => {
   try {
     const f = new Date(`${from}T12:00:00`);
     const t = new Date(`${to}T12:00:00`);
@@ -119,15 +124,20 @@ const monthRange = (year: any, month: any) => {
   };
 };
 
-const PROFILE_SCOPE_LABELS = {
-  branch: "Профиль филиала",
-  global: "Общий профиль компании",
-};
-
 const MarketEmployEmployeeDetail = () => {
   const { employeeId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const tm = (k: string, o?: any): string =>
+    t(`crm.employees.marketDetail.${k}`, o) as string;
   const { company, tariff, profile } = useUser();
+
+  const profileScopeLabel = (scope: any) =>
+    scope === "branch"
+      ? tm("profileScopeBranch")
+      : scope === "global"
+        ? tm("profileScopeGlobal")
+        : scope;
 
   const [employee, setEmployee] = useState<any>(null);
   const [allEmployees, setAllEmployees] = useState<any[]>([]);
@@ -154,7 +164,9 @@ const MarketEmployEmployeeDetail = () => {
     d.setDate(1);
     return d.toISOString().slice(0, 10);
   });
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dateTo, setDateTo] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [salaryLoading, setSalaryLoading] = useState(false);
   const [salaryRows, setSalaryRows] = useState<any[]>([]);
   const [salaryError, setSalaryError] = useState("");
@@ -182,13 +194,15 @@ const MarketEmployEmployeeDetail = () => {
   const roleOptions = useMemo(() => {
     const sys = SYSTEM_ROLES.map((code) => ({
       key: `sys:${code}`,
-      label: ruLabelSys(code),
+      label: sysRoleLabel(code, t),
     }));
     const cus = roles
       .filter((r) => !sysCodeFromName(r.name))
       .map((r) => ({ key: `cus:${r.id}`, label: String(r.name || "").trim() }));
-    return [...sys, ...cus].sort((a, b) => a.label.localeCompare(b.label, "ru"));
-  }, [roles]);
+    return [...sys, ...cus].sort((a, b) =>
+      a.label.localeCompare(b.label, "ru"),
+    );
+  }, [roles, t]);
 
   const reload = useCallback(async () => {
     if (!employeeId) return;
@@ -202,13 +216,18 @@ const MarketEmployEmployeeDetail = () => {
       ]);
       setEmployee(empRes.data);
       setAllEmployees(asArray(listRes.data).map(normalizeEmployee));
-      setRoles(asArray(rolesRes.data).map((r: any) => ({ id: r.id, name: r.name || "" })));
+      setRoles(
+        asArray(rolesRes.data).map((r: any) => ({
+          id: r.id,
+          name: r.name || "",
+        })),
+      );
       setBranches(asArray(brRes.data));
     } catch (e: any) {
-      setLoadErr(validateResErrors(e, "Не удалось загрузить сотрудника"));
+      setLoadErr(validateResErrors(e, tm("loadError")));
       setEmployee(null);
     }
-  }, [employeeId]);
+  }, [employeeId, t]);
 
   const fetchSalary = useCallback(async () => {
     if (!employeeId || !isSalePayroll) return;
@@ -228,14 +247,24 @@ const MarketEmployEmployeeDetail = () => {
         : Array.isArray(data?.tables?.rows)
           ? data.tables.rows
           : [];
-      setSalaryRows(rows.filter((r: any) => String(r.user_id) === String(employeeId)));
+      setSalaryRows(
+        rows.filter((r: any) => String(r.user_id) === String(employeeId)),
+      );
     } catch (e: any) {
-      setSalaryError(validateResErrors(e, "Не удалось загрузить аналитику зарплаты"));
+      setSalaryError(validateResErrors(e, tm("salaryLoadError")));
       setSalaryRows([]);
     } finally {
       setSalaryLoading(false);
     }
-  }, [employeeId, isSalePayroll, dateFrom, dateTo, profile?.active_branch, profile?.branch]);
+  }, [
+    employeeId,
+    isSalePayroll,
+    dateFrom,
+    dateTo,
+    profile?.active_branch,
+    profile?.branch,
+    t,
+  ]);
 
   const fetchEmployeeMarketAnalytics = useCallback(async () => {
     if (!employeeId || !isSalePayroll) return;
@@ -259,13 +288,21 @@ const MarketEmployEmployeeDetail = () => {
       setEmpSalesPayload(salesRes?.data || null);
       setEmpShiftsPayload(shiftsRes?.data || null);
     } catch (e: any) {
-      setEmpAnalyticsError(validateResErrors(e, "Не удалось загрузить аналитику сотрудника"));
+      setEmpAnalyticsError(validateResErrors(e, tm("salesLoadError")));
       setEmpSalesPayload(null);
       setEmpShiftsPayload(null);
     } finally {
       setEmpAnalyticsLoading(false);
     }
-  }, [employeeId, isSalePayroll, dateFrom, dateTo, profile?.active_branch, profile?.branch]);
+  }, [
+    employeeId,
+    isSalePayroll,
+    dateFrom,
+    dateTo,
+    profile?.active_branch,
+    profile?.branch,
+    t,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -298,11 +335,17 @@ const MarketEmployEmployeeDetail = () => {
   }, [empSalesPayload]);
 
   const empSalesTopProducts = useMemo(
-    () => (Array.isArray(empSalesPayload?.tables?.top_products) ? empSalesPayload.tables.top_products : []),
+    () =>
+      Array.isArray(empSalesPayload?.tables?.top_products)
+        ? empSalesPayload.tables.top_products
+        : [],
     [empSalesPayload],
   );
   const empSalesDocuments = useMemo(
-    () => (Array.isArray(empSalesPayload?.tables?.documents) ? empSalesPayload.tables.documents : []),
+    () =>
+      Array.isArray(empSalesPayload?.tables?.documents)
+        ? empSalesPayload.tables.documents
+        : [],
     [empSalesPayload],
   );
   const empSalesPaymentMethods = useMemo(
@@ -313,7 +356,10 @@ const MarketEmployEmployeeDetail = () => {
     [empSalesPayload],
   );
   const empShiftRows = useMemo(
-    () => (Array.isArray(empShiftsPayload?.tables?.active_shifts) ? empShiftsPayload.tables.active_shifts : []),
+    () =>
+      Array.isArray(empShiftsPayload?.tables?.active_shifts)
+        ? empShiftsPayload.tables.active_shifts
+        : [],
     [empShiftsPayload],
   );
 
@@ -351,13 +397,16 @@ const MarketEmployEmployeeDetail = () => {
   const display = employee ? normalizeEmployee(employee) : null;
   const roleLabel = display
     ? display.role
-      ? ruLabelSys(display.role)
+      ? sysRoleLabel(display.role, t)
       : roleById.get(display.custom_role)?.name || display.role_display || "—"
     : "—";
 
   const openAccess = () => {
     if (!employee || display?.role === "owner") return;
-    const labels = convertEmployeeAccessesToLabels(employee, company?.sector?.name);
+    const labels = convertEmployeeAccessesToLabels(
+      employee,
+      company?.sector?.name,
+    );
     setAccessEmployee(employee);
     setAccessLabels(labels);
     setAccessOpen(true);
@@ -411,26 +460,26 @@ const MarketEmployEmployeeDetail = () => {
     const email = normalizeEmail(empForm.email);
     if (!email || !emailRx.test(email)) {
       errs.email = true;
-      alerts.push("Проверьте Email.");
+      alerts.push(tm("errEmail"));
     }
     if (!String(empForm.first_name || "").trim()) {
       errs.first_name = true;
-      alerts.push("Укажите имя.");
+      alerts.push(tm("errFirstName"));
     }
     if (!String(empForm.last_name || "").trim()) {
       errs.last_name = true;
-      alerts.push("Укажите фамилию.");
+      alerts.push(tm("errLastName"));
     }
     if (!empForm.roleChoice) {
       errs.roleChoice = true;
-      alerts.push("Выберите роль.");
+      alerts.push(tm("errRole"));
     }
     const exists = allEmployees.some(
       (u) => normalizeEmail(u.email) === email && u.id !== editingEmpId,
     );
     if (exists) {
       errs.email = true;
-      alerts.push("Сотрудник с таким Email уже существует.");
+      alerts.push(tm("errEmailExists"));
     }
     if (alerts.length) {
       setEmpFieldErrors(errs);
@@ -446,8 +495,10 @@ const MarketEmployEmployeeDetail = () => {
       role: null,
       custom_role: null,
     };
-    if (empForm.roleChoice.startsWith("sys:")) payload.role = empForm.roleChoice.slice(4);
-    if (empForm.roleChoice.startsWith("cus:")) payload.custom_role = empForm.roleChoice.slice(4);
+    if (empForm.roleChoice.startsWith("sys:"))
+      payload.role = empForm.roleChoice.slice(4);
+    if (empForm.roleChoice.startsWith("cus:"))
+      payload.custom_role = empForm.roleChoice.slice(4);
     if (showBranchSelect && empForm.branch) payload.branches = [empForm.branch];
     setEmpSaving(true);
     try {
@@ -456,7 +507,7 @@ const MarketEmployEmployeeDetail = () => {
       setEditingEmpId(null);
       await reload();
     } catch (err: any) {
-      setEmpAlerts([pickApiError(err, "Не удалось обновить сотрудника.")]);
+      setEmpAlerts([pickApiError(err, tm("errUpdate"))]);
     } finally {
       setEmpSaving(false);
     }
@@ -465,107 +516,129 @@ const MarketEmployEmployeeDetail = () => {
   if (!isSalePayroll) return <Navigate to="/crm/employ" replace />;
   if (!employeeId) return <Navigate to="/crm/employ" replace />;
 
-  const periodLabel = formatPeriodRu(dateFrom, dateTo);
+  const periodLabel = formatPeriod(dateFrom, dateTo);
   const isRefreshing = salaryLoading || empAnalyticsLoading;
+  const isOwner = display?.role === "owner";
+  const avatarChar =
+    (fullName(display) || display?.email || "•").trim().charAt(0).toUpperCase() ||
+    "•";
 
   return (
     <div className="barbermasters cafeEmployDetail marketEmployDetail">
-      <div className="barbermasters__top">
+      <div className="barbermasters__top marketEmployDetail__topbar">
         <button
           type="button"
           className="barbermasters__btn barbermasters__btn--secondary"
           onClick={() => navigate("/crm/employ")}
         >
-          <FaArrowLeft /> К списку сотрудников
+          <FaArrowLeft /> {tm("backToList")}
         </button>
       </div>
 
-      {loading && <div className="barbermasters__help">Загрузка…</div>}
-      {!loading && loadErr && <div className="barbermasters__alert">{loadErr}</div>}
+      {loading && (
+        <div className="marketEmployDetail__stateBox">{t("common.loading")}</div>
+      )}
+      {!loading && loadErr && (
+        <div className="barbermasters__alert">{loadErr}</div>
+      )}
 
       {!loading && !loadErr && display && (
         <>
           <div className="marketEmployDetail__layout">
             <aside className="marketEmployDetail__sidebar">
-              <header className="cafeEmployDetail__head marketEmployDetail__profileHead">
-                <div className="barbermasters__avatar cafeEmployDetail__avatar">
-                  {(fullName(display) || display.email || "•").trim().charAt(0).toUpperCase() || "•"}
+              <header className="marketEmployDetail__profileHead">
+                <div className="marketEmployDetail__avatar" aria-hidden>
+                  {avatarChar}
                 </div>
-                <div className="cafeEmployDetail__headText">
-                  <h1 className="cafeEmployDetail__title">{fullName(display) || "Без имени"}</h1>
-                  <div className="cafeEmployDetail__meta">
-                    <span className="cafeEmployDetail__metaItem">{display.email || "—"}</span>
-                    <span className="cafeEmployDetail__metaDot">·</span>
-                    <span className="cafeEmployDetail__metaItem">{roleLabel}</span>
-                  </div>
+                <div className="marketEmployDetail__profileHeadText">
+                  <h1 className="marketEmployDetail__profileName">
+                    {fullName(display) || tm("noName")}
+                  </h1>
+                  <span className="marketEmployDetail__roleBadge">
+                    {roleLabel}
+                  </span>
                 </div>
               </header>
 
               <dl className="marketEmployDetail__profileFacts">
                 <div>
-                  <dt>Телефон</dt>
+                  <dt>Email</dt>
+                  <dd className="marketEmployDetail__factBreak">
+                    {display.email || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{tm("phone")}</dt>
                   <dd>{display.phone_number || "—"}</dd>
                 </div>
                 <div>
-                  <dt>Трек-номер</dt>
+                  <dt>{tm("trackNumber")}</dt>
                   <dd>{display.track_number || "—"}</dd>
                 </div>
               </dl>
 
-              {display.role !== "owner" ? (
+              {!isOwner ? (
                 <div className="marketEmployDetail__sidebarCta">
                   <p className="marketEmployDetail__sidebarCtaText">
-                    Сначала укажите схему: оклад, процент от продаж или оба варианта.
+                    {tm("schemeCta")}
                   </p>
                   <button
                     type="button"
                     className="barbermasters__btn barbermasters__btn--primary marketEmployDetail__sidebarCtaBtn"
                     onClick={() => setSalaryOpen(true)}
                   >
-                    <FaCog aria-hidden /> Настроить зарплату
+                    <FaCog aria-hidden /> {tm("setupSalary")}
                   </button>
                 </div>
               ) : null}
 
-              <div className="cafeEmployDetail__actions marketEmployDetail__sidebarActions">
+              <div className="marketEmployDetail__sidebarActions">
                 <button
                   type="button"
                   className="barbermasters__btn barbermasters__btn--secondary"
                   onClick={openEdit}
                 >
-                  <FaEdit /> Редактировать
+                  <FaEdit /> {t("common.edit")}
                 </button>
                 <button
                   type="button"
                   className="barbermasters__btn barbermasters__btn--secondary"
                   onClick={openAccess}
-                  disabled={display.role === "owner"}
+                  disabled={isOwner}
                 >
-                  <FaLock /> Доступы
+                  <FaLock /> {t("crm.employees.accesses")}
                 </button>
               </div>
             </aside>
 
             <div className="marketEmployDetail__content">
               <div className="marketEmployDetail__guide" role="note">
-                <FaInfoCircle className="marketEmployDetail__guideIcon" aria-hidden />
+                <FaInfoCircle
+                  className="marketEmployDetail__guideIcon"
+                  aria-hidden
+                />
                 <div>
-                  <strong>Как считается зарплата</strong>
+                  <strong>{tm("guideTitle")}</strong>
                   <ol className="marketEmployDetail__guideList">
-                    <li>Настройте схему начисления (оклад и/или % от продаж).</li>
+                    <li>{tm("guideStep1")}</li>
                     <li>
-                      В расчёт попадают только <em>оплаченные</em> чеки, где этот сотрудник
-                      указан как оформивший продажу.
+                      {tm("guideStep2a")}
+                      <em>{tm("guideStep2em")}</em>
+                      {tm("guideStep2b")}
                     </li>
-                    <li>Выберите период ниже — система покажет начисление и детализацию.</li>
+                    <li>{tm("guideStep3")}</li>
                   </ol>
                 </div>
               </div>
 
               <div className="marketEmployDetail__periodCard">
                 <div className="marketEmployDetail__periodHead">
-                  <span className="marketEmployDetail__periodTitle">Период отчёта</span>
-                  <span className="marketEmployDetail__periodHint">{periodLabel}</span>
+                  <span className="marketEmployDetail__periodTitle">
+                    {tm("periodTitle")}
+                  </span>
+                  <span className="marketEmployDetail__periodHint">
+                    {periodLabel}
+                  </span>
                 </div>
                 <div className="marketEmployDetail__presets">
                   <button
@@ -573,42 +646,42 @@ const MarketEmployEmployeeDetail = () => {
                     className="marketEmployDetail__presetBtn"
                     onClick={() => applyPeriodPreset("thisMonth")}
                   >
-                    Текущий месяц
+                    {tm("presetThisMonth")}
                   </button>
                   <button
                     type="button"
                     className="marketEmployDetail__presetBtn"
                     onClick={() => applyPeriodPreset("lastMonth")}
                   >
-                    Прошлый месяц
+                    {tm("presetLastMonth")}
                   </button>
                   <button
                     type="button"
                     className="marketEmployDetail__presetBtn"
                     onClick={() => applyPeriodPreset("last7")}
                   >
-                    7 дней
+                    {tm("presetLast7")}
                   </button>
                 </div>
                 <div className="marketEmployDetail__filters">
                   <label className="marketEmployDetail__dateField">
-                    <span>С</span>
+                    <span>{tm("dateFrom")}</span>
                     <input
                       type="date"
                       className="barbermasters__input marketEmployDetail__dateInput"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
-                      aria-label="Дата начала периода"
+                      aria-label={tm("dateFromAria")}
                     />
                   </label>
                   <label className="marketEmployDetail__dateField">
-                    <span>По</span>
+                    <span>{tm("dateTo")}</span>
                     <input
                       type="date"
                       className="barbermasters__input marketEmployDetail__dateInput"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      aria-label="Дата окончания периода"
+                      aria-label={tm("dateToAria")}
                     />
                   </label>
                   <button
@@ -617,7 +690,7 @@ const MarketEmployEmployeeDetail = () => {
                     onClick={refreshAll}
                     disabled={isRefreshing}
                   >
-                    {isRefreshing ? "Обновление…" : "Показать за период"}
+                    {isRefreshing ? tm("refreshing") : tm("showForPeriod")}
                   </button>
                 </div>
               </div>
@@ -625,7 +698,7 @@ const MarketEmployEmployeeDetail = () => {
               <div
                 className="marketEmployDetail__tabs"
                 role="tablist"
-                aria-label="Разделы карточки сотрудника"
+                aria-label={tm("tabsAria")}
               >
                 <button
                   type="button"
@@ -634,7 +707,7 @@ const MarketEmployEmployeeDetail = () => {
                   className={`marketEmployDetail__tab${activePanel === "payroll" ? " marketEmployDetail__tab--active" : ""}`}
                   onClick={() => setActivePanel("payroll")}
                 >
-                  <FaCalculator aria-hidden /> Расчёт зарплаты
+                  <FaCalculator aria-hidden /> {tm("tabPayroll")}
                 </button>
                 <button
                   type="button"
@@ -643,7 +716,7 @@ const MarketEmployEmployeeDetail = () => {
                   className={`marketEmployDetail__tab${activePanel === "sales" ? " marketEmployDetail__tab--active" : ""}`}
                   onClick={() => setActivePanel("sales")}
                 >
-                  <FaChartLine aria-hidden /> Продажи и смены
+                  <FaChartLine aria-hidden /> {tm("tabSales")}
                 </button>
               </div>
 
@@ -651,12 +724,16 @@ const MarketEmployEmployeeDetail = () => {
                 <section
                   className="marketEmployDetail__panel"
                   role="tabpanel"
-                  aria-label="Расчёт зарплаты"
+                  aria-label={tm("tabPayroll")}
                 >
-                  {salaryError ? <div className="barbermasters__alert">{salaryError}</div> : null}
+                  {salaryError ? (
+                    <div className="barbermasters__alert">{salaryError}</div>
+                  ) : null}
 
                   {salaryLoading ? (
-                    <div className="marketEmployDetail__panelLoading">Считаем зарплату за период…</div>
+                    <div className="marketEmployDetail__panelLoading">
+                      {tm("calcInProgress")}
+                    </div>
                   ) : null}
 
                   {!salaryLoading && salarySummary ? (
@@ -664,15 +741,17 @@ const MarketEmployEmployeeDetail = () => {
                       <div className="marketEmployDetail__salaryHero">
                         <div className="marketEmployDetail__salaryHeroMain">
                           <span className="marketEmployDetail__salaryHeroLabel">
-                            К выплате за период
+                            {tm("toPayForPeriod")}
                           </span>
                           <span className="marketEmployDetail__salaryHeroTotal">
                             {fmtMoney(salarySummary.total)} <small>сом</small>
                           </span>
                           <span className="marketEmployDetail__salaryHeroScheme">
-                            {salarySummary.pay_scheme_label || salarySummary.pay_scheme || "—"}
+                            {salarySummary.pay_scheme_label ||
+                              salarySummary.pay_scheme ||
+                              "—"}
                             {salarySummary.profile_scope
-                              ? ` · ${PROFILE_SCOPE_LABELS[salarySummary.profile_scope] || salarySummary.profile_scope}`
+                              ? ` · ${profileScopeLabel(salarySummary.profile_scope)}`
                               : ""}
                           </span>
                         </div>
@@ -681,23 +760,29 @@ const MarketEmployEmployeeDetail = () => {
                           className="barbermasters__btn barbermasters__btn--secondary"
                           onClick={() => setSalaryOpen(true)}
                         >
-                          Изменить схему
+                          {tm("changeScheme")}
                         </button>
                       </div>
 
                       <div className="marketEmployDetail__breakdown">
                         <div className="marketEmployDetail__breakdownItem">
-                          <span className="marketEmployDetail__breakdownLabel">Оклад за период</span>
+                          <span className="marketEmployDetail__breakdownLabel">
+                            {tm("baseForPeriod")}
+                          </span>
                           <span className="marketEmployDetail__breakdownValue">
                             {fmtMoney(salarySummary.base_prorated)}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            из {fmtMoney(salarySummary.monthly_base_salary)} / мес ·{" "}
-                            {salarySummary.period_days || 0} дн.
+                            {tm("baseFromPerMonth", {
+                              base: fmtMoney(salarySummary.monthly_base_salary),
+                              days: salarySummary.period_days || 0,
+                            })}
                           </span>
                         </div>
                         <div className="marketEmployDetail__breakdownItem">
-                          <span className="marketEmployDetail__breakdownLabel">Продажи как кассир</span>
+                          <span className="marketEmployDetail__breakdownLabel">
+                            {tm("salesAsCashier")}
+                          </span>
                           <span className="marketEmployDetail__breakdownValue">
                             {fmtMoney(
                               salarySummary.cashier_sales_period ??
@@ -705,83 +790,98 @@ const MarketEmployEmployeeDetail = () => {
                             )}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            чеки, где сотрудник пробил оплату
+                            {tm("salesAsCashierHint")}
                           </span>
                         </div>
                         <div className="marketEmployDetail__breakdownItem">
-                          <span className="marketEmployDetail__breakdownLabel">Продажи как консультант</span>
+                          <span className="marketEmployDetail__breakdownLabel">
+                            {tm("salesAsConsultant")}
+                          </span>
                           <span className="marketEmployDetail__breakdownValue">
                             {fmtMoney(salarySummary.consultant_sales_period)}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            чеки, где сотрудник указан консультантом
+                            {tm("salesAsConsultantHint")}
                           </span>
                         </div>
                         <div className="marketEmployDetail__breakdownItem">
-                          <span className="marketEmployDetail__breakdownLabel">Комиссия консультанта</span>
+                          <span className="marketEmployDetail__breakdownLabel">
+                            {tm("consultantCommission")}
+                          </span>
                           <span className="marketEmployDetail__breakdownValue">
-                            {fmtMoney(salarySummary.consultant_commission_period)}
+                            {fmtMoney(
+                              salarySummary.consultant_commission_period,
+                            )}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            сумма комиссий за период (минус возвраты)
+                            {tm("consultantCommissionHint")}
                           </span>
                         </div>
                         <div className="marketEmployDetail__breakdownItem">
-                          <span className="marketEmployDetail__breakdownLabel">База для % кассира</span>
+                          <span className="marketEmployDetail__breakdownLabel">
+                            {tm("cashierPercentBase")}
+                          </span>
                           <span className="marketEmployDetail__breakdownValue">
                             {fmtMoney(salarySummary.employee_sales_period)}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            чеки без комиссии консультанта
+                            {tm("cashierPercentBaseHint")}
                           </span>
                         </div>
                         <div className="marketEmployDetail__breakdownItem marketEmployDetail__breakdownItem--accent">
                           <span className="marketEmployDetail__breakdownLabel">
-                            Бонус {fmtMoney(salarySummary.sales_percent)}%
+                            {tm("bonusPercent", {
+                              percent: fmtMoney(salarySummary.sales_percent),
+                            })}
                           </span>
                           <span className="marketEmployDetail__breakdownValue">
                             {fmtMoney(salarySummary.percent_bonus)}
                           </span>
                           <span className="marketEmployDetail__breakdownHint">
-                            % кассира + комиссия консультанта
+                            {tm("bonusHint")}
                           </span>
                         </div>
                       </div>
 
                       <details className="marketEmployDetail__detailsTable">
-                        <summary>Все поля расчёта (таблица)</summary>
+                        <summary>{tm("allCalcFields")}</summary>
                         <div className="marketEmployDetail__tableWrap">
                           <table className="marketEmployDetail__table marketEmployDetail__table--compact">
                             <thead>
                               <tr>
-                                <th>Схема</th>
-                                <th>Оклад/мес</th>
-                                <th>%</th>
-                                <th>Дней</th>
-                                <th>Оклад за период</th>
-                                <th>Кассир</th>
-                                <th>Консультант</th>
-                                <th>Комиссия</th>
-                                <th>База %</th>
-                                <th>Бонус</th>
-                                <th>Итого</th>
+                                <th>{tm("colScheme")}</th>
+                                <th>{tm("colBasePerMonth")}</th>
+                                <th>{tm("colPercent")}</th>
+                                <th>{tm("colDays")}</th>
+                                <th>{tm("colBaseForPeriod")}</th>
+                                <th>{tm("colCashier")}</th>
+                                <th>{tm("colConsultant")}</th>
+                                <th>{tm("colCommission")}</th>
+                                <th>{tm("colPercentBase")}</th>
+                                <th>{tm("colBonus")}</th>
+                                <th>{tm("colTotal")}</th>
                               </tr>
                             </thead>
                             <tbody>
                               {salaryRows.map((r, idx) => (
                                 <tr key={`${r.user_id || "u"}-${idx}`}>
-                                  <td>{r.pay_scheme_label || r.pay_scheme || "—"}</td>
+                                  <td>
+                                    {r.pay_scheme_label || r.pay_scheme || "—"}
+                                  </td>
                                   <td>{fmtMoney(r.monthly_base_salary)}</td>
                                   <td>{fmtMoney(r.sales_percent)}</td>
                                   <td>{r.period_days || 0}</td>
                                   <td>{fmtMoney(r.base_prorated)}</td>
                                   <td>
                                     {fmtMoney(
-                                      r.cashier_sales_period ?? r.employee_sales_period,
+                                      r.cashier_sales_period ??
+                                        r.employee_sales_period,
                                     )}
                                   </td>
                                   <td>{fmtMoney(r.consultant_sales_period)}</td>
-                                  <td>{fmtMoney(r.consultant_commission_period)}</td>
+                                  <td>
+                                    {fmtMoney(r.consultant_commission_period)}
+                                  </td>
                                   <td>{fmtMoney(r.employee_sales_period)}</td>
                                   <td>{fmtMoney(r.percent_bonus)}</td>
                                   <td>{fmtMoney(r.total)}</td>
@@ -796,23 +896,25 @@ const MarketEmployEmployeeDetail = () => {
 
                   {!salaryLoading && !salarySummary ? (
                     <div className="marketEmployDetail__emptyState">
-                      <div className="marketEmployDetail__emptyStateIcon" aria-hidden>
+                      <div
+                        className="marketEmployDetail__emptyStateIcon"
+                        aria-hidden
+                      >
                         {payrollEmoji}
                       </div>
                       <h3 className="marketEmployDetail__emptyStateTitle">
-                        Нет расчёта за выбранный период
+                        {tm("noCalcTitle")}
                       </h3>
                       <p className="marketEmployDetail__emptyStateText">
-                        Обычно это значит, что схема зарплаты ещё не настроена, или за период не
-                        было оплаченных продаж от этого сотрудника.
+                        {tm("noCalcText")}
                       </p>
-                      {display.role !== "owner" ? (
+                      {!isOwner ? (
                         <button
                           type="button"
                           className="barbermasters__btn barbermasters__btn--primary"
                           onClick={() => setSalaryOpen(true)}
                         >
-                          <FaCog aria-hidden /> Настроить зарплату
+                          <FaCog aria-hidden /> {tm("setupSalary")}
                         </button>
                       ) : null}
                     </div>
@@ -824,45 +926,66 @@ const MarketEmployEmployeeDetail = () => {
                 <section
                   className="marketEmployDetail__panel"
                   role="tabpanel"
-                  aria-label="Продажи и смены"
+                  aria-label={tm("tabSales")}
                 >
                   <p className="marketEmployDetail__panelIntro">
-                    Сводка по кассе за тот же период. Для начисления % используются продажи, где
-                    сотрудник — автор чека (см. вкладку «Расчёт зарплаты»).
+                    {tm("salesIntro")}
                   </p>
                   {empAnalyticsError ? (
-                    <div className="barbermasters__alert">{empAnalyticsError}</div>
+                    <div className="barbermasters__alert">
+                      {empAnalyticsError}
+                    </div>
                   ) : null}
                   {empAnalyticsLoading ? (
-                    <div className="marketEmployDetail__panelLoading">Загружаем продажи…</div>
+                    <div className="marketEmployDetail__panelLoading">
+                      {tm("loadingSales")}
+                    </div>
                   ) : null}
 
                   <div className="marketEmployDetail__kpis">
                     <div className="marketEmployDetail__kpi">
-                      <div className="marketEmployDetail__kpiLabel">Выручка</div>
-                      <div className="marketEmployDetail__kpiValue">{empSalesCards.revenue}</div>
+                      <div className="marketEmployDetail__kpiLabel">
+                        {tm("kpiRevenue")}
+                      </div>
+                      <div className="marketEmployDetail__kpiValue">
+                        {empSalesCards.revenue}
+                      </div>
                     </div>
                     <div className="marketEmployDetail__kpi">
-                      <div className="marketEmployDetail__kpiLabel">Чеков</div>
-                      <div className="marketEmployDetail__kpiValue">{empSalesCards.transactions}</div>
+                      <div className="marketEmployDetail__kpiLabel">
+                        {tm("kpiChecks")}
+                      </div>
+                      <div className="marketEmployDetail__kpiValue">
+                        {empSalesCards.transactions}
+                      </div>
                     </div>
                     <div className="marketEmployDetail__kpi">
-                      <div className="marketEmployDetail__kpiLabel">Средний чек</div>
-                      <div className="marketEmployDetail__kpiValue">{empSalesCards.avgCheck}</div>
+                      <div className="marketEmployDetail__kpiLabel">
+                        {tm("kpiAvgCheck")}
+                      </div>
+                      <div className="marketEmployDetail__kpiValue">
+                        {empSalesCards.avgCheck}
+                      </div>
                     </div>
                     <div className="marketEmployDetail__kpi">
-                      <div className="marketEmployDetail__kpiLabel">Клиенты</div>
-                      <div className="marketEmployDetail__kpiValue">{empSalesCards.clients}</div>
+                      <div className="marketEmployDetail__kpiLabel">
+                        {tm("kpiClients")}
+                      </div>
+                      <div className="marketEmployDetail__kpiValue">
+                        {empSalesCards.clients}
+                      </div>
                     </div>
                   </div>
 
-                  <h4 className="marketEmployDetail__blockTitle">Оплата</h4>
+                  <h4 className="marketEmployDetail__blockTitle">
+                    {tm("blockPayment")}
+                  </h4>
                   <div className="marketEmployDetail__tableWrap">
                     <table className="marketEmployDetail__table marketEmployDetail__table--compact">
                       <thead>
                         <tr>
-                          <th>Способ</th>
-                          <th>Сумма</th>
+                          <th>{tm("colMethod")}</th>
+                          <th>{tm("colAmount")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -875,8 +998,11 @@ const MarketEmployEmployeeDetail = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={2} className="marketEmployDetail__empty">
-                              Нет данных за период
+                            <td
+                              colSpan={2}
+                              className="marketEmployDetail__empty"
+                            >
+                              {tm("noDataForPeriod")}
                             </td>
                           </tr>
                         )}
@@ -884,14 +1010,16 @@ const MarketEmployEmployeeDetail = () => {
                     </table>
                   </div>
 
-                  <h4 className="marketEmployDetail__blockTitle">Топ товаров</h4>
+                  <h4 className="marketEmployDetail__blockTitle">
+                    {tm("blockTopProducts")}
+                  </h4>
                   <div className="marketEmployDetail__tableWrap">
                     <table className="marketEmployDetail__table marketEmployDetail__table--compact">
                       <thead>
                         <tr>
-                          <th>Товар</th>
-                          <th>Шт.</th>
-                          <th>Выручка</th>
+                          <th>{tm("colProduct")}</th>
+                          <th>{tm("colQtyShort")}</th>
+                          <th>{tm("colRevenue")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -905,8 +1033,11 @@ const MarketEmployEmployeeDetail = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={3} className="marketEmployDetail__empty">
-                              Нет данных
+                            <td
+                              colSpan={3}
+                              className="marketEmployDetail__empty"
+                            >
+                              {tm("noData")}
                             </td>
                           </tr>
                         )}
@@ -914,14 +1045,16 @@ const MarketEmployEmployeeDetail = () => {
                     </table>
                   </div>
 
-                  <h4 className="marketEmployDetail__blockTitle">Документы</h4>
+                  <h4 className="marketEmployDetail__blockTitle">
+                    {tm("blockDocuments")}
+                  </h4>
                   <div className="marketEmployDetail__tableWrap">
                     <table className="marketEmployDetail__table marketEmployDetail__table--compact">
                       <thead>
                         <tr>
-                          <th>Тип</th>
-                          <th>Кол-во</th>
-                          <th>Сумма</th>
+                          <th>{tm("colType")}</th>
+                          <th>{tm("colCount")}</th>
+                          <th>{tm("colAmount")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -935,8 +1068,11 @@ const MarketEmployEmployeeDetail = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={3} className="marketEmployDetail__empty">
-                              Нет данных
+                            <td
+                              colSpan={3}
+                              className="marketEmployDetail__empty"
+                            >
+                              {tm("noData")}
                             </td>
                           </tr>
                         )}
@@ -944,15 +1080,17 @@ const MarketEmployEmployeeDetail = () => {
                     </table>
                   </div>
 
-                  <h4 className="marketEmployDetail__blockTitle">Смены</h4>
+                  <h4 className="marketEmployDetail__blockTitle">
+                    {tm("blockShifts")}
+                  </h4>
                   <div className="marketEmployDetail__tableWrap">
                     <table className="marketEmployDetail__table marketEmployDetail__table--compact">
                       <thead>
                         <tr>
-                          <th>Сотрудник</th>
-                          <th>Касса</th>
-                          <th>Продажи</th>
-                          <th>Статус</th>
+                          <th>{tm("colEmployee")}</th>
+                          <th>{tm("colCashbox")}</th>
+                          <th>{tm("colSales")}</th>
+                          <th>{tm("colStatus")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -967,8 +1105,11 @@ const MarketEmployEmployeeDetail = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={4} className="marketEmployDetail__empty">
-                              Нет смен за период
+                            <td
+                              colSpan={4}
+                              className="marketEmployDetail__empty"
+                            >
+                              {tm("noShiftsForPeriod")}
                             </td>
                           </tr>
                         )}

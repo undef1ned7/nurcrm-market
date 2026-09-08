@@ -1,16 +1,19 @@
 .invoice-preview-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
   z-index: 2000;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
   backdrop-filter: blur(4px);
 }
 
 .invoice-preview-modal {
-  background: var(--nur-surface);
+  background: var(--nur-surface-2);
   border-radius: 16px;
   width: 90%;
   max-width: 800px;
@@ -54,11 +57,14 @@
     padding: 24px;
     overflow-y: auto;
     flex: 1;
+    background: var(--nur-surface-3);
   }
 
   &__invoice {
-    background: var(--nur-surface);
-    border: 1px solid var(--nur-border);
+    background: var(--nur-surface-2);
+    border: 1px solid var(--nur-border-strong);
+    border-radius: 8px;
+    box-shadow: var(--nur-shadow-sm);
     padding: 32px;
     font-family: Arial, sans-serif;
     font-size: 14px;
@@ -118,7 +124,7 @@
 
   &__table {
     margin-top: 16px;
-    border: 1px solid #000;
+    border: 1px solid var(--nur-border-strong);
   }
 
   &__table-header {
@@ -127,13 +133,13 @@
     background: var(--nur-surface-3);
     font-weight: 700;
     font-size: 9px;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid var(--nur-border-strong);
   }
 
   &__table-row {
     display: grid;
     grid-template-columns: 4% 25% 8% 8% 8% 12% 8% 12% 13%;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid var(--nur-border-strong);
     min-height: 20px;
     font-size: 9px;
 
@@ -149,7 +155,7 @@
 
   &__table-col {
     padding: 6px;
-    border-right: 1px solid #000;
+    border-right: 1px solid var(--nur-border-strong);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -221,7 +227,7 @@
 
   &__signature-line {
     height: 1px;
-    border-bottom: 1px solid var(--nur-text);
+    border-bottom: 1px solid var(--nur-text-2);
     margin-top: 40px;
   }
 
@@ -234,7 +240,7 @@
   }
 
   &__error {
-    color: #dc2626;
+    color: var(--nur-danger);
   }
 
   &__actions {
@@ -251,7 +257,7 @@
     gap: 8px;
     padding: 12px 24px;
     background: var(--nur-text);
-    color: white;
+    color: var(--nur-surface);
     border: none;
     border-radius: 8px;
     font-size: 14px;
@@ -260,7 +266,7 @@
     transition: background 0.2s;
 
     &:hover:not(:disabled) {
-      background: #1f2937;
+      background: var(--nur-text-2);
     }
 
     &:disabled {

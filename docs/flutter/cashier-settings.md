@@ -7,7 +7,7 @@
 - Касса: `/crm/market/cashier`
 
 **Веб-код:** `src/features/create-sale/model/useMarketCashierSettings.ts`  
-**Бэкенд-док:** [cashier-settings.md](../backend/cashier-settings.md)
+**Бэкенд-док:** [cashier-settings.md](../backend/kassa/cashier-settings.md)
 
 **Статус:** веб готов «мягко». Пока эндпоинтов нет — GET падает, функции выключены (код не спрашивается, лимита скидки нет) + fallback на `company.cashier_password`. После появления API всё включается само.
 

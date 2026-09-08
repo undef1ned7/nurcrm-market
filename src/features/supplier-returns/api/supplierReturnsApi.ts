@@ -1,5 +1,6 @@
 import api from "@shared/api";
-import { addCashFlows } from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import { updateProductAsync } from "@entities/product";
 import {
   RETURNS_CREATE_PATH,
@@ -161,7 +162,11 @@ export async function createSupplierReturn({
     reason: payload.reason,
     comment: payload.comment || "",
     compensation: payload.compensation,
-    cashbox_id: payload.compensation === "cash" ? payload.cashboxId : undefined,
+    ...(payload.compensation === "cash"
+      ? payload.cashboxId
+        ? { cashbox_id: payload.cashboxId }
+        : buildExpenseVariableRouting()
+      : {}),
     items: payload.items.map((item) => ({
       product_id: item.productId,
       qty: item.qty,
@@ -195,18 +200,20 @@ export async function createSupplierReturn({
       const amount = sumReturnItems(payload.items);
       if (amount > 0) {
         try {
-          await dispatch(
-            addCashFlows({
+          await postCashflowIfNeeded(
+            dispatch,
+            {
               cashbox: payload.cashboxId,
               type: "income",
               name: `Возврат поставщику: ${payload.supplierName}`,
               amount: amount.toFixed(2),
               source_business_operation_id: "Возврат поставщику",
               status: companyPlanName === "Старт" ? "approved" : "pending",
-            }),
-          ).unwrap();
+            },
+            { warnOnFailure: true, failureContext: "supplierReturn" },
+          );
         } catch {
-          /* остаток уже списан; документ всё равно сохраняем локально */
+          /* warnOnFailure handles UI */
         }
       }
     }

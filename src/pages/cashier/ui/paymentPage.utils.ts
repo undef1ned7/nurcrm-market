@@ -1,6 +1,7 @@
 import {
   handleCheckoutResponseForPrinting,
   ensurePrinterConnectedInteractively,
+  isPrintFormatError,
 } from "@pages/sell/ui/services/printService";
 import type { PaymentAmounts, PaymentMethodId } from "./paymentPage.types";
 
@@ -135,14 +136,23 @@ export function getPaymentAmounts({
   };
 }
 
-export async function printReceiptSmart(payload) {
+export async function printReceiptSmart(
+  payload: unknown,
+  options: { skipDrawer?: boolean } = {},
+) {
+  const printOpts = {
+    interactive: false,
+    receiptStyle: "market" as const,
+    skipDrawer: options.skipDrawer === true,
+  };
   try {
-    await handleCheckoutResponseForPrinting(payload, {
-      interactive: false,
-      receiptStyle: "market",
-    });
+    await handleCheckoutResponseForPrinting(payload, printOpts);
     return true;
   } catch (err) {
+    if (isPrintFormatError(err)) {
+      console.warn("[PaymentPage] Неверный формат чека для печати:", err);
+      return false;
+    }
     console.warn(
       "[PaymentPage] Печать не удалась, запрашиваем выбор USB-принтера:",
       err,
@@ -151,10 +161,7 @@ export async function printReceiptSmart(payload) {
     if (!connected) return false;
 
     try {
-      await handleCheckoutResponseForPrinting(payload, {
-        interactive: false,
-        receiptStyle: "market",
-      });
+      await handleCheckoutResponseForPrinting(payload, printOpts);
       return true;
     } catch (err2) {
       console.warn("[PaymentPage] Повторная печать не удалась:", err2);

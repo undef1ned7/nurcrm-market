@@ -116,6 +116,14 @@ export const getDebtStatus = (dueDate: any) => {
   };
 };
 
+export {
+  DEBT_PAYMENT_BANKS,
+  DEBT_PAY_BANK_DEFAULT,
+  resolveDebtPaymentMethod,
+  debtPaymentMethodLabel,
+} from "@shared/lib/tools/debtPaymentMethod";
+export type { DebtPayMethod } from "@shared/lib/tools/debtPaymentMethod";
+
 export const checkNotifications = (items: any[]) => {
   const notifications: any[] = [];
   const today = new Date();

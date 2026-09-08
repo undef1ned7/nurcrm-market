@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import BarberMastersPortal from "./BarberMastersPortal";
 import { fullName, getMembershipCommonWarehouseIds } from "../masters.utils";
 
@@ -22,6 +23,9 @@ const WarehouseAgentModal = ({
   onSubmit,
   onClose,
 }) => {
+  const { t } = useTranslation();
+  const tw = (k: string): string =>
+    t(`crm.employees.warehouseAgentModal.${k}`) as string;
   if (!open || !employee) return null;
 
   return (
@@ -37,12 +41,12 @@ const WarehouseAgentModal = ({
           onClick={(e) => e.stopPropagation()}
         >
           <header className="barbermasters__modalHeader">
-            <h3 className="barbermasters__modalTitle">Агент склада</h3>
+            <h3 className="barbermasters__modalTitle">{tw("title")}</h3>
             <button
               type="button"
               className="barbermasters__iconBtn"
               onClick={onClose}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
             >
               ×
             </button>
@@ -59,7 +63,7 @@ const WarehouseAgentModal = ({
                   </div>
                   <div className="barbermasters__employeeInfo">
                     <div className="barbermasters__employeeName">
-                      {fullName(employee) || "Без имени"}
+                      {fullName(employee) || tw("noName")}
                     </div>
                     <div className="barbermasters__employeeMeta">
                       {employee.email || employee.id}
@@ -71,7 +75,7 @@ const WarehouseAgentModal = ({
               {existingMembership && (
                 <div className="barbermasters__field barbermasters__field--full">
                   <div className="barbermasters__help">
-                    Текущее назначение:{" "}
+                    {tw("currentAssignment")}{" "}
                     <strong>
                       {getWarehouseAgentLabel(
                         existingMembership.assigned_warehouse,
@@ -80,7 +84,7 @@ const WarehouseAgentModal = ({
                     {existingMembership.common_access_enabled && (
                       <>
                         {" "}
-                        · общий доступ:{" "}
+                        · {tw("commonAccessInline")}{" "}
                         <strong>
                           {getMembershipCommonWarehouseIds(existingMembership)
                             .map((id) => getWarehouseAgentLabel(id))
@@ -94,7 +98,7 @@ const WarehouseAgentModal = ({
 
               <div className="barbermasters__field barbermasters__field--full">
                 <label className="barbermasters__label">
-                  Ограничить доступ одним складом
+                  {tw("limitToOneWarehouse")}
                 </label>
                 <select
                   className="barbermasters__input"
@@ -104,8 +108,8 @@ const WarehouseAgentModal = ({
                 >
                   <option value="">
                     {warehousesLoading || membershipLoading
-                      ? "Загрузка…"
-                      : "Все склады компании"}
+                      ? t("common.loading")
+                      : tw("allCompanyWarehouses")}
                   </option>
                   {warehouses.map((w) => (
                     <option key={w.id} value={w.id}>
@@ -116,7 +120,9 @@ const WarehouseAgentModal = ({
               </div>
 
               <div className="barbermasters__field barbermasters__field--full">
-                <label className="barbermasters__label">Доступ к складу</label>
+                <label className="barbermasters__label">
+                  {tw("warehouseAccess")}
+                </label>
                 <div className="barbermasters__seg">
                   <button
                     type="button"
@@ -126,7 +132,7 @@ const WarehouseAgentModal = ({
                     onClick={() => setCommonEnabled(false)}
                     disabled={saving}
                   >
-                    Только свои остатки
+                    {tw("ownStockOnly")}
                   </button>
                   <button
                     type="button"
@@ -136,7 +142,7 @@ const WarehouseAgentModal = ({
                     onClick={() => setCommonEnabled(true)}
                     disabled={saving}
                   >
-                    Общий прайс склада
+                    {tw("commonWarehousePrice")}
                   </button>
                 </div>
               </div>
@@ -144,20 +150,22 @@ const WarehouseAgentModal = ({
               {commonEnabled && (
                 <div className="barbermasters__field barbermasters__field--full">
                   <label className="barbermasters__label">
-                    Склады общего доступа{" "}
+                    {tw("commonAccessWarehouses")}{" "}
                     <span className="barbermasters__req">*</span>
                   </label>
                   {warehousesLoading || membershipLoading ? (
-                    <div className="barbermasters__help">Загрузка…</div>
+                    <div className="barbermasters__help">
+                      {t("common.loading")}
+                    </div>
                   ) : warehouses.length === 0 ? (
                     <div className="barbermasters__help">
-                      У компании нет складов
+                      {tw("noWarehouses")}
                     </div>
                   ) : (
                     <div
                       className="flex flex-col gap-2 max-h-48 overflow-y-auto rounded-lg border border-slate-200 p-3"
                       role="group"
-                      aria-label="Склады общего доступа"
+                      aria-label={tw("commonAccessWarehouses")}
                     >
                       {warehouses.map((w) => {
                         const id = String(w.id);
@@ -179,14 +187,15 @@ const WarehouseAgentModal = ({
                     </div>
                   )}
                   <div className="barbermasters__help">
-                    Отметьте склады, остатки которых агент будет видеть в общем
-                    прайс‑листе. Можно выбрать несколько.
+                    {tw("commonAccessHint")}
                   </div>
                 </div>
               )}
 
               <div className="barbermasters__field barbermasters__field--full">
-                <label className="barbermasters__label">Оптовые продажи</label>
+                <label className="barbermasters__label">
+                  {t("crm.employees.accessModal.wholesaleSales")}
+                </label>
                 <div className="barbermasters__seg">
                   <button
                     type="button"
@@ -196,7 +205,7 @@ const WarehouseAgentModal = ({
                     onClick={() => setCanSellWholesale(false)}
                     disabled={saving}
                   >
-                    Оптовая цена
+                    {t("crm.employees.accessModal.wholesalePrice")}
                   </button>
                   <button
                     type="button"
@@ -206,12 +215,10 @@ const WarehouseAgentModal = ({
                     onClick={() => setCanSellWholesale(true)}
                     disabled={saving}
                   >
-                    Цена агента
+                    {t("crm.employees.accessModal.agentPrice")}
                   </button>
                 </div>
-                <div className="barbermasters__help">
-                  Агент сможет создавать продажи с переключателем «Опт».
-                </div>
+                <div className="barbermasters__help">{tw("wholesaleHint")}</div>
               </div>
 
               {error && (
@@ -228,10 +235,10 @@ const WarehouseAgentModal = ({
                 disabled={saving}
               >
                 {saving
-                  ? "Сохранение…"
+                  ? t("common.saving")
                   : existingMembership
-                    ? "Сохранить изменения"
-                    : "Назначить агентом"}
+                    ? t("crm.employees.editModal.saveChanges")
+                    : tw("assignAsAgent")}
               </button>
               <button
                 type="button"
@@ -239,7 +246,7 @@ const WarehouseAgentModal = ({
                 onClick={onClose}
                 disabled={saving}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
             </div>
           </form>

@@ -22,12 +22,12 @@ import {
   updateProductInCart,
 } from "@entities/sale";
 import {
-  addCashFlows,
-  getCashBoxes,
+  postCashflowIfNeeded,
 } from "@entities/cash";
 import { useClient } from "@entities/client";
 import { useSale } from "@entities/sale";
 import { getProfile, useUser } from "@entities/user";
+import { buildPosRoutingFromUser } from "@shared/lib/tools/cashboxResolution";
 import BarcodeScanner from "./BarcodeScanner";
 import { createDebt, filterProducts } from "./sellHelpers";
 import { fetchTransfersAsync } from "@entities/warehouse";
@@ -49,7 +49,7 @@ async function handleCheckoutResponseForPrinting(res) {
 /* =========================
    1) SellModal
    ========================= */
-const SellModal = ({ onClose, id, selectCashBox }) => {
+const SellModal = ({ onClose, id }) => {
   const dispatch = useDispatch() as any;
   const location = useLocation();
   const  alert = useAlert();
@@ -439,17 +439,24 @@ const SellModal = ({ onClose, id, selectCashBox }) => {
         }
 
         const result = await run(
-          productCheckout({ id: start?.id, bool: withReceipt, clientId })
+          productCheckout({
+            id: start?.id,
+            bool: withReceipt,
+            clientId,
+            ...buildPosRoutingFromUser(profile, company),
+          })
         );
 
         if (debt !== "Долги") {
-          await run(
-            addCashFlows({
-              ...cashData,
+          await postCashflowIfNeeded(
+            dispatch,
+            {
+              type: cashData.type,
               name: cashData.name === "" ? "Продажа" : cashData.name,
               amount: debt === "Предоплата" ? amount : start.total,
               source_cashbox_flow_id: start.id,
-            })
+            },
+            { warnOnFailure: true, failureContext: "sale" },
           );
         }
 
@@ -524,13 +531,8 @@ const SellModal = ({ onClose, id, selectCashBox }) => {
 
   useEffect(() => {
     dispatch(fetchClientsAsync(undefined as any));
-    dispatch(getCashBoxes(undefined as any));
     dispatch(fetchAgentProductsAsync(undefined as any));
   }, [dispatch]);
-
-  useEffect(() => {
-    setCashData((prev) => ({ ...prev, cashbox: selectCashBox }));
-  }, [selectCashBox]);
 
   useEffect(() => {
     if (!profile) return;

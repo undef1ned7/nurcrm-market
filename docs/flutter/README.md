@@ -17,6 +17,8 @@ i18n (те же ключи, что веб): [`../i18n.md`](../i18n.md).
 | [add-product.md](./add-product.md) | Создание / редактирование товара |
 | [adult-products.md](./adult-products.md) | Товар 18+: флаг, касса, второй экран |
 | [cashier-settings.md](./cashier-settings.md) | Код удаления из корзины + max скидка |
+| [cash-and-cashflows.md](./cash-and-cashflows.md) | **Денежные средства:** auto-cashflows на бэке (BE готов), смены, pending |
+| [cashbox-reports.md](./cashbox-reports.md) | **Отчёты кассы:** день/месяц, аналитика, fallback |
 | [client-debt-and-kpis.md](./client-debt-and-kpis.md) | Карточка клиента: KPI + долг + оплата графика |
 | [debt-installment-schedule.md](./debt-installment-schedule.md) | Продажа в долг: v1 и v2 |
 | [procurement-history-returns.md](./procurement-history-returns.md) | История закупок + возврат поставщикам |

@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Bell, ShoppingCart } from "lucide-react";
+import { Bell, Menu, ShoppingCart, X } from "lucide-react";
 import { useUser } from "@entities/user";
 import NotificationModal from "@widgets/notification-modal/ui/NotificationModal";
 import {
   fetchNotificationsAsync,
   formatUnreadBadge,
 } from "@entities/notification";
-import { useNotificationsSocket } from "@entities/notification/lib/useNotificationsSocket";
 import { usePageChrome } from "@shared/ui/page-shell";
 import "./Header.scss";
 import { useAppDispatch, useAppSelector } from "@app/store";
@@ -53,7 +52,12 @@ function resolvePageMeta(pathname: string, t: ReturnType<typeof useTranslation>[
   return { title: bestTitle ?? t("header.defaultTitle"), description: desc };
 }
 
-const Header = () => {
+type HeaderProps = {
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+};
+
+const Header = ({ isSidebarOpen = false, onToggleSidebar }: HeaderProps) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -72,8 +76,6 @@ const Header = () => {
   const unreadBadge = formatUnreadBadge(unreadCount);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  useNotificationsSocket();
-
   useEffect(() => {
     dispatch(fetchNotificationsAsync({} as any) as any);
   }, [dispatch]);
@@ -91,6 +93,27 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header__left">
+        {onToggleSidebar ? (
+          <button
+            type="button"
+            className="header__menu-btn"
+            onClick={onToggleSidebar}
+            title={
+              isSidebarOpen
+                ? t("crm.nav.chrome.collapseMenu")
+                : t("crm.nav.chrome.openMenu")
+            }
+            aria-label={
+              isSidebarOpen
+                ? t("crm.nav.chrome.collapseMenu")
+                : t("crm.nav.chrome.openMenu")
+            }
+            aria-expanded={isSidebarOpen}
+            aria-controls="app-sidebar"
+          >
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        ) : null}
         <div className="header__title-wrap">
           <h1 className="header__title">{title}</h1>
           {description ? (

@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { FaCheckCircle, FaRegCircle, FaSearch, FaTimes } from "react-icons/fa";
+import { accessLabel } from "./accessList/accessLabelI18n";
 import { MENU_CONFIG } from "@widgets/sidebar/ui/config/menuConfig";
 import { HIDE_RULES } from "@widgets/sidebar/ui/config/hideRules";
 import {
@@ -28,6 +30,7 @@ const AccessList = ({
   company, // Добавляем company для использования в логике меню
   isModalMode = false, // Новый проп для режима модального окна
 }: any) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(isModalMode); // В модальном режиме сразу открыт
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -507,7 +510,7 @@ const AccessList = ({
           <input
             type="text"
             className="access-list-modal__search-input"
-            placeholder="Поиск доступов..."
+            placeholder={t("crm.access.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -516,7 +519,7 @@ const AccessList = ({
               type="button"
               className="access-list-modal__search-clear"
               onClick={() => setSearchQuery("")}
-              aria-label="Очистить поиск"
+              aria-label={t("crm.access.clearSearch")}
             >
               <FaTimes size={14} />
             </button>
@@ -524,7 +527,7 @@ const AccessList = ({
         </div>
 
         <AccessSection
-          title="Базовые доступы"
+          title={t("crm.access.section.basic")}
           items={filteredBasic}
           selectedAccess={selectedAccess}
           onToggle={toggleAccess}
@@ -534,7 +537,7 @@ const AccessList = ({
         />
 
         <AccessSection
-          title="Секторные доступы"
+          title={t("crm.access.section.sector")}
           items={filteredSector}
           selectedAccess={selectedAccess}
           onToggle={toggleAccess}
@@ -544,7 +547,7 @@ const AccessList = ({
         />
 
         <AccessSection
-          title="Заказы кафе — официанты"
+          title={t("crm.access.section.cafeWaiterOrders")}
           items={filteredCafeWaiterOrderSpecial}
           selectedAccess={selectedAccess}
           onToggle={toggleAccess}
@@ -554,7 +557,7 @@ const AccessList = ({
         />
 
         <AccessSection
-          title="Касса Маркета"
+          title={t("crm.access.section.marketCashier")}
           items={filteredMarketCashierSpecial}
           selectedAccess={selectedAccess}
           onToggle={toggleAccess}
@@ -564,7 +567,7 @@ const AccessList = ({
         />
 
         <AccessSection
-          title="Дополнительные услуги"
+          title={t("crm.access.section.additionalServices")}
           items={filteredAdditional}
           selectedAccess={selectedAccess}
           onToggle={toggleAccess}
@@ -588,7 +591,7 @@ const AccessList = ({
             className="nur-btn nur-btn--primary"
             onClick={handleSave}
           >
-            Сохранить доступы
+            {t("crm.access.save")}
           </button>
         </div>
       </div>
@@ -611,7 +614,7 @@ const AccessList = ({
           cursor: "pointer",
         }}
       >
-        Доступы сотрудника ▾
+        {t("crm.access.employeeAccessesToggle")} ▾
       </button>
 
       {isOpen && (
@@ -643,7 +646,9 @@ const AccessList = ({
                   cursor: "pointer",
                 }}
               >
-                <span style={{ color: "var(--nur-text)" }}>{accessType.label}</span>
+                <span style={{ color: "var(--nur-text)" }}>
+                  {accessLabel(accessType.label, t)}
+                </span>
                 {selectedAccess[accessType.backendKey] ? (
                   <FaCheckCircle color="#2ecc71" />
                 ) : (
@@ -667,7 +672,7 @@ const AccessList = ({
               cursor: "pointer",
             }}
           >
-            Сохранить доступы
+            {t("crm.access.save")}
           </button>
         </div>
       )}

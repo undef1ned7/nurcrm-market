@@ -1,38 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@app/store";
 import { X } from "lucide-react";
 import {
   fetchProductsAsync,
   updateProductAsync,
 } from "@entities/product";
-import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
-} from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import { useUser } from "@entities/user";
 
 const AcceptPendingModal = ({ onClose, onChanged }: any) => {
   const dispatch = useAppDispatch();
   const { list: products, loading } = useAppSelector((s: any) => s.product);
-  const { list: cashBoxes } = useCash();
   const { company } = useUser();
-  const [selectedCashBox, setSelectedCashBox] = useState("");
-
-  useEffect(() => {
-    dispatch(getCashBoxes({} as any) as any);
-  }, [dispatch]);
-
-  // Автоматически выбираем первую кассу по индексу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectedCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectedCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectedCashBox]);
 
   const pending = useMemo(
     () =>
@@ -56,37 +36,41 @@ const AcceptPendingModal = ({ onClose, onChanged }: any) => {
   };
 
   const handleAccept = async (item: any) => {
-    // Дополнительная проверка кассы перед выполнением операции
-    if (!selectedCashBox) {
-      alert("Касса не выбрана. Создайте кассу в разделе «Кассы».");
-      return;
-    }
+    const amount = calcExpenseAmount(item);
     try {
       await dispatch(updateProductAsync({
           productId: item.id,
-          updatedData: { status: "accepted" },
+          updatedData: {
+            status: "accepted",
+            ...(amount > 0
+              ? { payment_mode: "cash", ...buildExpenseVariableRouting() }
+              : {}),
+          },
         } as any) as any).unwrap();
-
-      const amount = calcExpenseAmount(item);
-      if (amount > 0) {
-        await dispatch(addCashFlows({
-            cashbox: selectedCashBox,
-            type: "expense",
-            name: item.name,
-            amount,
-            source_cashbox_flow_id: item.id,
-            source_business_operation_id: "Возврат товара",
-            status:
-              company?.subscription_plan?.name === "Старт"
-                ? "approved"
-                : "pending",
-          } as any) as any).unwrap();
-      }
-      refresh();
     } catch (e: any) {
       console.error(e);
       alert("Не удалось принять товар");
+      return;
     }
+
+    if (amount > 0) {
+      await postCashflowIfNeeded(
+        dispatch,
+        {
+          type: "expense",
+          name: item.name,
+          amount,
+          source_cashbox_flow_id: item.id,
+          source_business_operation_id: "Возврат товара",
+          status:
+            company?.subscription_plan?.name === "Старт"
+              ? "approved"
+              : "pending",
+        } as any,
+        { warnOnFailure: true, failureContext: "accept" },
+      );
+    }
+    refresh();
   };
 
   const handleReject = async (item: any) => {
@@ -109,29 +93,6 @@ const AcceptPendingModal = ({ onClose, onChanged }: any) => {
         <div className="add-modal__header">
           <h3>Принятие товаров (статус: pending)</h3>
           <X className="add-modal__close-icon" size={20} onClick={onClose} />
-        </div>
-
-        <div className="add-modal__section">
-          <label>Касса (обязательно для принятия)</label>
-          {selectedCashBox && cashBoxes && cashBoxes.length > 0 ? (
-            <span
-              className="add-modal__input"
-              style={{ padding: "8px", display: "block" }}
-            >
-              Касса:{" "}
-              {cashBoxes.find((cash) => cash.id === selectedCashBox)?.name ||
-                cashBoxes.find((cash) => cash.id === selectedCashBox)
-                  ?.department_name ||
-                "Касса"}
-            </span>
-          ) : (
-            <span
-              className="add-modal__input"
-              style={{ padding: "8px", display: "block", color: "#999" }}
-            >
-              Нет доступных касс
-            </span>
-          )}
         </div>
 
         {loading ? (

@@ -12,11 +12,8 @@ import {
   createClientAsync,
   fetchClientsAsync,
 } from "@entities/client";
-import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
-} from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import { createDeal } from "@entities/sale";
 import AddProductBarcode from "../../AddProductBarcode";
 import { createProductAsync } from "@entities/product";
@@ -42,13 +39,7 @@ const AddModal = ({
   const { creating, createError, brands, categories, barcodeError } =
     useProducts();
   const { company } = useUser();
-  const { list: internalCashBoxes } = useCash();
 
-  // Используем внешние кассы, если переданы, иначе внутренние
-  const cashBoxes = externalCashBoxes || internalCashBoxes;
-  const [selectCashBox, setSelectCashBox] = useState(
-    externalSelectCashBox || ""
-  );
   const [activeTab, setActiveTab] = useState(0);
   const [isTabSelected, setIsTabSelected] = useState(true); // Автоматически открываем первую вкладку (сканирование)
 
@@ -198,6 +189,12 @@ const AddModal = ({
       purchase_price,
       plu: newItemData.plu ? Number(newItemData.plu) : null,
       scale_type: newItemData.scale_type || null,
+      ...(debt !== "Долги"
+        ? {
+            payment_mode: debt === "Предоплата" ? "prepayment" : "cash",
+            ...buildExpenseVariableRouting(),
+          }
+        : { payment_mode: "debt" }),
     };
 
     try {
@@ -240,16 +237,17 @@ const AddModal = ({
         ).unwrap();
       }
 
-      // Добавление денежного потока только если не долг
       if (debt !== "Долги") {
         const amountForCash = debt === "Предоплата" ? amount : totalAmount;
-        await dispatch(
-          addCashFlows({
+        await postCashflowIfNeeded(
+          dispatch,
+          {
             ...cashData,
             amount: amountForCash,
             source_cashbox_flow_id: product.id,
-          })
-        ).unwrap();
+          },
+          { warnOnFailure: true, failureContext: "purchase" },
+        );
       }
 
       if (client !== "" && !debt) {
@@ -303,7 +301,6 @@ const AddModal = ({
           onClose={onClose}
           onShowSuccessAlert={onShowSuccessAlert}
           onShowErrorAlert={onShowErrorAlert}
-          selectCashBox={selectCashBox || externalSelectCashBox}
         />
       ),
       option: "scan",
@@ -727,21 +724,7 @@ const AddModal = ({
 
   useEffect(() => {
     dispatch(fetchClientsAsync({} as any) as any);
-    if (!externalCashBoxes) {
-      dispatch(getCashBoxes({} as any) as any);
-    }
-  }, [dispatch, externalCashBoxes]);
-
-  // Автоматически выбираем первую кассу по индексу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectCashBox]);
+  }, [dispatch]);
 
   useEffect(() => {
     if (barcodeError) {
@@ -753,11 +736,10 @@ const AddModal = ({
   useEffect(() => {
     setCashData((prev) => ({
       ...prev,
-      cashbox: selectCashBox,
       name: newItemData.name,
       amount: newItemData.price,
     }));
-  }, [newItemData, selectCashBox]);
+  }, [newItemData]);
 
   // Автоматическое заполнение телефона при выборе поставщика в тарифе "Старт"
   useEffect(() => {

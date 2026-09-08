@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import UniversalModal from "@shared/ui/legacy-production/ProductionAgents/UniversalModal/UniversalModal";
 
 const CustomServiceModal = ({
@@ -8,6 +9,9 @@ const CustomServiceModal = ({
   setCustomService,
   onAdd,
 }: any) => {
+  const { t } = useTranslation();
+  const tc = (k: string): string =>
+    t(`crm.sell.modals.customService.${k}`) as string;
   const handleClose = useCallback(() => {
     onClose();
     setCustomService({ name: "", price: "", quantity: "1" });
@@ -37,11 +41,11 @@ const CustomServiceModal = ({
   return (
     <UniversalModal
       onClose={handleClose}
-      title={"Дополнительная услуга"}
+      title={tc("title")}
     >
       <div className="start__custom-service">
         <div>
-          <label>Название</label>
+          <label>{t("common.name")}</label>
           <input
             className="sell__header-input"
             value={customService.name}
@@ -52,11 +56,11 @@ const CustomServiceModal = ({
               }))
             }
             type="text"
-            placeholder="Введите название услуги"
+            placeholder={tc("namePlaceholder")}
           />
         </div>
         <div>
-          <label>Сумма</label>
+          <label>{t("common.amount")}</label>
           <input
             className="sell__header-input"
             value={customService.price}
@@ -67,11 +71,11 @@ const CustomServiceModal = ({
               }))
             }
             type="text"
-            placeholder="Введите цену услуги"
+            placeholder={tc("pricePlaceholder")}
           />
         </div>
         <div>
-          <label>Количество</label>
+          <label>{t("common.quantity")}</label>
           <input
             className="sell__header-input"
             value={customService.quantity}
@@ -84,7 +88,7 @@ const CustomServiceModal = ({
             type="number"
             onWheel={(e) => (e.target as HTMLElement).blur()}
             min="0"
-            placeholder="Введите количество товара"
+            placeholder={tc("quantityPlaceholder")}
           />
         </div>
         <div
@@ -100,7 +104,7 @@ const CustomServiceModal = ({
             type="button"
             onClick={handleClose}
           >
-            Отменить
+            {t("common.cancel")}
           </button>
           <button
             className="start__total-pay"
@@ -108,7 +112,7 @@ const CustomServiceModal = ({
             type="button"
             onClick={handleAdd}
           >
-            Добавить
+            {t("common.add")}
           </button>
         </div>
       </div>

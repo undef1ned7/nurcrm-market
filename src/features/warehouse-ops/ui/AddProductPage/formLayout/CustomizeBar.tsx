@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Check, Plus, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { useOptionalProductFormLayout } from "./ProductFormLayoutContext";
 
@@ -7,6 +8,8 @@ export function CustomizeBar({
   variant?: "entry" | "edit" | "auto";
 }) {
   const layout = useOptionalProductFormLayout();
+  const { t } = useTranslation();
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
   if (!layout?.canCustomize) return null;
 
   const showEntry =
@@ -23,11 +26,11 @@ export function CustomizeBar({
           onClick={layout.startCustomize}
         >
           <SlidersHorizontal size={18} />
-          Настроить форму
+          {tp("configureForm")}
         </button>
         {layout.hiddenCount > 0 ? (
           <span className="product-form-layout-entry__meta">
-            Скрыто полей: {layout.hiddenCount}
+            {tp("hiddenFieldsCount", { count: layout.hiddenCount })}
           </span>
         ) : null}
       </div>
@@ -39,10 +42,10 @@ export function CustomizeBar({
   return (
     <div className="product-form-layout-bar">
       <p className="product-form-layout-bar__hint">
-        Нажмите − чтобы скрыть поле. Скрытые поля можно вернуть кнопкой ниже.
+        {tp("customizeHint")}
         {layout.remoteAvailable
-          ? " Сохраняется для всей компании."
-          : " Пока сохраняется на этом устройстве."}
+          ? tp("customizeSavedCompany")
+          : tp("customizeSavedDevice")}
       </p>
       <div className="product-form-layout-bar__actions">
         <button
@@ -52,7 +55,7 @@ export function CustomizeBar({
           disabled={layout.hiddenCount === 0}
         >
           <RotateCcw size={16} />
-          Сбросить
+          {t("common.reset")}
         </button>
         <button
           type="button"
@@ -61,7 +64,7 @@ export function CustomizeBar({
           disabled={layout.saving}
         >
           <Check size={16} />
-          Готово
+          {tp("done")}
         </button>
         <button
           type="button"
@@ -69,7 +72,7 @@ export function CustomizeBar({
           onClick={() => layout.setAddSheetOpen(true)}
         >
           <Plus size={18} />
-          Добавить поле
+          {tp("addField")}
           {layout.hiddenCount > 0 ? ` (${layout.hiddenCount})` : ""}
         </button>
       </div>

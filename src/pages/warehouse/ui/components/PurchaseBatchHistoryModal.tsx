@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Modal from "@shared/ui/Modal/Modal";
 import api from "@shared/api";
 import Pagination from "./Pagination";
@@ -33,6 +34,7 @@ const parseListResponse = (response: any) => {
 };
 
 const PurchaseBatchHistoryModal = ({ open, productId, productName, onClose }: any) => {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [limit] = useState(DEFAULT_LIMIT);
   const [loading, setLoading] = useState<any>(false);
@@ -77,11 +79,11 @@ const PurchaseBatchHistoryModal = ({ open, productId, productName, onClose }: an
       setNext(null);
       setPrevious(null);
       setTotalAmount(null);
-      setError("Не удалось загрузить историю закупок.");
+      setError(t("crm.warehouse.purchaseHistory.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [productId, page, limit]);
+  }, [productId, page, limit, t]);
 
   useEffect(() => {
     if (!open || !productId) return;
@@ -100,8 +102,8 @@ const PurchaseBatchHistoryModal = ({ open, productId, productName, onClose }: an
   };
 
   const title = productName
-    ? `История закупок: ${productName}`
-    : "История закупок";
+    ? t("crm.warehouse.purchaseHistory.titleFor", { name: productName })
+    : t("crm.warehouse.purchaseHistory.title");
 
   return (
     <>
@@ -114,7 +116,7 @@ const PurchaseBatchHistoryModal = ({ open, productId, productName, onClose }: an
       >
         {totalAmount != null && (
           <div className="purchase-batch-history__summary">
-            Сумма всех партий:{" "}
+            {t("crm.warehouse.purchaseHistory.totalSum")}{" "}
             <strong>{formatBatchMoney(totalAmount)}</strong>
           </div>
         )}
@@ -126,7 +128,7 @@ const PurchaseBatchHistoryModal = ({ open, productId, productName, onClose }: an
         <PurchaseBatchTable
           batches={batches}
           loading={loading}
-          emptyMessage="Партии закупок не найдены"
+          emptyMessage={t("crm.warehouse.purchaseHistory.emptyModal")}
           onReceiptClick={handleReceiptClick}
         />
 
@@ -135,7 +137,7 @@ const PurchaseBatchHistoryModal = ({ open, productId, productName, onClose }: an
             currentPage={page}
             totalPages={totalPages}
             count={count}
-            countLabel="партий"
+            countLabel={t("crm.warehouse.purchaseHistory.batchesLabel")}
             loading={loading}
             hasNextPage={Boolean(next)}
             hasPrevPage={Boolean(previous)}
