@@ -296,6 +296,52 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 </tbody>
               </table>,
             )}
+          {!isStartTariff &&
+            renderProductsAccordion(
+              "expiringProducts",
+              t("crm.analytics.products.expiringProducts"),
+              <table className="analytics-page__table">
+                <thead>
+                  <tr>
+                    <th>{t("crm.analytics.products.code")}</th>
+                    <th>{t("crm.analytics.products.goods")}</th>
+                    <th>{t("crm.analytics.products.quantity")}</th>
+                    <th>{t("crm.analytics.products.expiryDate")}</th>
+                    <th>{t("crm.analytics.products.daysLeft")}</th>
+                    <th>{t("common.status")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {productsData.expiringProducts.length > 0 ? (
+                    productsData.expiringProducts.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.code}</td>
+                        <td>{row.name}</td>
+                        <td>{row.quantity}</td>
+                        <td>{row.expiry_date || row.expiration_date || "—"}</td>
+                        <td>{row.days_left ?? "—"}</td>
+                        <td>
+                          <span
+                            className={`analytics-page__status analytics-page__status--${row.statusType}`}
+                          >
+                            {row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        style={{ textAlign: "center", color: "#6b7280" }}
+                      >
+                        {t("crm.analytics.noData")}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>,
+            )}
         </div>
     </>
   );

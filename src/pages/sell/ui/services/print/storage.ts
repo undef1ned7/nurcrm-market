@@ -52,6 +52,24 @@ export function setEscposCodepage(n) {
   safeLsSet("escpos_cp", String(n));
 }
 
+export type ReceiptPrintMode = "graphic" | "text";
+
+const RECEIPT_MODE_KEY = "escpos_receipt_mode";
+
+/** По умолчанию graphic — canvas → GS v 0 (стабильная кириллица). */
+export function getReceiptPrintMode(): ReceiptPrintMode {
+  const raw = String(safeLsGet(RECEIPT_MODE_KEY) || "graphic").trim().toLowerCase();
+  return raw === "text" ? "text" : "graphic";
+}
+
+export function setEscposReceiptMode(mode: ReceiptPrintMode) {
+  safeLsSet(RECEIPT_MODE_KEY, mode === "text" ? "text" : "graphic");
+}
+
+export function isGraphicReceiptMode(): boolean {
+  return getReceiptPrintMode() !== "text";
+}
+
 /** Все ключи ESC/POS + ящика, которые живут только в этом браузере. */
 export const ESCPOS_SETTING_KEYS = [
   "escpos_vid",
@@ -64,6 +82,7 @@ export const ESCPOS_SETTING_KEYS = [
   "escpos_font",
   "escpos_line",
   "escpos_cp",
+  "escpos_receipt_mode",
   "escpos_drawer_enabled",
   "escpos_drawer_when",
   "escpos_drawer_cmd",

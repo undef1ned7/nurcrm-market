@@ -1,4 +1,5 @@
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FileSpreadsheet, X, Download } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { msgFromError } from "../clientDetails.helpers";
@@ -15,6 +16,7 @@ export default function ReconciliationModal({
   onClose,
 }: any) {
   const { mode } = useContext(ThemeModeContext);
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({ start: "", end: "" });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -65,7 +67,9 @@ export default function ReconciliationModal({
       );
     } catch (e) {
       console.error(e);
-      setErr(msgFromError(e, "Не удалось загрузить акт сверки"));
+      setErr(
+        msgFromError(e, t("crm.clients.details.reconciliationLoadError")),
+      );
     } finally {
       setLoading(false);
     }
@@ -86,13 +90,19 @@ export default function ReconciliationModal({
                 <FileSpreadsheet />
               </span>
               <div className="cmx__heading-text">
-                <h3 className="cmx__title">Акт сверки с клиентом</h3>
+                <h3 className="cmx__title">
+                  {t("crm.clients.details.reconTitle")}
+                </h3>
                 <p className="cmx__subtitle">
-                  Выберите период и выгрузите PDF
+                  {t("crm.clients.details.reconSubtitle")}
                 </p>
               </div>
             </div>
-            <button className="cmx__close" onClick={onClose} aria-label="Закрыть">
+            <button
+              className="cmx__close"
+              onClick={onClose}
+              aria-label={t("common.close")}
+            >
               <X />
             </button>
           </div>
@@ -100,7 +110,9 @@ export default function ReconciliationModal({
           <div className="cmx__body">
             <div className="cmx__grid">
               <label className="cmx__field">
-                <span className="cmx__label">Дата с</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.dateFromShort")}
+                </span>
                 <input
                   className="cmx__input"
                   type="date"
@@ -111,7 +123,9 @@ export default function ReconciliationModal({
                 />
               </label>
               <label className="cmx__field">
-                <span className="cmx__label">Дата по</span>
+                <span className="cmx__label">
+                  {t("crm.clients.details.dateToShort")}
+                </span>
                 <input
                   className="cmx__input"
                   type="date"
@@ -129,7 +143,7 @@ export default function ReconciliationModal({
           <div className="cmx__footer">
             <div className="cmx__footer-left">
               <button className="cmx__btn cmx__btn--ghost" onClick={onClose}>
-                Закрыть
+                {t("common.close")}
               </button>
             </div>
             <div className="cmx__footer-right">
@@ -139,7 +153,9 @@ export default function ReconciliationModal({
                 disabled={loading}
               >
                 <Download />
-                {loading ? "Загрузка..." : "Загрузить акт"}
+                {loading
+                  ? t("common.loading")
+                  : t("crm.clients.details.loadReconciliation")}
               </button>
             </div>
           </div>

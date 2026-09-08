@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { PRODUCT_FORM_BLOCK_META } from "./constants";
 import { useOptionalProductFormLayout } from "./ProductFormLayoutContext";
 import type { ProductFormBlockId } from "./types";
@@ -12,6 +13,7 @@ type Props = {
 
 export function FormBlock({ id, className = "", inline = false, children }: Props) {
   const layout = useOptionalProductFormLayout();
+  const { t } = useTranslation();
 
   if (!layout) {
     if (!className && !inline) return <>{children}</>;
@@ -25,7 +27,9 @@ export function FormBlock({ id, className = "", inline = false, children }: Prop
   if (!layout.isVisible(id)) return null;
 
   const customizing = layout.isCustomizing && layout.canCustomize;
-  const label = PRODUCT_FORM_BLOCK_META[id]?.label || id;
+  const label = t(`crm.warehouse.addProduct.block.${id}.label`, {
+    defaultValue: PRODUCT_FORM_BLOCK_META[id]?.label || id,
+  });
   const classes = [
     "product-form-block",
     inline ? "product-form-block--inline" : "",
@@ -42,8 +46,8 @@ export function FormBlock({ id, className = "", inline = false, children }: Prop
           type="button"
           className="product-form-block__remove"
           onClick={() => layout.hideBlock(id)}
-          aria-label={`Скрыть: ${label}`}
-          title={`Скрыть: ${label}`}
+          aria-label={t("crm.warehouse.addProduct.hideField", { label })}
+          title={t("crm.warehouse.addProduct.hideField", { label })}
         >
           <span aria-hidden="true">−</span>
         </button>

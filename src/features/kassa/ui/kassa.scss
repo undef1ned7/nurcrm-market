@@ -1426,3 +1426,11 @@
   color: #334155;
   text-transform: capitalize;
 }
+
+/* Действия «Изменить/Отменить» у строки движения (заявка на правку/сторно) */
+.kassa-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}

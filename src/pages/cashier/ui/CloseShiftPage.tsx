@@ -11,6 +11,10 @@ import {
   ShiftPaymentBreakdown,
 } from "@entities/shift";
 import { useShifts } from "@entities/shift";
+import {
+  calcShiftDrawerExpected,
+  estimateShiftWarehouseDrain,
+} from "@shared/lib/tools/cashboxResolution";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import "./CloseShiftPage.scss";
 
@@ -102,8 +106,21 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
   const salesTotal = parseFloat(String(shift.sales_total || 0));
   const cashSalesTotal = parseFloat(String(shift.cash_sales_total || 0));
   const noncashSalesTotal = parseFloat(String(shift.noncash_sales_total || 0));
+  const drawerExpectedFromSales = calcShiftDrawerExpected(
+    openingCash,
+    cashSalesTotal,
+  );
+  const warehouseDrainInShift = estimateShiftWarehouseDrain(
+    openingCash,
+    cashSalesTotal,
+    expectedCash,
+  );
+  const reconciliationExpected =
+    shift.drawer_expected_cash != null
+      ? parseFloat(String(shift.drawer_expected_cash))
+      : drawerExpectedFromSales;
   const closingCashNum = parseFloat(String(closingCash || 0));
-  const cashDiff = closingCashNum - expectedCash;
+  const cashDiff = closingCashNum - reconciliationExpected;
 
   const handleCloseShift = async () => {
     if (isNaN(closingCashNum) || closingCashNum < 0) {
@@ -122,7 +139,7 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
       setClosedSummary({
         closingCash: closingCashNum,
-        expectedCash,
+        expectedCash: reconciliationExpected,
         cashDiff,
         breakdown: resolveShiftPaymentBreakdown(
           closedShift || shift,
@@ -255,13 +272,39 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
 
                 <div className="close-shift-page__info-item">
                   <span className="close-shift-page__info-label">
+                    {t("crm.cashier.shift.drawerExpectedFromSales")}
+                  </span>
+                  <span className="close-shift-page__info-value">
+                    {formatShiftMoney(drawerExpectedFromSales)}
+                  </span>
+                </div>
+
+                {warehouseDrainInShift > 0 && (
+                  <div className="close-shift-page__info-item close-shift-page__info-item--warning">
+                    <span className="close-shift-page__info-label">
+                      {t("crm.cashier.shift.warehouseDrainInShift")}
+                    </span>
+                    <span className="close-shift-page__info-value">
+                      −{formatShiftMoney(warehouseDrainInShift)}
+                    </span>
+                  </div>
+                )}
+
+                <div className="close-shift-page__info-item">
+                  <span className="close-shift-page__info-label">
                     {t("crm.cashier.shift.expectedCash")}
                   </span>
                   <span className="close-shift-page__info-value">
-                    {formatShiftMoney(expectedCash)}
+                    {formatShiftMoney(reconciliationExpected)}
                   </span>
                 </div>
               </div>
+
+              {warehouseDrainInShift > 0 && (
+                <p className="close-shift-page__hint close-shift-page__hint--warning">
+                  {t("crm.cashier.shift.warehouseDrainHint")}
+                </p>
+              )}
 
               <div className="close-shift-page__payments">
                 <ShiftPaymentBreakdown

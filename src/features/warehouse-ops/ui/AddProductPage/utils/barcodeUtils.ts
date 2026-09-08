@@ -24,10 +24,13 @@ export const calculateEAN13Checksum = (digits) => {
  * @returns {string} Полный EAN-13 код (13 цифр)
  */
 export const generateEAN13Barcode = () => {
-  // Генерируем 12 случайных цифр
-  const randomDigits = Array.from({ length: 12 }, () =>
+  // Первая цифра всегда 1–9: код, начинающийся с «0», при печати
+  // трактуется как UPC-A/CODE128 и даёт «плоский» нечитаемый штрих-код.
+  const firstDigit = String(Math.floor(Math.random() * 9) + 1);
+  const restDigits = Array.from({ length: 11 }, () =>
     Math.floor(Math.random() * 10)
   ).join("");
+  const randomDigits = firstDigit + restDigits;
 
   // Вычисляем контрольную сумму
   const checksum = calculateEAN13Checksum(randomDigits);

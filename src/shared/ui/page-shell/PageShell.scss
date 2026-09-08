@@ -77,6 +77,14 @@
       width: 40px;
       padding-inline: 0;
       justify-content: center;
+
+      > svg,
+      > i {
+        flex-shrink: 0;
+        font-size: var(--nur-icon-md, 20px);
+        width: 1em;
+        height: 1em;
+      }
     }
 
     .nur-btn__label {

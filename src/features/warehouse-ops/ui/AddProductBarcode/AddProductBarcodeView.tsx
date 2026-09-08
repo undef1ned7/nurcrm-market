@@ -1,6 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { PromotionRulesEditor } from "../AddProductPage/components";
 
 const AddProductBarcodeView = (vm) => {
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.warehouse.addProduct.${k}`) as string;
   const {
     scanningProduct,
     scannedProduct,
@@ -53,30 +56,30 @@ const AddProductBarcodeView = (vm) => {
     <div className="add-product-barcode">
       {/* Индикатор загрузки сканирования */}
       {scanningProduct && (
-        <div className="add-product-barcode__loading">Поиск товара...</div>
+        <div className="add-product-barcode__loading">{tp("scanSearching")}</div>
       )}
 
       {/* Информация о найденном товаре */}
       {scannedProduct && (
         <div className="add-product-barcode__product-card">
           <h3 className="add-product-barcode__product-title">
-            Найденный товар
+            {tp("scanFoundProduct")}
           </h3>
 
           <div className="add-product-barcode__form-group">
-            <label>Название *</label>
+            <label>{tp("scanNameLabel")}</label>
             <input
               type="text"
               value={state.name}
               onChange={onChange}
               name="name"
-              placeholder="Введите название товара"
+              placeholder={tp("scanNamePlaceholder")}
             />
           </div>
 
           {warehouseUuid && warehouseCategories?.length > 0 && (
             <div className="add-product-barcode__form-group">
-              <label>Категория *</label>
+              <label>{tp("scanCategoryRequired")}</label>
               <select
                 value={warehouseCategory ?? ""}
                 onChange={(e) =>
@@ -84,7 +87,7 @@ const AddProductBarcodeView = (vm) => {
                 }
                 className="add-product-barcode__select"
               >
-                <option value="">Выберите категорию</option>
+                <option value="">{tp("scanChooseCategory")}</option>
                 {warehouseCategories.map((cat, idx) => (
                   <option key={cat.id ?? idx} value={cat.id}>
                     {cat.name}
@@ -97,23 +100,23 @@ const AddProductBarcodeView = (vm) => {
           <div className="add-product-barcode__grid">
             {scannedProduct.brand && (
               <div className="add-product-barcode__info-row">
-                <strong>Бренд:</strong>
+                <strong>{tp("scanBrand")}</strong>
                 <span>{scannedProduct.brand.name}</span>
               </div>
             )}
             {scannedProduct.category && (
               <div className="add-product-barcode__info-row">
-                <strong>Категория:</strong>
+                <strong>{tp("scanCategory")}</strong>
                 <span>{scannedProduct.category.name}</span>
               </div>
             )}
             <div className="add-product-barcode__info-row">
-              <strong>Штрих-код:</strong>
+              <strong>{tp("scanBarcode")}</strong>
               <span>{scannedProduct.barcode}</span>
             </div>
             {scannedProduct.price && (
               <div className="add-product-barcode__info-row">
-                <strong>Цена:</strong>
+                <strong>{tp("scanPrice")}</strong>
                 <span>{scannedProduct.price} сом</span>
               </div>
             )}
@@ -121,7 +124,7 @@ const AddProductBarcodeView = (vm) => {
 
           <div className="add-product-barcode__grid">
             <div className="add-product-barcode__form-group">
-              <label>Количество *</label>
+              <label>{tp("quantityLabel")}</label>
               <input
                 type="number"
                 min="1"
@@ -132,7 +135,7 @@ const AddProductBarcodeView = (vm) => {
               />
             </div>
             <div className="add-product-barcode__form-group">
-              <label>Закупочная цена *</label>
+              <label>{tp("scanPurchasePriceRequired")}</label>
               <div className="add-product-page__price-input">
                 <input
                   type="text"
@@ -147,7 +150,7 @@ const AddProductBarcodeView = (vm) => {
               </div>
             </div>
             <div className="add-product-barcode__form-group">
-              <label>Наценка</label>
+              <label>{tp("markupLabel")}</label>
               <div className="add-product-page__price-input">
                 <input
                   type="text"
@@ -161,7 +164,7 @@ const AddProductBarcodeView = (vm) => {
               </div>
             </div>
             <div className="add-product-barcode__form-group">
-              <label>Розничная цена *</label>
+              <label>{tp("scanRetailPriceRequired")}</label>
               <div className="add-product-page__price-input">
                 <input
                   type="text"
@@ -176,7 +179,7 @@ const AddProductBarcodeView = (vm) => {
               </div>
             </div>
             <div className="add-product-barcode__form-group">
-              <label>Оптовая цена</label>
+              <label>{tp("scanWholesalePrice")}</label>
               <div className="add-product-page__price-input">
                 <input
                   type="text"
@@ -190,7 +193,7 @@ const AddProductBarcodeView = (vm) => {
               </div>
             </div>
             <div className="add-product-barcode__form-group">
-              <label>ПЛУ</label>
+              <label>{tp("scanPlu")}</label>
               <input
                 type="number"
                 min="0"
@@ -198,42 +201,41 @@ const AddProductBarcodeView = (vm) => {
                 name="plu"
                 value={state.plu}
                 onChange={onChange}
-                placeholder="Номер ПЛУ для весов"
+                placeholder={tp("scanPluPlaceholder")}
               />
             </div>
           </div>
 
           <div className="add-product-barcode__form-group">
-            <label>Тип товара для весов</label>
+            <label>{tp("scanScaleType")}</label>
             <select
               name="scale_type"
               value={state.scale_type}
               onChange={onChange}
             >
-              <option value="">-- Выберите тип --</option>
-              <option value="piece">Штучный</option>
-              <option value="weight">Весовой</option>
+              <option value="">{tp("scanScaleTypeChoose")}</option>
+              <option value="piece">{tp("scanScalePiece")}</option>
+              <option value="weight">{tp("scanScaleWeight")}</option>
             </select>
           </div>
 
           <div className="add-product-barcode__form-group">
-            <label>Дополнительные штрихкоды</label>
+            <label>{tp("altBarcodesLabel")}</label>
             <textarea
               className="add-product-page__input"
               rows={3}
               name="alternateBarcodesText"
-              placeholder="По одному коду в строке (или через запятую)"
+              placeholder={tp("altBarcodesPlaceholder")}
               value={state.alternateBarcodesText ?? ""}
               onChange={onChange}
             />
             <p className="add-product-page__hint">
-              Учитываются при поиске на складе и сканировании на кассе. Не должны
-              совпадать с основным штрихкодом.
+              {tp("altBarcodesHint")}
             </p>
           </div>
 
           <div className="add-product-barcode__form-group add-product-barcode__supplier-row">
-            <label>Поставщик</label>
+            <label>{tp("scanSupplier")}</label>
             <div className="add-product-barcode__supplier-select-wrap">
               <select
                 onChange={(e) => {
@@ -242,7 +244,7 @@ const AddProductBarcodeView = (vm) => {
                 value={clientId}
                 className="add-product-barcode__select"
               >
-                <option value="">Выберите поставщика</option>
+                <option value="">{tp("supplierSelectLabel")}</option>
                 {filterClient.map((client) => (
                   <option key={client.id} value={client.id}>
                     {client.full_name}
@@ -254,7 +256,7 @@ const AddProductBarcodeView = (vm) => {
                 className="add-product-barcode__create-supplier-btn"
                 onClick={() => setShowSupplierForm(!showSupplierForm)}
               >
-                + Создать поставщика
+                {tp("createSupplier")}
               </button>
             </div>
           </div>
@@ -266,7 +268,7 @@ const AddProductBarcodeView = (vm) => {
               <input
                 type="text"
                 name="full_name"
-                placeholder="ФИО *"
+                placeholder={tp("scanFullNameRequired")}
                 value={supplierFormState.full_name}
                 onChange={handleSupplierFormChange}
                 className="add-product-barcode__input"
@@ -274,7 +276,7 @@ const AddProductBarcodeView = (vm) => {
               <input
                 type="text"
                 name="phone"
-                placeholder="Телефон"
+                placeholder={tp("supplierPhone")}
                 value={supplierFormState.phone}
                 onChange={handleSupplierFormChange}
                 className="add-product-barcode__input"
@@ -282,7 +284,7 @@ const AddProductBarcodeView = (vm) => {
               <input
                 type="email"
                 name="email"
-                placeholder="Почта"
+                placeholder={tp("supplierEmail")}
                 value={supplierFormState.email}
                 onChange={handleSupplierFormChange}
                 className="add-product-barcode__input"
@@ -290,7 +292,7 @@ const AddProductBarcodeView = (vm) => {
               <input
                 type="text"
                 name="llc"
-                placeholder="ОсОО"
+                placeholder={tp("supplierLlc")}
                 value={supplierFormState.llc}
                 onChange={handleSupplierFormChange}
                 className="add-product-barcode__input"
@@ -298,7 +300,7 @@ const AddProductBarcodeView = (vm) => {
               <input
                 type="text"
                 name="inn"
-                placeholder="ИНН"
+                placeholder={tp("supplierInn")}
                 value={supplierFormState.inn}
                 onChange={handleSupplierFormChange}
                 className="add-product-barcode__input"
@@ -306,7 +308,7 @@ const AddProductBarcodeView = (vm) => {
               <input
                 type="text"
                 name="address"
-                placeholder="Адрес"
+                placeholder={tp("supplierAddress")}
                 value={supplierFormState.address}
                 onChange={handleSupplierFormChange}
                 className="add-product-barcode__input"
@@ -320,14 +322,14 @@ const AddProductBarcodeView = (vm) => {
                     setSupplierFormState(initialSupplierFormState);
                   }}
                 >
-                  Отмена
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="add-product-barcode__btn add-product-barcode__btn--primary"
                   disabled={creatingSupplier}
                 >
-                  {creatingSupplier ? "Создание..." : "Создать"}
+                  {creatingSupplier ? tp("creatingProduct") : t("common.create")}
                 </button>
               </div>
             </form>
@@ -350,7 +352,7 @@ const AddProductBarcodeView = (vm) => {
                 checked={showDebtForm}
                 onChange={(e) => setShowDebtForm(e.target.checked)}
               />
-              <strong>Добавить долг по этому товару</strong>
+              <strong>{tp("addDebtForProduct")}</strong>
             </label>
 
             {/* Форма долга */}
@@ -359,24 +361,24 @@ const AddProductBarcodeView = (vm) => {
                 {clientId === "" && (
                   <>
                     <p className="add-product-barcode__error-message">
-                      Выберите поставщика!
+                      {tp("scanDebtNoSupplier")}
                     </p>
                   </>
                 )}
                 {company?.subscription_plan?.name === "Старт" && clientId && (
                   <div className="add-product-barcode__grid">
                     <div className="add-product-barcode__form-group">
-                      <label>Телефон</label>
+                      <label>{tp("scanDebtPhone")}</label>
                       <input
                         type="text"
                         onChange={onChangeDebt}
                         name="phone"
                         value={debtState.phone}
-                        placeholder="Номер телефона"
+                        placeholder={tp("scanDebtPhonePlaceholder")}
                       />
                     </div>
                     <div className="add-product-barcode__form-group">
-                      <label>Дата оплаты</label>
+                      <label>{tp("paymentDate")}</label>
                       <input
                         type="date"
                         onChange={onChangeDebt}
@@ -387,20 +389,20 @@ const AddProductBarcodeView = (vm) => {
                   </div>
                 )}
                 <div className="add-product-barcode__form-group">
-                  <label>Тип оплаты</label>
+                  <label>{tp("paymentType")}</label>
                   <select
                     value={debt}
                     onChange={(e) => setDebt(e.target.value)}
                   >
-                    <option value="">Тип оплаты</option>
-                    <option value="Предоплата">Предоплата</option>
-                    <option value="Долги">Долг</option>
+                    <option value="">{tp("paymentType")}</option>
+                    <option value="Предоплата">{tp("prepayment")}</option>
+                    <option value="Долги">{tp("debtOption")}</option>
                   </select>
                 </div>
                 {debt === "Предоплата" && (
                   <div className="add-product-barcode__grid">
                     <div className="add-product-barcode__form-group">
-                      <label>Сумма предоплаты</label>
+                      <label>{tp("prepaymentAmount")}</label>
                       <input
                         type="text"
                         value={amount}
@@ -409,7 +411,7 @@ const AddProductBarcodeView = (vm) => {
                       />
                     </div>
                     <div className="add-product-barcode__form-group">
-                      <label>Срок долга (мес.)</label>
+                      <label>{tp("debtTermMonths")}</label>
                       <input
                         type="text"
                         value={debtMonths}
@@ -421,7 +423,7 @@ const AddProductBarcodeView = (vm) => {
                 )}
                 {debt === "Долги" && (
                   <div className="add-product-barcode__form-group">
-                    <label>Срок долга (мес.)</label>
+                    <label>{tp("debtTermMonths")}</label>
                     <input
                       type="text"
                       value={debtMonths}
@@ -432,9 +434,11 @@ const AddProductBarcodeView = (vm) => {
                 )}
                 {debt && clientId && (
                   <div className="add-product-barcode__debt-summary">
-                    <strong>Сумма долга:</strong> {totalAmount.toFixed(2)} сом
+                    <strong>{tp("scanDebtSum")}</strong> {totalAmount.toFixed(2)}{" "}
+                    сом
                     <br />
-                    <strong>Поставщик:</strong> {pickClient?.full_name}
+                    <strong>{tp("scanDebtSupplier")}</strong>{" "}
+                    {pickClient?.full_name}
                   </div>
                 )}
               </div>
@@ -447,14 +451,14 @@ const AddProductBarcodeView = (vm) => {
               className="add-product-barcode__btn add-product-barcode__btn--secondary"
               onClick={handleCancel}
             >
-              Отмена
+              {t("common.cancel")}
             </button>
             <button
               className="add-product-barcode__btn add-product-barcode__btn--primary"
               onClick={handleAddToWarehouse}
               disabled={addingToWarehouse}
             >
-              {addingToWarehouse ? "Добавление..." : "Добавить в склад"}
+              {addingToWarehouse ? tp("adding") : tp("scanAddToWarehouse")}
             </button>
           </div>
         </div>
@@ -463,7 +467,7 @@ const AddProductBarcodeView = (vm) => {
       {/* Инструкция */}
       {!scannedProduct && !scanningProduct && (
         <div className="add-product-barcode__instruction">
-          Отсканируйте штрих-код товара для добавления в склад
+          {tp("scanInstruction")}
         </div>
       )}
     </div>

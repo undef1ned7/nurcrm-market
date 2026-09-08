@@ -921,6 +921,12 @@
     gap: 10px;
   }
 
+  &__action-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+  }
+
   &__accept-btn {
     width: 100%;
     padding: 14px;

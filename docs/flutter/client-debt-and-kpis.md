@@ -7,7 +7,7 @@
 **Связанные доки:**
 - KPI для бэка: [client-kpis-backend.md](../backend/client-kpis-backend.md)
 - Создание долга с кассы: [debt-installment-schedule.md](./debt-installment-schedule.md)
-- Бэк кассы/графика: [debt-installment-schedule-backend.md](../backend/debt-installment-schedule-backend.md)
+- Бэк кассы/графика: [debt-installment-schedule-backend.md](../backend/kassa/debt-installment-schedule-backend.md)
 
 **Статус:** веб готов. KPI-эндпоинт может ещё отсутствовать — тогда суммы считают по списку deals (формула ниже).
 

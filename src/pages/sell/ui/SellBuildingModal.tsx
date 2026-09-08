@@ -15,9 +15,7 @@ import {
   startSellObjects,
 } from "@entities/sale";
 import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
+  postCashflowIfNeeded,
 } from "@entities/cash";
 import { useClient } from "@entities/client";
 import { useSale } from "@entities/sale";
@@ -42,9 +40,6 @@ const SellBuildingModal = ({ onClose }: any) => {
   });
   const [creatingCart, setCreatingCart] = useState<any>(false);
 
-  // 2) Касса
-  const { list: cashBoxes } = useCash();
-  const [cashboxId, setCashboxId] = useState<any>("");
   const [prepayment, setPrepayment] = useState<any>("");
 
   // 3) Добавление товара
@@ -102,22 +97,10 @@ const SellBuildingModal = ({ onClose }: any) => {
     }
   };
 
-  // Первичная загрузка клиентов и касс
+  // Первичная загрузка клиентов
   useEffect(() => {
     dispatch(fetchClientsAsync(undefined as any));
-    dispatch(getCashBoxes(undefined as any));
   }, [dispatch]);
-
-  // Автоматически выбираем первую кассу по индексу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !cashboxId) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setCashboxId(String(firstCashBoxId));
-      }
-    }
-  }, [cashBoxes, cashboxId]);
 
   // Подгрузка объектов, когда корзина создана
   useEffect(() => {
@@ -129,12 +112,8 @@ const SellBuildingModal = ({ onClose }: any) => {
   // Шаги
   const step = useMemo(() => {
     if (!start?.id) return 1;
-    // Не блокируем шаг 2, если кассы еще загружаются
-    if (Array.isArray(cashBoxes) && cashBoxes.length > 0 && !cashboxId)
-      return 2;
-    if (!cashboxId && (!cashBoxes || cashBoxes.length === 0)) return 2;
     return 3;
-  }, [start?.id, cashboxId, cashBoxes]);
+  }, [start?.id]);
 
   const canCreateCart =
     Boolean(cartSeed.client) &&
@@ -166,11 +145,6 @@ const SellBuildingModal = ({ onClose }: any) => {
   const addObjectToCart = async () => {
     if (!start?.id) {
       alert("Сначала создайте корзину");
-      return;
-    }
-    // Дополнительная проверка кассы перед выполнением операции
-    if (!cashboxId) {
-      alert("Касса не выбрана. Создайте кассу в разделе «Кассы».");
       return;
     }
     if (!objectItemId || !quantity || !unitPrice) {
@@ -230,11 +204,10 @@ const SellBuildingModal = ({ onClose }: any) => {
         })
       ).unwrap();
 
-      // 3) Создаём движение по кассе с выбранной кассой
       if (dealStatus !== "Долги") {
-        await dispatch(
-          addCashFlows({
-            cashbox: cashboxId, // выбранная касса
+        await postCashflowIfNeeded(
+          dispatch,
+          {
             type: "income",
             name: clientFullName || String(cartSeed.client),
             amount: dealStatus === "Предоплата" ? result.prepayment : amountStr,
@@ -244,8 +217,9 @@ const SellBuildingModal = ({ onClose }: any) => {
               company?.subscription_plan?.name === "Старт"
                 ? "approved"
                 : "pending",
-          })
-        ).unwrap();
+          },
+          { warnOnFailure: true, failureContext: "sale" },
+        );
       }
       onClose();
 
@@ -419,10 +393,8 @@ const SellBuildingModal = ({ onClose }: any) => {
           </div>
         )}
 
-        {/* Шаг 2 — касса автоматически выбирается - скрыто от пользователя */}
-
         {/* Шаг 3 — выбор товара и добавление в корзину */}
-        {start?.id && cashboxId && (
+        {start?.id && (
           <div
             className="add-modal__section"
             style={{ display: "grid", gap: 12 }}

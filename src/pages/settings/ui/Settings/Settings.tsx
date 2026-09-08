@@ -36,6 +36,7 @@ import {
 } from "@shared/api/marketCashierSettings";
 import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
 import { CompanyTab } from "./tabs/CompanyTab";
+import { SubscriptionTab } from "./tabs/SubscriptionTab";
 import { SecurityTab } from "./tabs/SecurityTab";
 import { CashierTab } from "./tabs/CashierTab";
 import { ScalesTokenTab } from "./tabs/ScalesTokenTab";
@@ -137,7 +138,11 @@ const Settings = () => {
   useEffect(() => {
     if (!isInitialized) return;
 
-    if (activeTab === SETTINGS_TABS.company && !isOwner) {
+    if (
+      (activeTab === SETTINGS_TABS.company ||
+        activeTab === SETTINGS_TABS.subscription) &&
+      !isOwner
+    ) {
       setActiveTab(
         isMarketSector
           ? SETTINGS_TABS.scalesToken
@@ -810,6 +815,8 @@ const Settings = () => {
     switch (activeTab) {
       case SETTINGS_TABS.company:
         return <CompanyTab {...tabProps} />;
+      case SETTINGS_TABS.subscription:
+        return <SubscriptionTab {...tabProps} />;
       case SETTINGS_TABS.security:
         return <SecurityTab {...tabProps} />;
       case SETTINGS_TABS.cashier:

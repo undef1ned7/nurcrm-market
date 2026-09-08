@@ -1203,8 +1203,11 @@
   .cdx__grid {
     grid-template-columns: 1fr;
   }
+
   .cdx__deal {
-    grid-template-columns: minmax(0, 1.4fr) auto minmax(150px, 1fr) auto;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: stretch;
   }
 }
 
@@ -1239,23 +1242,74 @@
   /* Deals collapse to stacked cards */
   .cdx__deal {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "main"
+      "money"
+      "progress"
+      "actions";
     gap: 12px;
     align-items: stretch;
+    padding: 14px;
+  }
+
+  .cdx__deal-main {
+    grid-area: main;
+    min-width: 0;
+  }
+
+  .cdx__deal-name {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .cdx__deal-meta {
+    gap: 6px 10px;
   }
 
   .cdx__deal-money {
+    grid-area: money;
     text-align: left;
     display: flex;
-    align-items: baseline;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--cdx-card);
+    border-radius: var(--cdx-radius-sm);
+    border: 1px solid var(--cdx-border);
+    white-space: normal;
   }
 
   .cdx__deal-remaining {
     margin-top: 0;
+    font-size: 12.5px;
+  }
+
+  .cdx__progress {
+    grid-area: progress;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .cdx__progress-top {
+    gap: 6px;
+  }
+
+  .cdx__progress-label {
+    min-width: 0;
+    line-height: 1.35;
   }
 
   .cdx__deal-actions {
+    grid-area: actions;
     justify-content: stretch;
+    padding-top: 4px;
+    border-top: 1px solid var(--cdx-border);
   }
 
   .cdx__deal-actions .cdx__btn {
@@ -1263,33 +1317,47 @@
   }
 
   .cdx__toolbar {
+    flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
   }
 
   .cdx__toolbar-dates {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
   }
 
   .cdx__field {
-    width: 100%;
+    width: auto;
+    min-width: 0;
   }
 
   .cdx__input {
     width: 100%;
+    min-width: 0;
   }
 
   .cdx__toolbar-presets {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
   }
 
   .cdx__chip {
     width: 100%;
+    justify-content: center;
+    text-align: center;
   }
 
   .cdx__toolbar-info {
     margin-left: 0;
-    text-align: center;
+    text-align: left;
+    padding-top: 4px;
+    border-top: 1px solid var(--cdx-border);
   }
 
   /* Supplier products -> cards */
@@ -1320,8 +1388,31 @@
     grid-template-columns: 1fr;
   }
 
-  .cdx__toolbar-presets {
+  .cdx__toolbar-dates {
     grid-template-columns: 1fr;
+  }
+
+  .cdx__toolbar-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cdx__deal {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .cdx__deal-money {
+    padding: 8px 10px;
+  }
+
+  .cdx__progress-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .cdx__progress-pct {
+    align-self: flex-end;
   }
 }
 

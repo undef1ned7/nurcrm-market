@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { updateProductAsync } from "@entities/product";
 import { X } from "lucide-react";
-import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
-} from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
 import { useUser } from "@entities/user";
+import {
+  buildExpenseVariableRouting,
+  buildPosRoutingFromUser,
+} from "@shared/lib/tools/cashboxResolution";
 import { useLocation } from "react-router-dom";
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
@@ -26,11 +26,9 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
   const alert = useAlert()
   const confirm = useConfirm()
   const [defectiveQty, setDefectiveQty] = useState(""); // количество для операции
-  const [selectCashBox, setSelectCashBox] = useState("");
   const [error, setError] = useState("");
-  const { list: cashBoxes } = useCash();
   const dispatch = useAppDispatch();
-  const { company } = useUser();
+  const { company, profile } = useUser();
   const { pathname } = useLocation();
   const isProductionWarehouse = pathname === "/crm/production/warehouse";
   const isWeightProduct = Boolean(item?.is_weight);
@@ -58,21 +56,6 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
   const q = useMemo(() => toNum(defectiveQty), [defectiveQty]);
   const expense = useMemo(() => +(q * unitCost).toFixed(2), [q, unitCost]);
 
-  useEffect(() => {
-    dispatch(getCashBoxes({} as any) as any);
-  }, [dispatch]);
-
-  // Автоматически выбираем первую кассу по индексу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectCashBox]);
-
   const validateWriteoff = useCallback(() => {
     if (!item?.id) return "Нет выбранного товара";
     if (!q) return "Введите количество";
@@ -95,17 +78,9 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
     }
     if (q > stockQty)
       return `Нельзя вернуть больше, чем в наличии (${stockQty} ${unitLabel})`;
-    // Проверяем кассу только если кассы уже загружены (не undefined) и есть, но касса не выбрана
-    // Если кассы еще загружаются (cashBoxes undefined), не блокируем кнопку
-    if (Array.isArray(cashBoxes) && cashBoxes.length > 0 && !selectCashBox) {
-      return "Касса не выбрана. Создайте кассу в разделе «Кассы».";
-    }
-    if (Array.isArray(cashBoxes) && cashBoxes.length === 0) {
-      return "Нет доступных касс. Создайте кассу в разделе «Кассы».";
-    }
     if (unitCost < 0) return "Себестоимость указана неверно";
     return "";
-  }, [item, q, stockQty, cashBoxes, selectCashBox, unitCost, isWeightProduct, unitLabel]);
+  }, [item, q, stockQty, unitCost, isWeightProduct, unitLabel]);
 
   const onFormSubmit = async (e) => {
     e.preventDefault();
@@ -120,31 +95,35 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
       await dispatch(
         updateProductAsync({
           productId: item.id,
-          updatedData: { quantity: stockQty - q },
+          updatedData: {
+            quantity: stockQty - q,
+            ...(!isProductionWarehouse && expense > 0
+              ? {
+                  payment_mode: "cash",
+                  ...buildExpenseVariableRouting(),
+                }
+              : {}),
+          },
         })
       ).unwrap();
 
-      // На производственном складе списание не должно попадать в кассовый расход.
-      // Для остальных складов сохраняем прежнее поведение.
-      if (!isProductionWarehouse && selectCashBox && expense > 0) {
-        try {
-          await dispatch(
-            addCashFlows({
-              cashbox: selectCashBox,
-              type: "expense",
-              name: `Списание брака: ${item?.name}`,
-              amount: expense,
-              source_cashbox_flow_id: item.id,
-              source_business_operation_id: "Списание брака",
-              status:
-                company?.subscription_plan?.name === "Старт"
-                  ? "approved"
-                  : "pending",
-            })
-          ).unwrap();
-        } catch (cashErr: any) {
-          console.warn("Ошибка при записи расхода в аналитику:", cashErr);
-        }
+      // Legacy fallback; при VITE_BE_CASHFLOWS=true cashflow создаёт бэк.
+      if (!isProductionWarehouse && expense > 0) {
+        await postCashflowIfNeeded(
+          dispatch,
+          {
+            type: "expense",
+            name: `Списание брака: ${item?.name}`,
+            amount: expense,
+            source_cashbox_flow_id: item.id,
+            source_business_operation_id: "Списание брака",
+            status:
+              company?.subscription_plan?.name === "Старт"
+                ? "approved"
+                : "pending",
+          },
+          { warnOnFailure: true, failureContext: "writeoff" },
+        );
       }
 
       alert('Товар списан!', () => {
@@ -164,11 +143,6 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
       return;
     }
 
-    // Дополнительная проверка кассы перед выполнением операции
-    if (!selectCashBox) {
-      alert("Касса не выбрана. Создайте кассу в разделе «Кассы».", true);
-      return;
-    }
     setError("");
     const confirmMsg = `Подтвердите возврат товара:
 Наименование: ${item?.name}
@@ -178,18 +152,26 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
       if (result) {
         try {
           // уменьшаем остаток на q
+          const incomeAmount = +(q * unitCost).toFixed(2);
           await dispatch(
             updateProductAsync({
               productId: item.id,
-              updatedData: { quantity: stockQty - q },
+              updatedData: {
+                quantity: stockQty - q,
+                ...(incomeAmount > 0
+                  ? {
+                      payment_mode: "cash",
+                      ...buildPosRoutingFromUser(profile, company),
+                    }
+                  : {}),
+              },
             })
           ).unwrap();
 
-          // приход в кассу на сумму возврата
-          const incomeAmount = +(q * unitCost).toFixed(2);
-          await dispatch(
-            addCashFlows({
-              cashbox: selectCashBox,
+          // Legacy fallback; product_return → POS-касса на бэке.
+          await postCashflowIfNeeded(
+            dispatch,
+            {
               type: "income",
               name: `Возврат товара: ${item?.name}`,
               amount: incomeAmount,
@@ -199,9 +181,9 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
                 company?.subscription_plan?.name === "Старт"
                   ? "approved"
                   : "pending",
-              // description: `Возврат ${q} шт. × ${unitCost} = ${incomeAmount}`,
-            })
-          ).unwrap();
+            },
+            { warnOnFailure: true, failureContext: "return" },
+          );
           alert('Возврат выполнен!', () => {
             onChanged?.();
             onClose?.();
@@ -218,12 +200,23 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
     <ReactPortal wrapperId="marriage-modal">
       <div className="add-modal marriage-modal">
         <div className="add-modal__overlay" onClick={onClose} />
-        <div className="add-modal__content" style={{ height: "auto" }}>
+        <div
+          className="add-modal__content"
+          style={{ height: "auto" }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="marriage-modal-title"
+        >
         <div className="add-modal__header">
-          <h3 className="text-xl marriage-modal__heading">
-            Списание брака / Возврат
-          </h3>
-          <X className="add-modal__close-icon" size={20} onClick={onClose} />
+          <h3 id="marriage-modal-title">Списание брака / Возврат</h3>
+          <button
+            type="button"
+            className="add-modal__close"
+            onClick={onClose}
+            aria-label="Закрыть"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <form className="marriage-modal__form" onSubmit={onFormSubmit}>
@@ -236,10 +229,12 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
               <div>
                 Себестоимость: <b>{unitCost}</b>
               </div>
-              <div className="marriage-modal__amount">
-                Сумма: <b>{isFinite(expense) ? expense : 0}</b>
-              </div>
             </div>
+          </div>
+
+          <div className="marriage-modal__summary">
+            <span>Сумма операции</span>
+            <b>{isFinite(expense) ? expense : 0}</b>
           </div>
 
           <div className="marriage-modal__field">
@@ -274,7 +269,7 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
 
           <div className="marriage-modal__actions">
             <button
-              className="btn marriage-modal__btn marriage-modal__btn--primary"
+              className="marriage-modal__btn marriage-modal__btn--primary"
               type="submit"
               disabled={!!validateWriteoff()}
             >
@@ -283,7 +278,7 @@ const MarriageModal = ({ onClose, onChanged, item }: any) => {
 
             <button
               type="button"
-              className="btn marriage-modal__btn marriage-modal__btn--danger"
+              className="marriage-modal__btn marriage-modal__btn--danger"
               onClick={onReturn}
               disabled={!!validateReturn()}
               title="Возврат на указанное количество: приход по себестоимости"

@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@app/store";
 import { useNavigate } from "react-router-dom";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import { useUser } from "@entities/user";
+import { useProducts, buildProductExpiryLocalNotification } from "@entities/product";
 import classes from "./NotificationModal.module.scss";
 import {
   buildTariffLocalNotification,
@@ -52,6 +53,7 @@ const NotificationModal = ({ onClose }: any) => {
   const navigate = useNavigate();
   const listRef = useRef(null);
   const { company } = useUser();
+  const { list: productList } = useProducts();
   const [tab, setTab] = useState<NotificationTab>("all");
   const [deleteUnsupported, setDeleteUnsupported] = useState(false);
 
@@ -67,6 +69,11 @@ const NotificationModal = ({ onClose }: any) => {
   const localTariff = useMemo(
     () => buildTariffLocalNotification(company?.end_date),
     [company?.end_date],
+  );
+
+  const localExpiry = useMemo(
+    () => buildProductExpiryLocalNotification(productList),
+    [productList],
   );
 
   useEffect(() => {
@@ -88,8 +95,11 @@ const NotificationModal = ({ onClose }: any) => {
     if (localTariff && !merged.some((n) => idOf(n) === localTariff.id)) {
       merged.unshift(localTariff);
     }
+    if (localExpiry && !merged.some((n) => idOf(n) === localExpiry.id)) {
+      merged.unshift(localExpiry);
+    }
     return merged.filter((n) => matchesNotificationTab(n, tab));
-  }, [list, localTariff, tab]);
+  }, [list, localTariff, localExpiry, tab]);
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { fetchProductsAsync } from "@entities/product";
 import { MARKET_WAREHOUSE_KIND } from "@shared/lib/tools/marketWarehouseFilters";
 import ProductTypeSelector from "./ProductTypeSelector";
@@ -61,6 +62,7 @@ const MarketProductForm = ({
   _setImages,
   fileInputRef,
   addImages,
+  imageCropper = null,
   removeImage,
   setPrimaryImage,
   isEditMode = false,
@@ -97,6 +99,7 @@ const MarketProductForm = ({
   company,
 }: any) => {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
   const brandOptions = useMemo(
     () =>
       (brands || [])
@@ -344,6 +347,7 @@ const MarketProductForm = ({
         onImageAdd={addImages}
         onImageRemove={removeImage}
         onSetPrimary={setPrimaryImage}
+        imageCropper={imageCropper}
       />
 
       <BrandCategorySection
@@ -382,7 +386,9 @@ const MarketProductForm = ({
       {itemType === "product" && (
         <FormBlock id="promotion">
         <div className="market-product-form__section">
-          <h3 className="market-product-form__section-title">Акция</h3>
+          <h3 className="market-product-form__section-title">
+            {t("crm.warehouse.addProduct.promotionTitle")}
+          </h3>
           <PromotionRulesEditor
               compact={false as any}
             stock={marketData.stock}

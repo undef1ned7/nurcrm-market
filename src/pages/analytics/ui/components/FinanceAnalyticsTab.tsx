@@ -13,6 +13,7 @@ export function FinanceAnalyticsTab({ vm }: Props) {
     financeData,
     openFinanceTable,
     toggleFinanceTable,
+    openFinanceAnchorSection,
     formatNumber,
     formatCurrency,
   } = vm;
@@ -20,7 +21,10 @@ export function FinanceAnalyticsTab({ vm }: Props) {
   const renderFinanceAccordion = (key: string, title: string, tableContent: ReactNode) => {
     const isOpen = openFinanceTable === key;
     return (
-      <div className="analytics-page__table-card analytics-page__accordion">
+      <div
+        id={`finance-section-${key}`}
+        className="analytics-page__table-card analytics-page__accordion"
+      >
         <button
           type="button"
           className="analytics-page__accordion-header"
@@ -48,8 +52,31 @@ export function FinanceAnalyticsTab({ vm }: Props) {
           <div className="analytics-page__kpis">
             {financeData.kpis.map((kpi: any, index: any) => {
               const Icon = kpi.icon;
+              const isInteractive = Boolean(kpi.anchorKey);
               return (
-                <div key={index} className="analytics-page__kpi-card">
+                <div
+                  key={index}
+                  className={`analytics-page__kpi-card ${
+                    isInteractive ? "analytics-page__kpi-card--interactive" : ""
+                  }`}
+                  role={isInteractive ? "button" : undefined}
+                  tabIndex={isInteractive ? 0 : undefined}
+                  onClick={
+                    isInteractive
+                      ? () => openFinanceAnchorSection(kpi.anchorKey)
+                      : undefined
+                  }
+                  onKeyDown={
+                    isInteractive
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openFinanceAnchorSection(kpi.anchorKey);
+                          }
+                        }
+                      : undefined
+                  }
+                >
                   <div className="analytics-page__kpi-header">
                     <span className="analytics-page__kpi-title">
                       {kpi.title}
@@ -278,6 +305,46 @@ export function FinanceAnalyticsTab({ vm }: Props) {
                     <tr>
                       <td
                         colSpan={3}
+                        style={{ textAlign: "center", color: "#6b7280" }}
+                      >
+                        {t("crm.analytics.noData")}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>,
+            )}
+
+            {renderFinanceAccordion(
+              "otherExpenseItems",
+              t("crm.analytics.finance.otherExpensesList"),
+              <table className="analytics-page__table">
+                <thead>
+                  <tr>
+                    <th>{t("common.name")}</th>
+                    <th>{t("crm.analytics.sales.amount")}</th>
+                    <th>{t("crm.analytics.filterFields.cashbox")}</th>
+                    <th>{t("crm.analytics.finance.date")}</th>
+                    <th>{t("crm.analytics.finance.createdBy")}</th>
+                    <th>{t("crm.analytics.finance.comment")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {financeData.otherExpenseItems.length > 0 ? (
+                    financeData.otherExpenseItems.map((row: any) => (
+                      <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>{formatCurrency(row.amount, 0)}</td>
+                        <td>{row.cashbox}</td>
+                        <td>{row.created_at}</td>
+                        <td>{row.created_by}</td>
+                        <td>{row.description}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
                         style={{ textAlign: "center", color: "#6b7280" }}
                       >
                         {t("crm.analytics.noData")}

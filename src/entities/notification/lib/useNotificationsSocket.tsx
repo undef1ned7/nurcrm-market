@@ -21,6 +21,11 @@ import {
   notificationReceived,
   unreadCountSet,
 } from "@entities/notification";
+import { cashFlowRealtimeEventReceived } from "@entities/cash";
+import {
+  extractCashflowRealtimeEvent,
+  isCashflowRealtimeEventType,
+} from "./cashflowRealtimeEvent";
 import { playNotificationSound } from "@shared/config/notificationSound";
 import {
   consultingNotificationLeadId,
@@ -29,6 +34,7 @@ import {
   resolveConsultingNotificationUrl,
 } from "@shared/lib/consultingLeadSources";
 import { isConsultingActiveChatLead } from "@shared/lib/consultingActiveChat";
+import { notify } from "@shared/lib/notifications";
 
 const PING_INTERVAL_MS = 25000;
 const MAX_RECONNECT_DELAY_MS = 30000;
@@ -312,6 +318,18 @@ export function useNotificationsSocket({ enabled = true } = {}) {
       const innerType = String(
         payload?.type || payload?.category || payload?.event || "",
       ).toLowerCase();
+
+      if (isCashflowRealtimeEventType(type) || isCashflowRealtimeEventType(innerType)) {
+        dispatch(
+          cashFlowRealtimeEventReceived(
+            extractCashflowRealtimeEvent(
+              isCashflowRealtimeEventType(type) ? type : innerType,
+              payload,
+            ),
+          ),
+        );
+        return;
+      }
       const consultingType = isConsultingLeadEventType(type)
         ? type
         : isConsultingLeadEventType(innerType)
@@ -342,6 +360,7 @@ export function useNotificationsSocket({ enabled = true } = {}) {
         dispatch(notificationReceived(normalized));
         if (!(normalized.is_read ?? false) && !skipSound) {
           playNotificationSound();
+          notify.fromRealtime(normalized);
         }
         return;
       }
@@ -401,7 +420,10 @@ export function useNotificationsSocket({ enabled = true } = {}) {
       dispatch(notificationReceived(enriched));
 
       const unread = !(enriched.is_read ?? enriched.read ?? false);
-      if (unread && !skipSound) playNotificationSound();
+      if (unread && !skipSound) {
+        playNotificationSound();
+        notify.fromRealtime(enriched);
+      }
     },
     [dispatch],
   );

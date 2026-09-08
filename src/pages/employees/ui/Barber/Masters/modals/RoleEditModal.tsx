@@ -1,4 +1,5 @@
 import { FaTimes } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import BarberMastersPortal from "./BarberMastersPortal";
 
 const RoleEditModal = ({
@@ -10,6 +11,7 @@ const RoleEditModal = ({
   setRoleEditName,
   roleEditErr,
 }) => {
+  const { t } = useTranslation();
   if (!roleEditOpen) return null;
 
   return (
@@ -19,15 +21,17 @@ const RoleEditModal = ({
       onClick={() => !roleEditSaving && setRoleEditOpen(false)}
     >
       <div
-        className="barbermasters__modal"
+        className="barbermasters__modal barbermasters__modal--form"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="barbermasters__modalHeader">
-          <h3 className="barbermasters__modalTitle">Изменить роль</h3>
+          <h3 className="barbermasters__modalTitle">
+            {t("crm.employees.roleModal.editTitle")}
+          </h3>
           <button
             className="barbermasters__iconBtn"
             onClick={() => !roleEditSaving && setRoleEditOpen(false)}
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
           >
             <FaTimes />
           </button>
@@ -47,11 +51,12 @@ const RoleEditModal = ({
           <div className="barbermasters__grid">
             <label className="barbermasters__field barbermasters__field--full">
               <span className="barbermasters__label">
-                Название роли <b className="barbermasters__req">*</b>
+                {t("crm.employees.roleModal.nameLabel")}{" "}
+                <b className="barbermasters__req">*</b>
               </span>
               <input
                 className="barbermasters__input"
-                placeholder="Название роли"
+                placeholder={t("crm.employees.roleModal.nameLabel")}
                 value={roleEditName}
                 onChange={(e) => setRoleEditName(e.target.value)}
                 required
@@ -68,14 +73,16 @@ const RoleEditModal = ({
                 onClick={() => setRoleEditOpen(false)}
                 disabled={roleEditSaving}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="barbermasters__btn barbermasters__btn--primary"
                 disabled={roleEditSaving}
               >
-                {roleEditSaving ? "Сохранение…" : "Сохранить изменения"}
+                {roleEditSaving
+                  ? t("common.saving")
+                  : t("crm.employees.editModal.saveChanges")}
               </button>
             </div>
           </div>

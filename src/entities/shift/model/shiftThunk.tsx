@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@shared/api";
+import { buildCashRoutingPayload } from "@shared/lib/tools/cashboxResolution";
 
 // Делает ошибки сериализуемыми
 const plainAxiosError = (error: any) => ({
@@ -48,17 +49,25 @@ export const fetchShiftByIdAsync = createAsyncThunk<any, void | any>(
 /**
  * Открыть смену
  * POST /construction/shifts/open/
- * Body: { cashbox, cashier, opening_cash }
+ * Body: { cashier, opening_cash, branch_id?, cashbox_role?, shift_id?, cashbox? }
  */
 export const openShiftAsync = createAsyncThunk<any, void | any>(
   "shifts/open",
   async (shiftData: any, { rejectWithValue }) => {
     try {
-      const { data } = await api.post("/construction/shifts/open/", {
-        cashbox: shiftData.cashbox,
-        cashier: shiftData.cashier,
+      const body: Record<string, string> = {
+        cashier: String(shiftData.cashier),
         opening_cash: String(shiftData.opening_cash || "0"),
-      });
+        ...buildCashRoutingPayload({
+          branch_id: shiftData.branch_id,
+          cashbox_role: shiftData.cashbox_role,
+          shift_id: shiftData.shift_id,
+        }),
+      };
+      if (shiftData.cashbox != null && String(shiftData.cashbox).trim()) {
+        body.cashbox = String(shiftData.cashbox);
+      }
+      const { data } = await api.post("/construction/shifts/open/", body);
       return data;
     } catch (error: any) {
       return rejectWithValue(plainAxiosError(error));

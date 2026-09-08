@@ -1,5 +1,5 @@
 // API-клиент настроек кассы сферы «Магазин».
-// Контракт описан в docs/backend/cashier-settings.md.
+// Контракт описан в docs/backend/kassa/cashier-settings.md.
 // Настройки задаёт владелец/админ компании, кассир получает их только на чтение.
 import api from "@shared/api";
 

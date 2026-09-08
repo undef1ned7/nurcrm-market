@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
 import {
   MARKET_WAREHOUSE_PRESETS,
   MARKET_WAREHOUSE_SALE_UNITS,
+  marketWarehouseSaleUnitLabelKey,
   buildMarketWarehouseListParams,
   modalStateFromAppliedFilters,
 } from "@shared/lib/tools/marketWarehouseFilters";
@@ -19,6 +21,7 @@ const FilterModal = ({
   suppliers = [],
   suppliersLoading = false,
 }: any) => {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState(() =>
     modalStateFromAppliedFilters(currentFilters),
   );
@@ -36,8 +39,8 @@ const FilterModal = ({
                 supplier.company_name ||
                 supplier.phone ||
                 supplier.email ||
-                "Без названия",
-            ).trim() || "Без названия",
+                t("crm.warehouse.noTitle"),
+            ).trim() || t("crm.warehouse.noTitle"),
         }))
         .filter((option: any) => option.value && option.label),
     [suppliers],
@@ -88,20 +91,22 @@ const FilterModal = ({
         onClick={(e: any) => e.stopPropagation()}
       >
         <div className="warehouse-filter-modal__header">
-          <h3 className="warehouse-filter-modal__title">Фильтры</h3>
+          <h3 className="warehouse-filter-modal__title">
+            {t("crm.warehouse.filters")}
+          </h3>
           <button className="warehouse-filter-modal__close" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
         <p className="warehouse-filter-modal__subtitle">
-          Настройте фильтры для поиска товаров
+          {t("crm.warehouse.filter.subtitle")}
         </p>
 
         <div className="warehouse-filter-modal__content">
           {/* Пресеты фильтров */}
           <div className="warehouse-filter-modal__section">
             <label className="warehouse-filter-modal__label">
-              Пресеты фильтров
+              {t("crm.warehouse.filter.presets")}
             </label>
             <select
               className="warehouse-filter-modal__select"
@@ -110,10 +115,10 @@ const FilterModal = ({
                 setFilters((prev: any) => ({ ...prev, preset: e.target.value }))
               }
             >
-              <option value="">Выберите</option>
-              {MARKET_WAREHOUSE_PRESETS.map(({ value, label }) => (
+              <option value="">{t("crm.warehouse.filter.choose")}</option>
+              {MARKET_WAREHOUSE_PRESETS.map(({ value, label, labelKey }) => (
                 <option key={value} value={value}>
-                  {label}
+                  {labelKey ? t(labelKey) : label}
                 </option>
               ))}
             </select>
@@ -127,12 +132,12 @@ const FilterModal = ({
 
           <div className="warehouse-filter-modal__section">
             <label className="warehouse-filter-modal__label">
-              Единица продажи
+              {t("crm.warehouse.filter.saleUnit")}
             </label>
             <div
               className="warehouse-view-toggle warehouse-sale-unit-toggle"
               role="radiogroup"
-              aria-label="Единица продажи"
+              aria-label={t("crm.warehouse.filter.saleUnit")}
             >
               <button
                 type="button"
@@ -145,15 +150,15 @@ const FilterModal = ({
                   setFilters((prev: any) => ({ ...prev, saleUnit: "" }))
                 }
               >
-                Все
+                {t("crm.warehouse.saleUnitAll")}
               </button>
-              {MARKET_WAREHOUSE_SALE_UNITS.map(({ value, label, hint }) => (
+              {MARKET_WAREHOUSE_SALE_UNITS.map(({ value, hintKey }) => (
                 <button
                   key={value}
                   type="button"
                   role="radio"
                   aria-checked={filters.saleUnit === value}
-                  title={hint}
+                  title={hintKey ? (t(hintKey) as string) : undefined}
                   className={`warehouse-view-toggle__btn${
                     filters.saleUnit === value
                       ? " warehouse-view-toggle__btn--active"
@@ -163,19 +168,20 @@ const FilterModal = ({
                     setFilters((prev: any) => ({ ...prev, saleUnit: value }))
                   }
                 >
-                  {label}
+                  {t(marketWarehouseSaleUnitLabelKey(value))}
                 </button>
               ))}
             </div>
             <p className="warehouse-filter-modal__hint">
-              Поштучно — товары, которые продаются и упаковкой, и по штукам
-              (достают из упаковки).
+              {t("crm.warehouse.filter.pieceSaleNote")}
             </p>
           </div>
 
           {/* Типы товаров */}
           <div className="warehouse-filter-modal__section">
-            <label className="warehouse-filter-modal__label">Тип товара</label>
+            <label className="warehouse-filter-modal__label">
+              {t("crm.warehouse.filter.productType")}
+            </label>
             <div className="warehouse-filter-modal__checkboxes">
               <label className="warehouse-filter-modal__checkbox-label">
                 <input
@@ -183,7 +189,7 @@ const FilterModal = ({
                   checked={filters.itemTypes.product}
                   onChange={() => handleItemTypeChange("product")}
                 />
-                <span>Товар</span>
+                <span>{t("crm.warehouse.filter.typeProduct")}</span>
               </label>
               <label className="warehouse-filter-modal__checkbox-label">
                 <input
@@ -191,7 +197,7 @@ const FilterModal = ({
                   checked={filters.itemTypes.service}
                   onChange={() => handleItemTypeChange("service")}
                 />
-                <span>Услуга</span>
+                <span>{t("crm.warehouse.filter.typeService")}</span>
               </label>
               <label className="warehouse-filter-modal__checkbox-label">
                 <input
@@ -199,14 +205,16 @@ const FilterModal = ({
                   checked={filters.itemTypes.kit}
                   onChange={() => handleItemTypeChange("kit")}
                 />
-                <span>Комплект</span>
+                <span>{t("crm.warehouse.filter.typeKit")}</span>
               </label>
             </div>
           </div>
 
           {/* Категории */}
           <div className="warehouse-filter-modal__section">
-            <label className="warehouse-filter-modal__label">Категории</label>
+            <label className="warehouse-filter-modal__label">
+              {t("crm.warehouse.filter.categories")}
+            </label>
             <select
               className="warehouse-filter-modal__select"
               value={filters.category}
@@ -214,7 +222,9 @@ const FilterModal = ({
                 setFilters((prev: any) => ({ ...prev, category: e.target.value }))
               }
             >
-              <option value="">Выбрать категорию</option>
+              <option value="">
+                {t("crm.warehouse.filter.chooseCategory")}
+              </option>
               {categories.map((category: any) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -225,7 +235,9 @@ const FilterModal = ({
 
           {/* Бренд */}
           <div className="warehouse-filter-modal__section">
-            <label className="warehouse-filter-modal__label">Бренд</label>
+            <label className="warehouse-filter-modal__label">
+              {t("crm.warehouse.filter.brand")}
+            </label>
             <select
               className="warehouse-filter-modal__select"
               value={filters.brand}
@@ -233,7 +245,7 @@ const FilterModal = ({
                 setFilters((prev: any) => ({ ...prev, brand: e.target.value }))
               }
             >
-              <option value="">Выбрать бренд</option>
+              <option value="">{t("crm.warehouse.filter.chooseBrand")}</option>
               {brands.map((brand: any) => (
                 <option key={brand.id} value={brand.id}>
                   {brand.name}
@@ -243,7 +255,9 @@ const FilterModal = ({
           </div>
 
           <div className="warehouse-filter-modal__section">
-            <label className="warehouse-filter-modal__label">Поставщик</label>
+            <label className="warehouse-filter-modal__label">
+              {t("crm.warehouse.filter.supplier")}
+            </label>
             <SearchableCombobox
               value={String(filters.supplier || "")}
               onChange={(value: any) =>
@@ -252,8 +266,8 @@ const FilterModal = ({
               options={supplierOptions}
               placeholder={
                 suppliersLoading
-                  ? "Загрузка поставщиков..."
-                  : "Выберите поставщика"
+                  ? t("crm.warehouse.filter.loadingSuppliers")
+                  : t("crm.warehouse.filter.chooseSupplier")
               }
               classNamePrefix="searchableCombo"
             />
@@ -261,7 +275,9 @@ const FilterModal = ({
 
           {/* Цена */}
           <div className="warehouse-filter-modal__section">
-            <label className="warehouse-filter-modal__label">Цена</label>
+            <label className="warehouse-filter-modal__label">
+              {t("crm.warehouse.filter.price")}
+            </label>
             <div className="warehouse-filter-modal__row">
               <select
                 className="warehouse-filter-modal__select-small"
@@ -270,10 +286,18 @@ const FilterModal = ({
                   handleInputChange("price", "type", e.target.value)
                 }
               >
-                <option value="базовая">Базовая</option>
-                <option value="цена закупки">Цена закупки</option>
-                <option value="себестоимость">Себестоимость</option>
-                <option value="скидка">Скидка</option>
+                <option value="базовая">
+                  {t("crm.warehouse.filter.priceBase")}
+                </option>
+                <option value="цена закупки">
+                  {t("crm.warehouse.filter.pricePurchase")}
+                </option>
+                <option value="себестоимость">
+                  {t("crm.warehouse.filter.priceCost")}
+                </option>
+                <option value="скидка">
+                  {t("crm.warehouse.filter.priceDiscount")}
+                </option>
               </select>
               <select
                 className="warehouse-filter-modal__select-small"
@@ -282,9 +306,9 @@ const FilterModal = ({
                   handleInputChange("price", "condition", e.target.value)
                 }
               >
-                <option value="больше">больше</option>
-                <option value="меньше">меньше</option>
-                <option value="равно">равно</option>
+                <option value="больше">{t("crm.warehouse.filter.opGt")}</option>
+                <option value="меньше">{t("crm.warehouse.filter.opLt")}</option>
+                <option value="равно">{t("crm.warehouse.filter.opEq")}</option>
               </select>
               <input
                 type="number"
@@ -299,18 +323,11 @@ const FilterModal = ({
           </div>
 
           {/* Остатки */}
-          {/* <div className="warehouse-filter-modal__section">
-            <label className="warehouse-filter-modal__label">Остатки</label>
+          <div className="warehouse-filter-modal__section">
+            <label className="warehouse-filter-modal__label">
+              {t("crm.warehouse.filter.stock")}
+            </label>
             <div className="warehouse-filter-modal__row">
-              <select
-                className="warehouse-filter-modal__select-small"
-                value={filters.stock.type}
-                onChange={(e: any) =>
-                  handleInputChange("stock", "type", e.target.value)
-                }
-              >
-                <option value="общие">общие</option>
-              </select>
               <select
                 className="warehouse-filter-modal__select-small"
                 value={filters.stock.condition}
@@ -318,9 +335,9 @@ const FilterModal = ({
                   handleInputChange("stock", "condition", e.target.value)
                 }
               >
-                <option value="больше">больше</option>
-                <option value="меньше">меньше</option>
-                <option value="равно">равно</option>
+                <option value="больше">{t("crm.warehouse.filter.opGt")}</option>
+                <option value="меньше">{t("crm.warehouse.filter.opLt")}</option>
+                <option value="равно">{t("crm.warehouse.filter.opEq")}</option>
               </select>
               <input
                 type="number"
@@ -330,14 +347,19 @@ const FilterModal = ({
                   handleInputChange("stock", "value", e.target.value)
                 }
               />
-              <button className="warehouse-filter-modal__add-btn">+</button>
+              <span className="warehouse-filter-modal__unit">
+                {t("crm.warehouse.filter.unitPcs")}
+              </span>
             </div>
-          </div> */}
+            <p className="warehouse-filter-modal__hint">
+              {t("crm.warehouse.filter.stockNote")}
+            </p>
+          </div>
 
           {/* Срок годности */}
           <div className="warehouse-filter-modal__section">
             <label className="warehouse-filter-modal__label">
-              Срок годности
+              {t("crm.warehouse.filter.shelfLife")}
             </label>
             <div className="warehouse-filter-modal__row">
               <select
@@ -347,8 +369,12 @@ const FilterModal = ({
                   handleInputChange("shelfLife", "condition", e.target.value)
                 }
               >
-                <option value="истекает в течение">истекает в течение</option>
-                <option value="истек">истек</option>
+                <option value="истекает в течение">
+                  {t("crm.warehouse.filter.shelfExpiresWithin")}
+                </option>
+                <option value="истек">
+                  {t("crm.warehouse.filter.shelfExpired")}
+                </option>
               </select>
               <input
                 type="number"
@@ -358,14 +384,16 @@ const FilterModal = ({
                   handleInputChange("shelfLife", "value", e.target.value)
                 }
               />
-              <span className="warehouse-filter-modal__unit">дней</span>
+              <span className="warehouse-filter-modal__unit">
+                {t("crm.warehouse.filter.unitDays")}
+              </span>
             </div>
           </div>
 
           {/* Изменения товара */}
-          {/* <div className="warehouse-filter-modal__section">
+          <div className="warehouse-filter-modal__section">
             <label className="warehouse-filter-modal__label">
-              Изменения товара
+              {t("crm.warehouse.filter.productChanges")}
             </label>
             <div className="warehouse-filter-modal__row">
               <select
@@ -379,7 +407,12 @@ const FilterModal = ({
                   )
                 }
               >
-                <option value="изменялся в течение">изменялся в течение</option>
+                <option value="меньше">
+                  {t("crm.warehouse.filter.changedLessThan")}
+                </option>
+                <option value="больше">
+                  {t("crm.warehouse.filter.changedMoreThan")}
+                </option>
               </select>
               <input
                 type="number"
@@ -389,14 +422,16 @@ const FilterModal = ({
                   handleInputChange("productChanges", "value", e.target.value)
                 }
               />
-              <span className="warehouse-filter-modal__unit">дней</span>
+              <span className="warehouse-filter-modal__unit">
+                {t("crm.warehouse.filter.unitDaysAgo")}
+              </span>
             </div>
-          </div> */}
+          </div>
 
           {/* Продаваемость */}
           <div className="warehouse-filter-modal__section">
             <label className="warehouse-filter-modal__label">
-              Продаваемость
+              {t("crm.warehouse.filter.sellability")}
             </label>
             <div className="warehouse-filter-modal__row">
               <select
@@ -407,10 +442,10 @@ const FilterModal = ({
                 }
               >
                 <option value="продавался в течение">
-                  продавался в течение
+                  {t("crm.warehouse.filter.soldWithin")}
                 </option>
                 <option value="не продавался в течение">
-                  не продавался в течение
+                  {t("crm.warehouse.filter.notSoldWithin")}
                 </option>
               </select>
               <input
@@ -421,7 +456,9 @@ const FilterModal = ({
                   handleInputChange("sellability", "value", e.target.value)
                 }
               />
-              <span className="warehouse-filter-modal__unit">дней</span>
+              <span className="warehouse-filter-modal__unit">
+                {t("crm.warehouse.filter.unitDays")}
+              </span>
             </div>
           </div>
         </div>
@@ -432,28 +469,28 @@ const FilterModal = ({
             className="warehouse-filter-modal__reset-btn"
             onClick={handleReset}
           >
-            Сбросить
+            {t("crm.warehouse.filter.reset")}
           </button>
           <button
             type="button"
             className="warehouse-filter-modal__cancel-btn"
             onClick={onClose}
           >
-            Отменить
+            {t("crm.warehouse.filter.cancel")}
           </button>
           <button
             type="button"
             className="warehouse-filter-modal__apply-btn"
             onClick={handleApply}
           >
-            Применить
+            {t("crm.warehouse.filter.apply")}
           </button>
           <button
             type="button"
             className="warehouse-filter-modal__save-preset-btn"
             onClick={() => {}}
           >
-            Сохранить пресет
+            {t("crm.warehouse.filter.savePreset")}
           </button>
         </div>
       </div>

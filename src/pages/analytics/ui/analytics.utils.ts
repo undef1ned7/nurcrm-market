@@ -15,6 +15,15 @@ export const normalizeLowStockStatusType = (status) => {
   return "low";
 };
 
+export const normalizeExpiryStatusType = (status) => {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase();
+  if (["expired", "просрочен"].includes(normalized)) return "critical";
+  if (["critical", "истекает"].includes(normalized)) return "critical";
+  return "low";
+};
+
 export const barPercentOfMax = (value, values) => {
   const nums = (values || []).map((v) => Number(v) || 0);
   const max = Math.max(0, ...nums);

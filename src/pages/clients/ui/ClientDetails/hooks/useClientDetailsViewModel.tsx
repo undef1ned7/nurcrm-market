@@ -1,12 +1,9 @@
 import { useMemo, type ReactNode } from "react";
 import { TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  EMPTY_CLIENT_KPIS,
-  type ClientKpis,
-} from "@entities/client";
+import { EMPTY_CLIENT_KPIS, type ClientKpis } from "@entities/client";
 
-import { toIsoDate10, typeLabel } from "../clientDetails.helpers";
+import { toIsoDate10 } from "../clientDetails.helpers";
 import type {
   ClientRecord,
   DealRecord,
@@ -67,9 +64,17 @@ export function useClientDetailsViewModel({
   const kindTranslate: Record<string, string> = {
     new: t("crm.clients.details.kindNew"),
   };
+  const typeLabel = (type: unknown) => {
+    const v = String(type || "").toLowerCase();
+    if (v === "client") return t("crm.clients.types.client");
+    if (v === "suppliers") return t("crm.clients.types.supplier");
+    if (v === "implementers") return t("crm.clients.types.reseller");
+    return "—";
+  };
   const clientName = client?.fio || client?.full_name || "—";
   const clientTypeLabel = typeLabel(client?.type);
-  const statusText = kindTranslate[String(client?.status || "")] || client?.status || "—";
+  const statusText =
+    kindTranslate[String(client?.status || "")] || client?.status || "—";
   const isBuildingSector = sectorName === "Строительная компания";
 
   const totals = useMemo<DealTotals>(
@@ -163,7 +168,14 @@ export function useClientDetailsViewModel({
         ? Number(totals.debt || 0)
         : Number(totals.sale || 0),
     };
-  }, [detailsView, isBuildingSector, totals.debt, totals.prepayment, totals.sale, t]);
+  }, [
+    detailsView,
+    isBuildingSector,
+    totals.debt,
+    totals.prepayment,
+    totals.sale,
+    t,
+  ]);
 
   const clientInitials = useMemo(() => {
     const parts = String(clientName || "")
@@ -218,7 +230,7 @@ export function useClientDetailsViewModel({
       label: isBuildingSector
         ? t("clients.kpi.contractAmount")
         : t("clients.kpi.debt"),
-      value: isBuildingSector ? totals.sale ?? 0 : totals.debt ?? 0,
+      value: isBuildingSector ? (totals.sale ?? 0) : (totals.debt ?? 0),
       count: dealKindCounts.debt,
       onClick: () => onOpenDetailsView("debt"),
     },
@@ -240,19 +252,23 @@ export function useClientDetailsViewModel({
       label: isBuildingSector
         ? t("clients.kpi.debtRemaining")
         : t("clients.kpi.sale"),
-      value: isBuildingSector ? totals.debt ?? 0 : totals.sale ?? 0,
+      value: isBuildingSector ? (totals.debt ?? 0) : (totals.sale ?? 0),
       count: dealKindCounts.sale,
       onClick: () => onOpenDetailsView("sale"),
     },
   ];
 
   const requisites: RequisiteItem[] = [
-    { label: "ОсОО", value: client?.llc },
-    { label: "ИНН", value: client?.inn },
-    { label: "ОКПО", value: client?.okpo },
-    { label: "Счет", value: client?.score },
-    { label: "БИК", value: client?.bik },
-    { label: "Адрес", value: client?.address, full: true },
+    { label: t("crm.clients.details.llc"), value: client?.llc },
+    { label: t("crm.clients.details.inn"), value: client?.inn },
+    { label: t("crm.clients.details.okpo"), value: client?.okpo },
+    { label: t("crm.clients.details.account"), value: client?.score },
+    { label: t("crm.clients.details.bik"), value: client?.bik },
+    {
+      label: t("crm.clients.details.address"),
+      value: client?.address,
+      full: true,
+    },
   ];
 
   const showSupplierSections =

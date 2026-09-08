@@ -1,15 +1,19 @@
+import { useTranslation } from "react-i18next";
 import { FormBlock } from "../../formLayout";
 
-const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
+const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => {
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.warehouse.addProduct.${k}`) as string;
+  return (
   <>
       <FormBlock id="characteristics">
       <div className="market-product-form__section">
         <h3 className="market-product-form__section-title">
-          Характеристики товара
+          {tp("charTitle")}
         </h3>
         <div className="market-product-form__characteristics-grid grid-cols-1 sm:grid-cols-2">
           <div className="market-product-form__form-group">
-            <label className="market-product-form__label">Высота, см</label>
+            <label className="market-product-form__label">{tp("heightCm")}</label>
             <input
               type="text"
               className="market-product-form__input"
@@ -18,7 +22,7 @@ const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
             />
           </div>
           <div className="market-product-form__form-group">
-            <label className="market-product-form__label">Ширина, см</label>
+            <label className="market-product-form__label">{tp("widthCm")}</label>
             <input
               type="text"
               className="market-product-form__input"
@@ -27,7 +31,7 @@ const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
             />
           </div>
           <div className="market-product-form__form-group">
-            <label className="market-product-form__label">Глубина, см</label>
+            <label className="market-product-form__label">{tp("depthCm")}</label>
             <input
               type="text"
               className="market-product-form__input"
@@ -37,7 +41,7 @@ const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
           </div>
           <div className="market-product-form__form-group">
             <label className="market-product-form__label">
-              Фактический вес, кг
+              {tp("weightKg")}
             </label>
             <input
               type="text"
@@ -52,10 +56,10 @@ const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
 
       <FormBlock id="description">
       <div className="market-product-form__section">
-        <h3 className="market-product-form__section-title">Описание</h3>
+        <h3 className="market-product-form__section-title">{tp("descTitle")}</h3>
         <textarea
           className="market-product-form__textarea"
-          placeholder="Введите описание товара"
+          placeholder={tp("descPlaceholder")}
           value={marketData.description}
           onChange={(e) =>
             handleMarketDataChange("description", e.target.value)
@@ -64,6 +68,7 @@ const CharacteristicsSection = ({ marketData, handleMarketDataChange }) => (
       </div>
       </FormBlock>
   </>
-);
+  );
+};
 
 export default CharacteristicsSection;

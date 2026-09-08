@@ -221,26 +221,10 @@ export function SupplierReturnForm() {
               ) : null}
 
               {compensation === "cash" ? (
-                <label className="srf__field">
-                  <span>Касса для прихода</span>
-                  <select
-                    className="nur-input"
-                    value={cashboxId}
-                    onChange={(event) => setCashboxId(event.target.value)}
-                  >
-                    <option value="">Выберите кассу</option>
-                    {cashBoxes.map(
-                      (box: { id?: unknown; uuid?: unknown; name?: unknown }) => {
-                        const id = String(box.id || box.uuid || "");
-                        return (
-                          <option key={id} value={id}>
-                            {String(box.name || "Касса")}
-                          </option>
-                        );
-                      },
-                    )}
-                  </select>
-                </label>
+                <p className="srf__hint">
+                  Компенсация наличными списывается с кассы «Переменные расходы»
+                  (определяется автоматически).
+                </p>
               ) : null}
 
               {compensation === "debt_offset" && source === "composed" ? (

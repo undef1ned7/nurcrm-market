@@ -130,6 +130,31 @@
     margin-top: 8px;
   }
 
+  &__seg {
+    display: flex;
+    gap: 8px;
+    margin: 6px 0 12px;
+  }
+
+  &__seg-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: var(--nur-radius, 12px);
+    border: 1px solid var(--nur-border);
+    background: var(--nur-surface);
+    color: var(--nur-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+    &--active {
+      background: var(--nur-primary-soft);
+      border-color: var(--nur-primary);
+      color: var(--nur-primary);
+    }
+  }
+
   @media (max-width: 768px) {
     &__toolbar {
       .nur-input {

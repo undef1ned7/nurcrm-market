@@ -1,4 +1,5 @@
 import { FaTimes } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import BarberMastersPortal from "./BarberMastersPortal";
 
 const RoleCreateModal = ({
@@ -10,6 +11,7 @@ const RoleCreateModal = ({
   setRoleCreateName,
   roleCreateErr,
 }) => {
+  const { t } = useTranslation();
   if (!roleCreateOpen) return null;
 
   return (
@@ -19,15 +21,17 @@ const RoleCreateModal = ({
       onClick={() => !roleCreateSaving && setRoleCreateOpen(false)}
     >
       <div
-        className="barbermasters__modal"
+        className="barbermasters__modal barbermasters__modal--form"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="barbermasters__modalHeader">
-          <h3 className="barbermasters__modalTitle">Новая роль</h3>
+          <h3 className="barbermasters__modalTitle">
+            {t("crm.employees.roleModal.newTitle")}
+          </h3>
           <button
             className="barbermasters__iconBtn"
             onClick={() => !roleCreateSaving && setRoleCreateOpen(false)}
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
           >
             <FaTimes />
           </button>
@@ -41,11 +45,12 @@ const RoleCreateModal = ({
           <div className="barbermasters__grid">
             <label className="barbermasters__field barbermasters__field--full">
               <span className="barbermasters__label">
-                Название роли <b className="barbermasters__req">*</b>
+                {t("crm.employees.roleModal.nameLabel")}{" "}
+                <b className="barbermasters__req">*</b>
               </span>
               <input
                 className="barbermasters__input"
-                placeholder="Например: Контент-менеджер"
+                placeholder={t("crm.employees.roleModal.namePlaceholder")}
                 value={roleCreateName}
                 onChange={(e) => setRoleCreateName(e.target.value)}
                 required
@@ -68,14 +73,16 @@ const RoleCreateModal = ({
                 onClick={() => setRoleCreateOpen(false)}
                 disabled={roleCreateSaving}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="barbermasters__btn barbermasters__btn--primary"
                 disabled={roleCreateSaving}
               >
-                {roleCreateSaving ? "Сохранение…" : "Создать роль"}
+                {roleCreateSaving
+                  ? t("common.saving")
+                  : t("crm.employees.roleModal.submitCreate")}
               </button>
             </div>
           </div>

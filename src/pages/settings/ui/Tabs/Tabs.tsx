@@ -85,6 +85,7 @@ const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
   const visibleTabs = useMemo(() => {
     return ALL_SETTINGS_TABS.filter((tab: SettingsTabId) => {
       if (tab === SETTINGS_TABS.company) return isOwner;
+      if (tab === SETTINGS_TABS.subscription) return isOwner;
       if (tab === SETTINGS_TABS.cashier) return canViewMarketCashierSettings;
       if (tab === SETTINGS_TABS.scalesToken) return isMarketSector;
       if (tab === SETTINGS_TABS.print) return isCafeSector;

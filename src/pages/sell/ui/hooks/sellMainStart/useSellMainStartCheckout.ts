@@ -5,7 +5,9 @@ import {
   getProductCheckout,
   getReceiptJson,
 } from "@entities/sale";
-import { addCashFlows, getCashBoxes, useCash } from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { useUser } from "@entities/user";
+import { buildPosRoutingFromUser } from "@shared/lib/tools/cashboxResolution";
 import { createDebt } from "../../sellHelpers";
 import { calcDaysUntilIsoDate } from "@shared/lib/tools/deferredPaymentDates";
 import { handleCheckoutResponseForPrinting } from "../../services/printService";
@@ -29,10 +31,8 @@ export function useSellMainStartCheckout({
   setShowDebtModal,
 }: any) {
   const confirm = useConfirm();
-  const { list: cashBoxes } = useCash();
+  const { profile } = useUser();
   const run = (thunk: any) => dispatch(thunk).unwrap();
-
-  const [selectCashBox, setSelectCashBox] = useState("");
   const [showPaymentChoiceModal, setShowPaymentChoiceModal] = useState(false);
   const [paymentChoice, setPaymentChoice] = useState("cash");
   const [showCashModal, setShowCashModal] = useState(false);
@@ -43,21 +43,6 @@ export function useSellMainStartCheckout({
   const [receiptWithCheck, setReceiptWithCheck] = useState(true);
   const [pendingCheckout, setPendingCheckout] = useState<any>(null);
   const [cashData, setCashData] = useState(() => buildInitialCashData(company));
-
-  useEffect(() => {
-    dispatch(getCashBoxes(undefined as any));
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectCashBox(firstCashBoxId);
-        setCashData((prev) => ({ ...prev, cashbox: firstCashBoxId }));
-      }
-    }
-  }, [cashBoxes, selectCashBox]);
 
   const validateDebtTerm = () => {
     if (debt === "Долги" || debt === "Предоплата") {
@@ -223,7 +208,7 @@ export function useSellMainStartCheckout({
         await dispatch(createDeal(dealPayload)).unwrap();
         // await run(deleteSale(start?.id));
         // await run(
-        //   addCashFlows({
+        //   postCashflowIfNeeded(dispatch, {
         //     ...cashData,
         //     name: cashData.name === "" ? "Продажа" : cashData.name,
         //     amount: amountForCash,
@@ -262,6 +247,7 @@ export function useSellMainStartCheckout({
         id: start?.id,
         bool: withReceipt,
         clientId: clientId,
+        ...buildPosRoutingFromUser(profile, company),
       };
 
       if (finalPaymentType === "cash") {
@@ -279,14 +265,15 @@ export function useSellMainStartCheckout({
 
       const amountForCash = debt === "Предоплата" ? amount : start.total;
       if (debt !== "Долги") {
-        await run(
-          addCashFlows({
-            ...cashData,
+        await postCashflowIfNeeded(
+          dispatch,
+          {
             name: cashData.name === "" ? "Продажа" : cashData.name,
             amount: amountForCash,
             source_cashbox_flow_id: result?.sale_id,
             type: finalPaymentType === "cash" ? "income" : "income",
-          })
+          },
+          { warnOnFailure: true, failureContext: "sale" },
         );
       }
 
@@ -530,9 +517,6 @@ export function useSellMainStartCheckout({
 
 
   return {
-    selectCashBox,
-    setSelectCashBox,
-    cashBoxes,
     cashData,
     setCashData,
     showPaymentChoiceModal,

@@ -1,6 +1,20 @@
 /**
  * Параметры GET /main/products/list/ для склада маркета (/crm/sklad).
  * UI — на русском, в query уходят стабильные английские коды.
+ *
+ * Контракт бэкенда подтверждён (см. docs/backend/warehouse-filters-backend.md):
+ * - `kind` — принимает массив, логика OR, имя комплекта `bundle` (не `kit`).
+ * - `sale_unit` — на бэке НЕ поддерживается, фильтруется на клиенте
+ *   (filterProductsBySaleUnit). Весовые/штучные дополнительно сужаются `is_weight`.
+ * - `category` / `brand` / `supplier` — UUID, точное совпадение.
+ * - `price_type`: base→price, purchase→purchase_price, cost→purchase_price (то же поле),
+ *   discount→discount_percent. Значение 0 игнорируется.
+ * - `stock_*` — сравнение Product.quantity. `changes_*` — по Product.updated_at
+ *   (lt = изменён менее N дней назад, gt = более N дней назад).
+ * - `shelf_life_*` — по expiration_date. `sellability_*` — по оплаченным чекам POS.
+ * - Все фильтры комбинируются по AND. Неизвестные параметры бэк молча игнорирует.
+ * - Сортировка: `?ordering=` (created_at | updated_at | price, с `-` для убыв.).
+ * - `page_size` фиксирован (100), с фронта не меняется.
  */
 
 export const MARKET_WAREHOUSE_KIND = {
@@ -44,15 +58,42 @@ export const MARKET_WAREHOUSE_SALE_UNIT = {
   piece_sale: "piece_sale",
 } as const;
 
-export const MARKET_WAREHOUSE_SALE_UNITS = [
-  { value: MARKET_WAREHOUSE_SALE_UNIT.weight, label: "Весовые" },
-  { value: MARKET_WAREHOUSE_SALE_UNIT.piece, label: "Штучные" },
-  {
-    value: MARKET_WAREHOUSE_SALE_UNIT.piece_sale,
-    label: "Поштучно",
-    hint: "Продаются и упаковкой, и по штукам (достают из упаковки)",
-  },
-];
+type MarketWarehouseSaleUnitValue =
+  (typeof MARKET_WAREHOUSE_SALE_UNIT)[keyof typeof MARKET_WAREHOUSE_SALE_UNIT];
+
+export type MarketWarehouseSaleUnitOption = {
+  value: MarketWarehouseSaleUnitValue;
+  label: string;
+  labelKey: string;
+  hint?: string;
+  hintKey?: string;
+};
+
+export const MARKET_WAREHOUSE_SALE_UNITS: readonly MarketWarehouseSaleUnitOption[] =
+  [
+    {
+      value: MARKET_WAREHOUSE_SALE_UNIT.weight,
+      label: "Весовые",
+      labelKey: "crm.warehouse.saleUnitWeight",
+    },
+    {
+      value: MARKET_WAREHOUSE_SALE_UNIT.piece,
+      label: "Штучные",
+      labelKey: "crm.warehouse.saleUnitPiece",
+    },
+    {
+      value: MARKET_WAREHOUSE_SALE_UNIT.piece_sale,
+      label: "Поштучно",
+      labelKey: "crm.warehouse.saleUnitPieceSale",
+      hint: "Продаются и упаковкой, и по штукам (достают из упаковки)",
+      hintKey: "crm.warehouse.saleUnitPieceSaleHint",
+    },
+  ];
+
+/** i18n-ключ подписи для значения единицы продажи. */
+export const marketWarehouseSaleUnitLabelKey = (value: string): string =>
+  MARKET_WAREHOUSE_SALE_UNITS.find((u) => u.value === value)?.labelKey ||
+  "crm.warehouse.saleUnitAll";
 
 export const isMarketWarehouseWeightProduct = (item: any) => {
   if (item?.is_weight === true || item?.isWeight === true) return true;
@@ -122,14 +163,14 @@ export const applySaleUnitParams = (params: any, saleUnit: any) => {
 };
 
 export const MARKET_WAREHOUSE_PRESETS = [
-  { value: "discounted", label: "Товары со скидкой" },
-  { value: "shelf_life_expires_7d", label: "Срок годности истекает в течение 7 дней" },
-  { value: "zero_cost", label: "Нулевая себестоимость" },
-  { value: "shelf_life_expired", label: "Истёк срок годности" },
-  { value: "out_of_stock", label: "Нет в наличии" },
-  { value: "not_sold_90d", label: "Не продаются 3 месяца" },
-  { value: "negative_stock", label: "Отрицательный остаток" },
-  { value: "stock_below_min", label: "Общий остаток меньше минимального" },
+  { value: "discounted", label: "Товары со скидкой", labelKey: "crm.warehouse.filter.presetDiscounted" },
+  { value: "shelf_life_expires_7d", label: "Срок годности истекает в течение 7 дней", labelKey: "crm.warehouse.filter.presetShelf7d" },
+  { value: "zero_cost", label: "Нулевая себестоимость", labelKey: "crm.warehouse.filter.presetZeroCost" },
+  { value: "shelf_life_expired", label: "Истёк срок годности", labelKey: "crm.warehouse.filter.presetShelfExpired" },
+  { value: "out_of_stock", label: "Нет в наличии", labelKey: "crm.warehouse.filter.presetOutOfStock" },
+  { value: "not_sold_90d", label: "Не продаются 3 месяца", labelKey: "crm.warehouse.filter.presetNotSold90d" },
+  { value: "negative_stock", label: "Отрицательный остаток", labelKey: "crm.warehouse.filter.presetNegativeStock" },
+  { value: "stock_below_min", label: "Общий остаток меньше минимального", labelKey: "crm.warehouse.filter.presetStockBelowMin" },
 ];
 
 /** @deprecated старые value на кириллице — для восстановления сохранённых фильтров */
@@ -370,7 +411,7 @@ export const modalStateFromAppliedFilters = (applied : any = {}) => {
       condition: mapFromApi(
         applied.changes_condition,
         CONDITION_FROM_API,
-        "изменялся в течение",
+        "меньше",
       ),
       value: applied.changes_value || "0",
     },

@@ -11,6 +11,7 @@ import { ThemeModeProvider } from "@shared/theme/ThemeModeProvider";
 import { Box } from "@mui/system";
 import "@shared/config/i18n";
 import { ModalProvider } from "@shared/context/modal";
+import NotificationProvider from "@app/providers/NotificationProvider";
 
 function AppRoutes({ profile }: { profile: any }) {
   const { pathname } = useLocation();
@@ -71,6 +72,7 @@ function App() {
   return (
     <ThemeModeProvider>
       <ModalProvider>
+        <NotificationProvider />
         <Box sx={{ minHeight: "100vh", bgcolor: "transparent" }}>
           <ErrorBoundary>
             <BrowserRouter>

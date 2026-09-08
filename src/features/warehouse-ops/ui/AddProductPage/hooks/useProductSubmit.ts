@@ -8,7 +8,8 @@ import {
   updateProductAsync,
 } from "@entities/product";
 import { createDeal } from "@entities/sale";
-import { addCashFlows } from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import { useAppDispatch } from "@app/store";
 
 /**
@@ -29,8 +30,6 @@ export const useProductSubmit = ({
   debtState,
   company,
   pickSupplier,
-  cashData,
-  selectCashBox,
   navigate,
   showAlert,
   setFieldErrors,
@@ -205,40 +204,38 @@ export const useProductSubmit = ({
     async (product, productName) => {
       if (isEditMode || debt === "Долги") return;
 
-      const sellingPrice =
-        newItemData.price || newItemData.price || "0";
-      const amountForCash = debt === "Предоплата" ? amount : sellingPrice;
-      const cashboxId = cashData.cashbox || selectCashBox;
+      const purchasePrice = newItemData.purchase_price || "0";
+      const qty = itemType === "product" ? Number(newItemData.quantity || "0") : 0;
+      const totalPurchase = Number(purchasePrice) * qty;
+      const amountForCash =
+        debt === "Предоплата" ? Number(amount || "0") : totalPurchase;
 
-      if (cashboxId && Number(amountForCash) > 0) {
-        try {
-          await dispatch(
-            addCashFlows({
-              cashbox: cashboxId,
-              type: "expense",
-              name: productName || product?.name || "Новый товар",
-              amount: amountForCash,
-              source_cashbox_flow_id: product.id,
-              source_business_operation_id: "Склад",
-              status:
-                company?.subscription_plan?.name === "Старт"
-                  ? "approved"
-                  : "pending",
-            })
-          ).unwrap();
-        } catch (cashError: any) {
-          console.warn("Ошибка при создании денежного потока:", cashError);
-        }
+      if (Number(amountForCash) > 0) {
+        await postCashflowIfNeeded(
+          dispatch,
+          {
+            type: "expense",
+            name: productName || product?.name || "Новый товар",
+            amount: amountForCash,
+            source_cashbox_flow_id: product.id,
+            source_business_operation_id: "Склад",
+            status:
+              company?.subscription_plan?.name === "Старт"
+                ? "approved"
+                : "pending",
+          },
+          { warnOnFailure: true, failureContext: "product" },
+        );
       }
     },
     [
       dispatch,
       isEditMode,
       debt,
-      newItemData.price,
+      newItemData.purchase_price,
+      newItemData.quantity,
+      itemType,
       amount,
-      cashData.cashbox,
-      selectCashBox,
       company,
     ]
   );
@@ -287,12 +284,20 @@ export const useProductSubmit = ({
 
     try {
       // Формируем payload используя утилиту
-      const payload = utils.buildProductPayload({
-        newItemData,
-        marketData,
-        itemType,
-        weightProductsCount,
-      });
+      const payload = {
+        ...utils.buildProductPayload({
+          newItemData,
+          marketData,
+          itemType,
+          weightProductsCount,
+        }),
+        ...(debt !== "Долги"
+          ? {
+              payment_mode: debt === "Предоплата" ? "prepayment" : "cash",
+              ...buildExpenseVariableRouting(),
+            }
+          : { payment_mode: "debt" }),
+      };
 
       // Создаем или обновляем товар
       const product = await saveProduct(payload);

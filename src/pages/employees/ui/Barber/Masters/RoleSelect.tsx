@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FaSearch } from "react-icons/fa";
 
 const RoleSelect = ({
@@ -9,6 +10,7 @@ const RoleSelect = ({
   className = "",
   hideCurrentLabelInMenu = false,
 }: any) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const refWrap = useRef<any>(null);
@@ -48,14 +50,7 @@ const RoleSelect = ({
   useEffect(() => {
     if (!open) return;
     const frame = requestAnimationFrame(() => {
-      if (refSearchInput.current) {
-        refSearchInput.current.focus();
-        refSearchInput.current.scrollIntoView({
-          block: "start",
-          inline: "nearest",
-          behavior: "smooth",
-        });
-      }
+      refSearchInput.current?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
   }, [open]);
@@ -89,7 +84,7 @@ const RoleSelect = ({
             <input
               ref={refSearchInput}
               className="barbermasters__selectSearchInput"
-              placeholder="Поиск роли…"
+              placeholder={t("crm.employees.roleSearchPlaceholder")}
               value={q}
               onChange={(e: any) => setQ(e.target.value)}
             />
@@ -98,7 +93,7 @@ const RoleSelect = ({
           <div className="barbermasters__selectList" tabIndex={-1}>
             {filtered.length === 0 ? (
               <div className="barbermasters__selectEmpty">
-                Ничего не найдено
+                {t("common.nothingFound")}
               </div>
             ) : (
               filtered.map((o: any) => (

@@ -7,8 +7,22 @@ import {
   isUsbLockHeldByOtherTab,
   releaseUsbLock,
 } from "./usbLock";
+import {
+  resetUsbTransferState,
+  type UsbTransferState,
+} from "./usbTransfer";
 
-export const usbState: any = { dev: null, opening: null };
+export const usbState: UsbTransferState & {
+  dev: USBDevice | null;
+  opening: Promise<unknown> | null;
+  iface: number | null;
+} = {
+  dev: null,
+  opening: null,
+  outEP: null,
+  iface: null,
+  sessionReady: false,
+};
 const navUsb: any = () => (navigator as any).usb;
 
 function saveVidPidToLS(dev: any) {
@@ -43,11 +57,27 @@ async function requestUsbDevice() {
   const filters = [{ classCode: 0x07 }, { classCode: 0xff }];
   return await (navigator as any).usb.requestDevice({ filters });
 }
-async function openUsbDevice(dev: any) {
+async function openUsbDevice(dev: USBDevice) {
   if (!dev) throw new Error("USB устройство не найдено");
   if (isUsbLockHeldByOtherTab()) {
     throw new Error(PRINTER_IN_USE_MESSAGE);
   }
+
+  // Уже открыт этот принтер в текущей вкладке — не делаем повторный claim.
+  if (usbState.dev === dev && usbState.outEP != null) {
+    return {
+      iface: usbState.iface as number,
+      alt: 0,
+      outEP: usbState.outEP,
+    };
+  }
+
+  if (usbState.dev && usbState.dev !== dev) {
+    resetUsbTransferState(usbState);
+    usbState.dev = null;
+    usbState.iface = null;
+  }
+
   if (!dev.opened) await dev.open();
 
   if (dev.configuration == null) {
@@ -82,6 +112,9 @@ async function openUsbDevice(dev: any) {
         continue;
       }
       acquireUsbLock();
+      usbState.outEP = out.endpointNumber;
+      usbState.iface = intf.interfaceNumber;
+      usbState.sessionReady = false;
       return {
         iface: intf.interfaceNumber,
         alt: needAlt,
@@ -107,8 +140,10 @@ async function ensureUsbReadyAuto() {
     (usbState.opening as any) = (async () => {
       const dev = await tryUsbAutoConnect();
       if (!dev) return null;
-      await openUsbDevice(dev);
+      const info = await openUsbDevice(dev);
       usbState.dev = dev;
+      usbState.outEP = info.outEP;
+      usbState.iface = info.iface;
       return usbState;
     })().finally(() => (usbState.opening = null));
   }
@@ -157,10 +192,10 @@ export async function ensurePrinterConnectedInteractively(options: any = {}) {
     // открываем устройство и захватываем интерфейс
     const info = await openUsbDevice(dev);
 
-    // сохраняем в глобальном состоянии
     usbState.dev = dev;
+    usbState.outEP = info.outEP;
+    usbState.iface = info.iface;
 
-    // если удалось получить outEP — считаем, что принтер подключен
     return !!info?.outEP;
   } catch (e: any) {
     // Пользователь мог нажать Cancel или произошла другая ошибка
@@ -192,6 +227,8 @@ export function attachUsbListenersOnce() {
   navUsb().addEventListener("disconnect", (e: any) => {
     if (usbState.dev && e.device === usbState.dev) {
       usbState.dev = null;
+      usbState.iface = null;
+      resetUsbTransferState(usbState);
       releaseUsbLock();
     }
   });

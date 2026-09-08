@@ -10,7 +10,8 @@ import {
   useProducts,
   clearScannedProduct,
 } from "@entities/product";
-import { addCashFlows } from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import { useUser } from "@entities/user";
 import {
   fetchClientsAsync,
@@ -51,12 +52,10 @@ export const useAddProductBarcode = ({
   onShowSuccessAlert,
   onShowErrorAlert,
   onShowSupplierCreated,
-  selectCashBox,
   warehouseUuid,
   warehouseCategories = [],
   warehouseCategory,
   onWarehouseCategoryChange,
-  cashBoxes = [],
 }: any) => {
   const {
     scannedProduct,
@@ -539,6 +538,12 @@ export const useAddProductBarcode = ({
         promotion_rules_input: stockPromo
           ? buildPromotionRulesInput(promotionRules)
           : [],
+        ...(debt !== "Долги"
+          ? {
+              payment_mode: debt === "Предоплата" ? "prepayment" : "cash",
+              ...buildExpenseVariableRouting(),
+            }
+          : { payment_mode: "debt" }),
       };
       const result = await dispatch(
         warehouseUuid
@@ -589,31 +594,23 @@ export const useAddProductBarcode = ({
         ).unwrap();
       }
 
-      // Запрос на кассу при добавлении через сканер (если не долг)
       if (debt !== "Долги") {
         const amountForCash = debt === "Предоплата" ? amount : totalAmount;
-        const cashboxId =
-          cashData.cashbox ||
-          selectCashBox ||
-          (cashBoxes?.[0]?.id ?? cashBoxes?.[0]);
         const sourceId = result?.id ?? result?.product_id ?? result?.product?.id;
-        if (cashboxId && Number(amountForCash) > 0) {
-          try {
-            await dispatch(
-              addCashFlows({
-                cashbox: cashboxId,
-                type: cashData.type || "expense",
-                name: state.name === "" ? "Товар" : state.name,
-                amount: amountForCash,
-                source_cashbox_flow_id: sourceId ?? result?.id,
-                source_business_operation_id:
-                  cashData.source_business_operation_id || "Склад",
-                status: cashData.status || "pending",
-              })
-            ).unwrap();
-          } catch (cashError: any) {
-            console.warn("Ошибка при создании денежного потока:", cashError);
-          }
+        if (Number(amountForCash) > 0) {
+          await postCashflowIfNeeded(
+            dispatch,
+            {
+              type: cashData.type || "expense",
+              name: state.name === "" ? "Товар" : state.name,
+              amount: amountForCash,
+              source_cashbox_flow_id: sourceId ?? result?.id,
+              source_business_operation_id:
+                cashData.source_business_operation_id || "Склад",
+              status: cashData.status || "pending",
+            },
+            { warnOnFailure: true, failureContext: "product" },
+          );
         }
       }
 
@@ -679,13 +676,8 @@ export const useAddProductBarcode = ({
   };
 
   useEffect(() => {
-    if (selectCashBox) {
-      setCashData((prev) => ({
-        ...prev,
-        cashbox: selectCashBox,
-      }));
-    }
-  }, [selectCashBox]);
+    dispatch(fetchClientsAsync({} as any) as any);
+  }, [dispatch]);
 
   const handleCancel = () => {
     dispatch(clearScannedProduct({} as any) as any);
@@ -788,8 +780,6 @@ export const useAddProductBarcode = ({
     warehouseCategories,
     warehouseCategory,
     onWarehouseCategoryChange,
-    cashBoxes,
-    selectCashBox,
     onChangeDebt,
     handleSupplierFormChange,
     onSubmitSupplier,

@@ -4,6 +4,24 @@
   gap: var(--nur-space-4, 16px);
   color: var(--nur-text);
 
+  > .nur-tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+
+    .nur-tabs__tab {
+      flex: 1 1 0;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 1.25;
+      white-space: normal;
+    }
+  }
+
   &__steps {
     display: flex;
     gap: 8px;
@@ -47,25 +65,33 @@
   }
 
   &__toolbar {
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 20px;
     width: 100%;
+    margin-bottom: 20px;
+
+    &.nur-page__toolbar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+      align-items: end;
+      gap: 16px;
+    }
   }
 
   &__field {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-width: 200px;
-    flex: 1 1 220px;
+    min-width: 0;
+    margin-top: 0;
+
+    .nur-input {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
   }
 
   &__field--date {
-    min-width: 150px;
-    flex: 0 0 170px;
+    min-width: 0;
   }
 
   &__label {
@@ -194,6 +220,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    width: 100%;
+
+    > .searchableCombo {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
   }
 
   &__supplier-add {
@@ -707,8 +740,7 @@
 @media (max-width: 1200px) {
   .market-receipt-page {
     &__field {
-      min-width: 160px;
-      flex: none;
+      min-width: 0;
     }
 
     &__search {
@@ -751,6 +783,11 @@
 
 @media (max-width: 900px) {
   .market-receipt-page {
+    > .nur-tabs .nur-tabs__tab {
+      padding: 10px 8px;
+      font-size: 13px;
+    }
+
     .warehouse-header {
       flex-direction: column;
       align-items: stretch;
@@ -766,21 +803,19 @@
       border-radius: 14px;
     }
 
-    &__toolbar {
-      flex-direction: column;
-      align-items: stretch;
+    &__toolbar.nur-page__toolbar {
+      grid-template-columns: 1fr;
       gap: 10px;
       margin-bottom: 14px;
     }
 
     &__field {
       gap: 6px;
-      flex: none;
+      width: 100%;
     }
 
     &__field--date {
       min-width: 0;
-      flex: none;
     }
 
     &__label {

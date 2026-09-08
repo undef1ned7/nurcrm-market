@@ -138,8 +138,8 @@ export const aggregateSalesPaymentBreakdown = (
 
 export const parseApiPaymentBreakdown = (
   raw: unknown,
-): ShiftPaymentBreakdownRow[] | null => {
-  if (!Array.isArray(raw) || raw.length === 0) return null;
+): ShiftPaymentBreakdownRow[] => {
+  if (!Array.isArray(raw)) return [];
 
   const rows = raw
     .map((item: any) => {
@@ -158,15 +158,16 @@ export const parseApiPaymentBreakdown = (
     })
     .filter((row) => row.count > 0 || row.amount > 0);
 
-  return rows.length ? rows : null;
+  return rows;
 };
 
 export const resolveShiftPaymentBreakdown = (
   shift: any,
   salesFallback: any = [],
 ): ShiftPaymentBreakdownRow[] => {
-  const fromApi = parseApiPaymentBreakdown(shift?.payment_breakdown);
-  if (fromApi) return fromApi;
+  if (Array.isArray(shift?.payment_breakdown)) {
+    return parseApiPaymentBreakdown(shift.payment_breakdown);
+  }
   return aggregateSalesPaymentBreakdown(salesFallback);
 };
 

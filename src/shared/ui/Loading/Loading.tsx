@@ -1,11 +1,14 @@
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import "./Loading.scss";
 
 const Loading = ({ message = "Загрузка..." }) => {
   return (
-    <div className="loading">
-      <div className="loading__spinner"></div>
-      <p className="loading__message">{message}</p>
-    </div>
+    <ReactPortal wrapperId="global-loading">
+      <div className="loading" role="status" aria-live="polite" aria-busy="true">
+        <div className="loading__spinner" />
+        <p className="loading__message">{message}</p>
+      </div>
+    </ReactPortal>
   );
 };
 

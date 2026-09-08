@@ -1,6 +1,9 @@
 const ENABLED_KEY = "market_customer_display_enabled";
 const WELCOME_KEY = "market_customer_display_welcome";
 const SLIDES_KEY = "market_customer_display_slides";
+const THEME_KEY = "market_customer_display_theme";
+
+export type CustomerDisplayTheme = "dark" | "light";
 
 const safeGet = (key: string) => {
   try {
@@ -26,6 +29,14 @@ export function isCustomerDisplayEnabled() {
 
 export function setCustomerDisplayEnabled(enabled: boolean) {
   safeSet(ENABLED_KEY, enabled ? "1" : "0");
+}
+
+export function getCustomerDisplayTheme(): CustomerDisplayTheme {
+  return safeGet(THEME_KEY) === "light" ? "light" : "dark";
+}
+
+export function setCustomerDisplayTheme(theme: CustomerDisplayTheme) {
+  safeSet(THEME_KEY, theme === "light" ? "light" : "dark");
 }
 
 export function getCustomerDisplayWelcome(companyName?: string) {

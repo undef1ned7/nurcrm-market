@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import {
   createCompanyMembership,
@@ -39,6 +40,7 @@ import {
 } from "../masters.utils";
 
 export function useMastersPage() {
+  const { t } = useTranslation();
   const { company, tariff, profile } = useUser();
 
   const [tab, setTab] = useState("masters");
@@ -210,11 +212,11 @@ export function useMastersPage() {
 
   const roleFilterOptions = useMemo(
     () => [
-      { key: "ALL", label: "Все роли" },
+      { key: "ALL", label: t("crm.employees.allRoles") },
       ...roleOptions,
-      { key: "NONE", label: "Без роли" },
+      { key: "NONE", label: t("crm.employees.noRole") },
     ],
-    [roleOptions],
+    [roleOptions, t],
   );
 
   const filteredEmployees = useMemo(() => {
@@ -397,10 +399,16 @@ export function useMastersPage() {
       setEmpAlerts([MARKET_START_EMPLOYEE_LIMIT_MESSAGE]);
       return;
     }
-    const { errs, alerts } = validateEmployee(empForm, employees, false, null);
+    const { errs, alerts } = validateEmployee(
+      empForm,
+      employees,
+      false,
+      null,
+      t,
+    );
     if (alerts.length) {
       setEmpFieldErrors(errs);
-      setEmpAlerts(["Исправьте ошибки в форме.", ...alerts]);
+      setEmpAlerts([t("crm.employees.validate.fixFormErrors"), ...alerts]);
       focusFirstInvalid(errs);
       return;
     }
@@ -486,10 +494,11 @@ export function useMastersPage() {
       employees,
       true,
       editingEmpId,
+      t,
     );
     if (alerts.length) {
       setEmpFieldErrors(errs);
-      setEmpAlerts(["Исправьте ошибки в форме.", ...alerts]);
+      setEmpAlerts([t("crm.employees.validate.fixFormErrors"), ...alerts]);
       focusFirstInvalid(errs);
       return;
     }

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Pencil, Trash2, X } from "lucide-react";
 import "./BulkActionsBar.scss";
 
@@ -13,13 +14,8 @@ const BulkActionsBar = ({
   isDeleting,
   isUpdating,
 }) => {
+  const { t } = useTranslation();
   if (selectedCount === 0) return null;
-
-  const getSelectedText = () => {
-    if (selectedCount === 1) return "товар выбран";
-    if (selectedCount < 5) return "товара выбрано";
-    return "товаров выбрано";
-  };
 
   return (
     <div className="warehouse-bulk-actions">
@@ -30,7 +26,7 @@ const BulkActionsBar = ({
               {selectedCount}
             </span>
             <span className="warehouse-bulk-actions__text">
-              {getSelectedText()}
+              {t("crm.warehouse.bulk.selected", { count: selectedCount })}
             </span>
           </div>
         </div>
@@ -40,10 +36,10 @@ const BulkActionsBar = ({
             className="nur-btn nur-btn--ghost nur-btn--sm"
             onClick={onClearSelection}
             disabled={isDeleting}
-            title="Снять выбор"
+            title={t("crm.warehouse.bulk.clearSelection")}
           >
             <X size={16} />
-            Сбросить
+            {t("crm.warehouse.bulk.reset")}
           </button>
           {onBulkEdit && (
             <button
@@ -51,10 +47,12 @@ const BulkActionsBar = ({
               className="nur-btn nur-btn--secondary nur-btn--sm"
               onClick={onBulkEdit}
               disabled={isDeleting || isUpdating}
-              title="Изменить бренд, категорию или поставщика у выбранных товаров"
+              title={t("crm.warehouse.bulk.editSelectedTitle")}
             >
               <Pencil size={16} />
-              {isUpdating ? "Сохранение..." : "Изменить выбранные"}
+              {isUpdating
+                ? t("common.saving")
+                : t("crm.warehouse.bulk.editSelected")}
             </button>
           )}
           <button
@@ -62,10 +60,12 @@ const BulkActionsBar = ({
             className="nur-btn nur-btn--danger nur-btn--sm"
             onClick={onBulkDelete}
             disabled={isDeleting}
-            title="Удалить выбранные товары"
+            title={t("crm.warehouse.bulk.deleteSelectedTitle")}
           >
             <Trash2 size={16} />
-            {isDeleting ? "Удаление..." : "Удалить выбранные"}
+            {isDeleting
+              ? t("common.deleting")
+              : t("crm.warehouse.bulk.deleteSelected")}
           </button>
         </div>
       </div>

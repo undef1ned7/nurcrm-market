@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { FormBlock } from "../formLayout";
 
 const PricingSection = ({
@@ -10,13 +11,18 @@ const PricingSection = ({
   handleMarkupFieldChange,
   handlePriceChange,
 }: any) => {
+  const { t } = useTranslation();
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
+  const unit = marketData.unit || tp("unitShort");
   return (
     <div className="market-product-form__section">
-      <h3 className="market-product-form__section-title">Цены</h3>
+      <h3 className="market-product-form__section-title">
+        {tp("sectionPrices")}
+      </h3>
       <div className="market-product-form__prices-grid">
         <div className="market-product-form__form-group">
           <label className="market-product-form__label">
-            Цена закупки (за 1 {marketData.unit || "ед."})
+            {tp("purchasePriceUnit", { unit })}
           </label>
           <div className="market-product-form__price-input">
             <input
@@ -38,7 +44,9 @@ const PricingSection = ({
         </div>
         <FormBlock id="markup">
         <div className="market-product-form__form-group">
-          <label className="market-product-form__label">Наценка</label>
+          <label className="market-product-form__label">
+            {tp("markupLabel")}
+          </label>
           <div className="market-product-form__price-input">
             <input
               type="text"
@@ -52,7 +60,7 @@ const PricingSection = ({
         </FormBlock>
         <div className="market-product-form__form-group">
           <label className="market-product-form__label">
-            Цена продажи (за 1 {marketData.unit || "ед."})
+            {tp("sellPriceUnit", { unit })}
           </label>
           <div className="market-product-form__price-input">
             <input
@@ -61,7 +69,7 @@ const PricingSection = ({
               className="market-product-form__input"
               value={newItemData.price}
               onChange={handlePriceChange}
-              placeholder="0.000 или рассчитывается автоматически"
+              placeholder={tp("sellPricePlaceholderAuto")}
               inputMode="decimal"
             />
             <span className="market-product-form__currency">COM</span>
@@ -73,7 +81,7 @@ const PricingSection = ({
         <FormBlock id="wholesale">
         <div className="market-product-form__form-group">
           <label className="market-product-form__label">
-            Оптовая цена (за 1 {marketData.unit || "ед."})
+            {tp("wholesalePriceUnit", { unit })}
           </label>
           <div className="market-product-form__price-input">
             <input
@@ -91,7 +99,9 @@ const PricingSection = ({
         </FormBlock>
         <FormBlock id="discount">
         <div className="market-product-form__form-group">
-          <label className="market-product-form__label">Скидка</label>
+          <label className="market-product-form__label">
+            {tp("discountLabel")}
+          </label>
           <div className="market-product-form__price-input">
             <input
               type="text"

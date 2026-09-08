@@ -1,0 +1,125 @@
+.nur-toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(420px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.nur-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.06);
+  background: var(--nur-surface-elevated, #fff);
+  color: var(--nur-text-primary, #0f172a);
+}
+
+.nur-toast--enter {
+  animation: nur-toast-in var(--nur-duration, 220ms) var(--nur-ease-enter, ease-out)
+    both;
+}
+
+.nur-toast--exit {
+  animation: nur-toast-out var(--nur-duration-fast, 180ms) var(--nur-ease-exit, ease-in)
+    both;
+}
+
+.nur-toast__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.nur-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.nur-toast__title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.nur-toast__message {
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.nur-toast__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.nur-toast__close:hover {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.nur-toast--success {
+  border-color: rgba(22, 163, 74, 0.25);
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
+}
+
+.nur-toast--success .nur-toast__icon {
+  color: #16a34a;
+}
+
+.nur-toast--error {
+  border-color: rgba(220, 38, 38, 0.25);
+  background: linear-gradient(180deg, #fef2f2 0%, #fff 100%);
+}
+
+.nur-toast--error .nur-toast__icon {
+  color: #dc2626;
+}
+
+.nur-toast--warning {
+  border-color: rgba(217, 119, 6, 0.25);
+  background: linear-gradient(180deg, #fffbeb 0%, #fff 100%);
+}
+
+.nur-toast--warning .nur-toast__icon {
+  color: #d97706;
+}
+
+.nur-toast--info {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: linear-gradient(180deg, #eff6ff 0%, #fff 100%);
+}
+
+.nur-toast--info .nur-toast__icon {
+  color: #2563eb;
+}
+
+@media (max-width: 640px) {
+  .nur-toast-stack {
+    top: auto;
+    bottom: 16px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}

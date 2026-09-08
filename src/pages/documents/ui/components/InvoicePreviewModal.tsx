@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { pdf } from "@react-pdf/renderer";
 
 import { getInvoiceJson } from "@entities/sale";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import InvoicePdfDocument from "./InvoicePdfDocument";
 
 import "./InvoicePreviewModal.scss";
@@ -143,39 +144,43 @@ const InvoicePreviewModal = ({
 
   if (loading) {
     return (
-      <div className="invoice-preview-modal-overlay" onClick={onClose}>
-        <div
-          className="invoice-preview-modal"
-          onClick={(e: any) => e.stopPropagation()}
-        >
-          <div className="invoice-preview-modal__loading">
-            Загрузка накладной...
+      <ReactPortal wrapperId="documents-invoice-preview-modal">
+        <div className="invoice-preview-modal-overlay" onClick={onClose}>
+          <div
+            className="invoice-preview-modal"
+            onClick={(e: any) => e.stopPropagation()}
+          >
+            <div className="invoice-preview-modal__loading">
+              Загрузка накладной...
+            </div>
           </div>
         </div>
-      </div>
+      </ReactPortal>
     );
   }
 
   if (error || !invoiceData) {
     return (
-      <div className="invoice-preview-modal-overlay" onClick={onClose}>
-        <div
-          className="invoice-preview-modal"
-          onClick={(e: any) => e.stopPropagation()}
-        >
-          <div className="invoice-preview-modal__error">
-            {error || "Накладная не найдена"}
-          </div>
-          <div className="invoice-preview-modal__actions">
-            <button
-              className="invoice-preview-modal__close-btn"
-              onClick={onClose}
-            >
-              ЗАКРЫТЬ
-            </button>
+      <ReactPortal wrapperId="documents-invoice-preview-modal">
+        <div className="invoice-preview-modal-overlay" onClick={onClose}>
+          <div
+            className="invoice-preview-modal"
+            onClick={(e: any) => e.stopPropagation()}
+          >
+            <div className="invoice-preview-modal__error">
+              {error || "Накладная не найдена"}
+            </div>
+            <div className="invoice-preview-modal__actions">
+              <button
+                className="invoice-preview-modal__close-btn"
+                onClick={onClose}
+              >
+                ЗАКРЫТЬ
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </ReactPortal>
     );
   }
 
@@ -250,6 +255,7 @@ const InvoicePreviewModal = ({
   const invoiceDate = document.datetime || document.date || "";
 
   return (
+    <ReactPortal wrapperId="documents-invoice-preview-modal">
     <div className="invoice-preview-modal-overlay" onClick={onClose}>
       <div
         className="invoice-preview-modal"
@@ -462,6 +468,7 @@ const InvoicePreviewModal = ({
         </div>
       </div>
     </div>
+    </ReactPortal>
   );
 };
 

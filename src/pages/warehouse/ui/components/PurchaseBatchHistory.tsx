@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { History } from "lucide-react";
 import PurchaseBatchTable from "./PurchaseBatchTable";
 import PurchaseBatchHistoryModal from "./PurchaseBatchHistoryModal";
@@ -7,6 +8,7 @@ import ReceiptDetailModal from "./ReceiptDetailModal";
 const PREVIEW_LIMIT = 50;
 
 const PurchaseBatchHistory = ({ productId, productName, batches = [] }: any) => {
+  const { t } = useTranslation();
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [receiptSeed, setReceiptSeed] = useState<any>(null);
 
@@ -27,7 +29,9 @@ const PurchaseBatchHistory = ({ productId, productName, batches = [] }: any) => 
   return (
     <div className="product-detail__section purchase-batch-history">
       <div className="purchase-batch-history__head">
-        <h3 className="product-detail__section-title">История закупок</h3>
+        <h3 className="product-detail__section-title">
+          {t("crm.warehouse.purchaseHistory.title")}
+        </h3>
         {productId && (
           <button
             type="button"
@@ -35,26 +39,24 @@ const PurchaseBatchHistory = ({ productId, productName, batches = [] }: any) => 
             onClick={() => setHistoryModalOpen(true)}
           >
             <History size={16} />
-            Вся история
+            {t("crm.warehouse.purchaseHistory.allHistory")}
           </button>
         )}
       </div>
 
       <p className="purchase-batch-history__hint">
-        Каждое оприходование от поставщика сохраняется отдельной партией. Цена
-        закупки в карточке — по последней партии.
+        {t("crm.warehouse.purchaseHistory.hint")}
       </p>
 
       <PurchaseBatchTable
         batches={previewBatches as any}
-        emptyMessage="Партии появятся после оприходования от поставщика"
+        emptyMessage={t("crm.warehouse.purchaseHistory.emptyPreview")}
         onReceiptClick={handleReceiptClick}
       />
 
       {hasPreview && previewBatches.length >= PREVIEW_LIMIT && (
         <p className="purchase-batch-history__footnote">
-          Показаны последние {PREVIEW_LIMIT} партий. Откройте «Вся историю» для
-          полного списка.
+          {t("crm.warehouse.purchaseHistory.footnote", { count: PREVIEW_LIMIT })}
         </p>
       )}
 

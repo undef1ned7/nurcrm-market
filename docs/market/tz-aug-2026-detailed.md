@@ -9,7 +9,7 @@
 
 **Связанные документы:**
 - [`../backend/alternate-barcodes.md`](../backend/alternate-barcodes.md) — доп. штрихкоды (критично для модуля 1)
-- [`../backend/cashier-settings.md`](../backend/cashier-settings.md) — настройки кассы / код удаления
+- [`../backend/kassa/cashier-settings.md`](../backend/kassa/cashier-settings.md) — настройки кассы / код удаления
 
 ---
 

@@ -1,5 +1,6 @@
 import { FaStar, FaTag } from "react-icons/fa";
-import { toNum, money, FALLBACK_IMG } from "../catalog.utils";
+import { toNum, money, FALLBACK_IMG, getProductImages } from "../catalog.utils";
+import { ImageCarousel } from "./ImageCarousel";
 
 export function ShowcaseCard({ item, onAdd, onOpen }) {
   const title = String(item?.name || item?.title || "Без названия");
@@ -13,24 +14,32 @@ export function ShowcaseCard({ item, onAdd, onOpen }) {
     Number(item.price) !== Number(item.final_price)
       ? toNum(item.price)
       : null;
+  const images = getProductImages(item);
 
   return (
     <article className="sfcard">
-      <button
-        type="button"
+      <div
         className="sfcard__media"
-        onClick={() => onOpen?.(item?.id)}
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest(".swiper-pagination-bullet")) return;
+          onOpen?.(item?.id);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen?.(item?.id);
+          }
+        }}
         aria-label="Open product"
       >
-        <img
-          className="sfcard__img"
-          src={item?.image_url || FALLBACK_IMG}
+        <ImageCarousel
+          images={images}
           alt={title}
-          loading="lazy"
-          onError={(e) => {
-            if (e?.currentTarget?.src !== FALLBACK_IMG)
-              e.currentTarget.src = FALLBACK_IMG;
-          }}
+          fallback={FALLBACK_IMG}
+          imgClassName="sfcard__img"
         />
         <div className="sfcard__priceTag">{money(price)} сом</div>
         {hasDiscount && (
@@ -43,7 +52,7 @@ export function ShowcaseCard({ item, onAdd, onOpen }) {
             <FaStar /> Новинка
           </div>
         )}
-      </button>
+      </div>
 
       <div className="sfcard__body">
         {cat ? (

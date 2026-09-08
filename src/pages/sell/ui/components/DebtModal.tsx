@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import UniversalModal from "@shared/ui/legacy-production/ProductionAgents/UniversalModal/UniversalModal";
 
 const DebtModal = ({
@@ -19,19 +20,21 @@ const DebtModal = ({
   setDebtMonths,
   onSave,
 }) => {
+  const { t } = useTranslation();
+  const td = (k: string): string => t(`crm.sell.modals.debt.${k}`) as string;
   if (!show) return null;
 
   return (
-    <UniversalModal onClose={onClose} title={"Долг"}>
+    <UniversalModal onClose={onClose} title={td("title")}>
       <div className="start__debt min-w-75">
         <p className="start__debt-amount">
-          Cумма долга: <b>{currentTotal}</b>
+          {td("debtAmount")} <b>{currentTotal}</b>
         </p>
 
         {clientId === "" && (
           <>
             <p style={{ margin: "5px 0" }} className="sell__header-necessarily">
-              Выберите клиента!
+              {td("selectClientHint")}
             </p>
             <select
               onChange={(e) => {
@@ -41,7 +44,7 @@ const DebtModal = ({
               value={clientId}
               className="sell__header-input"
             >
-              <option value="">Выберите клиента</option>
+              <option value="">{td("selectClient")}</option>
               {filterClient.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.full_name}
@@ -53,7 +56,7 @@ const DebtModal = ({
 
         {company?.subscription_plan?.name === "Старт" && (
           <>
-            <label>Телефон</label>
+            <label>{t("common.phone")}</label>
             <input
               type="text"
               className="sell__header-input"
@@ -64,21 +67,21 @@ const DebtModal = ({
           </>
         )}
 
-        <label>Тип оплаты</label>
+        <label>{td("paymentType")}</label>
         <select
           value={debt}
           onChange={(e) => setDebt(e.target.value)}
           className="sell__header-input"
         >
-          <option value="">Тип оплаты</option>
-          <option value="Предоплата">Предоплата</option>
-          <option value="Долги">Долг</option>
+          <option value="">{td("paymentType")}</option>
+          <option value="Предоплата">{td("prepayment")}</option>
+          <option value="Долги">{td("debt")}</option>
         </select>
 
         {/* Блок для "Предоплата" */}
         {debt === "Предоплата" && (
           <>
-            <label>Сумма предоплаты</label>
+            <label>{td("prepaymentAmount")}</label>
             <input
               type="text"
               className="sell__header-input"
@@ -86,7 +89,7 @@ const DebtModal = ({
               onChange={(e) => setAmount(e.target.value)}
             />
 
-            <label>Срок долга (в месяцах)</label>
+            <label>{td("debtTermMonths")}</label>
             <input
               type="number"
               min="1"
@@ -95,7 +98,7 @@ const DebtModal = ({
               onChange={(e) => setDebtMonths(e.target.value)}
             />
 
-            <label>Дата первого платежа</label>
+            <label>{td("firstPaymentDate")}</label>
             <input
               type="date"
               className="sell__header-input"
@@ -109,7 +112,7 @@ const DebtModal = ({
         {/* Блок для "Долги" */}
         {debt === "Долги" && (
           <>
-            <label>Срок долга (в месяцах)</label>
+            <label>{td("debtTermMonths")}</label>
             <input
               type="number"
               min="1"
@@ -118,7 +121,7 @@ const DebtModal = ({
               onChange={(e) => setDebtMonths(e.target.value)}
             />
 
-            <label>Дата первого платежа</label>
+            <label>{td("firstPaymentDate")}</label>
             <input
               type="date"
               className="sell__header-input"
@@ -138,7 +141,7 @@ const DebtModal = ({
           }}
         >
           <button className="sell__reset" type="button" onClick={onClose}>
-            Отмена
+            {t("common.cancel")}
           </button>
           <button
             className="start__total-pay"
@@ -146,7 +149,7 @@ const DebtModal = ({
             type="button"
             onClick={onSave}
           >
-            Сохранить
+            {t("common.save")}
           </button>
         </div>
       </div>

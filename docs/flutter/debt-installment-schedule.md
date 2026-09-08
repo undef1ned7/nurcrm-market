@@ -5,7 +5,7 @@
 **Веб-экран:** `/crm/market/cashier` → оплата → «Отсрочка»  
 **Веб-код:** `src/pages/cashier/ui/` + `src/entities/sale/lib/buildDebtSchedule.ts`  
 **Переключатель:** `GET/PATCH /main/pos/cashier-settings/` → `debt_schedule_version`  
-**Бэкенд-док:** [debt-installment-schedule-backend.md](../backend/debt-installment-schedule-backend.md)
+**Бэкенд-док:** [debt-installment-schedule-backend.md](../backend/kassa/debt-installment-schedule-backend.md)
 
 **Статус:** веб готов.  
 - **Бэкенд:** нет поля / `null` / не передали → **v1**.  

@@ -29,6 +29,7 @@ export function CashierPageModals({ vm }: Props) {
     clients,
     showDebtModal,
     setShowDebtModal,
+    openShiftId,
     showReceiptsModal,
     setShowReceiptsModal,
     pieceSaleModal,
@@ -106,6 +107,7 @@ export function CashierPageModals({ vm }: Props) {
               <DebtPaymentModal
                 onClose={() => setShowDebtModal(false)}
                 customers={clients}
+                shiftId={openShiftId}
               />
             )}
 

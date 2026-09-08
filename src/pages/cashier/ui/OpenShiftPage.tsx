@@ -4,17 +4,15 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Wallet } from "lucide-react";
 import { openShiftAsync } from "@entities/shift";
 import { fetchShiftsAsync } from "@entities/shift";
-import { getCashBoxes } from "@entities/cash";
-import { useCash } from "@entities/cash";
 import { useUser } from "@entities/user";
+import { buildPosRoutingFromUser } from "@shared/lib/tools/cashboxResolution";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import "./OpenShiftPage.scss";
 
 const OpenShiftPage = ({ onBack }: any) => {
   const { t } = useTranslation();
   const dispatch = useDispatch() as any;
-  const { list: cashBoxes } = useCash();
-  const { currentUser, userId } = useUser();
+  const { currentUser, userId, profile, company } = useUser();
 
   const [openingCash, setOpeningCash] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,26 +44,7 @@ const OpenShiftPage = ({ onBack }: any) => {
       return;
     }
 
-    // Проверяем наличие кассы
-    if (!cashBoxes || cashBoxes.length === 0) {
-      showAlert(
-        "error",
-        t("common.error"),
-        t("crm.cashier.shift.alerts.noCashboxes")
-      );
-      return;
-    }
-
-    // Берем первую доступную кассу
-    const firstCashBox = cashBoxes[0];
-    const cashboxId = firstCashBox?.id;
-
-    if (!cashboxId) {
-      showAlert("error", t("common.error"), t("crm.cashier.shift.alerts.cashboxNotFound"));
-      return;
-    }
-
-    // Получаем ID кассира из пользователя
+    // Кассу выбирает бэкенд по branch_id / cashbox_role
     const cashierId = currentUser?.id || userId;
 
     if (!cashierId) {
@@ -78,16 +57,15 @@ const OpenShiftPage = ({ onBack }: any) => {
       // Отправляем запрос на открытие смены
       await dispatch(
         openShiftAsync({
-          cashbox: cashboxId,
           cashier: cashierId,
           opening_cash: String(cashAmount),
+          ...buildPosRoutingFromUser(profile, company),
         })
       ).unwrap();
 
       showAlert("success", t("common.success"), t("crm.cashier.shift.alerts.openSuccess"));
       // Обновляем список смен
       dispatch((fetchShiftsAsync as any)());
-      dispatch((getCashBoxes as any)());
       // Закрываем экран через небольшую задержку
       setTimeout(() => {
         onBack();

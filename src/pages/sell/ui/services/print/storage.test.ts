@@ -3,6 +3,9 @@ import {
   exportEscposSettings,
   importEscposSettings,
   parseEscposSettingsImport,
+  getReceiptPrintMode,
+  setEscposReceiptMode,
+  isGraphicReceiptMode,
 } from "./storage";
 
 const memory: Record<string, string> = {};
@@ -58,5 +61,18 @@ describe("escpos settings export/import", () => {
 
   it("rejects JSON without escpos keys", () => {
     expect(() => parseEscposSettingsImport({ foo: 1 })).toThrow(/escpos_/);
+  });
+
+  it("defaults receipt print mode to graphic", () => {
+    expect(getReceiptPrintMode()).toBe("graphic");
+    expect(isGraphicReceiptMode()).toBe(true);
+  });
+
+  it("persists text receipt print mode", () => {
+    setEscposReceiptMode("text");
+    expect(getReceiptPrintMode()).toBe("text");
+    expect(isGraphicReceiptMode()).toBe(false);
+    setEscposReceiptMode("graphic");
+    expect(getReceiptPrintMode()).toBe("graphic");
   });
 });

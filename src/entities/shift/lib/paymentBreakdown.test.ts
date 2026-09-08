@@ -90,8 +90,14 @@ describe("resolveShiftPaymentBreakdown", () => {
     expect(rows[0]).toMatchObject({ method: "optima", count: 1, amount: 15 });
   });
 
-  it("parses empty API list as missing", () => {
-    expect(parseApiPaymentBreakdown([])).toBeNull();
+  it("parses empty API list as empty array", () => {
+    expect(parseApiPaymentBreakdown([])).toEqual([]);
+  });
+
+  it("returns empty array when shift has empty payment_breakdown", () => {
+    expect(resolveShiftPaymentBreakdown({ payment_breakdown: [] }, [])).toEqual(
+      [],
+    );
   });
 
   it("formats a human summary", () => {

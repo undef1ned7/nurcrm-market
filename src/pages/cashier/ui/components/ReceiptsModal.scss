@@ -401,3 +401,145 @@
     }
   }
 }
+
+@media (max-width: 768px) {
+  .receipts-modal-overlay {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+  }
+
+  .receipts-modal {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .receipts-modal__container {
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .receipts-modal__filters {
+    width: 100%;
+    flex-shrink: 0;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--nur-border);
+    overflow: visible;
+  }
+
+  .receipts-modal__filters-header {
+    margin-bottom: 16px;
+  }
+
+  .receipts-modal__filter-group {
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .receipts-modal__content {
+    flex: 1;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .receipts-modal__header {
+    padding: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--nur-surface);
+  }
+
+  .receipts-modal__title {
+    font-size: 18px;
+  }
+
+  .receipts-modal__list {
+    overflow: visible;
+    padding: 16px;
+  }
+
+  .receipts-modal__receipt {
+    padding: 16px;
+  }
+
+  .receipts-modal__receipt-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .receipts-modal__receipt-actions {
+    width: 100%;
+
+    .receipts-modal__action-btn {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
+  .receipts-modal__receipt-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .receipts-modal__receipt-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .receipts-modal__receipt-amount {
+    margin-left: 0;
+  }
+
+  .receipts-modal__footer {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--nur-surface);
+  }
+
+  .receipts-modal__close-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .receipts-modal__filters {
+    padding: 14px;
+  }
+
+  .receipts-modal__filters-title {
+    font-size: 16px;
+  }
+
+  .receipts-modal__reset-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .receipts-modal__date-btn {
+    font-size: 13px;
+    padding: 11px 14px;
+  }
+
+  .receipts-modal__header,
+  .receipts-modal__list {
+    padding: 14px;
+  }
+
+  .receipts-modal__receipt-title {
+    font-size: 16px;
+  }
+}

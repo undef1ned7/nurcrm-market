@@ -395,13 +395,15 @@ const ShiftDetail = () => {
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
             <TrendingUp size={20} className="shift-detail-page__icon--success" />
-            <h3 className="shift-detail-page__detail-title">Выручка</h3>
+            <h3 className="shift-detail-page__detail-title">
+              {t("crm.shifts.detail.revenueCard")}
+            </h3>
           </div>
           <div className="shift-detail-page__detail-content">
             <div className="shift-detail-page__detail-row">
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
-                  Кол-во продаж
+                  {t("crm.shifts.detail.salesCount")}
                 </div>
                 <div className="shift-detail-page__detail-value">
                   {shift.sales_count || 0}
@@ -409,7 +411,7 @@ const ShiftDetail = () => {
               </div>
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
-                  Общая сумма продаж
+                  {t("crm.shifts.detail.salesTotal")}
                 </div>
                 <div className="shift-detail-page__detail-value">
                   {parseFloat(shift.sales_total || 0).toFixed(2)} сом
@@ -423,7 +425,7 @@ const ShiftDetail = () => {
                     size={14}
                     style={{ display: "inline", marginRight: "4px" }}
                   />
-                  Наличными
+                  {t("crm.shifts.detail.cash")}
                 </div>
                 <div className="shift-detail-page__detail-value shift-detail-page__detail-value--green">
                   {parseFloat(shift.cash_sales_total || 0).toFixed(2)} сом
@@ -435,7 +437,7 @@ const ShiftDetail = () => {
                     size={14}
                     style={{ display: "inline", marginRight: "4px" }}
                   />
-                  Безналичные
+                  {t("crm.shifts.detail.noncash")}
                 </div>
                 <div className="shift-detail-page__detail-value">
                   {parseFloat(shift.noncash_sales_total || 0).toFixed(2)} сом
@@ -451,31 +453,35 @@ const ShiftDetail = () => {
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
             <RefreshCw size={20} className="shift-detail-page__icon--warning" />
-            <h3 className="shift-detail-page__detail-title">Возвраты</h3>
+            <h3 className="shift-detail-page__detail-title">
+              {t("crm.shifts.detail.returns")}
+            </h3>
           </div>
           <div className="shift-detail-page__detail-content">
             <div className="shift-detail-page__detail-row">
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
-                  Количество возвратов
+                  {t("crm.shifts.detail.returnsCount")}
                 </div>
                 <div className="shift-detail-page__detail-value">0</div>
               </div>
               <div className="shift-detail-page__detail-item">
-                <div className="shift-detail-page__detail-label">Наличные</div>
+                <div className="shift-detail-page__detail-label">
+                  {t("crm.shifts.detail.cashPlain")}
+                </div>
                 <div className="shift-detail-page__detail-value">0.00 сом</div>
               </div>
             </div>
             <div className="shift-detail-page__detail-row">
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
-                  Сумма возвратов
+                  {t("crm.shifts.detail.returnsAmount")}
                 </div>
                 <div className="shift-detail-page__detail-value">0.00 сом</div>
               </div>
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
-                  Безналичные
+                  {t("crm.shifts.detail.noncash")}
                 </div>
                 <div className="shift-detail-page__detail-value">0.00 сом</div>
               </div>
@@ -487,14 +493,14 @@ const ShiftDetail = () => {
           <div className="shift-detail-page__detail-header">
             <Wallet size={20} className="shift-detail-page__icon--info" />
             <h3 className="shift-detail-page__detail-title">
-              Наличные в кассе
+              {t("crm.shifts.detail.cashInRegister")}
             </h3>
           </div>
           <div className="shift-detail-page__detail-content">
             <div className="shift-detail-page__detail-row">
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
-                  На начало смены
+                  {t("crm.shifts.detail.openingCash")}
                 </div>
                 <div className="shift-detail-page__detail-value">
                   {parseFloat(shift.opening_cash || 0).toFixed(2)} сом
@@ -503,7 +509,7 @@ const ShiftDetail = () => {
               {shift.closed_at && shift.closing_cash !== null && (
                 <div className="shift-detail-page__detail-item">
                   <div className="shift-detail-page__detail-label">
-                    Фактическая сумма
+                    {t("crm.shifts.detail.actualAmount")}
                   </div>
                   <div className="shift-detail-page__detail-value">
                     {parseFloat(shift.closing_cash || 0).toFixed(2)} сом
@@ -514,7 +520,7 @@ const ShiftDetail = () => {
             <div className="shift-detail-page__detail-row">
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
-                  Ожидаемая сумма
+                  {t("crm.shifts.detail.expectedAmount")}
                 </div>
                 <div className="shift-detail-page__detail-value">
                   {parseFloat(shift.expected_cash || 0).toFixed(2)} сом
@@ -527,7 +533,7 @@ const ShiftDetail = () => {
                       size={14}
                       style={{ display: "inline", marginRight: "4px" }}
                     />
-                    Расхождение
+                    {t("crm.shifts.detail.discrepancy")}
                   </div>
                   <div
                     className={`shift-detail-page__detail-value ${parseFloat(shift.cash_diff || 0) === 0
@@ -559,7 +565,7 @@ const ShiftDetail = () => {
           <div className="shift-detail-page__detail-header">
             <TrendingUp size={20} className="shift-detail-page__icon--success" />
             <h3 className="shift-detail-page__detail-title">
-              Приходы и расходы
+              {t("crm.shifts.detail.incomeExpense")}
             </h3>
           </div>
           <div className="shift-detail-page__detail-content">
@@ -570,7 +576,7 @@ const ShiftDetail = () => {
                     size={14}
                     style={{ display: "inline", marginRight: "4px" }}
                   />
-                  Прочие приходы
+                  {t("crm.shifts.detail.otherIncome")}
                 </div>
                 <div className="shift-detail-page__detail-value shift-detail-page__detail-value--green">
                   {parseFloat(shift.income_total || 0).toFixed(2)} сом
@@ -582,7 +588,7 @@ const ShiftDetail = () => {
                     size={14}
                     style={{ display: "inline", marginRight: "4px" }}
                   />
-                  Расходы
+                  {t("crm.shifts.detail.expenses")}
                 </div>
                 <div className="shift-detail-page__detail-value shift-detail-page__detail-value--red">
                   {parseFloat(shift.expense_total || 0).toFixed(2)} сом
@@ -595,7 +601,9 @@ const ShiftDetail = () => {
 
       <div className="shift-detail-page__total">
         <DollarSign size={24} />
-        <span className="shift-detail-page__total-label">Итоговая выручка</span>
+        <span className="shift-detail-page__total-label">
+          {t("crm.shifts.detail.totalRevenue")}
+        </span>
         <span className="shift-detail-page__total-value">
           {parseFloat(shift.sales_total || 0).toFixed(2)} сом
         </span>
@@ -603,12 +611,12 @@ const ShiftDetail = () => {
 
       <PagePanel className="shift-detail-page__operations">
         <h2 className="shift-detail-page__operations-title">
-          Последние операции
+          {t("crm.shifts.detail.recentOperations")}
         </h2>
         <div
           className="nur-tabs shift-detail-page__tabs"
           role="tablist"
-          aria-label="Операции смены"
+          aria-label={t("crm.shifts.detail.operationsAriaLabel")}
         >
           <button
             type="button"
@@ -617,7 +625,7 @@ const ShiftDetail = () => {
             className={`nur-tabs__tab${activeTab === "products" ? " is-active" : ""}`}
             onClick={() => setActiveTab("products")}
           >
-            Движение товара
+            {t("crm.shifts.detail.productMovement")}
           </button>
           <button
             type="button"
@@ -626,7 +634,7 @@ const ShiftDetail = () => {
             className={`nur-tabs__tab${activeTab === "money" ? " is-active" : ""}`}
             onClick={() => setActiveTab("money")}
           >
-            Движение денег
+            {t("crm.shifts.detail.moneyMovement")}
           </button>
         </div>
 
@@ -634,7 +642,7 @@ const ShiftDetail = () => {
           <div className="shift-detail-page__operations-list">
             <FilterBar className="shift-detail-page__filters">
               <div className="nur-field shift-detail-page__filter-group">
-                <label className="nur-label">Статус</label>
+                <label className="nur-label">{t("common.status")}</label>
                 <select
                   className="nur-select"
                   value={filters.status}
@@ -642,13 +650,15 @@ const ShiftDetail = () => {
                     setFilters({ ...filters, status: e.target.value })
                   }
                 >
-                  <option value="">Все</option>
-                  <option value="paid">Оплаченные</option>
-                  <option value="unpaid">Неоплаченные</option>
+                  <option value="">{t("common.all")}</option>
+                  <option value="paid">{t("crm.shifts.detail.paid")}</option>
+                  <option value="unpaid">{t("crm.shifts.detail.unpaid")}</option>
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">
-                <label className="nur-label">Способ оплаты</label>
+                <label className="nur-label">
+                  {t("crm.shifts.detail.paymentMethod")}
+                </label>
                 <select
                   className="nur-select"
                   value={filters.payment_method}
@@ -656,17 +666,19 @@ const ShiftDetail = () => {
                     setFilters({ ...filters, payment_method: e.target.value })
                   }
                 >
-                  <option value="">Все</option>
-                  <option value="cash">Наличные</option>
-                  <option value="transfer">Безнал</option>
+                  <option value="">{t("common.all")}</option>
+                  <option value="cash">{t("crm.shifts.detail.cashPlain")}</option>
+                  <option value="transfer">
+                    {t("crm.shifts.detail.noncashShort")}
+                  </option>
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">
-                <label className="nur-label">Поиск</label>
+                <label className="nur-label">{t("common.search")}</label>
                 <input
                   type="text"
                   className="nur-input"
-                  placeholder="Поиск по номеру чека"
+                  placeholder={t("crm.shifts.detail.searchReceipt")}
                   value={filters.q}
                   onChange={(e) =>
                     setFilters({ ...filters, q: e.target.value })
@@ -692,8 +704,8 @@ const ShiftDetail = () => {
                 <>
                   {productMovements.length === 0 ? (
                     <EmptyState
-                      title="Продажи не найдены"
-                      text="За эту смену продаж нет или измените фильтры."
+                      title={t("crm.shifts.detail.salesNotFound")}
+                      text={t("crm.shifts.detail.salesNotFoundHint")}
                     />
                   ) : (
                     productMovements.map((movement, idx) => (
@@ -704,11 +716,16 @@ const ShiftDetail = () => {
                         <div className="shift-detail-page__operation-indicator shift-detail-page__operation-indicator--blue" />
                         <div className="shift-detail-page__operation-content">
                           <div className="shift-detail-page__operation-title">
-                            Продажа #{idx + 1}
+                            {t("crm.shifts.detail.saleTitle", {
+                              number: idx + 1,
+                            })}
                             {movement.docNumber || movement.id.slice(0, 8)}
                           </div>
                           <div className="shift-detail-page__operation-info">
-                            Магазин {movement.store} &gt; клиент {movement.client}
+                            {t("crm.shifts.detail.saleInfo", {
+                              store: movement.store,
+                              client: movement.client,
+                            })}
                           </div>
                           <div className="shift-detail-page__operation-info">
                             {movement.cashier}, {formatDate(movement.date)}
@@ -720,17 +737,21 @@ const ShiftDetail = () => {
                             {movement.status === "paid" ? (
                               <>
                                 <CheckCircle size={16} />
-                                <span>Документ оплачен</span>
+                                <span>{t("crm.shifts.detail.documentPaid")}</span>
                               </>
                             ) : (
                               <>
                                 <XCircle size={16} />
-                                <span>Документ не оплачен</span>
+                                <span>
+                                  {t("crm.shifts.detail.documentUnpaid")}
+                                </span>
                               </>
                             )}
                           </div>
                           <div className="shift-detail-page__operation-positions">
-                            {movement.positions} позиции
+                            {t("crm.shifts.detail.positions", {
+                              count: movement.positions,
+                            })}
                           </div>
                         </div>
                         <div className="shift-detail-page__operation-amount">
@@ -754,7 +775,7 @@ const ShiftDetail = () => {
           <div className="shift-detail-page__operations-list">
             <FilterBar className="shift-detail-page__filters">
               <div className="nur-field shift-detail-page__filter-group">
-                <label className="nur-label">Статус</label>
+                <label className="nur-label">{t("common.status")}</label>
                 <select
                   className="nur-select"
                   value={moneyFilters.status}
@@ -765,13 +786,15 @@ const ShiftDetail = () => {
                     })
                   }
                 >
-                  <option value="">Все</option>
-                  <option value="paid">Оплаченные</option>
-                  <option value="unpaid">Неоплаченные</option>
+                  <option value="">{t("common.all")}</option>
+                  <option value="paid">{t("crm.shifts.detail.paid")}</option>
+                  <option value="unpaid">{t("crm.shifts.detail.unpaid")}</option>
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">
-                <label className="nur-label">Способ оплаты</label>
+                <label className="nur-label">
+                  {t("crm.shifts.detail.paymentMethod")}
+                </label>
                 <select
                   className="nur-select"
                   value={moneyFilters.payment_method}
@@ -782,17 +805,19 @@ const ShiftDetail = () => {
                     })
                   }
                 >
-                  <option value="">Все</option>
-                  <option value="cash">Наличные</option>
-                  <option value="transfer">Безнал</option>
+                  <option value="">{t("common.all")}</option>
+                  <option value="cash">{t("crm.shifts.detail.cashPlain")}</option>
+                  <option value="transfer">
+                    {t("crm.shifts.detail.noncashShort")}
+                  </option>
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">
-                <label className="nur-label">Поиск</label>
+                <label className="nur-label">{t("common.search")}</label>
                 <input
                   type="text"
                   className="nur-input"
-                  placeholder="Поиск по номеру чека"
+                  placeholder={t("crm.shifts.detail.searchReceipt")}
                   value={moneyFilters.q}
                   onChange={(e) =>
                     setMoneyFilters({ ...moneyFilters, q: e.target.value })
@@ -816,8 +841,8 @@ const ShiftDetail = () => {
               <>
                 {moneyMovements.length === 0 ? (
                   <EmptyState
-                    title="Движение денег не найдено"
-                    text="За эту смену движений нет или измените фильтры."
+                    title={t("crm.shifts.detail.moneyNotFound")}
+                    text={t("crm.shifts.detail.moneyNotFoundHint")}
                   />
                 ) : (
                   moneyMovements.map((movement, idx) => (
@@ -829,13 +854,16 @@ const ShiftDetail = () => {
                       <div className="shift-detail-page__operation-content">
                         <div className="shift-detail-page__operation-title">
                           <FileText size={16} />
-                          Приход #{idx + 1}
+                          {t("crm.shifts.detail.incomeTitle", {
+                            number: idx + 1,
+                          })}
                         </div>
                         <div className="shift-detail-page__operation-info">
-                          Контрагент: {movement.counterparty}
+                          {t("crm.shifts.detail.counterparty")}:{" "}
+                          {movement.counterparty}
                         </div>
                         <div className="shift-detail-page__operation-info">
-                          Счёт: {movement.account}
+                          {t("crm.shifts.detail.account")}: {movement.account}
                         </div>
                         <div className="shift-detail-page__operation-tag">
                           {movement.tag}
@@ -844,11 +872,12 @@ const ShiftDetail = () => {
                           {formatDate(movement.date)}
                         </div>
                         <div className="shift-detail-page__operation-info">
-                          Кассир: {movement.cashier}
+                          {t("crm.shifts.cashier")}: {movement.cashier}
                         </div>
                         {movement.payment_method && (
                           <div className="shift-detail-page__operation-info">
-                            Способ оплаты: {movement.payment_method}
+                            {t("crm.shifts.detail.paymentMethod")}:{" "}
+                            {movement.payment_method}
                           </div>
                         )}
                       </div>
@@ -866,15 +895,15 @@ const ShiftDetail = () => {
         {activeTab === "list" && (
           <div className="shift-detail-page__product-list">
             <h3 className="shift-detail-page__product-list-title">
-              Продажа товара
+              {t("crm.shifts.detail.productSale")}
             </h3>
             <table className="nur-table nur-table--dense">
               <thead>
                 <tr>
-                  <th>Товар</th>
-                  <th>Кол-во товара</th>
-                  <th>Сумма продаж</th>
-                  <th>Прибыль</th>
+                  <th>{t("crm.shifts.detail.product")}</th>
+                  <th>{t("crm.shifts.detail.productQty")}</th>
+                  <th>{t("crm.shifts.detail.salesAmount")}</th>
+                  <th>{t("crm.shifts.detail.profit")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -897,7 +926,7 @@ const ShiftDetail = () => {
         type={alertModal.type}
         title={alertModal.title}
         message={alertModal.message}
-        okText={alertModal.type === "warning" ? "Да" : "ОК"}
+        okText={alertModal.type === "warning" ? t("common.yes") : t("common.ok")}
         onClose={closeAlert}
         onConfirm={handleConfirm}
       />

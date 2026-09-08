@@ -19,9 +19,12 @@ import {
   safeNumber,
 } from "./storage";
 
-const DEFAULT_DOTS_PER_LINE = 576; // 80мм принтер обычно 576 точек
-const MARKET_DEFAULT_DOTS_PER_LINE = 384; // 58мм
-const MARKET_DEFAULT_CHARS_PER_LINE = 42; // font B: 384 / 9
+const DEFAULT_DOTS_PER_LINE = 576; // 80 мм печать (~576 точек при 203 dpi)
+/** 48 мм зона печати на рулоне ~58 мм (203 dpi → 384 точки). */
+export const PRINT_WIDTH_48MM_DPL = 384;
+export const PRINT_WIDTH_48MM_CHARS_B = 42; // font B: 384 / 9
+const MARKET_DEFAULT_DOTS_PER_LINE = PRINT_WIDTH_48MM_DPL;
+const MARKET_DEFAULT_CHARS_PER_LINE = PRINT_WIDTH_48MM_CHARS_B;
 const DEFAULT_FONT = "B";
 const DEFAULT_CODEPAGE = 17; // PC866 (часто 17 или 66)
 

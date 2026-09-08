@@ -11,11 +11,14 @@ export {
   setEscposLineHeight,
   setEscposFont,
   setEscposCodepage,
+  setEscposReceiptMode,
+  getReceiptPrintMode,
+  isGraphicReceiptMode,
   exportEscposSettings,
   importEscposSettings,
 } from "./print/storage";
 
-export { getEscposRuntimeConfig } from "./print/encoding";
+export { getEscposRuntimeConfig, PRINT_WIDTH_48MM_DPL, PRINT_WIDTH_48MM_CHARS_B } from "./print/encoding";
 
 export {
   ensurePrinterConnectedInteractively,
@@ -32,7 +35,14 @@ export {
   enrichMarketReceiptPayload,
   handleCheckoutResponseForPrinting,
   kickCashDrawer,
+  isOpaquePrintPayload,
+  isPrintFormatError,
 } from "./print/print";
+
+export {
+  buildMarketReceiptLayout,
+  renderReceiptLayoutToCanvas,
+} from "./print/receiptLayout";
 
 export {
   DEFAULT_DRAWER_CMD,

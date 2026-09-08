@@ -225,6 +225,20 @@ export function useAnalyticsData() {
     }
   }, []);
 
+  const openFinanceAnchorSection = React.useCallback((key) => {
+    const anchorId = `finance-section-${key}`;
+    setOpenFinanceTable(key);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `#${anchorId}`);
+      window.setTimeout(() => {
+        const target = document.getElementById(anchorId);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 80);
+    }
+  }, []);
+
   const tabData = useAnalyticsTabData({
     analyticsData,
     activeTab,
@@ -260,6 +274,7 @@ export function useAnalyticsData() {
     toggleProductTable,
     toggleFinanceTable,
     openProductAnchorSection,
+    openFinanceAnchorSection,
     isDark,
     isStartTariff,
     monthName,

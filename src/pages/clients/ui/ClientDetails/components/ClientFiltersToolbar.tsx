@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export interface ClientFiltersToolbarProps {
   dateFrom: string;
   dateTo: string;
@@ -17,11 +19,14 @@ export function ClientFiltersToolbar({
   filteredCount,
   totalCount,
 }: ClientFiltersToolbarProps) {
+  const { t } = useTranslation();
   return (
     <div className="cdx__toolbar">
       <div className="cdx__toolbar-dates">
         <div className="cdx__field">
-          <label className="cdx__field-label">Дата с</label>
+          <label className="cdx__field-label">
+            {t("crm.clients.details.dateFromShort")}
+          </label>
           <input
             className="cdx__input"
             type="date"
@@ -30,7 +35,9 @@ export function ClientFiltersToolbar({
           />
         </div>
         <div className="cdx__field">
-          <label className="cdx__field-label">Дата по</label>
+          <label className="cdx__field-label">
+            {t("crm.clients.details.dateToShort")}
+          </label>
           <input
             className="cdx__input"
             type="date"
@@ -46,33 +53,34 @@ export function ClientFiltersToolbar({
           className="cdx__chip"
           onClick={() => onPreset("today")}
         >
-          Сегодня
+          {t("crm.clients.details.presetToday")}
         </button>
         <button
           type="button"
           className="cdx__chip"
           onClick={() => onPreset("week")}
         >
-          Неделя
+          {t("crm.clients.details.presetWeek")}
         </button>
         <button
           type="button"
           className="cdx__chip"
           onClick={() => onPreset("month")}
         >
-          Месяц
+          {t("crm.clients.details.presetMonth")}
         </button>
         <button
           type="button"
           className="cdx__chip cdx__chip--clear"
           onClick={() => onPreset("clear")}
         >
-          Очистить
+          {t("crm.clients.details.presetClear")}
         </button>
       </div>
 
       <div className="cdx__toolbar-info">
-        Показано: <b>{filteredCount}</b> из {totalCount}
+        {t("crm.clients.details.shown")}: <b>{filteredCount}</b>{" "}
+        {t("crm.clients.details.ofCount")} {totalCount}
       </div>
     </div>
   );

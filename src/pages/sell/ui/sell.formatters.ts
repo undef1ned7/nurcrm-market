@@ -72,6 +72,7 @@ export const getStatusVariant = (status: any) => {
   const s = String(status || "").toLowerCase();
   if (s === "paid") return "paid";
   if (s === "canceled" || s === "cancelled") return "canceled";
+  if (s === "partially_returned") return "canceled";
   if (s === "debt") return "debt";
   return "new";
 };

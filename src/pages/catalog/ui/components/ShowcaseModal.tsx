@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { FaTimes, FaTag, FaStar, FaInfoCircle } from "react-icons/fa";
 import api from "@shared/api";
-import { toNum, money, FALLBACK_IMG } from "../catalog.utils";
+import { toNum, money, FALLBACK_IMG, getProductImages } from "../catalog.utils";
+import { ImageCarousel } from "./ImageCarousel";
 
 export function ShowcaseModal({ open, slug, productId, onClose, onAdd }) {
   const [loading, setLoading] = useState(false);
@@ -64,6 +65,8 @@ export function ShowcaseModal({ open, slug, productId, onClose, onAdd }) {
     return out;
   }, [data]);
 
+  const images = useMemo(() => getProductImages(data), [data]);
+
   if (!open) return null;
 
   return (
@@ -96,15 +99,12 @@ export function ShowcaseModal({ open, slug, productId, onClose, onAdd }) {
             <div className="sfmodal__grid">
               <div className="sfmodal__left">
                 <div className="sfmodal__imgBox">
-                  <img
-                    className="sfmodal__img"
-                    src={data?.image_url || FALLBACK_IMG}
+                  <ImageCarousel
+                    key={data?.id || productId}
+                    images={images}
                     alt={title}
-                    loading="lazy"
-                    onError={(e) => {
-                      if (e?.currentTarget?.src !== FALLBACK_IMG)
-                        e.currentTarget.src = FALLBACK_IMG;
-                    }}
+                    fallback={FALLBACK_IMG}
+                    imgClassName="sfmodal__img"
                   />
                 </div>
               </div>

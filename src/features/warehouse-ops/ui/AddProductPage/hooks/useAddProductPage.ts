@@ -3,7 +3,6 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useClient } from "@entities/client";
 import { useProducts } from "@entities/product";
 import { useUser } from "@entities/user";
-import { useCash } from "@entities/cash";
 import { useProductImages } from "./useProductImages";
 import { useDebtForm } from "./useDebtForm";
 import { useSupplierForm } from "./useSupplierForm";
@@ -46,7 +45,6 @@ export const useAddProductPage = ({
     weightProductsCount,
   } = useProducts();
   const { company } = useUser();
-  const { list: cashBoxes } = useCash();
   const returnToPath =
     (typeof embeddedReturnTo === "string" && embeddedReturnTo.trim()) ||
     (typeof location.state?.returnTo === "string" && location.state.returnTo.trim()) ||
@@ -66,7 +64,6 @@ export const useAddProductPage = ({
   const [loadingProduct, setLoadingProduct] = useState(isEditMode);
   const [activeTab, setActiveTab] = useState(0);
   const [productType, setProductType] = useState("piece");
-  const [selectCashBox, setSelectCashBox] = useState("");
 
   const {
     itemType,
@@ -90,6 +87,7 @@ export const useAddProductPage = ({
     addImages,
     removeImage,
     setPrimaryImage,
+    imageCropper,
   } = useProductImages();
 
   const [alertModal, setAlertModal] = useState({
@@ -136,16 +134,6 @@ export const useAddProductPage = ({
     showAlert,
   });
 
-  const [cashData, setCashData] = useState({
-    cashbox: "",
-    type: "expense",
-    name: "",
-    amount: "",
-    source_cashbox_flow_id: "",
-    source_business_operation_id: "Склад",
-    status:
-      company?.subscription_plan?.name === "Старт" ? "approved" : "pending",
-  });
   const [fieldErrors, setFieldErrors] = useState<any>({});
   const [initialProductImageIds, setInitialProductImageIds] = useState<any[]>([]);
 
@@ -175,10 +163,6 @@ export const useAddProductPage = ({
     setImages,
     setInitialProductImageIds,
     showAlert,
-    cashBoxes,
-    selectCashBox,
-    setSelectCashBox,
-    setCashData,
     newItemData,
     itemType,
     marketData,
@@ -221,8 +205,6 @@ export const useAddProductPage = ({
     debtState,
     company,
     pickSupplier,
-    cashData,
-    selectCashBox,
     embedded,
     onEmbeddedSaved,
     returnToPath,
@@ -270,7 +252,6 @@ export const useAddProductPage = ({
     count,
     weightProductsCount,
     company,
-    cashBoxes,
     creating,
     updating,
     newItemData,
@@ -287,6 +268,7 @@ export const useAddProductPage = ({
     addImages,
     removeImage,
     setPrimaryImage,
+    imageCropper,
     addProductToKit,
     removeProductFromKit,
     handleUpdateKitProductQuantity,
@@ -337,9 +319,6 @@ export const useAddProductPage = ({
     setDebtState,
     onChangeDebt,
     pickSupplier,
-    selectCashBox,
-    setSelectCashBox,
-    cashData,
     handleSubmit,
     generateBarcode,
   };

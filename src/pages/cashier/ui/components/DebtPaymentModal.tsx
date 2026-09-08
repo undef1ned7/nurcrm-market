@@ -5,11 +5,10 @@ import { useDispatch } from "react-redux";
 import api from "@shared/api";
 import { payDebtDeal } from "@entities/client";
 import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
+  postCashflowIfNeeded,
 } from "@entities/cash";
 import { useUser } from "@entities/user";
+import { buildPosRoutingFromUser } from "@shared/lib/tools/cashboxResolution";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import {
   getInstallmentRemaining,
@@ -17,11 +16,18 @@ import {
 } from "@shared/lib/tools/clientDeals";
 import "./DebtPaymentModal.scss";
 
-const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
+const DebtPaymentModal = ({
+  onClose,
+  customers: _customers = [],
+  shiftId,
+}: {
+  onClose: () => void;
+  customers?: unknown[];
+  shiftId?: string | number;
+}) => {
   const { t } = useTranslation();
   const dispatch = useDispatch() as any;
-  const { list: cashBoxes } = useCash();
-  const { company } = useUser();
+  const { company, profile } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [debtors, setDebtors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +36,6 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [clientDeals, setClientDeals] = useState<any[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(false);
-  const [selectedCashBox, setSelectedCashBox] = useState("");
   const [paymentAmounts, setPaymentAmounts] = useState<any>({}); // { dealId-installmentNumber: amount }
   const [alertModal, setAlertModal] = useState<any>({
     open: false,
@@ -180,22 +185,6 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
     return colors[index];
   };
 
-  // Загрузка касс
-  useEffect(() => {
-    dispatch(getCashBoxes(undefined as any));
-  }, [dispatch]);
-
-  // Автоматически выбираем первую кассу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectedCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectedCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectedCashBox]);
-
   // Загрузка deals клиента
   const loadClientDeals = async (clientId: any) => {
     try {
@@ -244,11 +233,6 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
   };
 
   const handlePayDebt = async (deal, installment) => {
-    if (!selectedCashBox) {
-      showAlert("warning", t("common.warning"), t("crm.cashier.debtPayment.alerts.selectCashbox"));
-      return;
-    }
-
     const remaining = getInstallmentRemaining(installment);
     const rawInput = paymentAmounts[`${deal.id}-${installment.number}`];
     const paymentAmount =
@@ -275,6 +259,7 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         installment_id: installment.id,
         date: new Date().toISOString().split("T")[0],
         note: "",
+        ...buildPosRoutingFromUser(profile, company, shiftId),
       };
       if (effectiveAmount < remaining) {
         paymentData.amount = effectiveAmount.toFixed(2);
@@ -294,30 +279,21 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
         prev.map((d: any) => (d.id === deal.id ? updatedDeal : d))
       );
 
-      // Добавляем денежный поток
-      try {
-        await dispatch(
-          addCashFlows({
-            cashbox: selectedCashBox,
-            type: "income",
-            name: `Погашение долга: ${deal.title || "Долг"}`,
-            amount: effectiveAmount.toFixed(2),
-            source_cashbox_flow_id: deal.id,
-            source_business_operation_id: "Погашение долга",
-            status:
-              company?.subscription_plan?.name === "Старт"
-                ? "approved"
-                : "pending",
-          })
-        ).unwrap();
-      } catch (cashError) {
-        console.warn("Ошибка при создании денежного потока:", cashError);
-        showAlert(
-          "warning",
-          t("common.warning"),
-          t("crm.cashier.debtPayment.alerts.paidButCashFailed"),
-        );
-      }
+      await postCashflowIfNeeded(
+        dispatch,
+        {
+          type: "income",
+          name: `Погашение долга: ${deal.title || "Долг"}`,
+          amount: effectiveAmount.toFixed(2),
+          source_cashbox_flow_id: deal.id,
+          source_business_operation_id: "Погашение долга",
+          status:
+            company?.subscription_plan?.name === "Старт"
+              ? "approved"
+              : "pending",
+        },
+        { warnOnFailure: true, failureContext: "debt" },
+      );
 
       // Обновляем общий долг клиента из обновленной сделки
       const allDeals = clientDeals.map((d: any) =>
@@ -393,29 +369,6 @@ const DebtPaymentModal = ({ onClose, customers: _customers = [] }) => {
               <X size={24} />
             </button>
           </div>
-
-          {cashBoxes && cashBoxes.length > 1 && (
-            <div className="debt-payment-modal__cashbox-selector">
-              <label className="debt-payment-modal__cashbox-label">
-                {t("crm.cashier.debtPayment.cashbox")}
-              </label>
-              <select
-                className="debt-payment-modal__cashbox-select"
-                value={selectedCashBox}
-                onChange={(e) => setSelectedCashBox(e.target.value)}
-              >
-                {cashBoxes.map((cashbox) => {
-                  const cashboxId = cashbox.id || cashbox.uuid || "";
-                  const cashboxName = cashbox.name || t("crm.cashier.debtPayment.defaultCashbox");
-                  return (
-                    <option key={cashboxId} value={cashboxId}>
-                      {cashboxName}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          )}
 
           <div className="debt-payment-modal__deals">
             {loadingDeals ? (

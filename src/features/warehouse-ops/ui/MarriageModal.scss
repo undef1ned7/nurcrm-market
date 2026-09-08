@@ -1,65 +1,99 @@
 @use "./addModalBase" as *;
 
+/* ============================================================
+   Модалка «Списание брака / Возврат».
+   Опирается только на глобальные --nur-* токены (light + dark).
+   ============================================================ */
 .marriage-modal {
-  // локальные переменные (с фолбэками)
-  --mm-bg: var(--panel-bg, #ffffff);
-  --mm-text: var(--text, var(--nur-text));
-  --mm-muted: var(--c-muted, var(--nur-muted));
-  --mm-border: var(--c-border, var(--nur-border));
-  --mm-soft: var(--c-bg-soft, var(--nur-surface-3));
-  --mm-accent: var(--fg-accent, #f7d74f);
-  --mm-accent-hover: var(--fg-accent-darker, #e6c530);
+  color: var(--nur-text);
 
-  color: var(--mm-text);
-
-  .add-modal__content {
-    background: var(--mm-bg);
-    width: min(520px, calc(100vw - 24px));
-    padding: 16px;
-    border-radius: 14px;
+  .add-modal__overlay {
+    background: var(--nur-scrim);
+    backdrop-filter: blur(2px);
   }
 
+  .add-modal__content {
+    width: min(520px, calc(100vw - 24px));
+    padding: 0;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-lg);
+    box-shadow: var(--nur-shadow-lg);
+    overflow: hidden;
+    animation: mmModalIn 0.16s ease-out;
+  }
+
+  /* ---------- Header ---------- */
   .add-modal__header {
-    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--nur-border);
 
     h3 {
       margin: 0;
-      font-size: 18px;
-      line-height: 1.2;
+      font-size: 17px;
+      line-height: 1.25;
       font-weight: 700;
       letter-spacing: -0.01em;
+      color: var(--nur-text);
     }
   }
 
-  .add-modal__close-icon {
+  .add-modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--nur-muted);
     cursor: pointer;
-    color: var(--mm-muted);
-    transition: color 0.15s ease, transform 0.15s ease;
-  }
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
 
-  .add-modal__close-icon:hover {
-    color: var(--mm-text);
-    transform: scale(1.05);
+    &:hover {
+      background: var(--nur-surface-3);
+      color: var(--nur-text);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--nur-primary);
+      box-shadow: 0 0 0 3px var(--nur-primary-ring);
+    }
   }
 }
 
+/* ---------- Form body ---------- */
 .marriage-modal__form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  padding: 18px;
 }
 
+/* ---------- Product card ---------- */
 .marriage-modal__card {
-  border: 1px solid var(--mm-border);
-  background: var(--mm-soft);
+  border: 1px solid var(--nur-border);
+  background: var(--nur-surface-3);
   border-radius: 12px;
-  padding: 12px;
+  padding: 12px 14px;
 }
 
 .marriage-modal__title {
-  font-size: 16px;
-  line-height: 1.25;
+  font-size: 15px;
+  line-height: 1.3;
   font-weight: 700;
+  color: var(--nur-text);
   margin-bottom: 8px;
   word-break: break-word;
 }
@@ -67,22 +101,39 @@
 .marriage-modal__meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px 12px;
+  gap: 6px 12px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--nur-muted);
+
+  b {
+    color: var(--nur-text);
+    font-weight: 700;
+  }
+}
+
+/* ---------- Summary ---------- */
+.marriage-modal__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--nur-primary);
+  background: var(--nur-primary-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
   font-size: 13px;
-  color: var(--mm-muted);
+  font-weight: 600;
+  color: var(--nur-text);
+
+  b {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--nur-text);
+  }
 }
 
-.marriage-modal__meta b {
-  color: var(--mm-text);
-  font-weight: 700;
-}
-
-.marriage-modal__amount {
-  grid-column: 1 / -1;
-  padding-top: 8px;
-  border-top: 1px dashed var(--mm-border);
-}
-
+/* ---------- Field ---------- */
 .marriage-modal__field {
   display: flex;
   flex-direction: column;
@@ -90,61 +141,61 @@
 }
 
 .marriage-modal__label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--nur-muted);
 }
 
 .marriage-modal__input {
   width: 100%;
   padding: 10px 12px;
+  border: 1px solid var(--nur-border);
   border-radius: 10px;
-  border: 1px solid var(--mm-border);
-  background: var(--c-input-bg, #ffffff);
-  color: var(--mm-text);
-  outline: none;
+  font: inherit;
   font-size: 14px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
+  background: var(--nur-surface);
+  color: var(--nur-text);
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
-.marriage-modal__input:focus {
-  border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  &::placeholder {
+    color: var(--nur-placeholder, var(--nur-muted));
+  }
+
+  &:hover {
+    border-color: var(--nur-border-strong);
+  }
+
+  &:focus {
+    border-color: var(--nur-primary);
+    box-shadow: 0 0 0 3px var(--nur-primary-ring);
+  }
 }
 
 .marriage-modal__hint {
   font-size: 12px;
-  line-height: 1.35;
-  color: var(--mm-muted);
+  line-height: 1.4;
+  color: var(--nur-muted);
 }
 
+/* ---------- Error ---------- */
 .marriage-modal__error {
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.08);
-  color: #b91c1c;
+  border: 1px solid var(--nur-danger-border, rgba(239, 68, 68, 0.35));
+  background: var(--nur-danger-soft);
+  color: var(--nur-danger-ink);
   border-radius: 10px;
   padding: 10px 12px;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 12.5px;
+  line-height: 1.4;
 }
 
+/* ---------- Actions ---------- */
 .marriage-modal__actions {
   display: flex;
   gap: 10px;
-  margin-top: 4px;
-}
-
-.marriage-modal .btn {
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
-  min-height: 42px;
-}
-
-.marriage-modal .btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  margin-top: 2px;
 }
 
 .marriage-modal__btn {
@@ -152,33 +203,69 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 12px;
-  transition: background-color 0.15s ease, transform 0.05s ease,
-    box-shadow 0.15s ease;
-}
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.05s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
 
-.marriage-modal__btn:active:not(:disabled) {
-  transform: translateY(1px);
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--nur-primary-ring);
+  }
 }
 
 .marriage-modal__btn--primary {
-  background: var(--mm-accent);
-  color: var(--nur-text);
-  box-shadow: 0 6px 16px rgba(247, 215, 79, 0.18);
-}
+  background: var(--nur-primary);
+  color: var(--nur-primary-ink);
+  box-shadow: 0 8px 18px var(--nur-primary-soft);
 
-.marriage-modal__btn--primary:hover:not(:disabled) {
-  background: var(--mm-accent-hover);
+  &:hover:not(:disabled) {
+    background: var(--nur-primary-dark, #e6c530);
+  }
 }
 
 .marriage-modal__btn--danger {
-  background: #ef4444;
+  background: var(--nur-danger);
   color: #fff;
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.18);
+  box-shadow: 0 8px 18px var(--nur-danger-soft);
+
+  &:hover:not(:disabled) {
+    background: var(--nur-danger-strong, #dc2626);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px var(--nur-danger-soft);
+  }
 }
 
-.marriage-modal__btn--danger:hover:not(:disabled) {
-  background: #dc2626;
+@keyframes mmModalIn {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
 @media (max-width: 520px) {
@@ -191,3 +278,8 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .marriage-modal .add-modal__content {
+    animation: none;
+  }
+}

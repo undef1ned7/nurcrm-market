@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { AccessItem } from "./AccessItem";
 
 export function AccessSection({
@@ -9,6 +10,7 @@ export function AccessSection({
   tone = "success",
   gridTone,
 }) {
+  const { t } = useTranslation();
   if (!items?.length) return null;
   return (
     <div className="access-list-section">
@@ -20,14 +22,14 @@ export function AccessSection({
             className="access-list-section__btn"
             onClick={() => onSelectAll(items, true)}
           >
-            Выбрать все
+            {t("crm.access.selectAll")}
           </button>
           <button
             type="button"
             className="access-list-section__btn"
             onClick={() => onSelectAll(items, false)}
           >
-            Снять все
+            {t("crm.access.clearAll")}
           </button>
         </div>
       </div>

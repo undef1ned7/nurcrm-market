@@ -72,4 +72,6 @@ export type PaymentPageProps = {
   sale?: PaymentSale;
   consultantDraft?: ConsultantDraft;
   onConsultantDraftChange?: (draft: ConsultantDraft) => void;
+  /** Открытая смена кассира — для маршрутизации кассы на бэке */
+  shiftId?: string | number;
 };

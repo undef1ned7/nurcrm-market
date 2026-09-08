@@ -1,4 +1,5 @@
 import { FaTimes } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import BarberMastersPortal from "./BarberMastersPortal";
 
 const EmployeeCreateModal = ({
@@ -16,6 +17,10 @@ const EmployeeCreateModal = ({
   branches,
   RoleSelect,
 }) => {
+  const { t } = useTranslation();
+  const tc = (k: string): string => t(`crm.employees.createModal.${k}`) as string;
+  const te = (k: string): string => t(`crm.employees.editModal.${k}`) as string;
+
   if (!empCreateOpen) return null;
 
   const isSawmill = company?.sector?.name === "Пилорама";
@@ -39,16 +44,14 @@ const EmployeeCreateModal = ({
                 id="barbermasters-employee-create-title"
                 className="barbermasters__modalTitle"
               >
-                Новый сотрудник
+                {tc("title")}
               </h3>
-              <p className="barbermasters__modalSubtitle">
-                Заполните данные — логин и пароль появятся после создания
-              </p>
+              <p className="barbermasters__modalSubtitle">{tc("subtitle")}</p>
             </div>
             <button
               className="barbermasters__iconBtn"
               onClick={() => !empSaving && setEmpCreateOpen(false)}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
               type="button"
             >
               <FaTimes />
@@ -86,7 +89,7 @@ const EmployeeCreateModal = ({
                 }`}
               >
                 <span className="barbermasters__label">
-                  Имя <b className="barbermasters__req">*</b>
+                  {te("firstName")} <b className="barbermasters__req">*</b>
                 </span>
                 <input
                   name="first_name"
@@ -95,7 +98,7 @@ const EmployeeCreateModal = ({
                       ? "barbermasters__input--invalid"
                       : ""
                   }`}
-                  placeholder="Имя"
+                  placeholder={te("firstName")}
                   value={empForm.first_name}
                   onChange={(e) =>
                     setEmpForm((p) => ({ ...p, first_name: e.target.value }))
@@ -113,7 +116,7 @@ const EmployeeCreateModal = ({
                 }`}
               >
                 <span className="barbermasters__label">
-                  Фамилия <b className="barbermasters__req">*</b>
+                  {te("lastName")} <b className="barbermasters__req">*</b>
                 </span>
                 <input
                   name="last_name"
@@ -122,7 +125,7 @@ const EmployeeCreateModal = ({
                       ? "barbermasters__input--invalid"
                       : ""
                   }`}
-                  placeholder="Фамилия"
+                  placeholder={te("lastName")}
                   value={empForm.last_name}
                   onChange={(e) =>
                     setEmpForm((p) => ({ ...p, last_name: e.target.value }))
@@ -166,7 +169,7 @@ const EmployeeCreateModal = ({
                     }`}
                   >
                     <span className="barbermasters__label">
-                      Номер машины <b className="barbermasters__req">*</b>
+                      {te("carNumber")} <b className="barbermasters__req">*</b>
                     </span>
                     <input
                       className={`barbermasters__input ${
@@ -174,7 +177,7 @@ const EmployeeCreateModal = ({
                           ? "barbermasters__input--invalid"
                           : ""
                       }`}
-                      placeholder="Номер машины"
+                      placeholder={te("carNumber")}
                       value={empForm.track_number}
                       onChange={(e) =>
                         setEmpForm((p) => ({
@@ -193,7 +196,7 @@ const EmployeeCreateModal = ({
                     }`}
                   >
                     <span className="barbermasters__label">
-                      Телефон <b className="barbermasters__req">*</b>
+                      {te("phone")} <b className="barbermasters__req">*</b>
                     </span>
                     <input
                       className={`barbermasters__input ${
@@ -226,7 +229,7 @@ const EmployeeCreateModal = ({
                 }`}
               >
                 <span className="barbermasters__label">
-                  Роль <b className="barbermasters__req">*</b>
+                  {te("role")} <b className="barbermasters__req">*</b>
                 </span>
                 <RoleSelect
                   options={roleOptions}
@@ -234,7 +237,7 @@ const EmployeeCreateModal = ({
                   onChange={(key) =>
                     setEmpForm((p) => ({ ...p, roleChoice: key }))
                   }
-                  placeholder="Выберите роль"
+                  placeholder={te("rolePlaceholder")}
                   className="barbermasters__roleSelect"
                 />
                 <input
@@ -253,20 +256,20 @@ const EmployeeCreateModal = ({
                       : ""
                   }`}
                 >
-                  <span className="barbermasters__label">Филиал</span>
+                  <span className="barbermasters__label">{te("branch")}</span>
                   <RoleSelect
                     options={[
-                      { key: "", label: "Не выбран" },
+                      { key: "", label: te("branchNotSelected") },
                       ...branches.map((b) => ({
                         key: b.id,
-                        label: b.name || "Без названия",
+                        label: b.name || t("crm.employees.noTitle"),
                       })),
                     ]}
                     value={empForm.branch || ""}
                     onChange={(key) =>
                       setEmpForm((p) => ({ ...p, branch: key }))
                     }
-                    placeholder="Выберите филиал"
+                    placeholder={te("branchPlaceholder")}
                     className="barbermasters__roleSelect"
                   />
                 </div>
@@ -280,14 +283,14 @@ const EmployeeCreateModal = ({
                 onClick={() => setEmpCreateOpen(false)}
                 disabled={empSaving}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="barbermasters__btn barbermasters__btn--primary"
                 disabled={empSaving}
               >
-                {empSaving ? "Сохранение…" : "Создать сотрудника"}
+                {empSaving ? t("common.saving") : tc("submit")}
               </button>
             </div>
           </form>

@@ -1,6 +1,7 @@
 /**
  * Legacy / loading-branch manual entry form preserved from AddProductPage.
  */
+import { useTranslation } from "react-i18next";
 import { Package, ShoppingBag } from "lucide-react";
 import SearchSelect from "@shared/ui/SearchSelect/SearchSelect";
 
@@ -54,6 +55,9 @@ const ManualEntryForm = ({
   handleSubmit,
   creating,
 }) => {
+  const { t } = useTranslation();
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
+  const unit = marketData.unit || tp("unitShort");
   return (
 <>
   {/* Вкладка ручного ввода (для других секторов) */}
@@ -61,7 +65,7 @@ const ManualEntryForm = ({
     {/* Выбор типа товара */}
     <div className="add-product-page__section">
       <label className="add-product-page__section-label">
-        Тип товара *
+        {tp("productTypeLabel")}
       </label>
       <div className="add-product-page__type-selector">
         <button
@@ -79,7 +83,7 @@ const ManualEntryForm = ({
           }}
         >
           <Package size={32} />
-          <span>Штучный товар</span>
+          <span>{tp("typePiece")}</span>
         </button>
         <button
           className={`add-product-page__type-card ${
@@ -96,7 +100,7 @@ const ManualEntryForm = ({
           }}
         >
           <ShoppingBag size={32} />
-          <span>Килограммовый товар</span>
+          <span>{tp("typeWeightKg")}</span>
         </button>
       </div>
     </div>
@@ -106,18 +110,18 @@ const ManualEntryForm = ({
       <div className="add-product-page__section-header">
         <div className="add-product-page__section-number">1</div>
         <h3 className="add-product-page__section-title">
-          Основная информация
+          {tp("sectionBasic")}
         </h3>
       </div>
 
       <div className="add-product-page__form-group">
         <label className="add-product-page__label">
-          Название товара *
+          {tp("manualNameLabel")}
         </label>
         <input
           type="text"
           name="name"
-          placeholder="Например, Монитор Dell 24 дюйма"
+          placeholder={tp("manualNamePlaceholder")}
           className="add-product-page__input"
           value={newItemData.name}
           onChange={handleChange}
@@ -132,7 +136,7 @@ const ManualEntryForm = ({
 
       <div className="add-product-page__form-group">
         <label className="add-product-page__label">
-          Штрих-код *
+          {tp("barcodeLabelRequired")}
         </label>
         <input
           type="text"
@@ -153,7 +157,7 @@ const ManualEntryForm = ({
         <>
           <div className="add-product-page__form-group">
             <label className="add-product-page__label">
-              ПЛУ (номер для весов)
+              {tp("pluForScalesLabel")}
             </label>
             <input
               type="text"
@@ -164,13 +168,13 @@ const ManualEntryForm = ({
               onChange={handleChange}
             />
             <span className="add-product-page__hint">
-              4-значный код для весов
+              {tp("pluForScalesHint")}
             </span>
           </div>
 
           <div className="add-product-page__form-group">
             <label className="add-product-page__label">
-              Бренд *
+              {tp("brandLabelRequired")}
             </label>
             <div className="add-product-page__supplier-row">
               <SearchSelect
@@ -182,8 +186,8 @@ const ManualEntryForm = ({
                   })
                 }
                 options={brandOptions}
-                placeholder="Выберите бренд"
-                emptyText="Бренды не найдены"
+                placeholder={tp("brandSelectPlaceholder")}
+                emptyText={tp("brandEmpty")}
                 maxVisible={500}
                 onQueryChange={setBrandQuery}
                 loading={brandsLoading}
@@ -195,7 +199,7 @@ const ManualEntryForm = ({
                 onClick={() => setShowBrandInputs(!showBrandInputs)}
                 type="button"
               >
-                + Создать бренд
+                {tp("createBrand")}
               </button>
             </div>
             {showBrandInputs && (
@@ -212,14 +216,14 @@ const ManualEntryForm = ({
                     })
                   }
                   type="text"
-                  placeholder="Название бренда"
+                  placeholder={tp("brandNamePlaceholder")}
                   name="name"
                   value={newBrand.name}
                   required
                 />
                 {isBrandNameTaken && (
                   <p className="add-product-page__error">
-                    Бренд с таким названием уже существует
+                    {tp("brandTaken")}
                   </p>
                 )}
                 <div className="add-product-page__form-actions">
@@ -231,14 +235,14 @@ const ManualEntryForm = ({
                       setNewBrand({ name: "" });
                     }}
                   >
-                    Отмена
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
                     className="add-product-page__save-btn"
                     disabled={isBrandNameTaken}
                   >
-                    Создать
+                    {t("common.create")}
                   </button>
                 </div>
               </form>
@@ -247,7 +251,7 @@ const ManualEntryForm = ({
 
           <div className="add-product-page__form-group">
             <label className="add-product-page__label">
-              Категория *
+              {tp("categoryLabelRequired")}
             </label>
             <div className="add-product-page__supplier-row">
               <SearchSelect
@@ -259,8 +263,8 @@ const ManualEntryForm = ({
                   })
                 }
                 options={categoryOptions}
-                placeholder="Выберите категорию"
-                emptyText="Категории не найдены"
+                placeholder={tp("categorySelectPlaceholder")}
+                emptyText={tp("categoryEmpty")}
                 maxVisible={500}
                 onQueryChange={setCategoryQuery}
                 loading={categoriesLoading}
@@ -274,7 +278,7 @@ const ManualEntryForm = ({
                 }
                 type="button"
               >
-                + Создать категорию
+                {tp("createCategory")}
               </button>
             </div>
             {showCategoryInputs && (
@@ -291,14 +295,14 @@ const ManualEntryForm = ({
                     })
                   }
                   type="text"
-                  placeholder="Название категории"
+                  placeholder={tp("categoryNamePlaceholder")}
                   name="name"
                   value={newCategory.name}
                   required
                 />
                 {isCategoryNameTaken && (
                   <p className="add-product-page__error">
-                    Категория с таким названием уже существует
+                    {tp("categoryTaken")}
                   </p>
                 )}
                 <div className="add-product-page__form-actions">
@@ -310,14 +314,14 @@ const ManualEntryForm = ({
                       setNewCategory({ name: "" });
                     }}
                   >
-                    Отмена
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
                     className="add-product-page__save-btn"
                     disabled={isCategoryNameTaken}
                   >
-                    Создать
+                    {t("common.create")}
                   </button>
                 </div>
               </form>
@@ -332,13 +336,13 @@ const ManualEntryForm = ({
       <div className="add-product-page__section-header">
         <div className="add-product-page__section-number">2</div>
         <h3 className="add-product-page__section-title">
-          Информация о поставщике
+          {tp("supplierTitle")}
         </h3>
       </div>
 
       <div className="add-product-page__form-group">
         <label className="add-product-page__label">
-          Поставщик *
+          {tp("supplierLabelRequired")}
         </label>
         <div className="add-product-page__supplier-row">
           <select
@@ -348,7 +352,7 @@ const ManualEntryForm = ({
             onChange={handleChange}
             required
           >
-            <option value="">Выберите поставщика</option>
+            <option value="">{tp("supplierSelectLabel")}</option>
             {filterClient.map((client, idx) => (
               <option key={client.id ?? idx} value={client.id}>
                 {client.full_name}
@@ -359,7 +363,7 @@ const ManualEntryForm = ({
             className="add-product-page__create-supplier"
             onClick={() => setShowInputs(!showInputs)}
           >
-            + Создать поставщика
+            {tp("createSupplier")}
           </button>
         </div>
         {showInputs && (
@@ -371,7 +375,7 @@ const ManualEntryForm = ({
               className="add-product-page__input"
               onChange={onChange}
               type="text"
-              placeholder="ФИО"
+              placeholder={tp("supplierFullName")}
               name="full_name"
             />
             <input
@@ -379,56 +383,56 @@ const ManualEntryForm = ({
               onChange={onChange}
               type="text"
               name="llc"
-              placeholder="ОсОО"
+              placeholder={tp("supplierLlc")}
             />
             <input
               className="add-product-page__input"
               onChange={onChange}
               type="text"
               name="inn"
-              placeholder="ИНН"
+              placeholder={tp("supplierInn")}
             />
             <input
               className="add-product-page__input"
               onChange={onChange}
               type="text"
               name="okpo"
-              placeholder="ОКПО"
+              placeholder={tp("supplierOkpo")}
             />
             <input
               className="add-product-page__input"
               onChange={onChange}
               type="text"
               name="score"
-              placeholder="Р/СЧЁТ"
+              placeholder={tp("supplierScore")}
             />
             <input
               className="add-product-page__input"
               onChange={onChange}
               type="text"
               name="bik"
-              placeholder="БИК"
+              placeholder={tp("supplierBik")}
             />
             <input
               className="add-product-page__input"
               onChange={onChange}
               type="text"
               name="address"
-              placeholder="Адрес"
+              placeholder={tp("supplierAddress")}
             />
             <input
               className="add-product-page__input"
               onChange={onChange}
               type="text"
               name="phone"
-              placeholder="Телефон"
+              placeholder={tp("supplierPhone")}
             />
             <input
               className="add-product-page__input"
               onChange={onChange}
               type="email"
               name="email"
-              placeholder="Почта"
+              placeholder={tp("supplierEmail")}
             />
             <div className="add-product-page__form-actions">
               <button
@@ -436,13 +440,13 @@ const ManualEntryForm = ({
                 className="add-product-page__cancel-btn"
                 onClick={() => setShowInputs(false)}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="add-product-page__save-btn"
               >
-                Создать
+                {t("common.create")}
               </button>
             </div>
           </form>
@@ -454,14 +458,14 @@ const ManualEntryForm = ({
             checked={showDebtForm}
             onChange={(e) => setShowDebtForm(e.target.checked)}
           />
-          Добавить долг по этому товару
+          {tp("addDebtForProduct")}
         </label>
 
         {showDebtForm && (
           <div className="add-product-page__debt-form">
             {!newItemData.client && (
               <p className="add-product-page__error">
-                Выберите поставщика в форме выше!
+                {tp("selectSupplierAbove")}
               </p>
             )}
             {company?.subscription_plan?.name === "Старт" &&
@@ -469,7 +473,7 @@ const ManualEntryForm = ({
                 <>
                   <div className="add-product-page__form-group">
                     <label className="add-product-page__label">
-                      Телефон поставщика
+                      {tp("supplierPhoneLabel")}
                     </label>
                     <input
                       type="text"
@@ -481,7 +485,7 @@ const ManualEntryForm = ({
                   </div>
                   <div className="add-product-page__form-group">
                     <label className="add-product-page__label">
-                      Дата оплаты
+                      {tp("paymentDate")}
                     </label>
                     <input
                       type="date"
@@ -495,23 +499,23 @@ const ManualEntryForm = ({
               )}
             <div className="add-product-page__form-group">
               <label className="add-product-page__label">
-                Тип оплаты
+                {tp("paymentType")}
               </label>
               <select
                 value={debt}
                 onChange={(e) => setDebt(e.target.value)}
                 className="add-product-page__input"
               >
-                <option value="">Тип оплаты</option>
-                <option value="Предоплата">Предоплата</option>
-                <option value="Долги">Долг</option>
+                <option value="">{tp("paymentType")}</option>
+                <option value="Предоплата">{tp("prepayment")}</option>
+                <option value="Долги">{tp("debtOption")}</option>
               </select>
             </div>
             {debt === "Предоплата" && (
               <>
                 <div className="add-product-page__form-group">
                   <label className="add-product-page__label">
-                    Сумма предоплаты
+                    {tp("prepaymentAmount")}
                   </label>
                   <input
                     type="text"
@@ -536,7 +540,7 @@ const ManualEntryForm = ({
             {debt === "Долги" && (
               <div className="add-product-page__form-group">
                 <label className="add-product-page__label">
-                  Срок долга (мес.)
+                  {tp("debtTermMonths")}
                 </label>
                 <input
                   type="text"
@@ -556,13 +560,13 @@ const ManualEntryForm = ({
       <div className="add-product-page__section-header">
         <div className="add-product-page__section-number">3</div>
         <h3 className="add-product-page__section-title">
-          Цена и количество
+          {tp("priceQtyTitle")}
         </h3>
       </div>
 
       <div className="add-product-page__form-group">
         <label className="add-product-page__label">
-          Закупочная цена за 1 {marketData.unit || "ед."} *
+          {tp("purchasePriceUnitRequired", { unit })}
         </label>
         <div className="add-product-page__price-input">
           <input
@@ -586,7 +590,7 @@ const ManualEntryForm = ({
 
       <div className="add-product-page__form-group">
         <label className="add-product-page__label">
-          Розничная цена за 1 {marketData.unit || "ед."} *
+          {tp("retailPriceUnitRequired", { unit })}
         </label>
         <div className="add-product-page__price-input">
           <input
@@ -610,7 +614,7 @@ const ManualEntryForm = ({
 
       <div className="add-product-page__form-group">
         <label className="add-product-page__label">
-          Оптовая цена за 1 {marketData.unit || "ед."}
+          {tp("wholesalePriceUnitPlain", { unit })}
         </label>
         <div className="add-product-page__price-input">
           <input
@@ -628,7 +632,7 @@ const ManualEntryForm = ({
 
       <div className="add-product-page__form-group">
         <label className="add-product-page__label">
-          Количество *
+          {tp("quantityLabel")}
         </label>
         <div className="add-product-page__price-input">
           <input
@@ -640,7 +644,9 @@ const ManualEntryForm = ({
             onChange={handleChange}
             required
           />
-          <span className="add-product-page__currency">шт</span>
+          <span className="add-product-page__currency">
+            {marketData.unit || "шт"}
+          </span>
         </div>
         {fieldErrors.quantity && (
           <p className="add-product-page__error">
@@ -658,7 +664,7 @@ const ManualEntryForm = ({
         onClick={handleReturn}
         disabled={creating}
       >
-        Отмена
+        {t("common.cancel")}
       </button>
       <button
         type="button"
@@ -666,7 +672,7 @@ const ManualEntryForm = ({
         onClick={handleSubmit}
         disabled={creating}
       >
-        {creating ? "Добавление..." : "Добавить товар"}
+        {creating ? tp("adding") : tp("addProductBtn")}
       </button>
     </div>
   </div>

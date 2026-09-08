@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
-import {
-  addCashFlows,
-  getCashBoxes,
-  useCash,
-} from "@entities/cash";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
 import { useUser } from "@entities/user";
 import { useClient } from "@entities/client";
 import { fetchClientsAsync } from "@entities/client";
@@ -30,7 +27,6 @@ const getTodayIsoDate = () => new Date().toISOString().split("T")[0];
 const AddProductModal = ({ onClose, onChanged, item }: any) => {
   const alert = useAlert();
   const dispatch = useAppDispatch();
-  const { list: cashBoxes } = useCash();
   const { company } = useUser();
   const { list: clients } = useClient();
 
@@ -47,7 +43,6 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
   const [retailPrice, setRetailPrice] = useState(
     item?.price != null ? String(item.price) : ""
   );
-  const [selectCashBox, setSelectCashBox] = useState("");
   const [selectedSupplier, setSelectedSupplier] = useState(
     item?.client || ""
   );
@@ -83,20 +78,8 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
   const expense = useMemo(() => +(q * pp).toFixed(2), [q, pp]);
 
   useEffect(() => {
-    dispatch(getCashBoxes({} as any) as any);
     dispatch(fetchClientsAsync({} as any) as any);
   }, [dispatch]);
-
-  // Автоматически выбираем первую кассу по индексу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectCashBox]);
 
   const handleQtyChange = (value) => {
     const nextValue = String(value ?? "");
@@ -130,23 +113,6 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
         return "Предоплата не может быть больше общей суммы";
       }
     }
-    // Проверяем кассу только если кассы уже загружены (не undefined) и есть, но касса не выбрана
-    // Если кассы еще загружаются (cashBoxes undefined), не блокируем кнопку
-    if (
-      (paymentType === "full" || paymentType === "prepayment") &&
-      Array.isArray(cashBoxes) &&
-      cashBoxes.length > 0 &&
-      !selectCashBox
-    ) {
-      return "Касса не выбрана. Создайте кассу в разделе «Кассы».";
-    }
-    if (
-      (paymentType === "full" || paymentType === "prepayment") &&
-      Array.isArray(cashBoxes) &&
-      cashBoxes.length === 0
-    ) {
-      return "Нет доступных касс. Создайте кассу в разделе «Кассы».";
-    }
     return "";
   };
 
@@ -158,29 +124,68 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
       return;
     }
 
-    // Дополнительная проверка кассы перед выполнением операции
-    if ((paymentType === "full" || paymentType === "prepayment") && !selectCashBox) {
-      alert("Касса не выбрана. Создайте кассу в разделе «Кассы».", true)
-      setError("Касса не выбрана. Создайте кассу в разделе «Кассы».");
-      return;
-    }
-
     setError("");
     try {
-      // обновляем существующий товар: увеличиваем остаток и цены
-     const response = await dispatch(
-        updateProductAsync({
-          productId: itemId,
-          updatedData: {
-            quantity: stockQty + q,
-            purchase_price: pp,
-            price: rp,
-            client: selectedSupplier || null,
+      const cashAmount =
+        paymentType === "debt"
+          ? 0
+          : paymentType === "prepayment"
+            ? toNum(prepayment)
+            : expense;
+
+      let receiptId: any = null;
+
+      if (selectedSupplier) {
+        // Поставщик указан — это приход от поставщика. Заводим через тот же
+        // эндпоинт, что и «Приход от поставщика», чтобы партия попала в
+        // «Историю закупок» товара. Остаток и purchase_price/наценку считает бэк.
+        const { data: receiptData } = await api.post(
+          `/main/suppliers/${encodeURIComponent(selectedSupplier)}/receipt/`,
+          {
+            items: [{ product: itemId, qty: q, purchase_price: pp }],
+            payment_type:
+              paymentType === "debt"
+                ? "debt"
+                : paymentType === "prepayment"
+                  ? "prepayment"
+                  : "cash",
+            ...(paymentType === "full" || paymentType === "prepayment"
+              ? buildExpenseVariableRouting()
+              : {}),
           },
-        })
-      ).unwrap();
-      console.log('response', response);
-      
+        );
+        receiptId = receiptData?.id ?? receiptData?.uuid ?? null;
+
+        // Приход не принимает розничную цену (её пересчитывает наценка на бэке) —
+        // явно фиксируем то, что ввёл пользователь в форме, отдельным PATCH.
+        try {
+          await dispatch(
+            updateProductAsync({
+              productId: itemId,
+              updatedData: { price: rp, client: selectedSupplier },
+            }),
+          ).unwrap();
+        } catch (priceError: any) {
+          console.error(
+            "Товар оприходован, но не удалось обновить розничную цену:",
+            priceError,
+          );
+        }
+      } else {
+        // Без поставщика — прежнее поведение: прямая корректировка остатка и цен.
+        await dispatch(
+          updateProductAsync({
+            productId: itemId,
+            updatedData: {
+              quantity: stockQty + q,
+              purchase_price: pp,
+              price: rp,
+              client: null,
+            },
+          }),
+        ).unwrap();
+      }
+
       if (selectedSupplier && paymentType !== "full") {
         const prepaymentValue = toNum(prepayment);
         const remainingDebt =
@@ -210,35 +215,29 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
         ).unwrap();
       }
 
-      // списываем расход из кассы (закупка по себестоимости) только если сумма > 0
-      const cashAmount =
-        paymentType === "debt"
-          ? 0
-          : paymentType === "prepayment"
-            ? toNum(prepayment)
-            : expense;
+      // Legacy fallback: бэк создаёт cashflow при VITE_BE_CASHFLOWS=true
       if (cashAmount > 0) {
-        await dispatch(
-          addCashFlows({
-            cashbox: selectCashBox,
+        await postCashflowIfNeeded(
+          dispatch,
+          {
             type: "expense",
             name: `Закупка товара: ${itemName}`,
             amount: cashAmount,
+            ...(receiptId != null ? { source_cashbox_flow_id: receiptId } : {}),
+            source_business_operation_id: "Закупки",
             status:
               company?.subscription_plan?.name === "Старт"
                 ? "approved"
                 : "pending",
-            // description: `Закупка ${q} шт. × ${pp} = ${expense}`,
-          })
-        ).unwrap();
+          },
+          { warnOnFailure: true, failureContext: "purchase" },
+        );
       }
       alert('Товар добавлен', () => {
         onChanged?.();
         onClose?.();
       })
     } catch (e: any) {
-      console.log('askdjalskdasd', e);
-      
       const errorMessage = validateResErrors(e, "Не удалось сохранить. Попробуйте ещё раз.");
       alert(errorMessage, true)
     }
@@ -250,10 +249,22 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
     <ReactPortal wrapperId="add-product-modal">
       <div className="add-modal sklad-add-product-modal">
         <div className="add-modal__overlay" onClick={onClose} />
-        <div className="add-modal__content">
-        <div className="add-modal__header ">
-          <h3 className="text-xl!">Добавление товара</h3>
-          <X className="add-modal__close-icon" size={20} onClick={onClose} />
+        <div
+          className="add-modal__content"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-product-title"
+        >
+        <div className="add-modal__header">
+          <h3 id="add-product-title">Добавление товара</h3>
+          <button
+            type="button"
+            className="add-modal__close"
+            onClick={onClose}
+            aria-label="Закрыть"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <form className="sklad-add-product-modal__form" onSubmit={onFormSubmit}>
@@ -341,6 +352,11 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
                 </option>
               ))}
             </select>
+            <p className="sklad-add-product-modal__meta">
+              {selectedSupplier
+                ? "Партия появится в «Истории закупок» товара."
+                : "Без поставщика операция только скорректирует остаток и цены — в «Историю закупок» не попадёт."}
+            </p>
           </div>
 
           {selectedSupplier && (
@@ -403,7 +419,7 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
           {/* касса автоматически выбирается - скрыто от пользователя */}
 
           <div className="sklad-add-product-modal__summary">
-            Итог к списанию:{" "}
+            <span>Итог к списанию</span>
             <b>
               {Number.isFinite(
                 paymentType === "prepayment" ? toNum(prepayment) : paymentType === "debt" ? 0 : expense
@@ -423,13 +439,22 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
             </div>
           )}
 
-          <button
-            className="btn sklad-add-product-modal__save"
-            type="submit"
-            disabled={disabled}
-          >
-            Сохранить
-          </button>
+          <div className="sklad-add-product-modal__footer">
+            <button
+              type="button"
+              className="sklad-add-product-modal__cancel"
+              onClick={onClose}
+            >
+              Отмена
+            </button>
+            <button
+              className="sklad-add-product-modal__save"
+              type="submit"
+              disabled={disabled}
+            >
+              Сохранить
+            </button>
+          </div>
         </form>
         </div>
       </div>

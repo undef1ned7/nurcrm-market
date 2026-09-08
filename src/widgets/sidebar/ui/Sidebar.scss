@@ -354,10 +354,6 @@
     transition: background var(--nur-duration), color var(--nur-duration);
     flex-shrink: 0;
 
-    @media (max-width: 768px) {
-      display: none;
-    }
-
     &:hover {
       background: var(--nur-sidebar-hover);
       color: var(--nur-sidebar-text-active);

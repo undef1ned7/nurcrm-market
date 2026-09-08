@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { FormBlock, useOptionalProductFormLayout } from "../formLayout";
 
 const PackagingSection = ({
@@ -15,17 +16,20 @@ const PackagingSection = ({
 }: any) => {
   const layout = useOptionalProductFormLayout();
   const showUnit = !layout || layout.isVisible("unit");
+  const { t } = useTranslation();
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
   return (
     <div className="market-product-form__section">
       <div className="market-product-form__unit-block">
         {showUnit ? (
           <>
             <label className="market-product-form__label">
-              Единица измерения
+              {tp("unitLabel")}
             </label>
             <p className="market-product-form__hint">
-              Цена закупки и цена продажи указываются за 1{" "}
-              {marketData.unit || "единицу учета"}.
+              {tp("unitHint", {
+                unit: marketData.unit || tp("unitFallback"),
+              })}
             </p>
           </>
         ) : null}
@@ -47,7 +51,7 @@ const PackagingSection = ({
                   checked={Boolean(marketData.enablePieceSale)}
                   onChange={(e) => handleTogglePieceSale(e.target.checked)}
                 />
-                <span>Поштучная продажа</span>
+                <span>{tp("pieceSale")}</span>
               </label>
               </FormBlock>
             )}
@@ -71,7 +75,9 @@ const PackagingSection = ({
                   }
                 />
                 <span>
-                  {itemType === "product" ? "Весовой товар" : "Дробная услуга"}
+                  {itemType === "product"
+                    ? tp("weightProduct")
+                    : tp("fractionalService")}
                 </span>
               </label>
               </FormBlock>
@@ -94,7 +100,7 @@ const PackagingSection = ({
                     if (checked) onAdultEnabled?.();
                   }}
                 />
-                <span>Товар 18+</span>
+                <span>{tp("adultFlag")}</span>
               </label>
               </FormBlock>
             )}
@@ -106,15 +112,14 @@ const PackagingSection = ({
               className="market-product-form__add-packaging-btn"
               onClick={handleAddPackaging}
             >
-              Добавить упаковку
+              {tp("addPackaging")}
             </button>
             </FormBlock>
           )}
         </div>
         {itemType === "product" && marketData.isAdult ? (
           <p className="market-product-form__adult-hint">
-            Этот товар предназначен для совершеннолетних. На кассе появится
-            уведомление, на втором экране — вопрос «Вам есть 18?».
+            {tp("adultHint")}
           </p>
         ) : null}
       </div>
@@ -132,12 +137,12 @@ const PackagingSection = ({
                 <div className="market-product-form__packaging-item-row mt-[20px]">
                   <div className="market-product-form__form-group">
                     <label className="market-product-form__label">
-                      Упаковка
+                      {tp("packagingName")}
                     </label>
                     <input
                       type="text"
                       className="market-product-form__input"
-                      placeholder="Введите название упаковки"
+                      placeholder={tp("packagingNamePlaceholder")}
                       value={packaging.name}
                       onChange={(e) =>
                         handleUpdatePackaging(
@@ -150,7 +155,7 @@ const PackagingSection = ({
                   </div>
                   <div className="market-product-form__form-group">
                     <label className="market-product-form__label">
-                      Количество в упаковке
+                      {tp("packagingQty")}
                     </label>
                     <div className="market-product-form__packaging-quantity">
                       <input
@@ -166,13 +171,13 @@ const PackagingSection = ({
                         }
                       />
                       <span className="market-product-form__unit-label">
-                        ШТ
+                        {tp("pcsShort")}
                       </span>
                       <button
                         type="button"
                         className="market-product-form__remove-packaging-btn"
                         onClick={() => handleRemovePackaging(packaging.id)}
-                        title="Удалить упаковку"
+                        title={tp("removePackaging")}
                       >
                         ×
                       </button>
@@ -180,7 +185,7 @@ const PackagingSection = ({
                   </div>
                   <div className="market-product-form__form-group">
                     <label className="market-product-form__label">
-                      Цена за штуку
+                      {tp("pricePerPiece")}
                     </label>
                     <div className="market-product-form__packaging-quantity">
                       <input
@@ -213,7 +218,9 @@ const PackagingSection = ({
       </FormBlock>
       )}
       <div className="market-product-form__form-group mt-4">
-        <label className="market-product-form__label">Количество *</label>
+        <label className="market-product-form__label">
+          {tp("quantityLabel")}
+        </label>
         <div className="market-product-form__price-input">
           <input
             type="text"

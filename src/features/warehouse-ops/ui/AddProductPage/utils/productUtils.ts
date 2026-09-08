@@ -171,16 +171,20 @@ export const buildProductPayload = ({
       ? marketData.isFractionalService
       : false;
 
-  // Генерируем PLU для весовых товаров
+  // PLU: сохраняем код, введённый пользователем, в т.ч. для невесовых товаров.
+  // Автогенерация — только для весовых, когда код не задан вручную.
+  const enteredPlu =
+    marketData.plu != null && String(marketData.plu).trim() !== ""
+      ? String(marketData.plu).trim()
+      : plu != null && String(plu).trim() !== ""
+      ? String(plu).trim()
+      : "";
   let pluValue: any = null;
-  if (isWeight) {
-    if (marketData.plu && marketData.plu.trim() !== "") {
-      pluValue = Number(marketData.plu);
-    } else if (plu && plu.trim() !== "") {
-      pluValue = Number(plu);
-    } else {
-      pluValue = weightProductsCount + 1;
-    }
+  if (enteredPlu !== "") {
+    const parsedPlu = Number(enteredPlu);
+    pluValue = Number.isFinite(parsedPlu) ? parsedPlu : null;
+  } else if (isWeight) {
+    pluValue = weightProductsCount + 1;
   }
 
   const finalPrice = price && price.trim() !== "" ? price.toString() : "0";

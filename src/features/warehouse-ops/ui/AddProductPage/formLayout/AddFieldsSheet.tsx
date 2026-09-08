@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Plus, X } from "lucide-react";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import {
@@ -7,8 +8,25 @@ import {
 } from "./constants";
 import { useOptionalProductFormLayout } from "./ProductFormLayoutContext";
 
+const GROUP_TITLE_KEY: Record<string, string> = {
+  "Основное": "groupBasic",
+  "Классификация": "groupClassification",
+  "Единицы и флаги": "groupUnitsFlags",
+  "Цены": "groupPrices",
+  "Склад": "groupWarehouse",
+  "Дополнительно": "groupExtra",
+};
+
 export function AddFieldsSheet() {
   const layout = useOptionalProductFormLayout();
+  const { t } = useTranslation();
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
+  const blockLabel = (id: string) =>
+    tp(`block.${id}.label`, { defaultValue: PRODUCT_FORM_BLOCK_META[id].label });
+  const blockDesc = (id: string) =>
+    tp(`block.${id}.desc`, {
+      defaultValue: PRODUCT_FORM_BLOCK_META[id].description,
+    });
   if (!layout?.addSheetOpen) return null;
 
   const hiddenSet = new Set(layout.layout.hidden);
@@ -25,7 +43,7 @@ export function AddFieldsSheet() {
         <button
           type="button"
           className="product-form-layout-sheet__overlay"
-          aria-label="Закрыть"
+          aria-label={t("common.close")}
           onClick={() => layout.setAddSheetOpen(false)}
         />
         <div
@@ -35,25 +53,29 @@ export function AddFieldsSheet() {
           aria-labelledby="product-form-layout-sheet-title"
         >
           <div className="product-form-layout-sheet__header">
-            <h2 id="product-form-layout-sheet-title">Добавить поле</h2>
+            <h2 id="product-form-layout-sheet-title">{tp("addField")}</h2>
             <button
               type="button"
               className="product-form-layout-sheet__close"
               onClick={() => layout.setAddSheetOpen(false)}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
             >
               <X size={20} />
             </button>
           </div>
           {groups.length === 0 ? (
             <p className="product-form-layout-sheet__empty">
-              Все поля уже на форме. Чтобы убрать лишнее, нажмите красный минус.
+              {tp("allFieldsShown")}
             </p>
           ) : (
             <div className="product-form-layout-sheet__groups">
               {groups.map((group) => (
                 <section key={group.title}>
-                  <h3>{group.title}</h3>
+                  <h3>
+                    {GROUP_TITLE_KEY[group.title]
+                      ? tp(GROUP_TITLE_KEY[group.title])
+                      : group.title}
+                  </h3>
                   <ul>
                     {group.items.map((item) => (
                       <li key={item.id}>
@@ -66,8 +88,8 @@ export function AddFieldsSheet() {
                             <Plus size={16} />
                           </span>
                           <span>
-                            <strong>{item.label}</strong>
-                            <small>{item.description}</small>
+                            <strong>{blockLabel(item.id)}</strong>
+                            <small>{blockDesc(item.id)}</small>
                           </span>
                         </button>
                       </li>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import BarberMastersPortal from "./BarberMastersPortal";
@@ -37,8 +38,8 @@ async function fetchProfilesForUser(userId) {
   return acc;
 }
 
-const branchLabel = (p: any) => {
-  if (p?.branch == null && p?.branch_name == null) return "Общий (все филиалы)";
+const branchLabel = (p: any, commonAllBranches: string) => {
+  if (p?.branch == null && p?.branch_name == null) return commonAllBranches;
   return p?.branch_name || p?.branch?.name || String(p.branch || "—");
 };
 
@@ -51,6 +52,8 @@ const CafeWaiterPayProfileModal = ({
   onClose,
   employeeDisplayName,
 }: any) => {
+  const { t } = useTranslation();
+  const tp = (k: string): string => t(`crm.employees.payProfile.${k}`) as string;
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -94,13 +97,15 @@ const CafeWaiterPayProfileModal = ({
         applyProfile(null);
       }
     } catch (e: any) {
-      setError(validateResErrors(e, "Не удалось загрузить профиль"));
+      setError(
+        validateResErrors(e, t("crm.employees.payProfile.errLoad")),
+      );
       setProfiles([]);
       applyProfile(null);
     } finally {
       setLoading(false);
     }
-  }, [employee?.id, applyProfile]);
+  }, [employee?.id, applyProfile, t]);
 
   useEffect(() => {
     if (open && employee?.id) load();
@@ -156,7 +161,7 @@ const CafeWaiterPayProfileModal = ({
       }
       await load();
     } catch (err: any) {
-      setError(validateResErrors(err, "Не удалось сохранить"));
+      setError(validateResErrors(err, tp("errSave")));
     } finally {
       setSaving(false);
     }
@@ -171,7 +176,7 @@ const CafeWaiterPayProfileModal = ({
       setDeleteConfirm(false);
       await load();
     } catch (err: any) {
-      setError(validateResErrors(err, "Не удалось удалить"));
+      setError(validateResErrors(err, tp("errDelete")));
     } finally {
       setSaving(false);
     }
@@ -191,13 +196,13 @@ const CafeWaiterPayProfileModal = ({
       >
         <header className="barbermasters__modalHeader">
           <h3 id="cafe-waiter-pay-title" className="barbermasters__modalTitle">
-            Зарплата официанта (кафе)
+            {tp("cafeTitle")}
           </h3>
           <button
             type="button"
             className="barbermasters__iconBtn"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
           >
             ×
           </button>
@@ -209,7 +214,8 @@ const CafeWaiterPayProfileModal = ({
               <div className="barbermasters__employeeCard">
                 <div className="barbermasters__employeeInfo">
                   <div className="barbermasters__employeeName">
-                    {employeeDisplayName || "Сотрудник"}
+                    {employeeDisplayName ||
+                      t("crm.employees.accessModal.employeeFallback")}
                   </div>
                   <div className="barbermasters__employeeMeta">
                     {employee.email || employee.id}
@@ -219,12 +225,12 @@ const CafeWaiterPayProfileModal = ({
             </div>
 
             {loading ? (
-              <div className="barbermasters__help">Загрузка…</div>
+              <div className="barbermasters__help">{t("common.loading")}</div>
             ) : null}
 
             {profiles.length > 1 ? (
               <div className="barbermasters__field barbermasters__field--full">
-                <label className="barbermasters__label">Профиль</label>
+                <label className="barbermasters__label">{tp("profile")}</label>
                 <select
                   className="barbermasters__input"
                   value={selectedId || ""}
@@ -233,7 +239,7 @@ const CafeWaiterPayProfileModal = ({
                 >
                   {profiles.map((p: any) => (
                     <option key={p.id} value={p.id}>
-                      {branchLabel(p)}
+                      {branchLabel(p, tp("commonAllBranches"))}
                     </option>
                   ))}
                 </select>
@@ -242,7 +248,7 @@ const CafeWaiterPayProfileModal = ({
 
             <div className="barbermasters__field barbermasters__field--full">
               <label className="barbermasters__label">
-                Оклад в месяц <span className="barbermasters__req">*</span>
+                {tp("monthlyBase")} <span className="barbermasters__req">*</span>
               </label>
               <input
                 className="barbermasters__input"
@@ -257,7 +263,8 @@ const CafeWaiterPayProfileModal = ({
 
             <div className="barbermasters__field barbermasters__field--full">
               <label className="barbermasters__label">
-                Процент от личной выручки <span className="barbermasters__req">*</span>
+                {tp("personalRevenuePercent")}{" "}
+                <span className="barbermasters__req">*</span>
               </label>
               <input
                 className="barbermasters__input"
@@ -268,10 +275,7 @@ const CafeWaiterPayProfileModal = ({
                 placeholder="0"
                 disabled={saving || loading}
               />
-              <div className="barbermasters__help">
-                Учитывается в отчёте аналитики зарплаты официантов (оклад × дни/30 + % от
-                выручки).
-              </div>
+              <div className="barbermasters__help">{tp("cafeHint")}</div>
             </div>
 
             {error ? (
@@ -285,7 +289,11 @@ const CafeWaiterPayProfileModal = ({
               className="barbermasters__btn barbermasters__btn--primary"
               disabled={saving || loading}
             >
-              {saving ? "Сохранение…" : selectedId ? "Сохранить" : "Создать профиль"}
+              {saving
+                ? t("common.saving")
+                : selectedId
+                  ? t("common.save")
+                  : tp("createProfile")}
             </button>
             {selectedId ? (
               deleteConfirm ? (
@@ -296,7 +304,7 @@ const CafeWaiterPayProfileModal = ({
                     onClick={handleDelete}
                     disabled={saving}
                   >
-                    {saving ? "Удаление…" : "Подтвердить удаление"}
+                    {saving ? t("common.deleting") : tp("confirmDelete")}
                   </button>
                   <button
                     type="button"
@@ -304,7 +312,7 @@ const CafeWaiterPayProfileModal = ({
                     onClick={() => setDeleteConfirm(false)}
                     disabled={saving}
                   >
-                    Отмена
+                    {t("common.cancel")}
                   </button>
                 </>
               ) : (
@@ -314,7 +322,7 @@ const CafeWaiterPayProfileModal = ({
                   onClick={() => setDeleteConfirm(true)}
                   disabled={saving}
                 >
-                  Удалить профиль
+                  {tp("deleteProfile")}
                 </button>
               )
             ) : null}
@@ -324,7 +332,7 @@ const CafeWaiterPayProfileModal = ({
               onClick={onClose}
               disabled={saving}
             >
-              Закрыть
+              {t("common.close")}
             </button>
           </div>
         </form>

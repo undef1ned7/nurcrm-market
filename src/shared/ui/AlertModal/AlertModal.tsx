@@ -68,7 +68,7 @@ const AlertModal = ({
             <CheckIcon />
           </div>
           {title ? <h3 className="alert-modal__title">{title}</h3> : null}
-          <p className="alert-modal__message">{message}</p>
+          <div className="alert-modal__message">{message}</div>
           <div className="alert-modal__actions">
             <button type="button" className="nur-btn nur-btn--primary" onClick={handle}>
               {okText}

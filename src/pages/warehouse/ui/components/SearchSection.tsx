@@ -1,7 +1,11 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Search, Filter, LayoutGrid, Table2 } from "lucide-react";
 import { FilterBar } from "@shared/ui/page-shell";
-import { MARKET_WAREHOUSE_SALE_UNITS } from "@shared/lib/tools/marketWarehouseFilters";
+import {
+  MARKET_WAREHOUSE_SALE_UNITS,
+  marketWarehouseSaleUnitLabelKey,
+} from "@shared/lib/tools/marketWarehouseFilters";
 import { VIEW_MODES } from "../constants";
 import "./SearchSection.scss";
 
@@ -18,10 +22,11 @@ const SearchSection = ({
   foundCount,
   scanLookupLoading = false,
   showViewModeToggle = true,
-  searchPlaceholder = "Поиск по названию товара...",
+  searchPlaceholder,
   saleUnit = "",
   onSaleUnitChange,
 }: any) => {
+  const { t } = useTranslation();
   return (
     <FilterBar className="warehouse-search-section">
       <div className="warehouse-search">
@@ -29,7 +34,9 @@ const SearchSection = ({
         <input
           type="text"
           className="nur-input warehouse-search__input"
-          placeholder={searchPlaceholder}
+          placeholder={
+            searchPlaceholder || t("crm.warehouse.searchPlaceholder")
+          }
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -37,7 +44,8 @@ const SearchSection = ({
 
       <div className="warehouse-search__info">
         <span className="nur-chip warehouse-search__count">
-          Всего: {count ?? 0} • Найдено: {foundCount}
+          {t("crm.warehouse.total")}: {count ?? 0} •{" "}
+          {t("crm.warehouse.found")}: {foundCount}
         </span>
 
         {scanLookupLoading && (
@@ -47,7 +55,7 @@ const SearchSection = ({
             aria-live="polite"
           >
             <span className="warehouse-search__scan-spinner" aria-hidden />
-            Поиск товара по штрихкоду...
+            {t("crm.warehouse.searchByBarcode")}
           </span>
         )}
 
@@ -56,7 +64,7 @@ const SearchSection = ({
             <div
               className="warehouse-view-toggle warehouse-sale-unit-toggle"
               role="radiogroup"
-              aria-label="Единица продажи"
+              aria-label={t("crm.warehouse.saleUnitGroupAria")}
             >
               <button
                 type="button"
@@ -67,15 +75,15 @@ const SearchSection = ({
                   !saleUnit ? " warehouse-view-toggle__btn--active" : ""
                 }`}
               >
-                Все
+                {t("crm.warehouse.saleUnitAll")}
               </button>
-              {MARKET_WAREHOUSE_SALE_UNITS.map(({ value, label, hint }) => (
+              {MARKET_WAREHOUSE_SALE_UNITS.map(({ value, hintKey }) => (
                 <button
                   key={value}
                   type="button"
                   role="radio"
                   aria-checked={saleUnit === value}
-                  title={hint}
+                  title={hintKey ? (t(hintKey) as string) : undefined}
                   onClick={() =>
                     onSaleUnitChange(saleUnit === value ? "" : value)
                   }
@@ -85,7 +93,7 @@ const SearchSection = ({
                       : ""
                   }`}
                 >
-                  {label}
+                  {t(marketWarehouseSaleUnitLabelKey(value))}
                 </button>
               ))}
             </div>
@@ -95,7 +103,7 @@ const SearchSection = ({
             <div
               className="warehouse-view-toggle"
               role="group"
-              aria-label="Режим отображения"
+              aria-label={t("crm.warehouse.viewModeGroupAria")}
             >
               <button
                 type="button"
@@ -108,7 +116,7 @@ const SearchSection = ({
                 }`}
               >
                 <Table2 size={16} aria-hidden />
-                Таблица
+                {t("crm.warehouse.table")}
               </button>
               <button
                 type="button"
@@ -121,7 +129,7 @@ const SearchSection = ({
                 }`}
               >
                 <LayoutGrid size={16} aria-hidden />
-                Карточки
+                {t("crm.warehouse.cards")}
               </button>
             </div>
           )}
@@ -133,7 +141,7 @@ const SearchSection = ({
               onClick={onOpenFilters}
             >
               <Filter size={16} aria-hidden />
-              Фильтры
+              {t("crm.warehouse.filters")}
             </button>
           )}
         </div>

@@ -863,3 +863,107 @@
     }
   }
 }
+
+/* ── Вкладка «Тариф и оплата» ─────────────────────────────── */
+.settings {
+  &__sub-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  &__sub-cardLabel {
+    font-size: var(--nur-font-caption);
+    font-weight: 600;
+    color: var(--nur-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+  }
+
+  &__sub-cardValue {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--nur-text);
+  }
+
+  &__sub-cardSub {
+    margin-top: 4px;
+    font-size: var(--nur-font-caption);
+    color: var(--nur-text-2);
+  }
+
+  &__sub-days {
+    margin-top: 8px;
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: var(--nur-font-caption);
+    font-weight: 700;
+    border: 1px solid transparent;
+
+    &--ok {
+      color: var(--nur-success-ink, #1a7f37);
+      background: var(--nur-success-soft, rgba(16, 185, 129, 0.12));
+    }
+
+    &--warn {
+      color: var(--nur-warning-ink, #a15c00);
+      background: var(--nur-warning-soft, rgba(245, 158, 11, 0.14));
+    }
+
+    &--danger {
+      color: var(--nur-danger-ink, #b42318);
+      background: var(--nur-danger-soft, rgba(239, 68, 68, 0.14));
+    }
+
+    &--muted {
+      color: var(--nur-text-2);
+      background: var(--nur-bg);
+      border-color: var(--nur-border);
+    }
+  }
+
+  &__sub-subtitle {
+    margin: 20px 0 8px;
+    font-size: var(--nur-font-body);
+    font-weight: 800;
+    color: var(--nur-text);
+  }
+
+  &__sub-details {
+    margin: 14px 0 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius);
+    overflow: hidden;
+  }
+
+  &__sub-detailRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 10px 14px;
+    font-size: var(--nur-font-meta);
+
+    & + & {
+      border-top: 1px solid var(--nur-border);
+    }
+
+    dt {
+      color: var(--nur-muted);
+    }
+
+    dd {
+      margin: 0;
+      text-align: right;
+      font-weight: 600;
+      color: var(--nur-text);
+    }
+  }
+
+  &__sub-note {
+    margin-top: 14px;
+    font-style: italic;
+  }
+}

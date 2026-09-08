@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { HelpCircle } from "lucide-react";
 import KitProductsPickerModal from "../KitProductsPickerModal";
 
@@ -27,12 +28,15 @@ const KitCompositionSection = ({
   recalculateKitPrice,
   showKitRecalculateTooltip,
   setShowKitRecalculateTooltip,
-}) => (
+}) => {
+  const { t } = useTranslation();
+  const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
+  return (
   <>
           {/* Состав комплекта */}
           <div className="market-product-form__section">
             <h3 className="market-product-form__section-title">
-              Состав комплекта
+              {tp("kitCompTitle")}
             </h3>
 
             {/* Список товаров в комплекте */}
@@ -60,7 +64,7 @@ const KitCompositionSection = ({
                       <button
                         className="market-product-form__remove-kit-btn"
                         onClick={() => removeProductFromKit(product.id)}
-                        title="Удалить из комплекта"
+                        title={tp("removeFromKit")}
                       >
                         ×
                       </button>
@@ -68,7 +72,7 @@ const KitCompositionSection = ({
                   </div>
                 ))}
                 <button className="market-product-form__show-more-btn">
-                  ПОКАЗАТЬ ЕЩЕ
+                  {tp("showMore")}
                 </button>
               </div>
             )}
@@ -79,10 +83,9 @@ const KitCompositionSection = ({
               className="market-product-form__kit-selection-area"
               onClick={() => void openKitPicker()}
             >
-              <p>← Выберите товары</p>
+              <p>{tp("kitPickPrompt")}</p>
               <span className="market-product-form__kit-selection-hint">
-                Откроется список товаров в наличии с поиском и фильтром по
-                категории
+                {tp("kitPickHint")}
               </span>
             </button>
           </div>
@@ -104,23 +107,25 @@ const KitCompositionSection = ({
             loading={kitPickerLoading}
             confirmLabel={
               kitPickerSelected.size > 0
-                ? `Добавить (${kitPickerSelected.size})`
-                : "Добавить выбранные"
+                ? tp("kitConfirmN", { count: kitPickerSelected.size })
+                : tp("kitPickerConfirm")
             }
             emptyText={
               kitPickerCandidates.length === 0
-                ? "Нет товаров в наличии для добавления в комплект"
-                : "Товары не найдены. Измените поиск или категорию."
+                ? tp("kitPickerNoStock")
+                : tp("kitPickerRefine")
             }
           />
 
           {/* Цены для комплекта */}
           <div className="market-product-form__section">
-            <h3 className="market-product-form__section-title">Цены</h3>
+            <h3 className="market-product-form__section-title">
+              {tp("sectionPrices")}
+            </h3>
             <div className="market-product-form__prices-grid">
               <div className="market-product-form__form-group">
                 <label className="market-product-form__label">
-                  Цена продажи
+                  {tp("sellPriceShort")}
                 </label>
                 <div className="market-product-form__price-input">
                   <input
@@ -138,7 +143,7 @@ const KitCompositionSection = ({
                       className="market-product-form__recalculate-btn"
                       onClick={recalculateKitPrice}
                     >
-                      Пересчитать стоимость
+                      {tp("recalcPrice")}
                     </button>
                     <div className="market-product-form__help-wrapper">
                       <button
@@ -151,10 +156,7 @@ const KitCompositionSection = ({
                       </button>
                       {showKitRecalculateTooltip && (
                         <div className="market-product-form__tooltip market-product-form__tooltip--kit">
-                          <p>
-                            Цена продажи комплекта будет пересчитана и равна
-                            сумме стоимостей товаров состава по текущим ценам
-                          </p>
+                          <p>{tp("kitRecalcTooltip")}</p>
                         </div>
                       )}
                     </div>
@@ -162,7 +164,9 @@ const KitCompositionSection = ({
                 </div>
               </div>
               <div className="market-product-form__form-group">
-                <label className="market-product-form__label">Скидка</label>
+                <label className="market-product-form__label">
+                  {tp("discountLabel")}
+                </label>
                 <div className="market-product-form__price-input">
                   <input
                     type="text"
@@ -178,6 +182,7 @@ const KitCompositionSection = ({
             </div>
           </div>
   </>
-);
+  );
+};
 
 export default KitCompositionSection;

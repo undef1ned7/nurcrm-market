@@ -178,9 +178,17 @@ export default function MarketClientDetails() {
         <ClientKpiDetailDrawer
           open={Boolean(data.detailsView)}
           mode={mode}
+          category={data.detailsView}
+          clientId={data.client?.id}
+          clientType={data.client?.type}
           detailsMeta={vm.detailsMeta}
           detailRows={vm.detailRows}
           onClose={() => data.setDetailsView(null)}
+          onChanged={() => {
+            if (!data.client?.id) return;
+            void data.loadDeals(data.client.id);
+            void data.loadKpis(data.client.id);
+          }}
         />
 
         <AlertModal

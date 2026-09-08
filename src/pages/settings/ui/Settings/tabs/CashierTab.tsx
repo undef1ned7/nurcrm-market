@@ -1,15 +1,24 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import {
+  getDrawerSettings,
+  saveDrawerSettings,
+} from "@pages/sell/ui/services/printService";
+import type { DrawerWhen } from "@pages/sell/ui/services/print/drawer";
 import { GlossaryText } from "@shared/ui/GlossaryText/GlossaryText";
 import {
   getCustomerDisplaySlidesText,
+  getCustomerDisplayTheme,
   getCustomerDisplayWelcome,
   isCustomerDisplayEnabled,
   openCustomerDisplayWindow,
   setCustomerDisplayEnabled,
   setCustomerDisplaySlides,
+  setCustomerDisplayTheme,
   setCustomerDisplayWelcome,
 } from "@features/customer-display";
+import type { CustomerDisplayTheme } from "@features/customer-display";
 
 /** Settings tab: Касса */
 export function CashierTab(props) {
@@ -23,12 +32,22 @@ export function CashierTab(props) {
     setCashierSettings,
     setShowCashierDeleteCode,
     showCashierDeleteCode,
+    isMarketSector,
   } = props;
+  const [drawerEnabled, setDrawerEnabled] = useState(
+    () => getDrawerSettings().enabled,
+  );
+  const [drawerWhen, setDrawerWhen] = useState<DrawerWhen>(
+    () => getDrawerSettings().when,
+  );
   const [displayEnabled, setDisplayEnabled] = useState(isCustomerDisplayEnabled);
   const [welcomeText, setWelcomeText] = useState(() =>
     getCustomerDisplayWelcome(),
   );
   const [slidesText, setSlidesText] = useState(getCustomerDisplaySlidesText);
+  const [displayTheme, setDisplayTheme] = useState<CustomerDisplayTheme>(
+    getCustomerDisplayTheme,
+  );
 
   return (
     <form onSubmit={handleSaveCashierSettings} className="settings__tab-form">
@@ -184,6 +203,87 @@ export function CashierTab(props) {
         </div>
       </div>
 
+      {isMarketSector ? (
+        <div className="settings__section">
+          <h2 className="settings__section-title">
+            <span className="settings__emoji">💵</span>{" "}
+            {t("settings.cashier.drawerTitle")}
+          </h2>
+          <p className="settings__mutedText">{t("settings.cashier.drawerHint")}</p>
+          <div className="settings__prefRow">
+            <div className="settings__prefText">
+              <span className="settings__prefLabel">
+                {t("settings.cashier.drawerEnabled")}
+              </span>
+              <p className="settings__prefHint">
+                {t("settings.cashier.drawerEnabledHint")}
+              </p>
+            </div>
+            <label className="settings__switch">
+              <input
+                type="checkbox"
+                className="settings__switch-input"
+                checked={drawerEnabled}
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  setDrawerEnabled(enabled);
+                  const current = getDrawerSettings();
+                  saveDrawerSettings({
+                    enabled,
+                    when: drawerWhen,
+                    command: current.command,
+                  });
+                }}
+              />
+              <span className="settings__switch-track" aria-hidden="true">
+                <span className="settings__switch-thumb" />
+              </span>
+            </label>
+          </div>
+          {drawerEnabled ? (
+            <div className="settings__form-group">
+              <div className="nur-label">{t("settings.cashier.drawerWhenLabel")}</div>
+              <div className="settings__segmented">
+                <button
+                  type="button"
+                  className={`settings__segBtn ${drawerWhen === "before" ? "settings__segBtn--active" : ""}`}
+                  onClick={() => {
+                    setDrawerWhen("before");
+                    const current = getDrawerSettings();
+                    saveDrawerSettings({
+                      enabled: drawerEnabled,
+                      when: "before",
+                      command: current.command,
+                    });
+                  }}
+                >
+                  {t("settings.cashier.drawerBefore")}
+                </button>
+                <button
+                  type="button"
+                  className={`settings__segBtn ${drawerWhen === "after" ? "settings__segBtn--active" : ""}`}
+                  onClick={() => {
+                    setDrawerWhen("after");
+                    const current = getDrawerSettings();
+                    saveDrawerSettings({
+                      enabled: drawerEnabled,
+                      when: "after",
+                      command: current.command,
+                    });
+                  }}
+                >
+                  {t("settings.cashier.drawerAfter")}
+                </button>
+              </div>
+            </div>
+          ) : null}
+          <p className="settings__mutedText">
+            {t("settings.cashier.drawerAdvanced")}{" "}
+            <Link to="/crm/pos-print-settings">{t("settings.cashier.drawerAdvancedLink")}</Link>
+          </p>
+        </div>
+      ) : null}
+
       <div className="settings__section">
         <h2 className="settings__section-title">
           <span className="settings__emoji">🖥️</span>{" "}
@@ -215,6 +315,24 @@ export function CashierTab(props) {
               <span className="settings__switch-thumb" />
             </span>
           </label>
+        </div>
+        <div className="settings__form-group nur-field">
+          <label className="nur-label" htmlFor="customer-display-theme">
+            {t("settings.cashier.customerDisplayTheme")}
+          </label>
+          <select
+            id="customer-display-theme"
+            className="nur-input"
+            value={displayTheme}
+            onChange={(e) => {
+              const next = e.target.value === "light" ? "light" : "dark";
+              setDisplayTheme(next);
+              setCustomerDisplayTheme(next);
+            }}
+          >
+            <option value="dark">{t("settings.cashier.customerDisplayThemeDark")}</option>
+            <option value="light">{t("settings.cashier.customerDisplayThemeLight")}</option>
+          </select>
         </div>
         <div className="settings__form-group nur-field">
           <label className="nur-label" htmlFor="customer-display-welcome">

@@ -10,10 +10,6 @@ import {
   historySellProduct,
   startSale,
 } from "@entities/sale";
-import {
-  getCashBoxes,
-  useCash,
-} from "@entities/cash";
 import { useSale } from "@entities/sale";
 import { useClient } from "@entities/client";
 import { useUser } from "@entities/user";
@@ -41,7 +37,6 @@ export function useSellPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { company, profile, userId } = useUser();
   const { list: clientsRaw } = useClient();
-  const { list: cashBoxes } = useCash();
   const {
     history,
     start,
@@ -73,7 +68,6 @@ export function useSellPage() {
   const [showAddCashboxModal, setShowAddCashboxModal] = useState(false);
   const [showBuilding, setShowBuilding] = useState(false);
   const [sellId, setSellId] = useState("");
-  const [selectCashBox, setSelectCashBox] = useState("");
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [itemId, setItemId] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
@@ -346,21 +340,6 @@ export function useSellPage() {
     return () => window.removeEventListener("keydown", onEsc);
   }, []);
 
-  useEffect(() => {
-    dispatch(getCashBoxes(undefined as any));
-  }, [dispatch]);
-
-  // Автоматически выбираем первую кассу по индексу
-  useEffect(() => {
-    if (cashBoxes && cashBoxes.length > 0 && !selectCashBox) {
-      const firstCashBox = cashBoxes[0];
-      const firstCashBoxId = firstCashBox?.id || firstCashBox?.uuid || "";
-      if (firstCashBoxId) {
-        setSelectCashBox(firstCashBoxId);
-      }
-    }
-  }, [cashBoxes, selectCashBox]);
-
   const handleOpenRefund = (sale, event) => {
     event?.stopPropagation?.();
     event?.preventDefault?.();
@@ -526,7 +505,6 @@ export function useSellPage() {
     setShowDetailSell,
     sellId,
     setSellId,
-    selectCashBox,
     showRefundModal,
     setShowRefundModal,
     itemId,

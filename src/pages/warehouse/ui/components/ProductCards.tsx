@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { GripVertical } from "lucide-react";
 import { formatPrice, formatStock, getPrimaryImage } from "../utils";
 import noImage from "./placeholder.png";
@@ -19,6 +20,7 @@ const ProductCard = React.memo(
     onProductDragStart,
     isOutOfStock,
   }: any) => {
+    const { t } = useTranslation();
     const outOfStock = isOutOfStock?.(product) ?? false;
     return (
       <div
@@ -37,8 +39,8 @@ const ProductCard = React.memo(
               }}
               onMouseDown={(e: any) => e.stopPropagation()}
               onClick={(e: any) => e.stopPropagation()}
-              title="Перетащить"
-              aria-label="Перетащить"
+              title={t("crm.warehouse.dragTitle")}
+              aria-label={t("crm.warehouse.dragTitle")}
             >
               <GripVertical size={18} />
             </button>
@@ -58,7 +60,7 @@ const ProductCard = React.memo(
 
           <img
             src={primaryImage?.image_url || noImage}
-            alt={product.name || "Товар"}
+            alt={product.name || t("crm.warehouse.productAlt")}
             className="warehouse-card__image"
             loading="lazy"
             decoding="async"
@@ -73,34 +75,53 @@ const ProductCard = React.memo(
 
             <div className="warehouse-card__meta">
               <span>
-                Код: <strong>{product.code || "—"}</strong>
+                {t("crm.warehouse.cardCodeShort")}:{" "}
+                <strong>{product.code || "—"}</strong>
               </span>
               <span>
-                Арт: <strong>{product.article || "—"}</strong>
+                {t("crm.warehouse.cardArticleShort")}:{" "}
+                <strong>{product.article || "—"}</strong>
               </span>
               <span>
-                Ед: <strong>{product.unit || "—"}</strong>
+                PLU:{" "}
+                <strong>
+                  {product.plu !== null &&
+                  product.plu !== undefined &&
+                  String(product.plu).trim() !== ""
+                    ? product.plu
+                    : "—"}
+                </strong>
+              </span>
+              <span>
+                {t("crm.warehouse.cardUnitShort")}:{" "}
+                <strong>{product.unit || "—"}</strong>
               </span>
             </div>
           </div>
         </div>
         <div className="warehouse-card__stats">
           <div className="warehouse-card__stat">
-            <div className="warehouse-card__stat-label">Цена продажи</div>
+            <div className="warehouse-card__stat-label">
+              {t("crm.warehouse.sellPrice")}
+            </div>
             <div className="warehouse-card__stat-value">
               {formatPrice(product.price)}
             </div>
           </div>
 
           <div className="warehouse-card__stat">
-            <div className="warehouse-card__stat-label">Скидка</div>
+            <div className="warehouse-card__stat-label">
+              {t("crm.warehouse.discount")}
+            </div>
             <div className="warehouse-card__stat-value">
               {formatPrice(product.discount_percent || 0)}%
             </div>
           </div>
 
           <div className="warehouse-card__stat">
-            <div className="warehouse-card__stat-label">Остатки</div>
+            <div className="warehouse-card__stat-label">
+              {t("crm.warehouse.stockLabel")}
+            </div>
             <div
               className={`warehouse-card__stat-value${outOfStock ? " warehouse-card__stat-value--out" : ""}`}
             >
@@ -143,6 +164,7 @@ const ProductCards = ({
   onProductDragStart,
   isOutOfStock,
 }: any) => {
+  const { t } = useTranslation();
   // Мемоизация вычислений для всех товаров
   const productsData = useMemo(() => {
     return products.map((product: any, index: any) => ({
@@ -157,16 +179,14 @@ const ProductCards = ({
   // Только если данных нет вообще - показываем загрузку
   if (loading && products.length === 0) {
     return (
-      <div className="warehouse-table__loading">
-        Загрузка...
-      </div>
+      <div className="warehouse-table__loading">{t("common.loading")}</div>
     );
   }
 
   if (products.length === 0 && !loading) {
     return (
       <div className="warehouse-table__empty">
-        Товары не найдены
+        {t("crm.warehouse.productsNotFound")}
       </div>
     );
   }
@@ -175,7 +195,9 @@ const ProductCards = ({
     <div className="warehouse-cards relative">
       {loading && products.length > 0 && (
         <div className="warehouse-table__loading-overlay">
-          <div className="warehouse-table__loading-text">Загрузка...</div>
+          <div className="warehouse-table__loading-text">
+            {t("common.loading")}
+          </div>
         </div>
       )}
       <div className="warehouse-cards__toolbar">
@@ -189,11 +211,11 @@ const ProductCards = ({
             onChange={onSelectAll}
             disabled={loading}
           />
-          Выбрать все
+          {t("crm.warehouse.selectAll")}
         </label>
 
         <div className="warehouse-cards__selected">
-          Выбрано: <strong>{selectedRows.size}</strong>
+          {t("crm.warehouse.selected")}: <strong>{selectedRows.size}</strong>
         </div>
       </div>
 

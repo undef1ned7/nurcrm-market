@@ -1,136 +1,55 @@
-# AddProductPage - Модульная структура
+# AddProductPage
 
-## 📁 Структура проекта
+Экран **создания и редактирования товара** склада NurCRM Market.
+
+| | |
+|---|---|
+| Оркестратор | `../AddProductPage.tsx` |
+| Модуль | эта папка |
+| Маршруты | `/crm/sklad/add-product`, `/crm/sklad/add-product/:id` |
+| Public API | `@features/add-product` |
+
+## Полная документация
+
+**Читать здесь:** [`docs/market/add-product-page.md`](../../../../../docs/market/add-product-page.md)
+
+Паритет полей/API для мобильного клиента: [`docs/flutter/add-product.md`](../../../../../docs/flutter/add-product.md)  
+Раскладка формы (BE): [`docs/backend/product-form-layout-backend.md`](../../../../../docs/backend/product-form-layout-backend.md)  
+Карта проекта: [`docs/PROJECT.md`](../../../../../docs/PROJECT.md)
+
+## Структура (актуально)
 
 ```
+AddProductPage.tsx              # оркестратор (тонкий)
 AddProductPage/
-├── AddProductPage.jsx          # Основной компонент (оркестратор)
-├── AddProductPage.scss         # Основные стили
-├── README.md                   # Эта документация
-│
-├── constants.js                # Константы и конфигурация
-│
-├── utils/                      # Утилиты
-│   ├── barcodeUtils.js        # Работа со штрих-кодами
-│   ├── debtUtils.js           # Работа с долгами
-│   ├── productUtils.js        # Работа с товарами
-│   └── index.js               # Экспорт утилит
-│
-├── hooks/                      # Кастомные хуки
-│   ├── useProductImages.js    # Управление изображениями
-│   ├── useKitProducts.js      # Управление комплектом товаров
-│   ├── useProductPriceCalculation.js # Расчет цен
-│   └── index.js               # Экспорт хуков
-│
-└── components/                 # UI компоненты
-    ├── ProductTypeSelector.jsx # Выбор типа товара
-    ├── ProductBasicInfo.jsx    # Основная информация
-    ├── ProductImagesSection.jsx # Загрузка изображений
-    └── index.js               # Экспорт компонентов
+├── constants.ts
+├── utils/                      # barcode, debt, product payload, kit picker
+├── hooks/
+│   ├── useAddProductPage.ts    # фасад состояния
+│   ├── useAddProductBootstrap.ts
+│   ├── useAddProductSubmitFlow.ts
+│   ├── useMarketProductState.ts
+│   ├── useProductImages.ts
+│   ├── useDebtForm.ts
+│   ├── useSupplierForm.ts
+│   └── useBrandCategoryDict.ts …
+├── formLayout/                 # скрываемые блоки формы (company layout)
+├── components/
+│   ├── MarketProductForm.tsx   # основная форма
+│   ├── ManualEntryForm.tsx     # legacy
+│   └── sections/ …
+└── (скан) ../AddProductBarcode/
 ```
 
-## 📦 Модули
+## Быстрый старт для правок
 
-### constants.js
-Константы и конфигурация:
-- `ITEM_TYPES` - типы товаров (product, service, kit)
-- `PRODUCT_TYPES` - типы товаров для старого формата
-- `TABS` - вкладки формы
-- `DEFAULT_VALUES` - значения по умолчанию
-- `DEBT_TYPES` - типы долгов
-- `CASH_OPERATIONS` - операции с кассой
+| Задача | Файл |
+|--------|------|
+| UI формы | `components/MarketProductForm.tsx`, `components/sections/` |
+| Payload / валидация | `utils/productUtils.ts` |
+| Submit | `hooks/useAddProductSubmitFlow.ts` |
+| Загрузка edit / автокоды | `hooks/useAddProductBootstrap.ts` |
+| Раскладка полей | `formLayout/` |
+| Embedded из прихода | props в `AddProductPage.tsx` + `SupplierReceiptModals` |
 
-### utils/
-
-#### barcodeUtils.js
-- `calculateEAN13Checksum(digits)` - вычисление контрольной суммы EAN-13
-- `generateEAN13Barcode()` - генерация EAN-13 штрих-кода
-
-#### debtUtils.js
-- `createDebt(payload)` - создание долга через API
-- `validateDebtData(debtData, company)` - валидация данных долга
-
-#### productUtils.js
-- `buildProductPayload(params)` - формирование payload для API
-- `validateProductData(params)` - валидация данных товара
-
-## 🎣 Хуки
-
-### useProductImages
-Управление изображениями товара:
-- `images` - массив изображений
-- `setImages` - установка изображений
-- `fileInputRef` - ссылка на input файла
-- `addImages(files)` - добавление изображений
-- `removeImage(index)` - удаление изображения
-- `setPrimaryImage(index)` - установка главного изображения
-- `loadImagesFromAPI(apiImages)` - загрузка из API
-- `clearImages()` - очистка всех изображений
-
-### useKitProducts
-Управление товарами в комплекте:
-- `kitProducts` - массив товаров в комплекте
-- `kitSearchTerm` - поисковый запрос
-- `showKitSearch` - показывать ли результаты поиска
-- `kitSearchResults` - результаты поиска
-- `handleKitSearch(term)` - обработка поиска
-- `addProductToKit(product)` - добавление товара
-- `removeProductFromKit(id)` - удаление товара
-- `updateKitProductQuantity(id, quantity)` - обновление количества
-- `recalculateKitPrice()` - пересчет стоимости
-
-### useProductPriceCalculation
-Автоматический расчет цены продажи:
-- `isPriceManuallyChanged` - была ли цена изменена вручную
-- `isMarkupManuallyChanged` - была ли наценка изменена вручную
-- `handlePriceChange(value, callback)` - обработка изменения цены
-- `handleMarkupChange(value, callback)` - обработка изменения наценки
-
-## 🧩 Компоненты
-
-### ProductTypeSelector
-Выбор типа товара (Товар/Услуга/Комплект)
-- `itemType` - текущий тип
-- `setItemType` - установка типа
-- `isEditMode` - режим редактирования
-
-### ProductBasicInfo
-Основная информация о товаре:
-- Наименование
-- Код товара
-- Штрих-код
-- Артикул
-
-### ProductImagesSection
-Загрузка и управление изображениями:
-- Drag & drop загрузка
-- Предпросмотр
-- Установка главного изображения
-- Удаление изображений
-
-## 🚀 Использование
-
-```javascript
-import AddProductPage from "./AddProductPage";
-
-// В роутере
-<Route path="/sklad/add-product" element={<AddProductPage />} />
-<Route path="/sklad/add-product/:id" element={<AddProductPage />} />
-```
-
-## ✨ Преимущества модульной структуры
-
-1. **Переиспользование** - компоненты и хуки можно использовать в других местах
-2. **Тестируемость** - каждый модуль можно тестировать отдельно
-3. **Поддерживаемость** - легче находить и исправлять ошибки
-4. **Читаемость** - код более структурирован и понятен
-5. **Производительность** - React.memo предотвращает лишние ререндеры
-6. **Масштабируемость** - легко добавлять новые функции
-
-## 📝 Зависимости
-
-- React, React Router
-- Redux Toolkit
-- Lucide React (иконки)
-- SCSS для стилей
-
+Устаревшие заметки `ANALYSIS.md` / `IMPROVEMENTS_SUMMARY.md` отражают состояние до рефакторинга на хуки — не считать источником правды.
