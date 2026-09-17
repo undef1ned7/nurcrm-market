@@ -77,8 +77,8 @@ export const useAddProductBootstrap = ({
           setNewItemData({
             name: product.name || "",
             barcode: product.barcode || "",
-            brand_name: product.brand_name || "",
-            category_name: product.category_name || "",
+            brand_name: product.brand_name || product.brand || "",
+            category_name: product.category_name || product.category || "",
             price: formatPrice3Decimals(product.price),
             wholesale_price: formatPrice3Decimals(product.wholesale_price),
             quantity: utils.stripTrailingZeros(product.quantity) || "",
@@ -89,6 +89,7 @@ export const useAddProductBootstrap = ({
           });
 
           // Заполняем данные для маркета
+          const shelfLife = utils.daysToShelfLife(product.shelf_life_days);
           setMarketData({
             code: product.code || "",
             article: product.article || "",
@@ -126,9 +127,11 @@ export const useAddProductBootstrap = ({
             promotionRules: utils.normalizePromotionRulesFromApi(
               product.promotion_rules || [],
             ),
-            alternateBarcodesText: Array.isArray(product.alternate_barcodes)
-              ? product.alternate_barcodes.filter(Boolean).join("\n")
-              : "",
+            alternateBarcodes: utils.normalizeAlternateBarcodesFromApi(
+              product.alternate_barcodes,
+            ),
+            shelfLifeValue: shelfLife.value,
+            shelfLifeUnit: shelfLife.unit,
           });
 
           // Загружаем изображения используя хук
@@ -197,8 +200,8 @@ export const useAddProductBootstrap = ({
       setNewItemData({
         name: product.name || "",
         barcode: "", // Очищаем штрих-код для нового товара
-        brand_name: product.brand_name || "",
-        category_name: product.category_name || "",
+        brand_name: product.brand_name || product.brand || "",
+        category_name: product.category_name || product.category || "",
         price: formatPrice3DecimalsDup(product.price),
         wholesale_price: formatPrice3DecimalsDup(product.wholesale_price),
         quantity: "", // Очищаем количество для нового товара
@@ -209,6 +212,7 @@ export const useAddProductBootstrap = ({
       });
 
       // Заполняем данные для маркета
+      const shelfLifeDup = utils.daysToShelfLife(product.shelf_life_days);
       setMarketData({
         code: product.code || "",
         article: product.article || "",
@@ -232,6 +236,8 @@ export const useAddProductBootstrap = ({
         supplier: product.client || "",
         minStock: "0",
         expiryDate: product.expiration_date || "",
+        shelfLifeValue: shelfLifeDup.value,
+        shelfLifeUnit: shelfLifeDup.unit,
         kitProducts: [] as any[], // Для комплекта можно будет доработать
         kitSearchTerm: "",
         enablePieceSale: Boolean((product.packages || []).length),
@@ -245,9 +251,9 @@ export const useAddProductBootstrap = ({
         promotionRules: utils.normalizePromotionRulesFromApi(
           product.promotion_rules || [],
         ),
-        alternateBarcodesText: Array.isArray(product.alternate_barcodes)
-          ? product.alternate_barcodes.filter(Boolean).join("\n")
-          : "",
+        alternateBarcodes: utils.normalizeAlternateBarcodesFromApi(
+          product.alternate_barcodes,
+        ),
       });
 
       // Загружаем изображения (копируем ссылки, но не файлы); для нового товара не храним id для удаления

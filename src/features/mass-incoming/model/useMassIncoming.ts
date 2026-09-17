@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import i18n from "@shared/config/i18n";
 import { listWarehouses } from "@entities/warehouse";
+import useScanDetection from "@shared/hooks/useScanDetection";
 import { getBarcodeAmbiguity } from "@shared/lib/tools/barcodeAmbiguity";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import {
@@ -13,7 +15,6 @@ import { playScanSuccess, playScanUnknown } from "../lib/scanSounds";
 import type { MassIncomingRow, MassIncomingStatus } from "./types";
 
 const DEBOUNCE_MS = 300;
-const FOCUS_RESTORE_MS = 1000;
 
 const listFrom = (data: unknown): any[] => {
   if (Array.isArray(data)) return data;
@@ -60,14 +61,11 @@ export function useMassIncoming() {
     window.setTimeout(() => inputRef.current?.focus(), 0);
   }, []);
 
+  // Сканер работает глобально (см. useScanDetection ниже) и не требует
+  // фокуса на конкретном поле — фокусируем инпут только один раз при
+  // монтировании, для удобства ручного ввода.
   useEffect(() => {
     focusInput();
-    const onBlur = () => {
-      window.setTimeout(() => inputRef.current?.focus(), FOCUS_RESTORE_MS);
-    };
-    const el = inputRef.current;
-    el?.addEventListener("blur", onBlur);
-    return () => el?.removeEventListener("blur", onBlur);
   }, [focusInput]);
 
   const upsertRow = useCallback((next: MassIncomingRow) => {
@@ -101,7 +99,7 @@ export function useMassIncoming() {
         const checked = await checkWarehouseBarcode(warehouseId, code);
         if (checked.ambiguous) {
           playScanUnknown();
-          setError("Найдено несколько товаров с этим штрихкодом. Уточните карточку.");
+          setError(i18n.t("crm.warehouse.massIncoming.ambiguousBarcodeClarify"));
           return;
         }
         const row = mergeScannedRow(
@@ -116,19 +114,31 @@ export function useMassIncoming() {
         const ambiguity = getBarcodeAmbiguity(err);
         if (ambiguity) {
           playScanUnknown();
-          setError("Найдено несколько товаров с этим штрихкодом.");
+          setError(i18n.t("crm.warehouse.massIncoming.ambiguousBarcode"));
           return;
         }
         playScanUnknown();
-        setError(validateResErrors(err, "Не удалось проверить штрихкод"));
+        setError(
+          validateResErrors(err, i18n.t("crm.warehouse.massIncoming.checkBarcodeFailed")),
+        );
       } finally {
         setBusy(false);
         setBarcode("");
-        focusInput();
       }
     },
-    [focusInput, upsertRow, warehouseId],
+    [upsertRow, warehouseId],
   );
+
+  // Сканер шлёт быстрый поток символов независимо от того, какой элемент
+  // сфокусирован (как на кассе) — не привязываемся к фокусу видимого поля.
+  useScanDetection({
+    minLength: 3,
+    onComplete: (code: any) => {
+      const value = String(code || "").trim();
+      if (!value || busy || saving || createFor) return;
+      void handleBarcode(value);
+    },
+  });
 
   const setQuantity = useCallback((key: string, quantity: number) => {
     setRows((prev) =>
@@ -164,7 +174,7 @@ export function useMassIncoming() {
     if (!createFor) return;
     const name = createName.trim();
     if (!name) {
-      setError("Укажите название товара");
+      setError(i18n.t("crm.warehouse.massIncoming.nameRequired"));
       return;
     }
     setBusy(true);
@@ -193,7 +203,9 @@ export function useMassIncoming() {
       setCreateFor(null);
       playScanSuccess();
     } catch (err) {
-      setError(validateResErrors(err, "Не удалось создать карточку"));
+      setError(
+        validateResErrors(err, i18n.t("crm.warehouse.massIncoming.createCardFailed")),
+      );
     } finally {
       setBusy(false);
       focusInput();
@@ -205,11 +217,11 @@ export function useMassIncoming() {
       (row) => row.productId && row.quantity > 0,
     );
     if (incoming.length === 0) {
-      setError("Нет позиций для прихода");
+      setError(i18n.t("crm.warehouse.massIncoming.noItemsToPost"));
       return false;
     }
     if (!warehouseId) {
-      setError("Не найден склад компании. Дождитесь загрузки или обновите страницу.");
+      setError(i18n.t("crm.warehouse.massIncoming.warehouseNotFound"));
       return false;
     }
     setSaving(true);
@@ -220,11 +232,11 @@ export function useMassIncoming() {
       return true;
     } catch (err) {
       if (isMassIncomingEndpointMissing(err)) {
-        setError(
-          "Сервер ещё не поддерживает атомарный массовый приход. Нужен endpoint POST /warehouse/{id}/mass-incoming/.",
-        );
+        setError(i18n.t("crm.warehouse.massIncoming.endpointMissing"));
       } else {
-        setError(validateResErrors(err, "Не удалось провести приход"));
+        setError(
+          validateResErrors(err, i18n.t("crm.warehouse.massIncoming.postFailed")),
+        );
       }
       return false;
     } finally {

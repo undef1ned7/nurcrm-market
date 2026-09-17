@@ -1,4 +1,5 @@
 /** Нормализация ответа POST /main/pos/sales/start/ и связанных POS-операций */
+import i18n from "@shared/config/i18n";
 
 const countItems = (sale: any) => {
   const items = sale?.items || sale?.cart?.items;
@@ -17,7 +18,9 @@ export const mapCartTabFromApi = (raw: any, index = 0) => {
     label:
       raw.label ||
       raw.name ||
-      (isMain ? "Основная" : `Корзина ${index + 1}`),
+      (isMain
+        ? i18n.t("crm.cashier.main")
+        : `${i18n.t("crm.cashier.cart")} ${index + 1}`),
     isMain,
     itemCount: Number(
       raw.items_count ?? raw.itemsCount ?? raw.item_count ?? 0,
@@ -36,7 +39,10 @@ const cartTabFromSale = (sale: any) => {
   if (!sale?.id) return null;
   return {
     saleId: String(sale.id),
-    label: sale.is_default || sale.is_default === undefined ? "Основная" : "Корзина",
+    label:
+      sale.is_default || sale.is_default === undefined
+        ? i18n.t("crm.cashier.main")
+        : i18n.t("crm.cashier.cart"),
     isMain: sale.is_default !== false,
     itemCount: countItems(sale),
     total: sale.total ?? null,

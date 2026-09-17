@@ -110,11 +110,13 @@ const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
     openingCash,
     cashSalesTotal,
   );
-  const warehouseDrainInShift = estimateShiftWarehouseDrain(
-    openingCash,
-    cashSalesTotal,
-    expectedCash,
-  );
+  // BE отдаёт non_drawer_expenses_total (закупки/расходы за смену, не влияющие
+  // на ящик). Пока поля нет — оцениваем эвристикой по расхождению ledger vs
+  // drawer. @see docs/backend/kassa/OPEN-QUESTIONS-2026-09-BE-RESPONSE.md Блок 5
+  const warehouseDrainInShift =
+    shift.non_drawer_expenses_total != null
+      ? Math.max(0, parseFloat(String(shift.non_drawer_expenses_total)) || 0)
+      : estimateShiftWarehouseDrain(openingCash, cashSalesTotal, expectedCash);
   const reconciliationExpected =
     shift.drawer_expected_cash != null
       ? parseFloat(String(shift.drawer_expected_cash))

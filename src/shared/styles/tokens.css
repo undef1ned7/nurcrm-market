@@ -139,20 +139,20 @@
 }
 
 html.dark {
-  --nur-bg: #0b1220;
-  --nur-surface: #111827;
-  --nur-surface-2: #0f172a;
-  --nur-surface-3: #1e293b;
-  --nur-border: #1f2937;
-  --nur-border-strong: #374151;
-  --nur-text: #e5e7eb;
-  --nur-text-2: #94a3b8;
-  --nur-muted: #94a3b8;
-  --nur-placeholder: #cbd5e1;
-  --nur-header-bg: rgba(11, 18, 32, 0.92);
+  --nur-bg: #1c2128;
+  --nur-surface: #22272e;
+  --nur-surface-2: #1f242b;
+  --nur-surface-3: #2d333b;
+  --nur-border: #373e47;
+  --nur-border-strong: #444c56;
+  --nur-text: #adbac7;
+  --nur-text-2: #909dab;
+  --nur-muted: #828f9d;
+  --nur-placeholder: #636c76;
+  --nur-header-bg: rgba(28, 33, 40, 0.92);
   --nur-primary-light: rgba(247, 215, 79, 0.22);
   --nur-primary-soft: rgba(247, 215, 79, 0.18);
-  --glass-bg: rgba(17, 24, 39, 0.72);
+  --glass-bg: rgba(34, 39, 46, 0.72);
   --panel-bg: var(--nur-surface);
   --text: var(--nur-text);
   --muted: var(--nur-muted);
@@ -171,18 +171,57 @@ html.dark {
   --nur-shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.45);
   --nur-scrim: rgba(0, 0, 0, 0.65);
 
-  /* Sidebar — cool navy, aligned with --nur-bg / surfaces */
-  --nur-sidebar-bg: linear-gradient(180deg, #0f172a 0%, #020617 100%);
-  --nur-sidebar-solid: #0f172a;
-  --nur-sidebar-text: #94a3b8;
-  --nur-sidebar-text-active: #f8fafc;
-  --nur-sidebar-hover: rgba(148, 163, 184, 0.1);
+  /* Sidebar — soft neutral dark, aligned with --nur-bg / surfaces */
+  --nur-sidebar-bg: linear-gradient(180deg, #21262e 0%, #1a1e24 100%);
+  --nur-sidebar-solid: #21262e;
+  --nur-sidebar-text: #909dab;
+  --nur-sidebar-text-active: #e6ebf1;
+  --nur-sidebar-hover: rgba(255, 255, 255, 0.06);
   --nur-sidebar-active-bg: linear-gradient(
     90deg,
     rgba(247, 215, 79, 0.16) 0%,
     rgba(247, 215, 79, 0.05) 100%
   );
+  --nur-sidebar-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Classic (pre-2026) dark palette — opt-in via the theme switcher in Settings */
+html.dark[data-dark-palette="classic"] {
+  --nur-bg: #0b1220;
+  --nur-surface: #111827;
+  --nur-surface-2: #0f172a;
+  --nur-surface-3: #1e293b;
+  --nur-border: #1f2937;
+  --nur-border-strong: #374151;
+  --nur-text: #e5e7eb;
+  --nur-text-2: #94a3b8;
+  --nur-muted: #94a3b8;
+  --nur-placeholder: #cbd5e1;
+  --nur-header-bg: rgba(11, 18, 32, 0.92);
+  --glass-bg: rgba(17, 24, 39, 0.72);
+
+  --nur-sidebar-bg: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  --nur-sidebar-solid: #0f172a;
+  --nur-sidebar-text: #94a3b8;
+  --nur-sidebar-text-active: #f8fafc;
+  --nur-sidebar-hover: rgba(148, 163, 184, 0.1);
   --nur-sidebar-border: rgba(148, 163, 184, 0.12);
+}
+
+/* Dark-theme component tweaks that can't be expressed as plain token swaps */
+html.dark .nur-chip--primary {
+  color: var(--nur-primary); /* dark ink on translucent yellow fails AA in dark */
+}
+
+html.dark .nur-skeleton {
+  /* keep the shimmer sweep lighter than the base in dark */
+  background: linear-gradient(
+    90deg,
+    var(--nur-surface-2) 0%,
+    var(--nur-surface-3) 50%,
+    var(--nur-surface-2) 100%
+  );
+  background-size: 200% 100%;
 }
 
 /* ── Buttons ─────────────────────────────────────────── */

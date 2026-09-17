@@ -1,3 +1,14 @@
+@keyframes shift-detail-items-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .shift-detail-page {
   min-height: 100%;
   position: relative;
@@ -198,55 +209,90 @@
     }
   }
 
-  &__operation {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--nur-space-4);
-    padding: var(--nur-space-4);
-    border: 1px solid var(--nur-border);
-    border-radius: var(--nur-radius-sm);
+  /* ============================================================
+     Строка продажи — карточка с разворачиваемыми позициями чека
+     ============================================================ */
+  &__operation-card {
+    // DataContainer — flex-колонка фиксированной высоты. Без этого свойства
+    // flexbox сжимает каждую продажу, а overflow:hidden обрезает её содержимое.
+    flex: 0 0 auto;
     background: var(--nur-surface);
-    transition: background 0.2s;
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius);
+    overflow: hidden;
+    box-shadow: var(--nur-shadow-sm);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 
     &:hover {
-      background: var(--nur-primary-soft);
+      border-color: var(--nur-border-strong);
+      box-shadow: var(--nur-shadow);
+    }
+
+    &--open {
+      border-color: var(--nur-primary);
+      box-shadow: 0 0 0 3px var(--nur-primary-ring);
     }
   }
 
-  &__operation-indicator {
-    width: 4px;
-    align-self: stretch;
-    border-radius: 2px;
+  &__operation {
+    display: flex;
+    align-items: center;
+    gap: var(--nur-space-4);
+    width: 100%;
+    padding: var(--nur-space-4);
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--nur-primary);
+      outline-offset: -2px;
+    }
+  }
+
+  &__operation-avatar {
     flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: var(--nur-radius);
+    background: var(--nur-success-soft);
+    color: var(--nur-success-ink);
 
-    &--blue {
-      background: var(--nur-info);
-    }
-
-    &--green {
-      background: var(--nur-success);
-    }
-
-    &--red {
-      background: var(--nur-danger);
+    &--unpaid {
+      background: var(--nur-danger-soft);
+      color: var(--nur-danger-ink);
     }
   }
 
-  &__operation-content {
+  &__operation-main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--nur-space-2);
+    gap: 6px;
     min-width: 0;
   }
 
+  &__operation-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
   &__operation-title {
-    font-size: var(--nur-font-body);
+    font-size: 15px;
     font-weight: 700;
     color: var(--nur-text);
-    display: flex;
-    align-items: center;
-    gap: var(--nur-space-2);
+  }
+
+  &__operation-doc {
+    font-size: var(--nur-font-caption);
+    font-family: var(--nur-font-mono, monospace);
+    color: var(--nur-muted);
   }
 
   &__operation-info {
@@ -254,25 +300,34 @@
     color: var(--nur-muted);
   }
 
-  &__operation-status {
+  &__operation-meta {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    font-size: var(--nur-font-caption);
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 6px;
-    width: fit-content;
+    row-gap: 2px;
+  }
 
-    &--paid {
-      background: var(--nur-success-soft);
-      color: var(--nur-success-ink);
-    }
+  &__operation-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--nur-font-meta);
+    color: var(--nur-muted);
+    min-width: 0;
 
-    &--unpaid {
-      background: var(--nur-danger-soft);
-      color: var(--nur-danger-ink);
+    svg {
+      flex-shrink: 0;
+      color: var(--nur-placeholder);
     }
+  }
+
+  &__operation-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--nur-border-strong);
+    flex-shrink: 0;
   }
 
   &__operation-tag {
@@ -286,13 +341,52 @@
   }
 
   &__operation-positions {
-    font-size: var(--nur-font-caption);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--nur-muted);
+    width: fit-content;
+
+    svg {
+      color: var(--nur-placeholder);
+    }
+  }
+
+  &__operation-side {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  &__operation-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: var(--nur-radius-full, 999px);
+    white-space: nowrap;
+
+    &--paid {
+      background: var(--nur-success-soft);
+      color: var(--nur-success-ink);
+    }
+
+    &--unpaid {
+      background: var(--nur-danger-soft);
+      color: var(--nur-danger-ink);
+    }
   }
 
   &__operation-amount {
-    font-size: var(--nur-font-body);
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
     color: var(--nur-text);
     white-space: nowrap;
 
@@ -301,10 +395,115 @@
     }
   }
 
+  &__operation-currency {
+    margin-left: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nur-muted);
+  }
+
+  &__operation-chevron {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--nur-surface-3);
+    transition: background 0.15s ease;
+  }
+
+  &__operation:hover &__operation-chevron {
+    background: var(--nur-primary-soft);
+  }
+
   &__operation-expand {
     color: var(--nur-muted);
-    cursor: pointer;
-    flex-shrink: 0;
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  /* ---- Раскрытые позиции чека ---- */
+  &__operation-items {
+    padding: 0 var(--nur-space-4) var(--nur-space-4);
+    background: var(--nur-surface-2);
+    border-top: 1px solid var(--nur-border);
+    animation: shift-detail-items-in 0.16s ease-out;
+  }
+
+  &__operation-items-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: var(--nur-space-3);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--nur-muted);
+  }
+
+  &__operation-items-table {
+    width: 100%;
+    min-width: 540px;
+    border-collapse: collapse;
+    margin-top: var(--nur-space-2);
+    font-size: var(--nur-font-meta);
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-sm);
+    overflow: hidden;
+
+    th,
+    td {
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    th {
+      color: var(--nur-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 10.5px;
+      background: var(--nur-surface-3);
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--nur-surface-2);
+    }
+
+    tbody tr:not(:last-child) td {
+      border-bottom: 1px solid var(--nur-border);
+    }
+
+    td:nth-child(2),
+    td:nth-child(3),
+    td:nth-child(4),
+    th:nth-child(2),
+    th:nth-child(3),
+    th:nth-child(4) {
+      text-align: right;
+      white-space: nowrap;
+    }
+  }
+
+  &__operation-items-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  &__operation-items-state {
+    margin-top: var(--nur-space-2);
+    font-size: var(--nur-font-meta);
+    color: var(--nur-muted);
+
+    &--error {
+      color: var(--nur-danger);
+    }
   }
 
   &__product-list {
@@ -354,7 +553,59 @@
     }
 
     &__operation {
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr) 30px;
+      align-items: start;
+      gap: 10px;
+      padding: var(--nur-space-3);
+    }
+
+    &__operation-avatar {
+      width: 38px;
+      height: 38px;
+      grid-row: 1 / span 2;
+    }
+
+    &__operation-main {
+      grid-column: 2;
+      grid-row: 1;
+      gap: 5px;
+    }
+
+    &__operation-heading {
+      gap: 4px 7px;
+    }
+
+    &__operation-meta {
+      gap: 4px 6px;
+    }
+
+    &__operation-meta-item {
+      font-size: 11px;
+    }
+
+    &__operation-side {
+      grid-column: 2;
+      grid-row: 2;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: var(--nur-space-2);
+    }
+
+    &__operation-amount {
+      font-size: 16px;
+    }
+
+    &__operation-chevron {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+      align-self: center;
+    }
+
+    &__operation-items {
+      padding: 0 var(--nur-space-3) var(--nur-space-3);
     }
 
     &__total {

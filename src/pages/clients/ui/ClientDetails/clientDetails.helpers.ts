@@ -10,6 +10,7 @@ export {
   getInstallmentStatus,
   dealHasPayments,
   resolveDebtFromDeals,
+  resolveDealSaleId,
   normalizeDealFromApi,
   buildDealPayload,
   normalizeDealCreateInput,

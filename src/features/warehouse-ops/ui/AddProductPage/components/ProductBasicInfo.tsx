@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { FormBlock } from "../formLayout";
+import AlternateBarcodesField from "./AlternateBarcodesField";
 
 const HOTKEY_GROUP_OPTIONS = Array.from({ length: 12 }, (_, index) => {
   const value = `F${index + 1}`;
@@ -86,23 +87,10 @@ const ProductBasicInfo = ({
         </FormBlock>
 
         <FormBlock id="alternateBarcodes" className="col-span-full">
-          <div className="market-product-form__form-group">
-            <label className="market-product-form__label">
-              {tp("altBarcodesLabel")}
-            </label>
-            <textarea
-              className="market-product-form__input market-product-form__textarea"
-              rows={3}
-              placeholder={tp("altBarcodesPlaceholder")}
-              value={marketData.alternateBarcodesText ?? ""}
-              onChange={(e) =>
-                handleMarketDataChange("alternateBarcodesText", e.target.value)
-              }
-            />
-            <p className="market-product-form__hint">
-              {tp("altBarcodesHint")}
-            </p>
-          </div>
+          <AlternateBarcodesField
+            rows={marketData.alternateBarcodes}
+            onChange={(rows) => handleMarketDataChange("alternateBarcodes", rows)}
+          />
         </FormBlock>
 
         <FormBlock id="article" className="col-span-full xl:col-span-1">

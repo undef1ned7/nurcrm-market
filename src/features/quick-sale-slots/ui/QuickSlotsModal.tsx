@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, X } from "lucide-react";
 import { fetchProductsApi } from "@entities/product";
 import {
@@ -31,6 +32,7 @@ export function QuickSlotsModal({
   onClose: () => void;
   onChange?: (slots: QuickSlotsMap) => void;
 }) {
+  const { t } = useTranslation();
   const [slots, setSlots] = useState<QuickSlotsMap>(() => loadQuickSlots(companyId));
   const [names, setNames] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
@@ -51,7 +53,8 @@ export function QuickSlotsModal({
         const next: Record<string, string> = {};
         list.forEach((product: any) => {
           const id = String(product?.id || "");
-          if (ids.includes(id)) next[id] = String(product?.name || "Товар");
+          if (ids.includes(id))
+            next[id] = String(product?.name || t("crm.sell.product"));
         });
         setNames((prev) => ({ ...prev, ...next }));
       } catch {
@@ -82,7 +85,7 @@ export function QuickSlotsModal({
           list
             .map((product: any) => ({
               id: String(product?.id || ""),
-              name: String(product?.name || "Товар"),
+              name: String(product?.name || t("crm.sell.product")),
             }))
             .filter((item) => item.id),
         );
@@ -133,10 +136,12 @@ export function QuickSlotsModal({
       >
         <div className="quick-slots-modal__header">
           <div>
-            <h2 id="quick-slots-title">Быстрые товары F3 + 0…9</h2>
-            <p>Нажмите F3, затем цифру — товар сразу попадёт в чек.</p>
+            <h2 id="quick-slots-title">
+              {t("crm.cashier.quickSlotsModal.title")}
+            </h2>
+            <p>{t("crm.cashier.quickSlotsModal.hint")}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Закрыть">
+          <button type="button" onClick={onClose} aria-label={t("common.close")}>
             <X size={20} />
           </button>
         </div>
@@ -154,7 +159,11 @@ export function QuickSlotsModal({
                 onClick={() => setActiveDigit(digit)}
               >
                 <span className="quick-slots-modal__key">F3 + {digit}</span>
-                <strong>{productId ? names[productId] || "Товар" : "Пусто"}</strong>
+                <strong>
+                  {productId
+                    ? names[productId] || t("crm.sell.product")
+                    : t("crm.cashier.quickSlotsModal.empty")}
+                </strong>
                 {productId ? (
                   <span
                     className="quick-slots-modal__clear"
@@ -163,7 +172,7 @@ export function QuickSlotsModal({
                       clearSlot(digit);
                     }}
                   >
-                    Очистить
+                    {t("crm.cashier.quickSlotsModal.clear")}
                   </span>
                 ) : null}
               </button>
@@ -176,10 +185,16 @@ export function QuickSlotsModal({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Найти товар для ${hint}`}
+            placeholder={t("crm.cashier.quickSlotsModal.searchPlaceholder", {
+              hint,
+            })}
           />
         </label>
-        {loading ? <p className="quick-slots-modal__hint">Поиск…</p> : null}
+        {loading ? (
+          <p className="quick-slots-modal__hint">
+            {t("crm.cashier.quickSlotsModal.searching")}
+          </p>
+        ) : null}
         <ul className="quick-slots-modal__results">
           {results.map((product) => (
             <li key={product.id}>

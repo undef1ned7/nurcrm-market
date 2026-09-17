@@ -41,20 +41,26 @@ export const normalizeMarketCashierSettings = (data: any) => {
     debtScheduleVersion: parseDebtScheduleVersion(
       data?.debt_schedule_version ?? data?.deferred_schedule_version,
     ),
+    // Заявки на подтверждение (ручные приходы/расходы не-владельца, правка/
+    // отмена одобренного движения). Нет поля на бэке = выключено (default).
+    // @see docs/backend/kassa/cashflow-requests-toggle-backend.md
+    cashflowRequestsEnabled: Boolean(data?.cashflow_requests_enabled),
   };
 };
 
-/** Значения по умолчанию: код не нужен, ограничения скидки нет, отсрочка v2. */
+/** Значения по умолчанию: код не нужен, ограничения скидки нет, отсрочка v2, заявки выключены. */
 export const DEFAULT_MARKET_CASHIER_SETTINGS: {
   deleteCodeRequired: boolean;
   deleteCode: string;
   maxDiscountPercent: number | null;
   debtScheduleVersion: DebtScheduleVersion;
+  cashflowRequestsEnabled: boolean;
 } = {
   deleteCodeRequired: false,
   deleteCode: "",
   maxDiscountPercent: null,
   debtScheduleVersion: "v2",
+  cashflowRequestsEnabled: false,
 };
 
 /** GET — текущие настройки кассы компании. */

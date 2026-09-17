@@ -1,4 +1,5 @@
 import api from "@shared/api";
+import i18n from "@shared/config/i18n";
 import { classifyBarcodeFallback } from "../lib/classifyBarcode";
 import type { MassIncomingCheck, MassIncomingRow } from "../model/types";
 
@@ -52,7 +53,7 @@ export async function postMassIncoming(
 
   const { data } = await api.post(
     `/warehouse/${encodeURIComponent(warehouseId)}/mass-incoming/`,
-    { items, comment: comment || "Массовое сканирование" },
+    { items, comment: comment || i18n.t("crm.warehouse.massScan") },
   );
   return data;
 }

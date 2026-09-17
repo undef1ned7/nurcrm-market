@@ -1,3 +1,4 @@
+import i18n from "@shared/config/i18n";
 import {
   getProductByBarcodeApi,
   lookupMarketWarehouseProductByBarcode,
@@ -15,9 +16,11 @@ const toProduct = (raw: any) => {
   );
   return {
     id: String(id),
-    name: String(product.name || product.title || "Товар"),
+    name: String(
+      product.name || product.title || i18n.t("crm.warehouse.massIncoming.fallbackProductName"),
+    ),
     barcode: String(product.barcode || raw?.barcode || ""),
-    unit: String(product.unit || "шт"),
+    unit: String(product.unit || i18n.t("crm.warehouse.massIncoming.unitPiece")),
     stock_qty: Number.isFinite(qty) ? qty : 0,
   };
 };
@@ -31,7 +34,7 @@ export function mergeScannedRow(
     key: product?.id ? `${status}:${product.id}` : `${status}:${barcode}`,
     barcode,
     status,
-    name: product?.name || "Неизвестный штрихкод",
+    name: product?.name || i18n.t("crm.warehouse.massIncoming.unknown"),
     quantity: 1,
     stockQty: product?.stock_qty,
     productId: product?.id,

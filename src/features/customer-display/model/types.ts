@@ -11,6 +11,21 @@ export type CustomerDisplaySlide = {
   caption?: string;
 };
 
+export type CustomerDisplayInstallment = {
+  number: number;
+  dueDate: string;
+  amount: number;
+};
+
+export type CustomerDisplayDebtInfo = {
+  customerName?: string;
+  /** Остаток, который клиент должен после этой продажи. */
+  totalDebt?: number;
+  /** Сумма, оплаченная сейчас (предоплата по рассрочке). */
+  prepayment?: number;
+  installments?: CustomerDisplayInstallment[];
+};
+
 export type CustomerDisplayMessage =
   | {
       type: "hello";
@@ -38,11 +53,19 @@ export type CustomerDisplayMessage =
       type: "payment";
       total: number;
       currency?: string;
+      /** Наличными получено от клиента. */
+      paid?: number;
+      /** Сдача клиенту. */
+      change?: number;
+      debt?: CustomerDisplayDebtInfo;
     }
   | {
       type: "thanks";
       total?: number;
       durationMs?: number;
+      paid?: number;
+      change?: number;
+      debt?: CustomerDisplayDebtInfo;
     }
   | {
       type: "age-check";

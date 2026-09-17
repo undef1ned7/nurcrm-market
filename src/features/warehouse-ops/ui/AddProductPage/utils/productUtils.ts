@@ -1,6 +1,8 @@
 /**
  * Утилиты для работы с товарами
  */
+import { isBatchExpiryEnabled } from "@entities/product";
+import { shelfLifeToDays } from "./shelfLife";
 
 const MAX_PROMOTION_TIERS = 30;
 
@@ -18,27 +20,79 @@ export const stripTrailingZeros = (value) => {
 };
 
 /**
- * Доп. штрихкоды для API: разделители перенос/запятая/;; пустые и дубли отбрасываются;
- * совпадение с основным barcode не отправляем (валидация бэкенда).
- * @param {string|undefined|null} text
- * @param {string|undefined|null} mainBarcode
- * @returns {string[]}
+ * Пустая строка доп. штрихкода для формы (ввод структурированный: штрихкод,
+ * название варианта — вкус/цвет и т.д., количество в упаковке).
+ * @returns {{id: number, barcode: string, name: string, quantity: string}}
  */
-export const parseAlternateBarcodesForApi = (text, mainBarcode) => {
+export const createEmptyAlternateBarcodeRow = () => ({
+  id: Date.now() + Math.random(),
+  barcode: "",
+  name: "",
+  quantity: "",
+});
+
+/**
+ * Доп. штрихкоды для API из структурированных строк формы.
+ * Пустые (без штрихкода) и дубли отбрасываются; совпадение с основным
+ * barcode не отправляем (валидация бэкенда).
+ * @param {Array} rows - строки формы {barcode, name, quantity}
+ * @param {string|undefined|null} mainBarcode
+ * @returns {{barcode: string, name: string, quantity?: number}[]}
+ */
+export const buildAlternateBarcodesForApi = (rows, mainBarcode) => {
   const main = String(mainBarcode ?? "").trim();
-  const raw = String(text ?? "");
   const seen = new Set();
   const out: any[] = [];
-  for (const segment of raw.split(/[\n\r,;]+/)) {
-    const t = String(segment).replace(/\s+/g, "").trim();
-    if (!t) continue;
-    if (main && t === main) continue;
-    const key = t.toLowerCase();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const barcode = String(row?.barcode ?? "").replace(/\s+/g, "").trim();
+    if (!barcode) continue;
+    if (main && barcode === main) continue;
+    const key = barcode.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(t);
+    const name = String(row?.name ?? "").trim();
+    const entry: any = { barcode, name };
+    const quantityRaw = String(row?.quantity ?? "").trim();
+    if (quantityRaw !== "") {
+      // Бэкенд принимает только целое положительное число.
+      const quantity = Math.floor(Number(quantityRaw.replace(",", ".")));
+      if (Number.isFinite(quantity) && quantity > 0) {
+        entry.quantity = quantity;
+      }
+    }
+    out.push(entry);
   }
   return out;
+};
+
+/**
+ * Обратное преобразование: доп. штрихкоды из API (объекты {barcode, name,
+ * quantity} или, для обратной совместимости, простые строки) — в строки формы.
+ * @param {Array} alternateBarcodes
+ * @returns {{id: number, barcode: string, name: string, quantity: string}[]}
+ */
+export const normalizeAlternateBarcodesFromApi = (alternateBarcodes) => {
+  if (!Array.isArray(alternateBarcodes)) return [];
+  return alternateBarcodes
+    .map((item, idx) => {
+      if (item && typeof item === "object") {
+        const barcode = String(item.barcode ?? "").trim();
+        if (!barcode) return null;
+        return {
+          id: Date.now() + idx,
+          barcode,
+          name: String(item.name ?? "").trim(),
+          quantity:
+            item.quantity != null && String(item.quantity).trim() !== ""
+              ? String(item.quantity)
+              : "",
+        };
+      }
+      const barcode = String(item ?? "").trim();
+      if (!barcode) return null;
+      return { id: Date.now() + idx, barcode, name: "", quantity: "" };
+    })
+    .filter(Boolean);
 };
 
 /** Нормализация ступеней акции из API (поле promotion_rules) в состояние формы */
@@ -201,8 +255,8 @@ export const buildProductPayload = ({
     kindValue = "bundle";
   }
 
-  const alternate_barcodes = parseAlternateBarcodesForApi(
-    marketData.alternateBarcodesText,
+  const alternate_barcodes = buildAlternateBarcodesForApi(
+    marketData.alternateBarcodes,
     barcode,
   );
 
@@ -220,7 +274,14 @@ export const buildProductPayload = ({
     wholesale_price: finalWholesalePrice,
     discount_percent: (marketData.discount || "0").toString(),
     country: marketData.country || "",
-    expiration_date: marketData.expiryDate || null,
+    ...(isBatchExpiryEnabled()
+      ? {
+          shelf_life_days: shelfLifeToDays(
+            marketData.shelfLifeValue,
+            marketData.shelfLifeUnit,
+          ),
+        }
+      : { expiration_date: marketData.expiryDate || null }),
     client: client || null,
     plu: pluValue,
     hotkey_group:

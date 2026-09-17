@@ -49,6 +49,7 @@ const BrandCategorySection = ({
                 options={categoryOptions}
                 placeholder={tp("categorySelectPlaceholder")}
                 emptyText={tp("categoryEmpty")}
+                valueLabel={newItemData.category_name}
               />
               <button
                 className="add-product-page__create-supplier"
@@ -119,6 +120,7 @@ const BrandCategorySection = ({
                 options={brandOptions}
                 placeholder={tp("brandSelectPlaceholder")}
                 emptyText={tp("brandEmpty")}
+                valueLabel={newItemData.brand_name}
               />
               <button
                 className="add-product-page__create-supplier"

@@ -7,6 +7,7 @@ import {
   fetchSaleConsultants,
   type SaleConsultant,
 } from "@entities/sale";
+import { useDebouncedValue } from "@shared/hooks/useDebounce";
 import {
   PageShell,
   PageHeader,
@@ -55,6 +56,8 @@ export default function MarketHistory() {
   const [end, setEnd] = useState("");
   const [consultant, setConsultant] = useState("");
   const [consultants, setConsultants] = useState<SaleConsultant[]>([]);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const barcode = useDebouncedValue(barcodeInput, 400, undefined);
 
   // модалка деталей
   const [openId, setOpenId] = useState<any>(null);
@@ -74,6 +77,7 @@ export default function MarketHistory() {
           if (start) q.set("start", start);
           if (end) q.set("end", end);
           if (consultant) q.set("consultant", consultant);
+          if (barcode.trim()) q.set("barcode", barcode.trim());
           resp = await api.get(
             `/main/pos/sales/${q.toString() ? `?${q.toString()}` : ""}`
           );
@@ -93,6 +97,7 @@ export default function MarketHistory() {
           user: r.user_display || "—",
           consultant: consultantDisplayFromSale(r),
           commission: consultantCommissionLabel(r),
+          matchedItemName: r.matched_item_name || "",
         }));
 
         if (url) {
@@ -109,7 +114,7 @@ export default function MarketHistory() {
         setLoading(false);
       }
     },
-    [status, start, end, consultant, t]
+    [status, start, end, consultant, barcode, t]
   );
 
   useEffect(() => {
@@ -137,6 +142,9 @@ export default function MarketHistory() {
     () => rows.reduce((s, r) => s + (Number(r.total) || 0), 0),
     [rows]
   );
+
+  const isBarcodeSearch = Boolean(barcode.trim());
+  const tableColSpan = isBarcodeSearch ? 8 : 7;
 
   return (
     <PageShell className="history">
@@ -198,6 +206,17 @@ export default function MarketHistory() {
           </select>
         </label>
 
+        <label className="nur-field history__filter">
+          <span className="nur-label">{t("crm.salesHistory.barcode")}</span>
+          <input
+            type="text"
+            className="nur-input"
+            value={barcodeInput}
+            onChange={(e: any) => setBarcodeInput(e.target.value)}
+            placeholder={t("crm.salesHistory.barcodeSearchPlaceholder")}
+          />
+        </label>
+
         <button
           type="button"
           className="nur-btn nur-btn--secondary"
@@ -220,6 +239,7 @@ export default function MarketHistory() {
                 <th>{t("crm.salesHistory.consultant")}</th>
                 <th>{t("crm.salesHistory.commission")}</th>
                 <th>{t("crm.salesHistory.status")}</th>
+                {isBarcodeSearch && <th>{t("crm.salesHistory.matchedItem")}</th>}
                 <th>{t("crm.salesHistory.total")}</th>
                 <th></th>
               </tr>
@@ -227,7 +247,7 @@ export default function MarketHistory() {
             <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={tableColSpan}>
                     <LoadingState rows={4} />
                   </td>
                 </tr>
@@ -247,6 +267,11 @@ export default function MarketHistory() {
                         {statusLabel(r.status, t)}
                       </StatusChip>
                     </td>
+                    {isBarcodeSearch && (
+                      <td className="ellipsis" title={r.matchedItemName || "—"}>
+                        {r.matchedItemName || "—"}
+                      </td>
+                    )}
                     <td>{fmtMoney(r.total)}</td>
                     <td>
                       <button
@@ -261,10 +286,18 @@ export default function MarketHistory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={tableColSpan}>
                     <EmptyState
-                      title={t("crm.salesHistory.emptyTitle")}
-                      text={t("crm.salesHistory.emptyText")}
+                      title={
+                        isBarcodeSearch
+                          ? t("crm.salesHistory.emptyBarcodeTitle")
+                          : t("crm.salesHistory.emptyTitle")
+                      }
+                      text={
+                        isBarcodeSearch
+                          ? t("crm.salesHistory.emptyBarcodeText")
+                          : t("crm.salesHistory.emptyText")
+                      }
                     />
                   </td>
                 </tr>
@@ -272,7 +305,7 @@ export default function MarketHistory() {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={5}>
+                <td colSpan={isBarcodeSearch ? 6 : 5}>
                   <strong>{t("crm.salesHistory.totalReceipts")}</strong> {count}
                 </td>
                 <td colSpan={2}>

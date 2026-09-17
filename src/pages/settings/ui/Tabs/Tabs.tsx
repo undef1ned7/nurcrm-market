@@ -57,6 +57,12 @@ const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
     () => isMarketSector && (isOwner || isAdmin),
     [isMarketSector, isOwner, isAdmin],
   );
+  // «Запросы на кассе» доступны владельцу/админу любой сферы — вкладка «Касса»
+  // видна и им, даже если рыночные поля (код удаления, лимит скидки) скрыты.
+  const canViewCashierTab = useMemo(
+    () => canViewMarketCashierSettings || isOwner || isAdmin,
+    [canViewMarketCashierSettings, isOwner, isAdmin],
+  );
 
   const canViewOnline = useMemo(() => {
     const hasSlug = Boolean(company?.slug);
@@ -86,7 +92,7 @@ const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
     return ALL_SETTINGS_TABS.filter((tab: SettingsTabId) => {
       if (tab === SETTINGS_TABS.company) return isOwner;
       if (tab === SETTINGS_TABS.subscription) return isOwner;
-      if (tab === SETTINGS_TABS.cashier) return canViewMarketCashierSettings;
+      if (tab === SETTINGS_TABS.cashier) return canViewCashierTab;
       if (tab === SETTINGS_TABS.scalesToken) return isMarketSector;
       if (tab === SETTINGS_TABS.print) return isCafeSector;
       if (tab === SETTINGS_TABS.online) return canViewOnline;
@@ -97,7 +103,7 @@ const Tabs = ({ activeTab, setActiveTab, company, profile }) => {
     isMarketSector,
     isCafeSector,
     canViewOnline,
-    canViewMarketCashierSettings,
+    canViewCashierTab,
   ]);
 
   return (

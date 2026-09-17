@@ -114,12 +114,6 @@ export function usePaymentPage({
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(customer);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  useCustomerDisplayPublisher({
-    phase: showSuccessModal ? "thanks" : "payment",
-    cart,
-    total,
-    cartId: saleId,
-  });
   const [selectedBank, setSelectedBank] = useState("");
   const [splitOnlineBank, setSplitOnlineBank] = useState("");
   const [splitOnlineAmount, setSplitOnlineAmount] = useState("");
@@ -1044,6 +1038,45 @@ export function usePaymentPage({
     paymentMethod === "cash" && amountReceived
       ? Math.max(0, (parseFloat(amountReceived) || 0) - total)
       : 0;
+
+  const customerDisplayPaid =
+    paymentMethod === "cash" && amountReceived
+      ? parseFloat(amountReceived) || 0
+      : undefined;
+
+  const customerDisplayDebt = useMemo(() => {
+    if (paymentMethod !== "deferred") return null;
+    return {
+      customerName:
+        selectedCustomer?.full_name ||
+        selectedCustomer?.name ||
+        selectedCustomer?.fio ||
+        undefined,
+      totalDebt: deferredSaleDebtRemaining,
+      prepayment: deferredPrepaymentValue > 0 ? deferredPrepaymentValue : undefined,
+      installments: debtSchedule?.installments.map((item) => ({
+        number: item.number,
+        dueDate: item.dueDate,
+        amount: item.amount,
+      })),
+    };
+  }, [
+    paymentMethod,
+    selectedCustomer,
+    deferredSaleDebtRemaining,
+    deferredPrepaymentValue,
+    debtSchedule,
+  ]);
+
+  useCustomerDisplayPublisher({
+    phase: showSuccessModal ? "thanks" : "payment",
+    cart,
+    total,
+    cartId: saleId,
+    paid: customerDisplayPaid,
+    change: paymentMethod === "cash" ? change : undefined,
+    debt: customerDisplayDebt,
+  });
 
   useEffect(() => {
     if (paymentMethod === "cashless" || paymentMethod === "cash") {

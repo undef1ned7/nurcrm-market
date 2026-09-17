@@ -21,11 +21,17 @@ import {
   notificationReceived,
   unreadCountSet,
 } from "@entities/notification";
+import { fetchNotificationsAsync } from "../model/notificationCreators";
 import { cashFlowRealtimeEventReceived } from "@entities/cash";
+import { shiftRealtimeUpdateReceived } from "@entities/shift";
 import {
   extractCashflowRealtimeEvent,
   isCashflowRealtimeEventType,
 } from "./cashflowRealtimeEvent";
+import {
+  extractShiftRealtimeEvent,
+  isShiftRealtimeEventType,
+} from "./shiftRealtimeEvent";
 import { playNotificationSound } from "@shared/config/notificationSound";
 import {
   consultingNotificationLeadId,
@@ -114,6 +120,11 @@ const CONSULTING_EVENT_META = {
     level: "warning",
   },
   // Бэкенд signals.py (create_and_publish_notification)
+  // Общий алерт по лиду — подтип в data.alert_kind (см. resolveConsultingMeta).
+  lead_alert: {
+    title: "Уведомление по лиду",
+    level: "info",
+  },
   no_activity: {
     title: "Нет активности по лиду",
     level: "warning",
@@ -142,6 +153,8 @@ const CONSULTING_EVENT_META = {
 
 function resolveConsultingMeta(type) {
   if (CONSULTING_EVENT_META[type]) return CONSULTING_EVENT_META[type];
+  // market-события агентов (agent_transfer / agent_return) — не консалтинг.
+  if (type.startsWith("agent_")) return null;
   if (
     type.includes("no_reply") ||
     type.includes("unanswered") ||
@@ -157,7 +170,7 @@ function resolveConsultingMeta(type) {
   if (type.includes("message") || type.includes("wazzup")) {
     return CONSULTING_EVENT_META["lead.message"];
   }
-  if (type.includes("transfer")) {
+  if (type.includes("transfer") && type.includes("lead")) {
     return CONSULTING_EVENT_META.lead_transferred;
   }
   if (type.includes("task") && type.includes("assign")) {
@@ -165,6 +178,10 @@ function resolveConsultingMeta(type) {
   }
   if (type.includes("assign")) {
     return CONSULTING_EVENT_META["lead.assigned"];
+  }
+  // Общий бэкенд-алерт по лиду без распознанного подтипа.
+  if (type === "lead_alert" || type === "unanswered_lead_alert") {
+    return CONSULTING_EVENT_META.lead_alert;
   }
   return null;
 }
@@ -175,10 +192,18 @@ function isConsultingLeadEventType(type) {
 
 function normalizeConsultingNotification(type, payload, raw) {
   const data = payload && typeof payload === "object" ? payload : {};
-  const metaHint = resolveConsultingMeta(type) || {
-    title: "Уведомление по лиду",
-    level: "info",
-  };
+  // Бэк шлёт общий `lead_alert`, подтип — в data.alert_kind. Уточняем заголовок.
+  const alertKind = String(
+    data.alert_kind || data.subtype || data.meta?.alert_kind || "",
+  )
+    .trim()
+    .toLowerCase();
+  const metaHint =
+    (alertKind && resolveConsultingMeta(`${type} lead_${alertKind} ${alertKind}`)) ||
+    resolveConsultingMeta(type) || {
+      title: "Уведомление по лиду",
+      level: "info",
+    };
   const id =
     data.id ??
     data.uuid ??
@@ -330,6 +355,11 @@ export function useNotificationsSocket({ enabled = true } = {}) {
         );
         return;
       }
+
+      if (isShiftRealtimeEventType(type) || isShiftRealtimeEventType(innerType)) {
+        dispatch(shiftRealtimeUpdateReceived(extractShiftRealtimeEvent(payload)));
+        return;
+      }
       const consultingType = isConsultingLeadEventType(type)
         ? type
         : isConsultingLeadEventType(innerType)
@@ -452,6 +482,17 @@ export function useNotificationsSocket({ enabled = true } = {}) {
         if (myGen !== connectGenRef.current) return;
         retryRef.current = 0;
         setIsConnected(true);
+        // Бэк не шлёт unread_count по WS — после реконнекта пересинхронизируем
+        // счётчик колокольчика из REST (list не трогаем, countOnly).
+        if (_isReconnect) {
+          dispatch(
+            fetchNotificationsAsync({
+              limit: 1,
+              offset: 0,
+              countOnly: true,
+            }) as any,
+          );
+        }
         pingRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ action: "ping" }));
@@ -497,7 +538,7 @@ export function useNotificationsSocket({ enabled = true } = {}) {
         /* onclose обработает переподключение */
       };
     },
-    [enabled, clearReconnect, clearPing, closeSocket, handleMessage],
+    [enabled, dispatch, clearReconnect, clearPing, closeSocket, handleMessage],
   );
 
   useEffect(() => {

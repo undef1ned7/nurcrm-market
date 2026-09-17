@@ -4,8 +4,10 @@ import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { useAlert } from "@shared/hooks/useDialog";
 import {
   addCashFlows,
+  fetchCashflowRequestsSetting,
   getCashBoxes,
   useCash,
+  useCashflowRequestsEnabled,
 } from "@entities/cash";
 import { useUser } from "@entities/user";
 import { useAppDispatch } from "@app/store";
@@ -15,6 +17,7 @@ const AddCashFlowsModal = ({ onClose }: any) => {
   const dispatch = useAppDispatch();
   const { profile }: any = useUser();
   const { list: cashBoxes } = useCash();
+  const cashflowRequestsEnabled = useCashflowRequestsEnabled();
   const [newCashbox, setNewCashbox] = useState({
     name: "",
     amount: 0,
@@ -25,6 +28,7 @@ const AddCashFlowsModal = ({ onClose }: any) => {
 
   useEffect(() => {
     dispatch(getCashBoxes({} as any) as any);
+    dispatch(fetchCashflowRequestsSetting() as any);
   }, [dispatch]);
 
   // Автоматически выбираем первую кассу по индексу
@@ -43,7 +47,10 @@ const AddCashFlowsModal = ({ onClose }: any) => {
       const response = await dispatch(
         addCashFlows({
           ...newCashbox,
-          status: profile.role === "owner" ? "approved" : "pending",
+          status:
+            profile.role === "owner" || !cashflowRequestsEnabled
+              ? "approved"
+              : "pending",
         } as any) as any,
       );
       if (response.error) {

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { useTranslation } from "react-i18next";
 import { kindTranslate, PAGE_SIZE } from "../../sell.constants";
 import {
   dayKeyOf,
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export default function SellHistoryCards({ vm }: Props) {
+  const { t } = useTranslation();
   const {
     filterField,
     currentPage,
@@ -137,7 +139,7 @@ export default function SellHistoryCards({ vm }: Props) {
                       className="sellCard__refund"
                       onClick={(event) => handleOpenRefund(item, event)}
                     >
-                      Возврат
+                      {t("crm.sell.refundModal.returnBtn")}
                     </button>
                   )}
                 </div>

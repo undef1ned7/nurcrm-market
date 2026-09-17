@@ -64,6 +64,20 @@
     }
   }
 
+  &__card-price {
+    position: absolute;
+    top: var(--nur-space-3);
+    right: var(--nur-space-3);
+    padding: 2px 10px;
+    border-radius: var(--nur-radius-full, 999px);
+    background: var(--nur-primary-soft);
+    color: var(--nur-primary-darker);
+    font-size: var(--nur-font-meta-sm, 12px);
+    font-weight: 700;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
   &__card-icon {
     display: flex;
     align-items: center;

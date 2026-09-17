@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Printer, Download } from "lucide-react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { pdf } from "@react-pdf/renderer";
 import { getReceiptJson } from "@entities/sale";
 import {
@@ -18,6 +19,7 @@ const ReceiptPreviewModal = ({
   onClose,
   onEdit: _onEdit,
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [receiptData, setReceiptData] = useState(initialReceiptData);
   const [loading, setLoading] = useState(!initialReceiptData);
@@ -42,11 +44,11 @@ const ReceiptPreviewModal = ({
         if (result.type === "products/getReceiptJson/fulfilled") {
           setReceiptData(result.payload);
         } else {
-          setError("Не удалось загрузить чек");
+          setError(t("crm.cashier.receiptPreview.loadFailed"));
         }
       } catch (err: any) {
         console.error("Ошибка при загрузке чека:", err);
-        setError("Ошибка при загрузке чека");
+        setError(t("crm.cashier.receiptPreview.loadErrorGeneric"));
       } finally {
         setLoading(false);
       }
@@ -64,9 +66,7 @@ const ReceiptPreviewModal = ({
     const isPrinterConnected = await checkPrinterConnection();
 
     if (!isPrinterConnected) {
-      alert(
-        "Принтер не подключен. Пожалуйста, подключите принтер перед печатью."
-      );
+      alert(t("crm.cashier.receiptPreview.printerNotConnected"));
       return;
     }
 
@@ -80,7 +80,7 @@ const ReceiptPreviewModal = ({
         if (result.type === "products/getReceiptJson/fulfilled") {
           dataToPrint = result.payload;
         } else {
-          throw new Error("Не удалось загрузить данные чека для печати");
+          throw new Error(t("crm.cashier.receiptPreview.printDataLoadFailed"));
         }
       }
 
@@ -111,14 +111,17 @@ const ReceiptPreviewModal = ({
           receiptStyle: "market",
         });
       } else {
-        throw new Error("Нет данных для печати");
+        throw new Error(t("crm.cashier.receiptPreview.noPrintData"));
       }
       onClose();
     } catch (printError: any) {
       console.error("Ошибка при печати чека:", printError);
       alert(
-        "Ошибка при печати чека: " +
-          (printError.message || "Неизвестная ошибка")
+        t("crm.cashier.receiptPreview.printError", {
+          message:
+            printError.message ||
+            t("crm.cashier.cartAlerts.unknownError"),
+        })
       );
     } finally {
       setPrinting(false);
@@ -139,12 +142,12 @@ const ReceiptPreviewModal = ({
           dataToDownload = result.payload;
           setReceiptData(result.payload);
         } else {
-          throw new Error("Не удалось загрузить данные чека");
+          throw new Error(t("crm.cashier.receiptPreview.downloadDataLoadFailed"));
         }
       }
 
       if (!dataToDownload) {
-        throw new Error("Нет данных для генерации PDF");
+        throw new Error(t("crm.cashier.receiptPreview.noPdfData"));
       }
 
       // Генерируем PDF из JSON используя ReceiptPdfDocument
@@ -167,8 +170,11 @@ const ReceiptPreviewModal = ({
     } catch (downloadError: any) {
       console.error("Ошибка при скачивании PDF:", downloadError);
       alert(
-        "Ошибка при скачивании PDF: " +
-          (downloadError.message || "Неизвестная ошибка")
+        t("crm.cashier.receiptPreview.pdfDownloadError", {
+          message:
+            downloadError.message ||
+            t("crm.cashier.cartAlerts.unknownError"),
+        })
       );
     } finally {
       setDownloadingPdf(false);
@@ -238,7 +244,7 @@ const ReceiptPreviewModal = ({
             className="receipt-preview-modal"
             onClick={(e: any) => e.stopPropagation()}
           >
-            <div className="receipt-preview-modal__loading">Загрузка чека...</div>
+            <div className="receipt-preview-modal__loading">{t("crm.cashier.receiptPreview.loading")}</div>
           </div>
         </div>
       </ReactPortal>
@@ -254,14 +260,14 @@ const ReceiptPreviewModal = ({
             onClick={(e: any) => e.stopPropagation()}
           >
             <div className="receipt-preview-modal__error">
-              {error || "Чек не найден"}
+              {error || t("crm.cashier.receiptPreview.notFound")}
             </div>
             <div className="receipt-preview-modal__actions">
               <button
                 className="receipt-preview-modal__close-btn"
                 onClick={onClose}
               >
-                ЗАКРЫТЬ
+                {t("crm.cashier.receiptPreview.close")}
               </button>
             </div>
           </div>
@@ -304,7 +310,7 @@ const ReceiptPreviewModal = ({
         >
         <div className="receipt-preview-modal__header">
           <h2 className="receipt-preview-modal__title">
-            Предварительный просмотр чека
+            {t("crm.cashier.receiptPreview.title")}
           </h2>
           <button className="receipt-preview-modal__close" onClick={onClose}>
             <X size={24} />
@@ -321,8 +327,10 @@ const ReceiptPreviewModal = ({
             {/* Заголовок чека */}
             <div className="receipt-preview-modal__receipt-header">
               <div className="receipt-preview-modal__doc-title">
-                ЧЕК №{doc.number || doc.doc_no || ""} от{" "}
-                {formatDate(doc.date || doc.created_at)}
+                {t("crm.cashier.receiptPreview.docTitleWithDate", {
+                  number: doc.number || doc.doc_no || "",
+                  date: formatDate(doc.date || doc.created_at),
+                })}
               </div>
             </div>
 
@@ -344,9 +352,9 @@ const ReceiptPreviewModal = ({
                 <>
                   <div className="receipt-preview-modal__item-row receipt-preview-modal__item-row--head">
                     <span className="receipt-preview-modal__item-price">
-                      Цена x Кол-о - Скидка
+                      {t("crm.cashier.receiptPreview.itemsHeaderPrice")}
                     </span>
-                    <span className="receipt-preview-modal__item-total">Итого</span>
+                    <span className="receipt-preview-modal__item-total">{t("crm.cashier.receiptPreview.itemsHeaderTotal")}</span>
                   </div>
                   {items.map((item: any, index: any) => (
                   <div
@@ -372,7 +380,7 @@ const ReceiptPreviewModal = ({
               ) : (
                 <div className="receipt-preview-modal__item">
                   <div className="receipt-preview-modal__item-name">
-                    Нет товаров
+                    {t("crm.cashier.receiptPreview.noItems")}
                   </div>
                 </div>
               )}
@@ -382,18 +390,18 @@ const ReceiptPreviewModal = ({
 
             <div className="receipt-preview-modal__receipt-totals">
               <div className="receipt-preview-modal__total-row">
-                <span>Подытог</span>
+                <span>{t("crm.cashier.receiptPreview.subtotalPlain")}</span>
                 <span>{formatMoney(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="receipt-preview-modal__total-row">
-                  <span>Скидка</span>
+                  <span>{t("crm.cashier.receiptPreview.discountPlain")}</span>
                   <span>-{formatMoney(discount)}</span>
                 </div>
               )}
               {tax > 0 && (
                 <div className="receipt-preview-modal__total-row">
-                  <span>НДС</span>
+                  <span>{t("crm.cashier.receiptPreview.taxNds")}</span>
                   <span>{formatMoney(tax)}</span>
                 </div>
               )}
@@ -402,7 +410,7 @@ const ReceiptPreviewModal = ({
             <div className="receipt-preview-modal__divider receipt-preview-modal__divider--dashed" />
 
             <div className="receipt-preview-modal__total-section">
-              <div className="receipt-preview-modal__total-label">ИТОГ</div>
+              <div className="receipt-preview-modal__total-label">{t("crm.cashier.receiptPreview.totalPlain")}</div>
               <div className="receipt-preview-modal__total-amount">
                 {formatMoney(total)}
               </div>
@@ -413,13 +421,13 @@ const ReceiptPreviewModal = ({
               <div className="receipt-preview-modal__receipt-info">
                 {cashier?.name && (
                   <div className="receipt-preview-modal__info-row">
-                    <span>Кассир:</span>
+                    <span>{t("crm.cashier.receiptPreview.cashierLabel")}</span>
                     <span>{cashier.name}</span>
                   </div>
                 )}
                 {client?.full_name && (
                   <div className="receipt-preview-modal__info-row">
-                    <span>Покупатель:</span>
+                    <span>{t("crm.cashier.receiptPreview.buyerLabel")}</span>
                     <span>{client.full_name}</span>
                   </div>
                 )}
@@ -433,19 +441,19 @@ const ReceiptPreviewModal = ({
                 <div className="receipt-preview-modal__receipt-payment">
                   {paidCash > 0 && (
                     <div className="receipt-preview-modal__payment-row">
-                      <span>Наличными:</span>
+                      <span>{t("crm.cashier.receiptPreview.cashLabel")}</span>
                       <span>{formatMoney(paidCash)}</span>
                     </div>
                   )}
                   {paidCard > 0 && (
                     <div className="receipt-preview-modal__payment-row">
-                      <span>Картой:</span>
+                      <span>{t("crm.cashier.receiptPreview.cardLabel")}</span>
                       <span>{formatMoney(paidCard)}</span>
                     </div>
                   )}
                   {change > 0 && (
                     <div className="receipt-preview-modal__payment-row">
-                      <span>Сдача:</span>
+                      <span>{t("crm.cashier.receiptPreview.changeLabel")}</span>
                       <span>{formatMoney(change)}</span>
                     </div>
                   )}
@@ -457,7 +465,7 @@ const ReceiptPreviewModal = ({
             <div className="receipt-preview-modal__receipt-footer">
               <div className="receipt-preview-modal__divider"></div>
               <div className="receipt-preview-modal__thank-you">
-                Спасибо за покупку!
+                {t("crm.cashier.receiptPreview.thankYou")}
               </div>
             </div>
           </div>
@@ -470,7 +478,7 @@ const ReceiptPreviewModal = ({
             disabled={downloadingPdf}
           >
             <Download size={20} />
-            {downloadingPdf ? "Скачивание..." : "СКАЧАТЬ PDF"}
+            {downloadingPdf ? t("crm.cashier.receiptPreview.downloading") : t("crm.cashier.receiptPreview.downloadPdf")}
           </button>
           <button
             className="receipt-preview-modal__print-btn"
@@ -478,13 +486,13 @@ const ReceiptPreviewModal = ({
             disabled={printing}
           >
             <Printer size={20} />
-            {printing ? "Печать..." : "ПЕЧАТАТЬ"}
+            {printing ? t("crm.cashier.receiptPreview.printing") : t("crm.cashier.receiptPreview.print")}
           </button>
           <button
             className="receipt-preview-modal__close-btn"
             onClick={onClose}
           >
-            ЗАКРЫТЬ
+            {t("crm.cashier.receiptPreview.close")}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import { StatusChip } from "@shared/ui/page-shell";
 import {
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export function SupplierReturnDetailModal({ detail, loading, onClose }: Props) {
+  const { t } = useTranslation();
   if (!detail) return null;
   const items = Array.isArray(detail.items) ? detail.items : [];
 
@@ -36,26 +38,26 @@ export function SupplierReturnDetailModal({ detail, loading, onClose }: Props) {
         >
           <div className="supplier-returns__detail-head">
             <h3 id="supplier-return-detail-title" className="market-receipt-page__modal-title">
-              Возврат поставщику
+              {t("crm.procurement.supplierReturn")}
             </h3>
             <button
               type="button"
               className="market-receipt-page__detail-close"
               onClick={onClose}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
             >
               <X size={20} />
             </button>
           </div>
           <div className="supplier-returns__detail-meta">
             <span>
-              <strong>Поставщик:</strong> {detail.supplierName || "—"}
+              <strong>{t("crm.procurement.detailSupplier")}</strong> {detail.supplierName || "—"}
             </span>
             <span>
-              <strong>Создал:</strong> {detail.createdByName || "—"}
+              <strong>{t("crm.procurement.detailCreatedBy")}</strong> {detail.createdByName || "—"}
             </span>
             <span>
-              <strong>Дата:</strong> {formatDateTime(detail.createdAt)}
+              <strong>{t("crm.procurement.detailDate")}</strong> {formatDateTime(detail.createdAt)}
             </span>
             <StatusChip>{reasonLabel(detail.reason)}</StatusChip>
             <StatusChip tone="warning">{compensationLabel(detail.compensation)}</StatusChip>
@@ -64,19 +66,23 @@ export function SupplierReturnDetailModal({ detail, loading, onClose }: Props) {
             <p className="supplier-returns__hint">{detail.comment}</p>
           ) : null}
           {loading ? (
-            <p className="market-receipt-page__detail-empty">Загрузка позиций…</p>
+            <p className="market-receipt-page__detail-empty">
+              {t("crm.procurement.detailLoadingItems")}
+            </p>
           ) : items.length === 0 ? (
-            <p className="market-receipt-page__detail-empty">Нет позиций для отображения.</p>
+            <p className="market-receipt-page__detail-empty">
+              {t("crm.procurement.detailNoItems")}
+            </p>
           ) : (
             <div className="nur-table-wrap market-receipt-page__detail-table-wrap">
               <table className="nur-table market-receipt-page__detail-table">
                 <thead>
                   <tr>
-                    <th>№</th>
-                    <th>Наименование</th>
-                    <th>Кол-во</th>
-                    <th>Цена закупки</th>
-                    <th>Сумма</th>
+                    <th>{t("crm.procurement.colNo")}</th>
+                    <th>{t("crm.procurement.colName")}</th>
+                    <th>{t("crm.procurement.colQty")}</th>
+                    <th>{t("crm.procurement.colPurchasePrice")}</th>
+                    <th>{t("crm.procurement.colAmount")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -96,9 +102,9 @@ export function SupplierReturnDetailModal({ detail, loading, onClose }: Props) {
             </div>
           )}
           <div className="market-receipt-page__actions">
-            <strong>Итого: {formatMoney(detail.totalAmount)}</strong>
+            <strong>{t("catalog.total", { amount: formatMoney(detail.totalAmount) })}</strong>
             <button type="button" className="nur-btn nur-btn--secondary" onClick={onClose}>
-              Закрыть
+              {t("common.close")}
             </button>
           </div>
         </div>

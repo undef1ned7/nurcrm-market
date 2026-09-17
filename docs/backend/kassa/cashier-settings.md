@@ -42,6 +42,7 @@
 | `delete_item_code` | `CharField(max_length=8, blank=True, default="")` | Код на удаление из корзины. Пустая строка = код не требуется |
 | `max_discount_percent` | `DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)` | Максимальная скидка в %, `null` = без ограничения |
 | `debt_schedule_version` | `CharField(max_length=8, default="v1")` | Версия отсрочки на кассе. **Нет значения / не указали → `v1`.** `"v2"` — график платежей. См. [debt-installment-schedule-backend.md](./debt-installment-schedule-backend.md) |
+| `cashflow_requests_enabled` | `BooleanField(default=False)` | Требовать подтверждение владельца для ручных записей не-владельца / компенсации возврата чека / правки-отмены движения. Default **выключено**. Доступно **всем сферам**, не только «Магазин». См. [cashflow-requests-toggle-backend.md](./cashflow-requests-toggle-backend.md) |
 | `updated_at` | datetime | Авто |
 | `updated_by` | FK → User, null | Кто последний менял |
 

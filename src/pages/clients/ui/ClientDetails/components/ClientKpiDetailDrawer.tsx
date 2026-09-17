@@ -2,10 +2,15 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Wallet, X } from "lucide-react";
+import { Banknote, Wallet, X } from "lucide-react";
 
 import type { DetailRow, DetailsView } from "../clientDetails.types";
-import { toYYYYMMDD, getInstallmentRemaining } from "../clientDetails.helpers";
+import {
+  toYYYYMMDD,
+  toNumber,
+  toDecimalString,
+  getInstallmentRemaining,
+} from "../clientDetails.helpers";
 import { getClientDealDetail, payDebtDeal } from "@entities/client";
 import { postCashflowIfNeeded } from "@entities/cash";
 import { useUser } from "@entities/user";
@@ -53,6 +58,8 @@ export function ClientKpiDetailDrawer({
   const isSupplier = String(clientType || "").toLowerCase() === "suppliers";
 
   const [payingAll, setPayingAll] = useState(false);
+  const [partialAmount, setPartialAmount] = useState("");
+  const [payingPartial, setPayingPartial] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<any>({
     open: false,
     message: "",
@@ -71,6 +78,145 @@ export function ClientKpiDetailDrawer({
       ? detailRows.filter((row) => row.id != null && row.amount > 0)
       : [];
   const totalDebt = debtRows.reduce((sum, row) => sum + row.amount, 0);
+
+  const partialAmountNum = toNumber(partialAmount);
+  const partialAmountValid =
+    Number.isFinite(partialAmountNum) &&
+    partialAmountNum > 0 &&
+    partialAmountNum <= totalDebt + 0.01;
+
+  /**
+   * Оплата произвольной суммы «в счёт долга» — гасит несколько сделок сразу,
+   * от самых старых к новым (FIFO), пока сумма не закончится. Последний
+   * задетый взнос может быть оплачен частично (см. `amount` в payDebtDeal) —
+   * бэк уже поддерживает частичную оплату одного взноса, здесь просто
+   * оркестрация по нескольким сделкам клиента. Бэк не умеет принять одну
+   * сумму и распределить её сам — см. docs/backend/kassa/debt-pay-arbitrary-amount-backend.md.
+   */
+  const onPayPartialDebt = () => {
+    if (payingAll || payingPartial || !clientId || debtRows.length === 0) return;
+    if (!partialAmountValid) {
+      setAlert({
+        open: true,
+        type: "error",
+        message: t("crm.clients.details.enterValidPartialAmount", {
+          max: totalDebt.toFixed(2),
+        }),
+      });
+      return;
+    }
+
+    const amountToPay = partialAmountNum;
+
+    setConfirmDialog({
+      open: true,
+      message: t("crm.clients.details.payPartialDebtConfirm", {
+        amount: amountToPay.toFixed(2),
+      }),
+      onConfirm: async () => {
+        setConfirmDialog({ open: false, message: "", onConfirm: null });
+        setPayingPartial(true);
+
+        const routing = isSupplier
+          ? buildExpenseVariableRouting()
+          : buildPosRoutingFromUser(profile, company);
+        const today = toYYYYMMDD(new Date());
+
+        // Показ (детали) — новые сверху; гасим — от старых к новым.
+        const orderedRows = [...debtRows].sort((a, b) =>
+          a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+        );
+
+        let remainingToPay = amountToPay;
+        let paidAnything = false;
+        let failed = false;
+
+        for (const row of orderedRows) {
+          if (remainingToPay <= 0.01) break;
+          try {
+            const dealDetail = await dispatch(
+              getClientDealDetail({ clientId, dealId: row.id }),
+            ).unwrap();
+            const installments = Array.isArray(dealDetail?.installments)
+              ? dealDetail.installments
+              : [];
+            const pending = installments.filter(
+              (p: any) => !p.paid_on && getInstallmentRemaining(p) > 0,
+            );
+            const counterpartyName =
+              String(dealDetail?.client_full_name || "").trim() ||
+              t("crm.clients.details.unknownCounterparty");
+
+            for (const p of pending) {
+              if (remainingToPay <= 0.01) break;
+              const instRemaining = getInstallmentRemaining(p);
+              if (instRemaining <= 0) continue;
+
+              const payNow = Math.min(instRemaining, remainingToPay);
+              const isFullInstallment = payNow >= instRemaining - 0.01;
+
+              const paymentData: any = {
+                idempotency_key: crypto.randomUUID(),
+                installment_id: p.id,
+                date: today,
+                note: "",
+                ...routing,
+              };
+              if (!isFullInstallment) {
+                paymentData.amount = toDecimalString(payNow);
+              }
+
+              await dispatch(
+                payDebtDeal({ id: row.id, clientId, data: paymentData }),
+              ).unwrap();
+
+              void postCashflowIfNeeded(
+                dispatch,
+                {
+                  type: isSupplier ? "expense" : "income",
+                  name: t("crm.clients.details.debtPaymentName", {
+                    name: counterpartyName,
+                    n: p.number,
+                  }),
+                  amount: payNow.toFixed(2),
+                  source_cashbox_flow_id: p.number,
+                  source_business_operation_id: t(
+                    "crm.clients.details.debtPayment",
+                  ),
+                },
+                { warnOnFailure: true, failureContext: "debt" },
+              );
+
+              remainingToPay -= payNow;
+              paidAnything = true;
+            }
+          } catch (e: any) {
+            console.error(e);
+            failed = true;
+            break;
+          }
+        }
+
+        setPayingPartial(false);
+        onChanged?.();
+
+        if (failed) {
+          setAlert({
+            open: true,
+            type: "error",
+            message: paidAnything
+              ? t("crm.clients.details.payPartialPartialFail", {
+                  paid: (amountToPay - Math.max(remainingToPay, 0)).toFixed(2),
+                })
+              : t("crm.clients.details.paymentError"),
+          });
+        } else {
+          setPartialAmount("");
+          onClose();
+        }
+      },
+    });
+  };
 
   const onPayAllDebt = () => {
     if (payingAll || !clientId || debtRows.length === 0) return;
@@ -251,6 +397,56 @@ export function ClientKpiDetailDrawer({
             )}
           </div>
 
+          {debtRows.length > 0 && (
+            <div className="cmx__pay-partial">
+              <label
+                htmlFor="kpi-partial-amount"
+                className="cmx__pay-partial-label"
+              >
+                {t(
+                  "crm.clients.details.payPartialLabel",
+                  "Оплатить часть долга",
+                )}
+              </label>
+              <div className="cmx__pay-partial-row">
+                <div className="cmx__pay-partial-input-wrap">
+                  <input
+                    id="kpi-partial-amount"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    max={totalDebt}
+                    className="cmx__input cmx__input--sm"
+                    placeholder={t(
+                      "crm.clients.details.payPartialPlaceholder",
+                      "Сумма",
+                    )}
+                    value={partialAmount}
+                    onChange={(e) => setPartialAmount(e.target.value)}
+                    disabled={payingAll || payingPartial}
+                  />
+                  <span className="cmx__pay-partial-currency">
+                    {t("common.currencySom")}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="cmx__btn cmx__btn--secondary cmx__btn--sm"
+                  onClick={onPayPartialDebt}
+                  disabled={
+                    payingAll || payingPartial || !partialAmountValid
+                  }
+                >
+                  <Banknote size={16} />
+                  {payingPartial
+                    ? t("crm.clients.details.paying")
+                    : t("crm.clients.details.payPartialAction", "Оплатить")}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="cmx__footer">
             <div className="cmx__footer-left">
               {debtRows.length > 0 && (
@@ -259,7 +455,7 @@ export function ClientKpiDetailDrawer({
                     type="button"
                     className="cmx__btn cmx__btn--primary"
                     onClick={onPayAllDebt}
-                    disabled={payingAll}
+                    disabled={payingAll || payingPartial}
                   >
                     <Wallet size={16} />{" "}
                     {payingAll

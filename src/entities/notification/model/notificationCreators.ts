@@ -17,7 +17,13 @@ export const fetchNotificationsAsync = createAsyncThunk(
     try {
       const data = await getNotifications(params);
       // Признак догрузки страницы (lazy load) — не затирать список, а добавить.
-      return { data, append: Boolean(params?.append), offset: params?.offset || 0 };
+      // countOnly — только пересинхронизировать unread_count (после реконнекта WS).
+      return {
+        data,
+        append: Boolean(params?.append),
+        countOnly: Boolean(params?.countOnly),
+        offset: params?.offset || 0,
+      };
     } catch (err: any) {
       return thunkAPI.rejectWithValue(err);
     }

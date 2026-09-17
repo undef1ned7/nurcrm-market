@@ -91,6 +91,37 @@ export const dealHasPayments = (deal: any) => {
   );
 };
 
+/**
+ * Долг может быть создан из чека POS (payment_method=debt) или вручную.
+ * Бэк ещё не устоялся на одном имени поля для этой связи, поэтому пробуем
+ * известные варианты. Если ничего не найдено — долг создан вручную,
+ * привязанного чека нет (это нормальный случай, не ошибка).
+ * См. docs/backend/kassa/debt-source-receipt-backend.md.
+ */
+export const resolveDealSaleId = (deal: any): string | number | null => {
+  if (!deal || typeof deal !== "object") return null;
+  const candidates = [
+    deal.sale_id,
+    deal.pos_sale_id,
+    deal.source_sale_id,
+    deal.receipt_id,
+    deal.sale,
+    deal.receipt,
+    deal.source_sale,
+  ];
+  for (const candidate of candidates) {
+    if (candidate == null) continue;
+    if (typeof candidate === "object") {
+      const id = (candidate as any).id ?? (candidate as any).uuid ?? null;
+      if (id != null && String(id).trim()) return id;
+      continue;
+    }
+    const asString = String(candidate).trim();
+    if (asString) return candidate;
+  }
+  return null;
+};
+
 export const resolveDebtFromDeals = (deals: any) => {
   const list = Array.isArray(deals) ? deals : [];
   return list.reduce((sum, deal) => {
@@ -125,6 +156,7 @@ export function normalizeDealFromApi(resOrObj: any) {
     client_full_name: d.client_full_name || "",
     created_at: d.created_at || null,
     updated_at: d.updated_at || null,
+    sale_id: resolveDealSaleId(d),
   };
 }
 

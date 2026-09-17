@@ -36,22 +36,66 @@ export function leadSourceLabel(source: any) {
   return leadSourceMeta(source).label;
 }
 
-function notifType(n: any) {
+/** Легаси-пути от бэка → актуальные фронтовые SPA-маршруты. */
+const LEGACY_URL_MAP: Record<string, string> = {
+  "/crm/subscription": "/crm/additional-services",
+  "/crm/subscriptions": "/crm/additional-services",
+};
+
+/**
+ * Нормализует URL уведомления: чинит легаси-пути от бэка (напр.
+ * `/crm/subscription`, которого нет в SPA-роутере) → `/crm/additional-services`.
+ * Абсолютные и пустые URL возвращает как есть.
+ */
+export function normalizeNotificationUrl(url: any): string {
+  const raw = String(url ?? "").trim();
+  if (!raw || /^https?:\/\//i.test(raw)) return raw;
+  const [path, query] = raw.split("?");
+  const mapped = LEGACY_URL_MAP[path.replace(/\/+$/, "")] || path;
+  return query ? `${mapped}?${query}` : mapped;
+}
+
+/**
+ * Подтип общего бэкенд-алерта по лиду. Бэк шлёт единый `type = "lead_alert"`,
+ * а конкретику (assigned / transferred / sla_breach / no_activity /
+ * task_overdue) кладёт в `data.alert_kind`.
+ */
+function leadAlertKind(n: any) {
+  const d = n?.data && typeof n.data === "object" ? n.data : {};
+  const m = n?.meta && typeof n.meta === "object" ? n.meta : {};
   return String(
+    d.alert_kind || d.subtype || d.kind || m.alert_kind || m.subtype || "",
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function notifType(n: any) {
+  const base = String(
     n?.type || n?.category || n?.event || n?.data?.type || "",
-  ).toLowerCase();
+  )
+    .trim()
+    .toLowerCase();
+  if (base !== "lead_alert" && base !== "unanswered_lead_alert") return base;
+  const kind = leadAlertKind(n);
+  // Разворачиваем подтип, чтобы детекторы ниже могли различить событие.
+  return kind ? `${base} lead_${kind} ${kind}` : base;
 }
 
 /** События назначения лида (уведомления + Wazzup WS). */
 export function isConsultingLeadAssignEvent(n: any) {
   const t = notifType(n);
   if (!t) return false;
+  const hay = `${t} ${n?.title || ""} ${n?.message || ""}`.toLowerCase();
   return (
     t === "lead.assigned" ||
     t.includes("lead.assigned") ||
     t.includes("funnel.lead.assigned") ||
     t.includes("lead.task.assigned") ||
-    (t.includes("lead") && t.includes("assign") && !t.includes("message"))
+    (t.includes("lead") && t.includes("assign") && !t.includes("message")) ||
+    hay.includes("назначен лид") ||
+    hay.includes("вам назначен") ||
+    hay.includes("вам поручен")
   );
 }
 
@@ -74,13 +118,21 @@ export function isConsultingLeadMessageEvent(n: any) {
 /** Лид передан другому сотруднику. */
 export function isConsultingLeadTransferEvent(n: any) {
   const t = notifType(n);
+  // market-события перемещения/возврата агентов — не про лиды.
+  if (
+    t.startsWith("agent_") ||
+    t.includes("agent_transfer") ||
+    t.includes("agent_return")
+  ) {
+    return false;
+  }
   const hay = `${t} ${n?.title || ""} ${n?.message || ""}`.toLowerCase();
   return (
     t === "lead_transferred" ||
     t === "lead.transferred" ||
     t.includes("lead_transferred") ||
     t.includes("lead.transferred") ||
-    t.includes("transfer") ||
+    (t.includes("lead") && t.includes("transfer")) ||
     hay.includes("передан лид") ||
     hay.includes("вам передан")
   );
@@ -262,7 +314,7 @@ export function extractLeadIdFromConsaltingUrl(url: any) {
  * Сообщение / SLA → чаты; назначение / передача / стадия → карточка на воронке.
  */
 export function resolveConsultingNotificationUrl(n: any) {
-  const rawUrl = n?.url ?? n?.link ?? n?.data?.url ?? "";
+  const rawUrl = normalizeNotificationUrl(n?.url ?? n?.link ?? n?.data?.url ?? "");
   const leadId = consultingNotificationLeadId(n);
 
   if (
@@ -295,7 +347,7 @@ export function resolveConsultingNotificationUrl(n: any) {
     if (/\/consalting\/funnel/i.test(path)) {
       return leadId ? consultingFunnelLeadPath(leadId) : "/crm/consulting/funnel";
     }
-    if (path.startsWith("/crm/")) return path;
+    if (path.startsWith("/crm/")) return normalizeNotificationUrl(path);
     if (path.startsWith("/consalting/")) {
       return path.replace(/^\/consalting\//, "/crm/consulting/");
     }

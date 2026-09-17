@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import { Calendar } from "lucide-react";
 import {
   DAY_INTERVAL_PRESETS,
@@ -98,6 +99,7 @@ export function PaymentPageDebtSection({
   onOpenDeferredDueDatePicker,
   onFirstDueDateChange,
 }: Props) {
+  const { t } = useTranslation();
   const presets =
     scheduleUnit === "month" ? MONTH_SCHEDULE_PRESETS : DAY_SCHEDULE_PRESETS;
   const intervalPresets =
@@ -110,15 +112,19 @@ export function PaymentPageDebtSection({
     <div className="payment-page__debt-section">
       <div className="payment-page__debt-amount">
         <div className="payment-page__debt-label">
-          {deferredPrepaymentValue > 0 ? "ОСТАТОК В ДОЛГ" : "СУММА ДОЛГА"}
+          {deferredPrepaymentValue > 0
+            ? t("crm.cashier.debtSection.remainderLabel")
+            : t("crm.cashier.debtSection.debtLabel")}
         </div>
         <div className="payment-page__debt-value">
           {deferredSaleDebtRemaining.toFixed(2)}
         </div>
         {deferredPrepaymentValue > 0 && (
           <p className="payment-page__debt-hint">
-            Сумма заказа {total.toFixed(2)} сом · предоплата{" "}
-            {deferredPrepaymentValue.toFixed(2)} сом
+            {t("crm.cashier.debtSection.orderPrepaymentHint", {
+              total: total.toFixed(2),
+              prepayment: deferredPrepaymentValue.toFixed(2),
+            })}
           </p>
         )}
       </div>
@@ -133,14 +139,14 @@ export function PaymentPageDebtSection({
                 onDeferredPrepaymentEnabledChange(e.target.checked);
               }}
             />
-            <span>Предоплата при отсрочке</span>
+            <span>{t("crm.cashier.debtSection.prepaymentAtDeferredToggle")}</span>
           </label>
 
           {deferredPrepaymentEnabled && (
             <div className="payment-page__deferred-prepay">
               <div className="payment-page__deferred-prepay-field">
                 <label className="payment-page__debt-days-label">
-                  Сумма предоплаты (сом)
+                  {t("crm.cashier.debtSection.prepaymentAmountLabel")}
                 </label>
                 <input
                   type="number"
@@ -157,7 +163,7 @@ export function PaymentPageDebtSection({
               </div>
               <div className="payment-page__deferred-prepay-field">
                 <span className="payment-page__debt-days-label">
-                  Способ предоплаты
+                  {t("crm.cashier.debtSection.prepaymentMethodLabel")}
                 </span>
                 <div className="payment-page__deferred-prepay-method-row">
                   <button
@@ -169,7 +175,7 @@ export function PaymentPageDebtSection({
                     }`}
                     onClick={() => onDeferredPrepaymentMethodChange("cash")}
                   >
-                    Наличные
+                    {t("crm.cashier.debtSection.cash")}
                   </button>
                   <button
                     type="button"
@@ -182,14 +188,14 @@ export function PaymentPageDebtSection({
                       onDeferredPrepaymentMethodChange("cashless")
                     }
                   >
-                    Безналичные
+                    {t("crm.cashier.debtSection.cashless")}
                   </button>
                 </div>
               </div>
               {deferredPrepaymentMethod === "cashless" && (
                 <div className="payment-page__deferred-prepay-field">
                   <p className="payment-page__debt-days-label">
-                    Банк предоплаты
+                    {t("crm.cashier.debtSection.prepaymentBankLabel")}
                   </p>
                   <PaymentPageBankGrid
                     banks={PAYMENT_BANKS}
@@ -208,7 +214,7 @@ export function PaymentPageDebtSection({
               className="payment-page__debt-days-label"
               htmlFor="deferred-debt-days"
             >
-              Срок рассрочки (дней):
+              {t("crm.cashier.debtSection.deferredTermDaysLabel")}
             </label>
             <div className="payment-page__debt-days-row">
               <input
@@ -226,8 +232,8 @@ export function PaymentPageDebtSection({
                 type="button"
                 className="payment-page__debt-days-calendar-btn"
                 onClick={onOpenDeferredDueDatePicker}
-                title="Выбрать дату погашения"
-                aria-label="Выбрать дату погашения в календаре"
+                title={t("crm.cashier.debtSection.selectDueDate")}
+                aria-label={t("crm.cashier.debtSection.selectDueDateAria")}
               >
                 <Calendar size={20} strokeWidth={2} />
               </button>
@@ -243,21 +249,26 @@ export function PaymentPageDebtSection({
               />
             </div>
             <p className="payment-page__debt-days-hint">
-              Дата погашения:{" "}
+              {t("crm.cashier.debtSection.dueDateLabel")}{" "}
               <strong>{formatIsoDateRu(deferredDueDate)}</strong>
               {" · "}
               {typeof debtDays === "number"
                 ? debtDays
                 : calcDaysUntilIsoDate(deferredDueDate)}{" "}
-              {debtDaysLabel(debtDays, deferredDueDate)} от сегодня
+              {debtDaysLabel(debtDays, deferredDueDate)}{" "}
+              {t("crm.cashier.debtSection.fromToday")}
             </p>
           </div>
         </>
       ) : (
       <>
       <div className="payment-page__debt-step">
-        <div className="payment-page__debt-step-title">1. Предоплата</div>
-        <p className="payment-page__debt-step-hint">Необязательно</p>
+        <div className="payment-page__debt-step-title">
+          {t("crm.cashier.debtSection.step1Title")}
+        </div>
+        <p className="payment-page__debt-step-hint">
+          {t("crm.cashier.debtSection.optional")}
+        </p>
         <label className="payment-page__deferred-prepay-toggle">
           <input
             type="checkbox"
@@ -266,14 +277,14 @@ export function PaymentPageDebtSection({
               onDeferredPrepaymentEnabledChange(e.target.checked);
             }}
           />
-          <span>Принять предоплату сейчас</span>
+          <span>{t("crm.cashier.debtSection.acceptPrepaymentNow")}</span>
         </label>
 
         {deferredPrepaymentEnabled && (
           <div className="payment-page__deferred-prepay">
             <div className="payment-page__deferred-prepay-field">
               <label className="payment-page__debt-days-label">
-                Сумма предоплаты (сом)
+                {t("crm.cashier.debtSection.prepaymentAmountLabel")}
               </label>
               <input
                 type="number"
@@ -290,7 +301,7 @@ export function PaymentPageDebtSection({
             </div>
             <div className="payment-page__deferred-prepay-field">
               <span className="payment-page__debt-days-label">
-                Способ предоплаты
+                {t("crm.cashier.debtSection.prepaymentMethodLabel")}
               </span>
               <div className="payment-page__deferred-prepay-method-row">
                 <button
@@ -302,7 +313,7 @@ export function PaymentPageDebtSection({
                   }`}
                   onClick={() => onDeferredPrepaymentMethodChange("cash")}
                 >
-                  Наличные
+                  {t("crm.cashier.debtSection.cash")}
                 </button>
                 <button
                   type="button"
@@ -313,13 +324,15 @@ export function PaymentPageDebtSection({
                   }`}
                   onClick={() => onDeferredPrepaymentMethodChange("cashless")}
                 >
-                  Безналичные
+                  {t("crm.cashier.debtSection.cashless")}
                 </button>
               </div>
             </div>
             {deferredPrepaymentMethod === "cashless" && (
               <div className="payment-page__deferred-prepay-field">
-                <p className="payment-page__debt-days-label">Банк предоплаты</p>
+                <p className="payment-page__debt-days-label">
+                  {t("crm.cashier.debtSection.prepaymentBankLabel")}
+                </p>
                 <PaymentPageBankGrid
                   banks={PAYMENT_BANKS}
                   selectedId={deferredPrepaymentBank}
@@ -334,9 +347,11 @@ export function PaymentPageDebtSection({
       </div>
 
       <div className="payment-page__debt-step">
-        <div className="payment-page__debt-step-title">2. График погашения</div>
+        <div className="payment-page__debt-step-title">
+          {t("crm.cashier.debtSection.step2Title")}
+        </div>
         <p className="payment-page__debt-step-hint">
-          Разделите остаток на платежи по дням или месяцам
+          {t("crm.cashier.debtSection.step2Hint")}
         </p>
 
         <div className="payment-page__deferred-prepay-method-row payment-page__schedule-unit-row">
@@ -349,7 +364,7 @@ export function PaymentPageDebtSection({
             }`}
             onClick={() => onScheduleUnitChange("day")}
           >
-            По дням
+            {t("crm.cashier.debtSection.byDays")}
           </button>
           <button
             type="button"
@@ -360,7 +375,7 @@ export function PaymentPageDebtSection({
             }`}
             onClick={() => onScheduleUnitChange("month")}
           >
-            По месяцам
+            {t("crm.cashier.debtSection.byMonths")}
           </button>
         </div>
 
@@ -370,8 +385,8 @@ export function PaymentPageDebtSection({
             htmlFor="deferred-schedule-count"
           >
             {scheduleUnit === "month"
-              ? "Количество месяцев"
-              : "Количество платежей"}
+              ? t("crm.cashier.debtSection.monthsCountLabel")
+              : t("crm.cashier.debtSection.paymentsCountLabel")}
           </label>
           <input
             id="deferred-schedule-count"
@@ -406,7 +421,7 @@ export function PaymentPageDebtSection({
             className="payment-page__debt-days-label"
             htmlFor="deferred-day-interval"
           >
-            Интервал
+            {t("crm.cashier.debtSection.intervalLabel")}
           </label>
           <div className="payment-page__schedule-presets">
             {intervalPresets.map((interval) => (
@@ -427,7 +442,9 @@ export function PaymentPageDebtSection({
             ))}
           </div>
           <div className="payment-page__day-interval-row">
-            <span className="payment-page__day-interval-prefix">Каждые</span>
+            <span className="payment-page__day-interval-prefix">
+              {t("crm.cashier.debtSection.everyPrefix")}
+            </span>
             <input
               id="deferred-day-interval"
               type="text"
@@ -441,16 +458,16 @@ export function PaymentPageDebtSection({
               autoComplete="off"
               aria-label={
                 scheduleUnit === "month"
-                  ? "Интервал в месяцах"
-                  : "Интервал в днях"
+                  ? t("crm.cashier.debtSection.intervalInMonthsAria")
+                  : t("crm.cashier.debtSection.intervalInDaysAria")
               }
             />
             <span className="payment-page__day-interval-suffix">
               {typeof dayInterval === "number"
                 ? scheduleCountLabel(scheduleUnit, dayInterval)
                 : scheduleUnit === "month"
-                  ? "месяцев"
-                  : "дней"}
+                  ? t("crm.cashier.debtSection.monthsPlural")
+                  : t("crm.cashier.debtSection.daysPlural")}
             </span>
           </div>
           <p className="payment-page__debt-days-hint">
@@ -459,15 +476,15 @@ export function PaymentPageDebtSection({
                 ? monthIntervalLabel(dayInterval)
                 : dayIntervalLabel(dayInterval)
               : scheduleUnit === "month"
-                ? "Укажите, через сколько месяцев повторять платёж"
-                : "Укажите, через сколько дней повторять платёж"}
+                ? t("crm.cashier.debtSection.repeatEveryMonthsHint")
+                : t("crm.cashier.debtSection.repeatEveryDaysHint")}
           </p>
 
           <label
             className="payment-page__debt-days-label"
             htmlFor="deferred-first-due-date"
           >
-            Дата первого платежа
+            {t("crm.cashier.debtSection.firstPaymentDateLabel")}
           </label>
           <div className="payment-page__debt-days-row">
             <input
@@ -483,8 +500,8 @@ export function PaymentPageDebtSection({
               type="button"
               className="payment-page__debt-days-calendar-btn"
               onClick={onOpenDeferredDueDatePicker}
-              title="Выбрать дату первого платежа"
-              aria-label="Выбрать дату первого платежа"
+              title={t("crm.cashier.debtSection.selectFirstDueDate")}
+              aria-label={t("crm.cashier.debtSection.selectFirstDueDate")}
             >
               <Calendar size={20} strokeWidth={2} />
             </button>
@@ -502,19 +519,25 @@ export function PaymentPageDebtSection({
                     ? monthIntervalLabel(debtSchedule.intervalMonths)
                     : dayIntervalLabel(debtSchedule.intervalDays)
                 }`}{" "}
-                · по{" "}
-                <strong>{debtSchedule.perPeriod.toFixed(2)} сом</strong>
+                ·{" "}
+                {t("crm.cashier.debtSection.perPeriod", {
+                  amount: debtSchedule.perPeriod.toFixed(2),
+                })}
                 {debtSchedule.lastAmount !== debtSchedule.perPeriod
-                  ? ` · последний ${debtSchedule.lastAmount.toFixed(2)} сом`
+                  ? ` · ${t("crm.cashier.debtSection.lastAmountNote", {
+                      amount: debtSchedule.lastAmount.toFixed(2),
+                    })}`
                   : null}
                 {" · "}
-                до <strong>{formatIsoDateRu(debtSchedule.lastDueDate)}</strong>
+                {t("crm.cashier.debtSection.untilDate", {
+                  date: formatIsoDateRu(debtSchedule.lastDueDate),
+                })}
               </p>
               <div className="payment-page__schedule-table" role="table">
                 <div className="payment-page__schedule-row payment-page__schedule-row--head">
-                  <span>#</span>
-                  <span>Дата</span>
-                  <span>Сумма</span>
+                  <span>{t("crm.cashier.debtSection.tableNumber")}</span>
+                  <span>{t("crm.cashier.debtSection.tableDate")}</span>
+                  <span>{t("crm.cashier.debtSection.tableAmount")}</span>
                 </div>
                 {previewRows.map((row) => (
                   <div key={row.number} className="payment-page__schedule-row">
@@ -527,7 +550,7 @@ export function PaymentPageDebtSection({
             </>
           ) : (
             <p className="payment-page__debt-days-hint">
-              Укажите число платежей, чтобы увидеть график
+              {t("crm.cashier.debtSection.fillCountToPreview")}
             </p>
           )}
         </div>
@@ -536,7 +559,7 @@ export function PaymentPageDebtSection({
       )}
 
       <div className="payment-page__total-debt">
-        <span>ОБЩИЙ ДОЛГ КЛИЕНТА</span>
+        <span>{t("crm.cashier.debtSection.totalDebtLabel")}</span>
         <span className="payment-page__total-debt-amount">
           {formatMoneyRu(totalDebt)} сом
         </span>

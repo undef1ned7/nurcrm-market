@@ -5,8 +5,10 @@ import { useUser } from "@entities/user";
 import { isMarketSectorName } from "@shared/lib/subscriptionPlan";
 import {
   addCashFlows,
+  fetchCashflowRequestsSetting,
   isCashFlowChangeRequestsEnabled,
   useCashFlowRealtimeEvent,
+  useCashflowRequestsEnabled,
 } from "@entities/cash";
 import useResize from "@shared/hooks/useResize";
 import { useAlert } from "@shared/hooks/useDialog";
@@ -36,7 +38,13 @@ export function useKassa() {
   const { profile } = useUser();
   // На сфере Магазин операцию может добавить любой сотрудник (сразу approved, без запроса на одобрение)
   const isMarket = isMarketSectorName(company?.sector?.name);
-  const canApproveDirectly = profile?.role === "owner" || isMarket;
+  const cashflowRequestsEnabled = useCashflowRequestsEnabled();
+  useEffect(() => {
+    dispatch(fetchCashflowRequestsSetting() as any);
+  }, [dispatch]);
+  // «Запросы» выключены по умолчанию (настройка компании) — тогда approved сразу для всех.
+  const canApproveDirectly =
+    profile?.role === "owner" || isMarket || !cashflowRequestsEnabled;
   const [cashboxDetails, setCashboxDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
@@ -57,7 +65,8 @@ export function useKassa() {
   const [showFilter, setShowFilter] = useState(false);
   // Заявка на редактирование/отмену движения: { mode: "edit" | "cancel", flow } | null
   const [flowChange, setFlowChange] = useState<any>(null);
-  const canRequestFlowChange = isCashFlowChangeRequestsEnabled();
+  const canRequestFlowChange =
+    isCashFlowChangeRequestsEnabled() && cashflowRequestsEnabled;
   const [showAddCashboxModal, setShowAddCashboxModal] = useState(false);
   const [selectedCashbox, setSelectedCashbox] = useState<any>(null);
   const [showEditCashboxModal, setShowEditCashboxModal] = useState(false);
@@ -382,6 +391,7 @@ export function useKassa() {
     handleEditCashbox,
     handleResetFilters,
     canRequestFlowChange,
+    cashflowRequestsEnabled,
     flowChange,
     openFlowChange,
     closeFlowChange,

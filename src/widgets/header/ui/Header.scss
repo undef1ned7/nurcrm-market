@@ -8,7 +8,7 @@
   gap: 16px;
   min-height: var(--nur-header-height, 64px);
   margin: 0 calc(-1 * var(--content-inline-padding, 20px));
-  padding: 10px var(--content-inline-padding, 20px);
+  padding: 14.2px var(--content-inline-padding, 20px);
   background: var(--nur-header-bg, rgba(246, 247, 249, 0.92));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -34,7 +34,9 @@
     background: var(--nur-surface, #fff);
     color: var(--nur-text, #0f172a);
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease,
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
       color 0.15s ease;
 
     &:hover {
@@ -181,7 +183,9 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s ease, box-shadow 0.15s ease,
+    transition:
+      background 0.15s ease,
+      box-shadow 0.15s ease,
       transform 0.1s ease;
 
     &:hover {
@@ -216,7 +220,9 @@
     background: var(--nur-surface, #fff);
     color: var(--nur-text-2, #475569);
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease,
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
       color 0.15s ease;
 
     &:hover {
@@ -252,7 +258,9 @@
     border: 1px solid var(--nur-border, #e9ecf1);
     background: var(--nur-surface, #fff);
     cursor: pointer;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
 
     &:hover {
       border-color: rgba(247, 215, 79, 0.55);
@@ -294,7 +302,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
 }
 
 @media screen and (max-width: 768px) {

@@ -166,6 +166,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
       title: "Печать штрих-кодов",
       description:
         "Установка 2000 + абонентская плата 300. Печать штрих-кодов для товаров со склада с предпросмотром.",
+      price: 300,
       icon: FaBarcode,
     },
   },
@@ -182,7 +183,8 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Интеграция с весами",
       description:
-        "Установка 5000 + абонентская плата 500. Отправка товарной номенклатуры на торговые весы.",
+        "Абонентская плата 500. Отправка товарной номенклатуры на торговые весы.",
+      price: 500,
       icon: FaBarcode,
     },
   },
@@ -209,7 +211,8 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Интерфейс кассира",
       description:
-        "Подключение интерфейса кассира для быстрой продажи, оформления оплат и работы с чеками.",
+        "Абонентская плата 500. Подключение интерфейса кассира для быстрой продажи, оформления оплат и работы с чеками.",
+      price: 500,
       icon: FaCashRegister,
     },
   },
@@ -228,7 +231,8 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Сотрудники (больше 3)",
       description:
-        "На тарифе Старт для Маркета лимит 3 сотрудника, включая владельца. Расширение: установка 2000 + абонентская плата 200.",
+        "На тарифе Старт для Маркета лимит 3 сотрудника, включая владельца. Расширение: абонентская плата 300.",
+      price: 300,
       icon: FaUsers,
     },
   },
@@ -248,6 +252,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
       title: "Двойной склад",
       description:
         "Установка 5000 + абонентская плата 500. Добавляет работу с двойным складом.",
+      price: 500,
       icon: FaWarehouse,
     },
   },
@@ -266,7 +271,8 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Онлайн витрина",
       description:
-        "Подключение по заявке: установка 3000 + абонентская плата 300. Публикация товаров в онлайн-витрине.",
+        "Подключение по заявке: абонентская плата 300. Публикация товаров в онлайн-витрине.",
+      price: 300,
       icon: FaStore,
     },
   },
@@ -284,6 +290,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Официант",
       description: "Установка 2000с + абонентская плата 200с.",
+      price: 200,
       icon: FaUsers,
     },
   },
@@ -301,6 +308,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Кухня",
       description: "Установка 2000с + абонентская плата 200с.",
+      price: 200,
       icon: FaUtensils,
     },
   },
@@ -318,6 +326,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Чековый аппарат (больше двух)",
       description: "Установка 1000с + абонентская плата 100с.",
+      price: 100,
       icon: FaReceipt,
     },
   },
@@ -335,6 +344,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Калькуляция",
       description: "Установка 2000с + абонентская плата 200с.",
+      price: 200,
       icon: FaConciergeBell,
     },
   },
@@ -352,6 +362,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Онлайн меню",
       description: "Установка 3000с + абонентская плата 300с.",
+      price: 300,
       icon: FaStore,
     },
   },
@@ -420,6 +431,7 @@ export const getAdditionalServicesForPage = (params) =>
       type: service.type,
       title: service.displayMeta.title,
       description: service.displayMeta.description,
+      price: service.displayMeta.price ?? null,
       icon: service.displayMeta.icon,
       to: service.to || null,
       isConnected: checkPermissionAccess({

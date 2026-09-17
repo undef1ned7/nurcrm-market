@@ -499,7 +499,17 @@ export function useCashierProducts(b: any) {
         shift: openShiftId,
         is_wholesale: Boolean(preferredWholesaleMode),
       }),
-    );
+    )
+      .unwrap()
+      .catch((error: any) => {
+        // Серверный лимит скидки (настройка кассы): 400 {detail, max_discount_percent}.
+        // @see docs/backend/kassa/cashier-settings.md §4.2
+        const detail = error?.data?.detail || error?.detail;
+        if (detail) {
+          showAlert("warning", "Скидка", String(detail));
+          void refreshSale();
+        }
+      });
   }, 600);
 
   const handleDiscountChange = (discount, mode = "amount") => {

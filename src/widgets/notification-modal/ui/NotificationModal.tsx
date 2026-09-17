@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, CheckCheck, BellOff, Bell, Loader2, Trash2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@app/store";
 import { useNavigate } from "react-router-dom";
@@ -15,16 +16,20 @@ import {
   matchesNotificationTab,
   type NotificationTab,
 } from "@entities/notification";
-import { resolveConsultingNotificationUrl } from "@shared/lib/consultingLeadSources";
+import {
+  normalizeNotificationUrl,
+  resolveConsultingNotificationUrl,
+} from "@shared/lib/consultingLeadSources";
 
 const PAGE_SIZE = 20;
 
-const TABS: { id: NotificationTab; label: string }[] = [
-  { id: "all", label: "Все" },
-  { id: "tariff", label: "Тариф" },
-  { id: "system", label: "Системные" },
-  { id: "news", label: "Новости" },
-];
+const TAB_IDS: NotificationTab[] = ["all", "tariff", "system", "news"];
+const TAB_LABEL_KEY: Record<NotificationTab, string> = {
+  all: "notifications.center.tabAll",
+  tariff: "notifications.center.tabTariff",
+  system: "notifications.center.tabSystem",
+  news: "notifications.center.tabNews",
+};
 
 const fmtDateTime = (s: any) => {
   if (!s) return "";
@@ -49,6 +54,9 @@ const levelTone = (n: any) => {
 };
 
 const NotificationModal = ({ onClose }: any) => {
+  const { t } = useTranslation();
+  const tn = (k: string, o?: any): string =>
+    t(`notifications.center.${k}`, o) as string;
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const listRef = useRef(null);
@@ -127,8 +135,9 @@ const NotificationModal = ({ onClose }: any) => {
       if (!isLocal(n) && isUnread(n)) {
         dispatch(markNotificationReadAsync(idOf(n) as any));
       }
-      const url =
-        n?.cta_url || n?.url || resolveConsultingNotificationUrl(n);
+      const url = normalizeNotificationUrl(
+        n?.cta_url || n?.url || resolveConsultingNotificationUrl(n),
+      );
       if (url) {
         onClose?.();
         if (/^https?:\/\//i.test(url)) window.location.assign(url);
@@ -164,7 +173,7 @@ const NotificationModal = ({ onClose }: any) => {
         <button
           type="button"
           className={classes.backdrop}
-          aria-label="Закрыть уведомления"
+          aria-label={tn("closeAria")}
           onClick={onClose}
         />
 
@@ -180,13 +189,11 @@ const NotificationModal = ({ onClose }: any) => {
                 <Bell size={18} />
               </span>
               <div className={classes.headerText}>
-                <h3 id="notification-center-title">Центр уведомлений</h3>
+                <h3 id="notification-center-title">{tn("title")}</h3>
                 <p className={classes.headerMeta}>
                   {unreadCount > 0
-                    ? `${unreadCount} непрочитанн${
-                        unreadCount === 1 ? "ое" : "ых"
-                      }`
-                    : "Все прочитаны"}
+                    ? tn("unread", { count: unreadCount })
+                    : tn("allRead")}
                 </p>
               </div>
             </div>
@@ -194,23 +201,27 @@ const NotificationModal = ({ onClose }: any) => {
               type="button"
               className={classes.close}
               onClick={onClose}
-              aria-label="Закрыть"
+              aria-label={t("common.close")}
             >
               <X size={18} />
             </button>
           </header>
 
-          <div className={classes.tabs} role="tablist" aria-label="Категории">
-            {TABS.map((item) => (
+          <div
+            className={classes.tabs}
+            role="tablist"
+            aria-label={tn("categoriesAria")}
+          >
+            {TAB_IDS.map((id) => (
               <button
-                key={item.id}
+                key={id}
                 type="button"
                 role="tab"
-                aria-selected={tab === item.id}
-                className={`${classes.tab} ${tab === item.id ? classes.tabActive : ""}`}
-                onClick={() => setTab(item.id)}
+                aria-selected={tab === id}
+                className={`${classes.tab} ${tab === id ? classes.tabActive : ""}`}
+                onClick={() => setTab(id)}
               >
-                {item.label}
+                {t(TAB_LABEL_KEY[id])}
               </button>
             ))}
           </div>
@@ -223,17 +234,15 @@ const NotificationModal = ({ onClose }: any) => {
             {loading && list.length === 0 ? (
               <div className={classes.loading} role="status">
                 <Loader2 className={classes.spinner} size={22} />
-                <span>Загрузка уведомлений…</span>
+                <span>{tn("loading")}</span>
               </div>
             ) : isEmpty ? (
               <div className={classes.empty} role="status">
                 <div className={classes.emptyIcon} aria-hidden="true">
                   <BellOff size={28} />
                 </div>
-                <h4 className={classes.emptyTitle}>Уведомлений нет</h4>
-                <p className={classes.emptyText}>
-                  Когда появятся новые события, они отобразятся здесь.
-                </p>
+                <h4 className={classes.emptyTitle}>{tn("emptyTitle")}</h4>
+                <p className={classes.emptyText}>{tn("emptyText")}</p>
               </div>
             ) : (
               <ul className={classes.list}>
@@ -241,7 +250,10 @@ const NotificationModal = ({ onClose }: any) => {
                   const unread = isUnread(n);
                   const tone = levelTone(n);
                   const title =
-                    n?.title || n?.verb || n?.subject || "Уведомление";
+                    n?.title ||
+                    n?.verb ||
+                    n?.subject ||
+                    tn("itemFallbackTitle");
                   const message =
                     n?.message ||
                     n?.description ||
@@ -278,7 +290,7 @@ const NotificationModal = ({ onClose }: any) => {
                               {unread ? (
                                 <span
                                   className={classes.dot}
-                                  aria-label="Непрочитано"
+                                  aria-label={tn("unreadDot")}
                                 />
                               ) : null}
                             </div>
@@ -302,7 +314,7 @@ const NotificationModal = ({ onClose }: any) => {
                           <button
                             type="button"
                             className={classes.deleteBtn}
-                            aria-label="Удалить уведомление"
+                            aria-label={tn("deleteAria")}
                             onClick={(event) => handleDelete(event, n)}
                           >
                             <Trash2 size={15} />
@@ -316,7 +328,7 @@ const NotificationModal = ({ onClose }: any) => {
                 {loadingMore ? (
                   <li className={classes.loadingMore} role="status">
                     <Loader2 className={classes.spinner} size={16} />
-                    Загрузка…
+                    {t("common.loading")}
                   </li>
                 ) : null}
               </ul>
@@ -332,7 +344,7 @@ const NotificationModal = ({ onClose }: any) => {
                 disabled={markingAllRead}
               >
                 <CheckCheck size={16} />
-                {markingAllRead ? "Отмечаем…" : "Отметить все как прочитанные"}
+                {markingAllRead ? tn("markingAll") : tn("markAll")}
               </button>
             </footer>
           ) : null}

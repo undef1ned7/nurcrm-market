@@ -5,6 +5,7 @@ import {
   FormBlock,
   useOptionalProductFormLayout,
 } from "../../formLayout";
+import { isBatchExpiryEnabled } from "@entities/product";
 
 const ProductWarehouseSection = ({
   marketData,
@@ -352,17 +353,48 @@ const ProductWarehouseSection = ({
             <h3 className="market-product-form__section-title">
               {tp("shelfLifeTitle")}
             </h3>
-            <div className="market-product-form__form-group">
-              <input
-                type="date"
-                className="market-product-form__input"
-                value={marketData.expiryDate}
-                onChange={(e) =>
-                  handleMarketDataChange("expiryDate", e.target.value)
-                }
-                placeholder="дд. мм. гггг"
-              />
-            </div>
+            {isBatchExpiryEnabled() ? (
+              <div className="market-product-form__form-group">
+                <p className="add-product-page__hint">
+                  {tp("shelfLifeDurationHint")}
+                </p>
+                <div className="add-product-page__shelf-life-row">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    className="market-product-form__input"
+                    value={marketData.shelfLifeValue}
+                    onChange={(e) =>
+                      handleMarketDataChange("shelfLifeValue", e.target.value)
+                    }
+                    placeholder={tp("shelfLifeValuePlaceholder")}
+                  />
+                  <select
+                    className="market-product-form__input"
+                    value={marketData.shelfLifeUnit}
+                    onChange={(e) =>
+                      handleMarketDataChange("shelfLifeUnit", e.target.value)
+                    }
+                  >
+                    <option value="days">{tp("shelfLifeUnitDays")}</option>
+                    <option value="months">{tp("shelfLifeUnitMonths")}</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="market-product-form__form-group">
+                <input
+                  type="date"
+                  className="market-product-form__input"
+                  value={marketData.expiryDate}
+                  onChange={(e) =>
+                    handleMarketDataChange("expiryDate", e.target.value)
+                  }
+                  placeholder="дд. мм. гггг"
+                />
+              </div>
+            )}
           </div>
           </FormBlock>
   </>

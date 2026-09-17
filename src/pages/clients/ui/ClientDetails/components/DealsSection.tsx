@@ -1,8 +1,11 @@
-import { CalendarDays, Pencil, ReceiptText } from "lucide-react";
+import { useState } from "react";
+import { CalendarDays, Pencil, Receipt, ReceiptText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { DealRecord } from "../clientDetails.types";
 import { getDealDateISO, getDebtProgress } from "../clientDetails.utils";
+import { resolveDealSaleId } from "../clientDetails.helpers";
+import ReceiptPreviewModal from "@pages/documents/ui/components/ReceiptPreviewModal";
 
 export interface DealsSectionProps {
   filteredDeals: DealRecord[];
@@ -20,6 +23,9 @@ export function DealsSection({
   onEditDeal,
 }: DealsSectionProps) {
   const { t } = useTranslation();
+  const [previewSaleId, setPreviewSaleId] = useState<string | number | null>(
+    null,
+  );
   const kindLabel = (kind: unknown) => {
     const map: Record<string, string> = {
       sale: t("crm.clients.details.sale"),
@@ -55,6 +61,7 @@ export function DealsSection({
               ? t("crm.clients.details.prepayment")
               : t("crm.clients.details.debt");
           const dealDate = getDealDateISO(deal);
+          const saleId = resolveDealSaleId(deal);
 
           return (
             <div
@@ -84,9 +91,32 @@ export function DealsSection({
                       {dealDate}
                     </span>
                   )}
-                  <span className="cdx__deal-meta-item">
-                    {t("crm.clients.details.noTasks")}
-                  </span>
+                  {isDebt ? (
+                    saleId ? (
+                      <button
+                        type="button"
+                        className="cdx__deal-meta-item cdx__deal-meta-item--link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewSaleId(saleId);
+                        }}
+                        title={t("crm.clients.details.viewReceiptHint")}
+                      >
+                        <Receipt size={14} />
+                        {t("crm.clients.details.receiptNumber", {
+                          id: saleId,
+                        })}
+                      </button>
+                    ) : (
+                      <span className="cdx__deal-meta-item cdx__deal-meta-item--muted">
+                        {t("crm.clients.details.noLinkedReceipt")}
+                      </span>
+                    )
+                  ) : (
+                    <span className="cdx__deal-meta-item">
+                      {t("crm.clients.details.noTasks")}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -153,6 +183,15 @@ export function DealsSection({
           );
         })}
       </div>
+
+      {previewSaleId != null && (
+        <ReceiptPreviewModal
+          receiptId={previewSaleId}
+          receiptData={undefined}
+          onClose={() => setPreviewSaleId(null)}
+          onEdit={undefined}
+        />
+      )}
     </div>
   );
 }

@@ -997,6 +997,25 @@
   }
 }
 
+.cdx__deal-meta-item--link {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--nur-primary, #3b82f6);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.cdx__deal-meta-item--muted {
+  opacity: 0.65;
+  font-style: italic;
+}
+
 .cdx__deal-money {
   text-align: right;
   white-space: nowrap;

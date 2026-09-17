@@ -88,7 +88,7 @@ export const DEFAULT_MARKET_DATA = {
   kitProducts: [],
   kitSearchTerm: "",
   packagings: [],
-  alternateBarcodesText: "",
+  alternateBarcodes: [],
 };
 
 // Задержка навигации после успешного сохранения (мс)
