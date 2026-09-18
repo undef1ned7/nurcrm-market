@@ -1,4 +1,8 @@
 .analytics-page {
+  // Страница может оказаться в узкой рабочей области (например, рядом с
+  // открытой боковой панелью), даже когда ширина всего окна десктопная.
+  // Поэтому адаптив KPI ниже зависит от ширины самой страницы.
+  container-type: inline-size;
   min-width: 0;
   padding: 0;
   // background: var(--nur-bg);
@@ -304,7 +308,7 @@
   // KPI Cards
   &__kpis {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
   }
 
@@ -313,6 +317,7 @@
     border: 1px solid var(--nur-border);
     border-radius: var(--nur-radius-lg, 16px);
     padding: 20px;
+    min-width: 0;
     box-shadow: var(--nur-shadow-sm);
     display: flex;
     flex-direction: column;
@@ -365,7 +370,13 @@
     color: var(--nur-text);
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
     gap: 4px;
+    min-width: 0;
+
+    > * {
+      min-width: 0;
+    }
   }
 
   &__kpi-currency {
@@ -897,7 +908,7 @@
   // Планшеты (1024px - 1200px)
   @media (max-width: 1200px) {
     &__kpis {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     &__grid {
@@ -1238,7 +1249,7 @@
   // Ландшафтная ориентация на мобильных
   @media (max-width: 768px) and (orientation: landscape) {
     &__kpis {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     &__chart-card {
@@ -1251,6 +1262,34 @@
   }
 }
 
+// Не опираемся только на @media: в split-view ширина документа остаётся
+// большой, но доступная ширина аналитики уже мобильная.
+@container (max-width: 640px) {
+  .analytics-page__kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .analytics-page__kpi-card {
+    padding: 16px;
+  }
+
+  .analytics-page__kpi-value {
+    font-size: 20px;
+    gap: 3px;
+  }
+
+  .analytics-page__kpi-currency {
+    font-size: 14px;
+  }
+}
+
+@container (max-width: 400px) {
+  .analytics-page__kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 // ============================================================================
 // ТЁМНАЯ ТЕМА — применяется только когда у корня есть модификатор `--dark`
 // (включается в тёмном режиме приложения). Светлый режим выше остаётся как был.
@@ -1258,14 +1297,16 @@
 // другие сферы не затрагиваются.
 // Палитра выровнена с глобальными --nur-* dark tokens (cool navy, без коричневого).
 // ============================================================================
-$dk-bg: #0b1220;
-$dk-panel: #111827;
-$dk-panel-hover: #1e293b;
-$dk-head: #0f172a;
-$dk-border: rgba(148, 163, 184, 0.14);
-$dk-border-strong: rgba(148, 163, 184, 0.22);
-$dk-text: #e5e7eb;
-$dk-muted: #94a3b8;
+// Follow the global dark tokens so the Settings → «Стиль тёмной темы»
+// switcher (soft / classic) applies here too.
+$dk-bg: var(--nur-bg);
+$dk-panel: var(--nur-surface);
+$dk-panel-hover: var(--nur-surface-3);
+$dk-head: var(--nur-surface-2);
+$dk-border: var(--nur-border);
+$dk-border-strong: var(--nur-border-strong);
+$dk-text: var(--nur-text);
+$dk-muted: var(--nur-muted);
 $dk-accent: var(--nur-primary);
 $dk-accent-soft: rgba(247, 214, 23, 0.14);
 $dk-accent-border: rgba(247, 214, 23, 0.32);

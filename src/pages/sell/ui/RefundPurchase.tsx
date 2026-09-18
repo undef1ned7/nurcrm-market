@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
   historySellProductDetail,
   returnSale,
@@ -11,6 +12,7 @@ import {
   normalizeSaleStatus,
 } from "@shared/lib/tools/saleReturn";
 import Modal from "@shared/ui/Modal/Modal";
+import i18n from "@shared/config/i18n";
 import { kindTranslate } from "./sell.constants";
 
 const extractApiError = (errorLike: any) => {
@@ -32,10 +34,13 @@ const extractApiError = (errorLike: any) => {
       .join(", ");
   }
 
-  return String(value || "Не удалось выполнить возврат. Попробуйте ещё раз.");
+  return String(
+    value || i18n.t("crm.sell.refundModal.errors.generic"),
+  );
 };
 
 const RefundPurchase = ({ onClose, onChanged, item }: any) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { profile } = useUser();
 
@@ -68,11 +73,11 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
           setSaleData(result.payload);
         } else {
           console.error("Ошибка загрузки данных продажи:", result.payload);
-          setError("Не удалось загрузить данные о продаже.");
+          setError(t("crm.sell.refundModal.errors.loadSaleFailed"));
         }
       } catch (err: any) {
         console.error("Ошибка загрузки данных продажи:", err);
-        setError("Не удалось загрузить данные о продаже.");
+        setError(t("crm.sell.refundModal.errors.loadSaleFailed"));
       } finally {
         setLoading(false);
       }
@@ -113,7 +118,7 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
           saleItem?.product_name ??
           saleItem?.display_name ??
           saleItem?.object_name ??
-          `Позиция ${index + 1}`,
+          t("crm.sell.refundModal.positionFallback", { number: index + 1 }),
         quantity: remainingQuantity,
         soldQuantity,
         returnedQuantity,
@@ -160,35 +165,38 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
     });
 
   const validateCommon = useCallback(() => {
-    if (!currentItem?.id) return "Не найден идентификатор продажи.";
+    if (!currentItem?.id) return t("crm.sell.refundModal.errors.saleIdNotFound");
     if (!isReturnableStatus) {
-      return "Возврат возможен только для оплаченных, долговых или частично возвращённых продаж.";
+      return t("crm.sell.refundModal.errors.notReturnable");
     }
     return "";
-  }, [currentItem?.id, isReturnableStatus]);
+  }, [currentItem?.id, isReturnableStatus, t]);
 
   const validatePartial = useCallback(() => {
     const commonError = validateCommon();
     if (commonError) return commonError;
     if (partialItems.length === 0) {
-      return "Укажите количество хотя бы для одной позиции.";
+      return t("crm.sell.refundModal.errors.noQuantitySpecified");
     }
 
     for (const partialItem of partialItems) {
       const sourceItem = saleItems.find(
         (saleItem) => String(saleItem.id) === String(partialItem.sale_item_id),
       );
-      if (!sourceItem) return "Одна из позиций чека не найдена.";
+      if (!sourceItem) return t("crm.sell.refundModal.errors.itemNotFound");
       if (partialItem.quantity > sourceItem.quantity) {
-        return `Для "${sourceItem.name}" нельзя вернуть больше ${sourceItem.quantity}.`;
+        return t("crm.sell.refundModal.errors.exceedsMax", {
+          name: sourceItem.name,
+          max: sourceItem.quantity,
+        });
       }
       if (isAgent && !Number.isInteger(partialItem.quantity)) {
-        return "Для агентских продаж количество возврата должно быть целым.";
+        return t("crm.sell.refundModal.errors.agentIntegerOnly");
       }
     }
 
     return "";
-  }, [isAgent, partialItems, saleItems, validateCommon]);
+  }, [isAgent, partialItems, saleItems, t, validateCommon]);
 
   // Ключ операции возврата: держится стабильным для одного и того же выбора
   // позиций, чтобы повторный клик / ретрай после сетевой ошибки не создал
@@ -262,7 +270,7 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
     <Modal
       open
       onClose={onClose}
-      title="Возврат продажи"
+      title={t("crm.sell.refundModal.title")}
       className="sellReturnModal"
       contentClassName="sellReturnModal__content"
       wrapperId="sell-return-modal"
@@ -270,35 +278,39 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
       <div className="sellReturn">
         {loading ? (
           <div className="sellReturn__loading">
-            <p>Загрузка данных о продаже...</p>
+            <p>{t("crm.sell.refundModal.loading")}</p>
           </div>
         ) : (
           <>
             <p className="sellReturn__lead">
-              Для полной отмены нажмите <b>Вернуть весь чек</b>. Если нужен
-              частичный возврат, укажите количество только в нужных позициях.
+              {t("crm.sell.refundModal.leadBefore")}{" "}
+              <b>{t("crm.sell.refundModal.returnAll")}</b>.{" "}
+              {t("crm.sell.refundModal.leadAfter")}
             </p>
 
             <div className="sellReturn__summary">
               <div className="sellReturn__summaryMain">
                 <div className="sellReturn__summaryTitle">
-                  {currentItem?.client_name || "Без клиента"}
+                  {currentItem?.client_name ||
+                    t("crm.sell.modals.saleDetail.noClient")}
                 </div>
                 <div className="sellReturn__summaryMeta">
-                  Чек #{String(currentItem?.id || "").slice(0, 8) || "—"}
+                  {t("crm.sell.refundModal.receiptNumber", {
+                    id: String(currentItem?.id || "").slice(0, 8) || "—",
+                  })}
                 </div>
               </div>
               <div className="sellReturn__summaryGrid">
                 <div className="sellReturn__summaryItem">
-                  <span>Статус</span>
+                  <span>{t("common.status")}</span>
                   <b>{statusLabel}</b>
                 </div>
                 <div className="sellReturn__summaryItem">
-                  <span>Сумма</span>
+                  <span>{t("common.amount")}</span>
                   <b>{formatMoney(currentItem?.total || currentItem?.amount)} сом</b>
                 </div>
                 <div className="sellReturn__summaryItem">
-                  <span>Позиций</span>
+                  <span>{t("crm.sell.positions")}</span>
                   <b>{saleItems.length}</b>
                 </div>
               </div>
@@ -307,9 +319,9 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
             {saleItems.length > 0 && (
               <div className="sellReturn__items">
                 <div className="sellReturn__itemsHead">
-                  <span>Позиция</span>
-                  <span>Макс. возврат</span>
-                  <span>Вернуть</span>
+                  <span>{t("crm.sell.refundModal.colPosition")}</span>
+                  <span>{t("crm.sell.refundModal.colMaxReturn")}</span>
+                  <span>{t("crm.sell.refundModal.colReturn")}</span>
                 </div>
 
                 {saleItems.map((saleItem: any) => (
@@ -319,7 +331,13 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
                       <div className="sellReturn__itemMeta">
                         {formatMoney(saleItem.unitPrice)} сом x {saleItem.quantity}
                         {saleItem.returnedQuantity > 0 && (
-                          <> · возвращено {saleItem.returnedQuantity} из {saleItem.soldQuantity}</>
+                          <>
+                            {" · "}
+                            {t("crm.sell.refundModal.returnedOfSold", {
+                              returned: saleItem.returnedQuantity,
+                              sold: saleItem.soldQuantity,
+                            })}
+                          </>
                         )}
                       </div>
                     </div>
@@ -349,8 +367,7 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
 
             {isAgent && saleItems.length > 0 && (
               <div className="sellReturn__hint">
-                Для агентских продаж частичный возврат доступен только целым
-                количеством.
+                {t("crm.sell.refundModal.agentPartialHint")}
               </div>
             )}
 
@@ -363,7 +380,7 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
                 onClick={onClose}
                 disabled={submitting || loading}
               >
-                Отмена
+                {t("common.cancel")}
               </button>
 
               <button
@@ -373,8 +390,8 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
                 disabled={submitting || loading || !isReturnableStatus}
               >
                 {submitting && partialCount === 0
-                  ? "Оформляем..."
-                  : "Вернуть весь чек"}
+                  ? t("crm.sell.refundModal.submitting")
+                  : t("crm.sell.refundModal.returnAll")}
               </button>
 
               <button
@@ -386,13 +403,13 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
                 }
               >
                 {submitting && partialCount > 0
-                  ? "Оформляем..."
-                  : `Частичный возврат${partialCount > 0 ? ` (${partialCount})` : ""}`}
+                  ? t("crm.sell.refundModal.submitting")
+                  : `${t("crm.sell.refundModal.partialReturn")}${partialCount > 0 ? ` (${partialCount})` : ""}`}
               </button>
             </div>
 
             <div className="sellReturn__hint">
-              Подсказка: Enter — подтвердить, Esc — закрыть.
+              {t("crm.sell.refundModal.shortcutHint")}
             </div>
           </>
         )}

@@ -34,6 +34,7 @@ const Kassa = () => {
     handleEditCashbox,
     handleResetFilters,
     canRequestFlowChange,
+    cashflowRequestsEnabled,
     flowChange,
     openFlowChange,
     closeFlowChange,
@@ -108,7 +109,8 @@ const Kassa = () => {
             { id: "all", label: t("crm.kassa.all") },
             { id: "expense", label: t("crm.kassa.expense") },
             { id: "income", label: t("crm.kassa.income") },
-            ...(company?.subscription_plan?.name !== "Старт"
+            ...(company?.subscription_plan?.name !== "Старт" &&
+            cashflowRequestsEnabled
               ? [{ id: "pending", label: tw("requests") }]
               : []),
             { id: "reports", label: t("crm.kassa.reports") },

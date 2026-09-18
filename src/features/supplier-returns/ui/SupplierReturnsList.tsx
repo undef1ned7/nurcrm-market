@@ -1,4 +1,5 @@
 import { RefreshCw, Undo2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import SearchableCombobox from "@shared/ui/SearchableCombobox/SearchableCombobox";
 import {
   EmptyState,
@@ -17,6 +18,7 @@ import { SupplierReturnDetailModal } from "./SupplierReturnDetailModal";
 import "./SupplierReturns.scss";
 
 export function SupplierReturnsList() {
+  const { t } = useTranslation();
   const vm = useSupplierReturnsList();
   const {
     loading,
@@ -50,27 +52,32 @@ export function SupplierReturnsList() {
     <div className="supplier-returns">
       {source === "composed" ? (
         <div className="supplier-returns__banner" role="status">
-          API возвратов ещё нет. Список хранится на этом устройстве, а списание
-          остатка идёт через складской PATCH. После появления эндпоинта документы
-          будут на сервере.
+          {t("crm.procurement.returnsListApiBanner")}
         </div>
       ) : null}
 
       <FilterBar className="supplier-returns__toolbar">
         <div className="supplier-returns__field">
-          <label className="nur-label">Поставщик</label>
+          <label className="nur-label">{t("crm.procurement.colSupplier")}</label>
           <SearchableCombobox
             value={filtersDraft.supplier_id}
             onChange={(value: string) =>
               setFiltersDraft((prev) => ({ ...prev, supplier_id: String(value || "") }))
             }
-            options={[{ value: "", label: "Все поставщики" }, ...supplierOptions]}
-            placeholder={suppliersLoading ? "Загрузка..." : "Все поставщики"}
+            options={[
+              { value: "", label: t("crm.procurement.allSuppliers") },
+              ...supplierOptions,
+            ]}
+            placeholder={
+              suppliersLoading
+                ? t("crm.procurement.suppliersLoading")
+                : t("crm.procurement.allSuppliers")
+            }
             classNamePrefix="searchableCombo"
           />
         </div>
         <div className="supplier-returns__field supplier-returns__field--date">
-          <label className="nur-label">Дата от</label>
+          <label className="nur-label">{t("crm.procurement.dateFrom")}</label>
           <input
             className="nur-input"
             type="date"
@@ -81,7 +88,7 @@ export function SupplierReturnsList() {
           />
         </div>
         <div className="supplier-returns__field supplier-returns__field--date">
-          <label className="nur-label">Дата до</label>
+          <label className="nur-label">{t("crm.procurement.dateTo")}</label>
           <input
             className="nur-input"
             type="date"
@@ -92,7 +99,7 @@ export function SupplierReturnsList() {
           />
         </div>
         <div className="supplier-returns__field supplier-returns__field--reason">
-          <label className="nur-label">Причина</label>
+          <label className="nur-label">{t("crm.procurement.reasonLabel")}</label>
           <select
             className="nur-input"
             value={filtersDraft.reason}
@@ -100,7 +107,7 @@ export function SupplierReturnsList() {
               setFiltersDraft((prev) => ({ ...prev, reason: event.target.value }))
             }
           >
-            <option value="">Все</option>
+            <option value="">{t("common.all")}</option>
             {REASON_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -109,14 +116,14 @@ export function SupplierReturnsList() {
           </select>
         </div>
         <div className="supplier-returns__field supplier-returns__field--search">
-          <label className="nur-label">Поиск</label>
+          <label className="nur-label">{t("crm.procurement.search")}</label>
           <input
             className="nur-input"
             value={filtersDraft.search}
             onChange={(event) =>
               setFiltersDraft((prev) => ({ ...prev, search: event.target.value }))
             }
-            placeholder="Поставщик или товар"
+            placeholder={t("crm.procurement.searchSupplierProduct")}
           />
         </div>
       </FilterBar>
@@ -128,7 +135,7 @@ export function SupplierReturnsList() {
           onClick={applyFilters}
           disabled={loading || !hasPendingChanges || dateRangeInvalid}
         >
-          Применить
+          {t("common.apply")}
         </button>
         <button
           type="button"
@@ -136,7 +143,7 @@ export function SupplierReturnsList() {
           onClick={resetFilters}
           disabled={loading || (!hasAnyFilter && !hasPendingChanges)}
         >
-          Сбросить
+          {t("common.reset")}
         </button>
         <button
           type="button"
@@ -145,7 +152,7 @@ export function SupplierReturnsList() {
           disabled={loading}
         >
           <RefreshCw size={16} />
-          Обновить
+          {t("common.refresh")}
         </button>
         <button
           type="button"
@@ -153,33 +160,33 @@ export function SupplierReturnsList() {
           onClick={() => goCreate()}
         >
           <Undo2 size={16} />
-          Оформить возврат
+          {t("crm.procurement.submitReturn")}
         </button>
       </div>
 
       {dateRangeInvalid ? (
         <div className="market-receipt-page__empty">
-          Проверьте диапазон дат: дата окончания раньше даты начала.
+          {t("crm.procurement.dateRangeInvalid")}
         </div>
       ) : loading ? (
-        <div className="market-receipt-page__empty">Загрузка...</div>
+        <div className="market-receipt-page__empty">{t("common.loading")}</div>
       ) : rows.length === 0 ? (
         <EmptyState
-          title="Возвратов пока нет"
-          text="Оформите возврат брака, излишка или ошибочной поставки."
+          title={t("crm.procurement.returnsEmpty")}
+          text={t("crm.procurement.returnsEmptyHint")}
         />
       ) : (
         <div className="supplier-returns__table-wrap">
           <table className="supplier-returns__table supplier-returns__table--clickable">
             <thead>
               <tr>
-                <th>Поставщик</th>
-                <th>Причина</th>
-                <th>Компенсация</th>
-                <th>Создал</th>
-                <th>Дата</th>
-                <th>Позиций</th>
-                <th>Сумма</th>
+                <th>{t("crm.procurement.colSupplier")}</th>
+                <th>{t("crm.procurement.reasonLabel")}</th>
+                <th>{t("crm.procurement.colCompensation")}</th>
+                <th>{t("crm.procurement.colCreatedBy")}</th>
+                <th>{t("crm.procurement.colDate")}</th>
+                <th>{t("crm.procurement.colItems")}</th>
+                <th>{t("crm.procurement.colAmount")}</th>
               </tr>
             </thead>
             <tbody>
@@ -215,7 +222,7 @@ export function SupplierReturnsList() {
       {!loading && !dateRangeInvalid && totalPages > 1 ? (
         <div className="supplier-returns__pager">
           <span>
-            {count} возвратов
+            {count} {t("crm.procurement.returnsCount")}
             {totalAmount != null ? ` · ${formatMoney(totalAmount)}` : ""}
           </span>
           <button
@@ -224,10 +231,10 @@ export function SupplierReturnsList() {
             onClick={() => handlePageChange(page - 1)}
             disabled={page <= 1 || !hasPrevPage}
           >
-            Назад
+            {t("common.back")}
           </button>
           <span>
-            Страница {page} из {totalPages}
+            {t("common.paginationPage", { current: page, total: totalPages })}
           </span>
           <button
             type="button"
@@ -235,7 +242,7 @@ export function SupplierReturnsList() {
             onClick={() => handlePageChange(page + 1)}
             disabled={!hasNextPage || page >= totalPages}
           >
-            Вперёд
+            {t("catalog.forward")}
           </button>
         </div>
       ) : null}

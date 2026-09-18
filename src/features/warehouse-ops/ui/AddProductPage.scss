@@ -254,6 +254,21 @@
     }
   }
 
+  &__shelf-life-row {
+    display: flex;
+    gap: 12px;
+
+    > :first-child {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    > :last-child {
+      flex: 0 0 auto;
+      width: auto;
+    }
+  }
+
   &__create-supplier {
     flex: 0 0 auto;
     align-self: stretch;
@@ -1603,5 +1618,129 @@
 
   &__error {
     margin-top: 8px;
+  }
+}
+
+/* Доп. штрихкоды (AlternateBarcodesField) */
+.alt-barcodes-field {
+  &--compact {
+    margin-top: 4px;
+  }
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--nur-surface-2);
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nur-text);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  &__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--nur-primary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &__chevron {
+    margin-left: auto;
+    transition: transform 0.15s ease;
+
+    &[data-open="true"] {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__panel {
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    background: var(--nur-surface-2);
+  }
+
+  &__hint {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: var(--nur-muted);
+    line-height: 1.45;
+  }
+
+  &__add-btn {
+    padding: 6px 12px;
+    margin-bottom: 12px;
+    background: var(--nur-primary);
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  &__table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 0.8fr 32px;
+    gap: 8px;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+
+      &--header {
+        display: none;
+      }
+    }
+
+    &--header {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--nur-muted);
+    }
+  }
+
+  &__input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  &__remove {
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--nur-muted);
+    cursor: pointer;
+    padding: 4px;
+
+    &:hover {
+      color: #e74c3c;
+    }
   }
 }

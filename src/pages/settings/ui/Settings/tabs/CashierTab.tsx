@@ -53,155 +53,196 @@ export function CashierTab(props) {
     <form onSubmit={handleSaveCashierSettings} className="settings__tab-form">
       <div className="settings__section">
         <h2 className="settings__section-title">
-          <span className="settings__emoji">🔐</span>{" "}
-          {t("settings.cashier.deleteCodeTitle")}
+          <span className="settings__emoji">📨</span>{" "}
+          {t("settings.cashier.requestsTitle")}
         </h2>
-
-        <div className="settings__form-group">
-          <p className="settings__mutedText">
-            <GlossaryText>{t("settings.cashier.deleteCodeHint")}</GlossaryText>
-          </p>
-
-          <label className="nur-label" htmlFor="delete_item_code">
-            {t("settings.cashier.deleteCodeLabel")}
-          </label>
-          <div className="settings__input-wrapper">
-            <input
-              id="delete_item_code"
-              name="delete_item_code"
-              type={showCashierDeleteCode ? "text" : "password"}
-              inputMode="numeric"
-              className="nur-input"
-              placeholder={t("settings.cashier.deleteCodePlaceholder")}
-              autoComplete="off"
-              disabled={cashierSettingsLoading}
-              value={cashierSettings.deleteCode}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 8);
-                setCashierSettings((prev) => ({
-                  ...prev,
-                  deleteCode: value,
-                }));
-              }}
-            />
-            <button
-              type="button"
-              className="settings__password-toggle"
-              onClick={() => setShowCashierDeleteCode((prev) => !prev)}
-              aria-label={t("settings.cashier.showCode")}
-            >
-              {showCashierDeleteCode ? "🙈" : "👁️"}
-            </button>
+        <p className="settings__mutedText">
+          <GlossaryText>{t("settings.cashier.requestsHint")}</GlossaryText>
+        </p>
+        <div className="settings__prefRow">
+          <div className="settings__prefText">
+            <span className="settings__prefLabel">
+              {t("settings.cashier.requestsEnable")}
+            </span>
+            <p className="settings__prefHint">
+              {t("settings.cashier.requestsEnableHint")}
+            </p>
           </div>
-
-          {cashierSettings.deleteCode ? (
-            <button
-              type="button"
-              className="nur-btn nur-btn--secondary"
-              style={{ marginTop: 10, width: "auto" }}
-              onClick={() =>
+          <label className="settings__switch">
+            <input
+              type="checkbox"
+              className="settings__switch-input"
+              disabled={cashierSettingsLoading}
+              checked={cashierSettings.cashflowRequestsEnabled}
+              onChange={(e) =>
                 setCashierSettings((prev) => ({
                   ...prev,
-                  deleteCode: "",
+                  cashflowRequestsEnabled: e.target.checked,
                 }))
               }
-            >
-              {t("settings.cashier.removeCode")}
-            </button>
-          ) : (
-            <p className="settings__mutedText" style={{ marginTop: 8 }}>
-              {t("settings.cashier.deleteCodeNotRequired")}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="settings__section">
-        <h2 className="settings__section-title">
-          <span className="settings__emoji">📅</span>{" "}
-          {t("settings.cashier.debtTitle")}
-        </h2>
-        <p className="settings__mutedText">{t("settings.cashier.debtHint")}</p>
-        <div className="settings__prefRow">
-          <button
-            type="button"
-            className="nur-btn nur-btn--secondary"
-            disabled={cashierSettingsLoading}
-            style={{
-              width: "auto",
-              opacity: cashierSettings.debtScheduleVersion === "v2" ? 1 : 0.65,
-              outline:
-                cashierSettings.debtScheduleVersion === "v2"
-                  ? "2px solid var(--nur-primary, #f7d74f)"
-                  : undefined,
-            }}
-            onClick={() =>
-              setCashierSettings((prev) => ({
-                ...prev,
-                debtScheduleVersion: "v2",
-              }))
-            }
-          >
-            {t("settings.cashier.debtV2")}
-          </button>
-          <button
-            type="button"
-            className="nur-btn nur-btn--secondary"
-            disabled={cashierSettingsLoading}
-            style={{
-              width: "auto",
-              opacity: cashierSettings.debtScheduleVersion === "v1" ? 1 : 0.65,
-              outline:
-                cashierSettings.debtScheduleVersion === "v1"
-                  ? "2px solid var(--nur-primary, #f7d74f)"
-                  : undefined,
-            }}
-            onClick={() =>
-              setCashierSettings((prev) => ({
-                ...prev,
-                debtScheduleVersion: "v1",
-              }))
-            }
-          >
-            {t("settings.cashier.debtV1")}
-          </button>
-        </div>
-      </div>
-
-      <div className="settings__section">
-        <h2 className="settings__section-title">
-          <span className="settings__emoji">％</span>{" "}
-          {t("settings.cashier.maxDiscountTitle")}
-        </h2>
-
-        <div className="settings__form-group">
-          <p className="settings__mutedText">
-            <GlossaryText>{t("settings.cashier.maxDiscountHint")}</GlossaryText>
-          </p>
-
-          <label className="nur-label" htmlFor="max_discount_percent">
-            {t("settings.cashier.maxDiscountLabel")}
+            />
+            <span className="settings__switch-track" aria-hidden="true">
+              <span className="settings__switch-thumb" />
+            </span>
           </label>
-          <input
-            id="max_discount_percent"
-            name="max_discount_percent"
-            type="number"
-            min="0"
-            max="100"
-            step="0.01"
-            className="nur-input"
-            placeholder={t("settings.cashier.maxDiscountPlaceholder")}
-            disabled={cashierSettingsLoading}
-            value={cashierSettings.maxDiscountPercent}
-            onChange={(e) =>
-              setCashierSettings((prev) => ({
-                ...prev,
-                maxDiscountPercent: e.target.value,
-              }))
-            }
-          />
         </div>
       </div>
+
+      {isMarketSector ? (
+        <>
+          <div className="settings__section">
+            <h2 className="settings__section-title">
+              <span className="settings__emoji">🔐</span>{" "}
+              {t("settings.cashier.deleteCodeTitle")}
+            </h2>
+
+            <div className="settings__form-group">
+              <p className="settings__mutedText">
+                <GlossaryText>{t("settings.cashier.deleteCodeHint")}</GlossaryText>
+              </p>
+
+              <label className="nur-label" htmlFor="delete_item_code">
+                {t("settings.cashier.deleteCodeLabel")}
+              </label>
+              <div className="settings__input-wrapper">
+                <input
+                  id="delete_item_code"
+                  name="delete_item_code"
+                  type={showCashierDeleteCode ? "text" : "password"}
+                  inputMode="numeric"
+                  className="nur-input"
+                  placeholder={t("settings.cashier.deleteCodePlaceholder")}
+                  autoComplete="off"
+                  disabled={cashierSettingsLoading}
+                  value={cashierSettings.deleteCode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 8);
+                    setCashierSettings((prev) => ({
+                      ...prev,
+                      deleteCode: value,
+                    }));
+                  }}
+                />
+                <button
+                  type="button"
+                  className="settings__password-toggle"
+                  onClick={() => setShowCashierDeleteCode((prev) => !prev)}
+                  aria-label={t("settings.cashier.showCode")}
+                >
+                  {showCashierDeleteCode ? "🙈" : "👁️"}
+                </button>
+              </div>
+
+              {cashierSettings.deleteCode ? (
+                <button
+                  type="button"
+                  className="nur-btn nur-btn--secondary"
+                  style={{ marginTop: 10, width: "auto" }}
+                  onClick={() =>
+                    setCashierSettings((prev) => ({
+                      ...prev,
+                      deleteCode: "",
+                    }))
+                  }
+                >
+                  {t("settings.cashier.removeCode")}
+                </button>
+              ) : (
+                <p className="settings__mutedText" style={{ marginTop: 8 }}>
+                  {t("settings.cashier.deleteCodeNotRequired")}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="settings__section">
+            <h2 className="settings__section-title">
+              <span className="settings__emoji">📅</span>{" "}
+              {t("settings.cashier.debtTitle")}
+            </h2>
+            <p className="settings__mutedText">{t("settings.cashier.debtHint")}</p>
+            <div className="settings__prefRow">
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary"
+                disabled={cashierSettingsLoading}
+                style={{
+                  width: "auto",
+                  opacity: cashierSettings.debtScheduleVersion === "v2" ? 1 : 0.65,
+                  outline:
+                    cashierSettings.debtScheduleVersion === "v2"
+                      ? "2px solid var(--nur-primary, #f7d74f)"
+                      : undefined,
+                }}
+                onClick={() =>
+                  setCashierSettings((prev) => ({
+                    ...prev,
+                    debtScheduleVersion: "v2",
+                  }))
+                }
+              >
+                {t("settings.cashier.debtV2")}
+              </button>
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary"
+                disabled={cashierSettingsLoading}
+                style={{
+                  width: "auto",
+                  opacity: cashierSettings.debtScheduleVersion === "v1" ? 1 : 0.65,
+                  outline:
+                    cashierSettings.debtScheduleVersion === "v1"
+                      ? "2px solid var(--nur-primary, #f7d74f)"
+                      : undefined,
+                }}
+                onClick={() =>
+                  setCashierSettings((prev) => ({
+                    ...prev,
+                    debtScheduleVersion: "v1",
+                  }))
+                }
+              >
+                {t("settings.cashier.debtV1")}
+              </button>
+            </div>
+          </div>
+
+          <div className="settings__section">
+            <h2 className="settings__section-title">
+              <span className="settings__emoji">％</span>{" "}
+              {t("settings.cashier.maxDiscountTitle")}
+            </h2>
+
+            <div className="settings__form-group">
+              <p className="settings__mutedText">
+                <GlossaryText>{t("settings.cashier.maxDiscountHint")}</GlossaryText>
+              </p>
+
+              <label className="nur-label" htmlFor="max_discount_percent">
+                {t("settings.cashier.maxDiscountLabel")}
+              </label>
+              <input
+                id="max_discount_percent"
+                name="max_discount_percent"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                className="nur-input"
+                placeholder={t("settings.cashier.maxDiscountPlaceholder")}
+                disabled={cashierSettingsLoading}
+                value={cashierSettings.maxDiscountPercent}
+                onChange={(e) =>
+                  setCashierSettings((prev) => ({
+                    ...prev,
+                    maxDiscountPercent: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {isMarketSector ? (
         <div className="settings__section">

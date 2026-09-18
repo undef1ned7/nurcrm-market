@@ -246,6 +246,9 @@ export function useCashierCartSync(b: any) {
           const localId = isCustom
             ? `custom-${cartItemId}`
             : `item-${cartItemId}`;
+          const variantName = productId
+            ? b.variantNameByProductIdRef?.current?.get(String(productId)) || ""
+            : "";
           return {
             id: localId, // ключ в UI (productId или custom-<cartItemId>)
             saleId: currentSale.id,
@@ -255,6 +258,7 @@ export function useCashierCartSync(b: any) {
             isWeight: Boolean(item.is_weight),
             salePackage,
             name: item.product_name || item.display_name || item.name || "—",
+            variantName,
             price: price,
             quantity: qty,
             discountTotal,

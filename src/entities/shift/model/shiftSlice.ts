@@ -27,6 +27,42 @@ const shiftSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    /**
+     * Патч открытой смены по WS-событию `market.shift.updated` (возврат чека /
+     * одобрение edit-cancel заявки на другом устройстве). Обновляем только
+     * пришедшие числовые поля — остальное не трогаем.
+     * @see docs/backend/kassa/OPEN-QUESTIONS-2026-09-BE-RESPONSE.md — Блок 1.4
+     */
+    shiftRealtimeUpdateReceived: (
+      state,
+      action: {
+        payload: {
+          shiftId?: string | null;
+          drawerExpectedCash?: string | null;
+          cashSalesTotal?: string | null;
+        };
+      },
+    ) => {
+      const { shiftId, drawerExpectedCash, cashSalesTotal } =
+        action.payload || {};
+      if (!shiftId) return;
+
+      const patch: Record<string, unknown> = {};
+      if (drawerExpectedCash != null) {
+        patch.drawer_expected_cash = drawerExpectedCash;
+        patch.expected_cash = drawerExpectedCash;
+      }
+      if (cashSalesTotal != null) patch.cash_sales_total = cashSalesTotal;
+      if (Object.keys(patch).length === 0) return;
+
+      if (state.currentShift?.id === shiftId) {
+        state.currentShift = { ...state.currentShift, ...patch };
+      }
+      const index = state.shifts.findIndex((s) => s.id === shiftId);
+      if (index !== -1) {
+        state.shifts[index] = { ...state.shifts[index], ...patch };
+      }
+    },
   },
   extraReducers: (builder) => {
     // Fetch all shifts
@@ -115,7 +151,8 @@ const shiftSlice = createSlice({
   },
 });
 
-export const { clearCurrentShift, clearError } = shiftSlice.actions;
+export const { clearCurrentShift, clearError, shiftRealtimeUpdateReceived } =
+  shiftSlice.actions;
 
 // Selectors
 export const useShifts = () => {

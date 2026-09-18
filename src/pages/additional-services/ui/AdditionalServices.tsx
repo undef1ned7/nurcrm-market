@@ -60,8 +60,14 @@ const AdditionalServices = () => {
       social.type === "navigational" &&
       social.isConnected &&
       Boolean(social.to);
+    const showPrice = Boolean(social.price);
     return (
       <article key={social.id} className="additional-services__card">
+        {showPrice ? (
+          <span className="additional-services__card-price">
+            {t("crm.additionalServices.pricePerMonth", { price: social.price })}
+          </span>
+        ) : null}
         <div className="additional-services__card-icon">
           {IconComponent ? <IconComponent /> : null}
         </div>

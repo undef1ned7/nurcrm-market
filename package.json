@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:stage": "VITE_API_URL=https://stageapp.nurcrm.kg/api VITE_WS_API_URL=https://stageapp.nurcrm.kg VITE_REGISTER_ACCESS_PASSWORD=nurcrm2026 VITE_BE_CASHFLOWS=true VITE_CASHFLOW_CHANGE_REQUESTS=true vite build",
+    "build:prod": "VITE_API_URL=https://app.nurcrm.kg/api VITE_WS_API_URL=https://app.nurcrm.kg VITE_BE_CASHFLOWS=true VITE_CASHFLOW_CHANGE_REQUESTS=true vite build",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "i18n:check": "node tools/check-i18n-keys.mjs",

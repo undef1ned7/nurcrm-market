@@ -84,6 +84,36 @@ export const productMatchesBarcode = (product: any, rawQuery: any) => {
   return barcodeCandidates.some((value) => value === query);
 };
 
+/**
+ * Название варианта (вкус/цвет и т.д.) из `alternate_barcodes`, если отсканированный
+ * код — дополнительный штрихкод с таким названием. Для основного штрихкода — "".
+ * @returns {string}
+ */
+export const getAlternateBarcodeVariantName = (product: any, rawBarcode: any) => {
+  const query = normalize(rawBarcode);
+  if (!query) return "";
+
+  const main = normalize(product?.barcode);
+  if (main && main === query) return "";
+
+  const nestedCandidates = [
+    product?.alternate_barcodes,
+    product?.barcodes,
+    product?.codes,
+  ];
+  for (const candidate of nestedCandidates) {
+    if (!Array.isArray(candidate)) continue;
+    for (const entry of candidate) {
+      if (!entry || typeof entry !== "object") continue;
+      const code = entry.value ?? entry.code ?? entry.barcode;
+      if (normalize(code) === query) {
+        return String(entry.name ?? "").trim();
+      }
+    }
+  }
+  return "";
+};
+
 const digitsOnly = (raw: any) => String(raw ?? "").replace(/\D/g, "");
 
 const normalizeEan13Digits = (digits: any) => {

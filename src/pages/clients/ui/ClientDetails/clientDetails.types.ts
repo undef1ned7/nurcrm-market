@@ -29,6 +29,8 @@ export type DealRecord = {
   date?: string;
   created_at?: string;
   updated_at?: string;
+  /** id чека POS, из которого создан долг (null — долг создан вручную). */
+  sale_id?: string | number | null;
   [key: string]: unknown;
 };
 

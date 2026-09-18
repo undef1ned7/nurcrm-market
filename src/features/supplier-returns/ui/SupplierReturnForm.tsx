@@ -33,17 +33,19 @@ const REASON_ICONS: Record<ReturnReason, ReactNode> = {
   other: <MoreHorizontal size={15} />,
 };
 
-const COMPENSATION_META: Record<
-  CompensationType,
-  { icon: ReactNode; short: string }
-> = {
-  cash: { icon: <Banknote size={18} />, short: "В кассу" },
-  debt_offset: { icon: <Scale size={18} />, short: "В счёт долга" },
-  none: { icon: <Warehouse size={18} />, short: "Только склад" },
+const COMPENSATION_ICONS: Record<CompensationType, ReactNode> = {
+  cash: <Banknote size={18} />,
+  debt_offset: <Scale size={18} />,
+  none: <Warehouse size={18} />,
 };
 
 export function SupplierReturnForm() {
   const { t } = useTranslation();
+  const COMPENSATION_SHORT_LABELS: Record<CompensationType, string> = {
+    cash: t("crm.procurement.compensationShortCash"),
+    debt_offset: t("crm.procurement.compensationShortDebtOffset"),
+    none: t("crm.procurement.compensationShortNone"),
+  };
   const vm = useSupplierReturnForm();
   const {
     navigate,
@@ -109,8 +111,7 @@ export function SupplierReturnForm() {
 
       {source === "composed" ? (
         <div className="srf__banner" role="status">
-          API возвратов ещё нет. Остаток спишется через склад, деньги — через
-          кассу, документ сохранится на этом устройстве.
+          {t("crm.procurement.returnFormApiBanner")}
         </div>
       ) : null}
 
@@ -121,13 +122,13 @@ export function SupplierReturnForm() {
               <header className="srf__card-head">
                 <span className="srf__step">1</span>
                 <div>
-                  <h2>Документ</h2>
-                  <p>Поставщик и причина возврата</p>
+                  <h2>{t("crm.procurement.returnFormDocument")}</h2>
+                  <p>{t("crm.procurement.returnFormDocumentHint")}</p>
                 </div>
               </header>
 
               <label className="srf__field">
-                <span>Поставщик</span>
+                <span>{t("crm.procurement.colSupplier")}</span>
                 <SearchableCombobox
                   value={selectedSupplierId}
                   onChange={(value: string) =>
@@ -135,7 +136,9 @@ export function SupplierReturnForm() {
                   }
                   options={supplierOptions}
                   placeholder={
-                    suppliersLoading ? "Загрузка..." : "Найти поставщика"
+                    suppliersLoading
+                      ? t("crm.procurement.suppliersLoading")
+                      : t("crm.procurement.findSupplier")
                   }
                   classNamePrefix="searchableCombo"
                   menuPortal
@@ -146,13 +149,17 @@ export function SupplierReturnForm() {
               {receiptId ? (
                 <div className="srf__receipt">
                   <FileText size={15} />
-                  Возврат по приходу — позиции ограничены этой накладной
+                  {t("crm.procurement.returnFormReceiptHint")}
                 </div>
               ) : null}
 
               <div className="srf__field">
-                <span>Причина</span>
-                <div className="srf__chips" role="radiogroup" aria-label="Причина">
+                <span>{t("crm.procurement.reasonLabel")}</span>
+                <div
+                  className="srf__chips"
+                  role="radiogroup"
+                  aria-label={t("crm.procurement.reasonLabel")}
+                >
                   {REASON_OPTIONS.map((option) => (
                     <button
                       key={option.value}
@@ -170,7 +177,7 @@ export function SupplierReturnForm() {
 
               <label className="srf__field">
                 <span>
-                  Комментарий
+                  {t("crm.procurement.commentLabel")}
                   {reason === "other" ? " *" : ""}
                 </span>
                 <textarea
@@ -180,8 +187,8 @@ export function SupplierReturnForm() {
                   onChange={(event) => setComment(event.target.value)}
                   placeholder={
                     reason === "other"
-                      ? "Опишите причину — поле обязательное"
-                      : "Номер претензии, партия, что именно не так"
+                      ? t("crm.procurement.commentPlaceholderRequired")
+                      : t("crm.procurement.commentPlaceholderOptional")
                   }
                 />
               </label>
@@ -191,14 +198,17 @@ export function SupplierReturnForm() {
               <header className="srf__card-head">
                 <span className="srf__step">2</span>
                 <div>
-                  <h2>Деньги</h2>
-                  <p>Куда уйдёт сумма возврата</p>
+                  <h2>{t("crm.procurement.returnFormMoney")}</h2>
+                  <p>{t("crm.procurement.returnFormMoneyHint")}</p>
                 </div>
               </header>
 
-              <div className="srf__money" role="radiogroup" aria-label="Компенсация">
+              <div
+                className="srf__money"
+                role="radiogroup"
+                aria-label={t("crm.procurement.colCompensation")}
+              >
                 {COMPENSATION_OPTIONS.map((option) => {
-                  const meta = COMPENSATION_META[option.value];
                   return (
                     <button
                       key={option.value}
@@ -209,8 +219,10 @@ export function SupplierReturnForm() {
                       aria-pressed={compensation === option.value}
                       onClick={() => setCompensation(option.value)}
                     >
-                      <span className="srf__money-icon">{meta.icon}</span>
-                      <strong>{meta.short}</strong>
+                      <span className="srf__money-icon">
+                        {COMPENSATION_ICONS[option.value]}
+                      </span>
+                      <strong>{COMPENSATION_SHORT_LABELS[option.value]}</strong>
                     </button>
                   );
                 })}
@@ -221,17 +233,11 @@ export function SupplierReturnForm() {
               ) : null}
 
               {compensation === "cash" ? (
-                <p className="srf__hint">
-                  Компенсация наличными списывается с кассы «Переменные расходы»
-                  (определяется автоматически).
-                </p>
+                <p className="srf__hint">{t("crm.procurement.cashCompensationHint")}</p>
               ) : null}
 
               {compensation === "debt_offset" && source === "composed" ? (
-                <p className="srf__warn">
-                  Пока нет API, долг не уменьшится сам — поправьте его в разделе
-                  «Долги».
-                </p>
+                <p className="srf__warn">{t("crm.procurement.debtOffsetNoApiWarn")}</p>
               ) : null}
             </section>
           </aside>
@@ -239,11 +245,14 @@ export function SupplierReturnForm() {
           <section className="srf__stage">
             <header className="srf__stage-head">
               <div>
-                <h2>Товары</h2>
+                <h2>{t("crm.procurement.returnFormProducts")}</h2>
                 <p>
                   {hasSupplier
-                    ? `${visibleProducts.length} позиций · выбрано ${selectedCount}`
-                    : "Сначала укажите поставщика"}
+                    ? t("crm.procurement.returnFormProductsSummary", {
+                        count: visibleProducts.length,
+                        selected: selectedCount,
+                      })
+                    : t("crm.procurement.returnFormSelectSupplierFirst")}
                 </p>
               </div>
               <label className="srf__search">
@@ -251,7 +260,7 @@ export function SupplierReturnForm() {
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Название, штрихкод, артикул"
+                  placeholder={t("crm.procurement.returnFormSearchPlaceholder")}
                   disabled={!hasSupplier}
                 />
               </label>
@@ -260,28 +269,25 @@ export function SupplierReturnForm() {
             {!hasSupplier ? (
               <div className="srf__empty">
                 <PackageSearch size={36} />
-                <strong>Выберите поставщика</strong>
-                <span>
-                  Слева укажите, кому возвращаете товар — здесь откроется его
-                  каталог с остатками.
-                </span>
+                <strong>{t("crm.procurement.returnFormSelectSupplier")}</strong>
+                <span>{t("crm.procurement.returnFormSelectSupplierHint")}</span>
               </div>
             ) : loadingCatalog ? (
               <div className="srf__empty">
                 <span className="srf__spinner" aria-hidden />
-                <strong>Загружаем товары</strong>
-                <span>Собираем остатки и лимиты по приходу…</span>
+                <strong>{t("crm.procurement.returnFormLoadingProducts")}</strong>
+                <span>{t("crm.procurement.returnFormLoadingProductsHint")}</span>
               </div>
             ) : visibleProducts.length === 0 ? (
               <div className="srf__empty">
                 <PackageX size={36} />
-                <strong>Нечего возвращать</strong>
+                <strong>{t("crm.procurement.returnFormNothingToReturn")}</strong>
                 <span>
                   {receiptId
-                    ? "В этом приходе не осталось возвратных позиций или на складе нулевой остаток."
+                    ? t("crm.procurement.returnFormNoReturnableInReceipt")
                     : search
-                      ? "По запросу ничего не найдено."
-                      : "У поставщика нет товаров с остатком."}
+                      ? t("crm.procurement.returnFormSearchEmpty")
+                      : t("crm.procurement.returnFormSupplierNoStock")}
                 </span>
               </div>
             ) : (
@@ -289,13 +295,15 @@ export function SupplierReturnForm() {
                 <table className="srf__table">
                   <thead>
                     <tr>
-                      <th>Товар</th>
-                      <th>На складе</th>
-                      {receiptId ? <th>Куплено / вернули</th> : null}
-                      <th>Можно</th>
-                      <th>Цена</th>
-                      <th>Кол-во</th>
-                      <th>Сумма</th>
+                      <th>{t("crm.procurement.returnFormColProduct")}</th>
+                      <th>{t("crm.procurement.returnFormColInStock")}</th>
+                      {receiptId ? (
+                        <th>{t("crm.procurement.returnFormColPurchasedReturned")}</th>
+                      ) : null}
+                      <th>{t("crm.procurement.returnFormColAvailable")}</th>
+                      <th>{t("crm.procurement.returnFormColPrice")}</th>
+                      <th>{t("crm.procurement.colQty")}</th>
+                      <th>{t("crm.procurement.colAmount")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -357,7 +365,9 @@ export function SupplierReturnForm() {
                                   event.target.value,
                                 )
                               }
-                              aria-label={`Цена ${product.productName}`}
+                              aria-label={t("crm.procurement.returnFormPriceFor", {
+                                name: product.productName,
+                              })}
                             />
                           </td>
                           <td>
@@ -375,14 +385,16 @@ export function SupplierReturnForm() {
                                 }
                                 placeholder="0"
                                 disabled={product.returnableQty <= 0}
-                                aria-label={`Количество ${product.productName}`}
+                                aria-label={t("crm.procurement.returnFormQtyFor", {
+                                  name: product.productName,
+                                })}
                               />
                               <button
                                 type="button"
                                 onClick={() => fillMax(product)}
                                 disabled={product.returnableQty <= 0}
                               >
-                                всё
+                                {t("crm.procurement.returnFormFillMax")}
                               </button>
                             </div>
                           </td>
@@ -402,11 +414,11 @@ export function SupplierReturnForm() {
         <footer className="srf__dock">
           <div className="srf__dock-stats">
             <div>
-              <span>Позиций</span>
+              <span>{t("crm.procurement.colItems")}</span>
               <strong>{selectedCount}</strong>
             </div>
             <div>
-              <span>Сумма возврата</span>
+              <span>{t("crm.procurement.returnFormTotalAmount")}</span>
               <strong>{formatMoney(totalAmount)}</strong>
             </div>
           </div>
@@ -414,9 +426,7 @@ export function SupplierReturnForm() {
             {validationError && selectedCount > 0 ? (
               <p className="srf__dock-error">{validationError}</p>
             ) : (
-              <p className="srf__dock-hint">
-                Проверьте количество и нажмите оформить — остаток спишется сразу.
-              </p>
+              <p className="srf__dock-hint">{t("crm.procurement.returnFormDockHint")}</p>
             )}
             <button
               type="button"

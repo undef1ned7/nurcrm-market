@@ -80,17 +80,28 @@ const notificationSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchNotificationsAsync.pending, (state, action) => {
+        if (action.meta.arg?.countOnly) return;
         if (action.meta.arg?.append) state.loadingMore = true;
         else state.loading = true;
         state.error = null;
       })
       .addCase(fetchNotificationsAsync.fulfilled, (state, action) => {
-        const { data, append } = action.payload || {};
+        const { data, append, countOnly } = action.payload || {};
+        state.loading = false;
+        state.loadingMore = false;
+
+        // Пересинхронизация только счётчика (после реконнекта WS) — список не трогаем.
+        if (countOnly) {
+          if (typeof data?.unread_count === 'number') {
+            state.unreadCount = Math.max(0, data.unread_count);
+          }
+          if (typeof data?.count === 'number') state.count = data.count;
+          return;
+        }
+
         const results = data?.results ?? (Array.isArray(data) ? data : []);
         const count =
           typeof data?.count === 'number' ? data.count : results.length;
-        state.loading = false;
-        state.loadingMore = false;
 
         if (append) {
           const existing = new Set(state.list.map(idOf));
@@ -110,6 +121,7 @@ const notificationSlice = createSlice({
       .addCase(fetchNotificationsAsync.rejected, (state, action) => {
         state.loading = false;
         state.loadingMore = false;
+        if (action.meta.arg?.countOnly) return;
         state.error = action.payload;
       })
 

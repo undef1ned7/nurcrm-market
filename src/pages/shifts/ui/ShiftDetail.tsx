@@ -17,8 +17,13 @@ import {
   Banknote,
   CreditCard,
   AlertCircle,
+  Store,
+  User,
+  Receipt,
+  Package,
 } from "lucide-react";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
+import api from "@shared/api";
 import {
   fetchShiftByIdAsync,
   fetchShiftSalesAsync,
@@ -57,6 +62,11 @@ const ShiftDetail = () => {
   const [salesHistory, setSalesHistory] = useState<any[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
   const [salesError, setSalesError] = useState<any>(null);
+  // Раскрытая продажа (позиции чека) в списке «Движение товаров».
+  const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
+  const [saleItemsById, setSaleItemsById] = useState<
+    Record<string, { loading: boolean; error: string | null; items: any[] }>
+  >({});
   const [moneyMovements, setMoneyMovements] = useState<any[]>([]);
   const [moneyLoading, setMoneyLoading] = useState(false);
   const [moneyError, setMoneyError] = useState<any>(null);
@@ -90,6 +100,8 @@ const ShiftDetail = () => {
 
       setSalesLoading(true);
       setSalesError(null);
+      setExpandedSaleId(null);
+      setSaleItemsById({});
 
       try {
         const searchParams: any = {};
@@ -110,7 +122,7 @@ const ShiftDetail = () => {
           fetchShiftSalesAsync({
             shiftId: id,
             params: searchParams,
-          })
+          }),
         ).unwrap();
         setSalesHistory(result?.results || []);
       } catch (error: any) {
@@ -127,7 +139,7 @@ const ShiftDetail = () => {
       () => {
         loadSalesHistory();
       },
-      filters.q ? 500 : 0
+      filters.q ? 500 : 0,
     );
 
     return () => clearTimeout(timeoutId);
@@ -160,7 +172,7 @@ const ShiftDetail = () => {
           fetchShiftSalesAsync({
             shiftId: id,
             params: searchParams,
-          })
+          }),
         ).unwrap();
 
         // Преобразуем продажи в движение денег
@@ -179,7 +191,10 @@ const ShiftDetail = () => {
         setMoneyMovements(movements);
       } catch (error: any) {
         console.error("Ошибка при загрузке движения денег:", error);
-        const errorMessage = validateResErrors(error, t("crm.shifts.detail.moneyLoadError"))
+        const errorMessage = validateResErrors(
+          error,
+          t("crm.shifts.detail.moneyLoadError"),
+        );
         setMoneyError(errorMessage);
         setMoneyMovements([]);
       } finally {
@@ -192,7 +207,7 @@ const ShiftDetail = () => {
       () => {
         loadMoneyMovements();
       },
-      moneyFilters.q ? 500 : 0
+      moneyFilters.q ? 500 : 0,
     );
 
     return () => clearTimeout(timeoutId);
@@ -230,17 +245,81 @@ const ShiftDetail = () => {
     closeAlert();
   };
 
+  /**
+   * Разворачивает/сворачивает позиции чека под строкой продажи. Список
+   * продаж смены (`.../shifts/{id}/sales/`) отдаёт позиции не всегда — если
+   * они уже пришли в самой продаже, используем их, иначе догружаем детально
+   * по `GET /main/pos/sales/{id}/` (тот же контракт, что и превью чека).
+   * См. docs/backend/kassa/shift-sale-positions-backend.md.
+   */
+  const toggleSaleExpand = async (movement: {
+    id: string;
+    items: any[] | null;
+  }) => {
+    const saleId = movement.id;
+    if (expandedSaleId === saleId) {
+      setExpandedSaleId(null);
+      return;
+    }
+    setExpandedSaleId(saleId);
+    if (saleItemsById[saleId]) return;
+
+    if (Array.isArray(movement.items) && movement.items.length > 0) {
+      setSaleItemsById((prev) => ({
+        ...prev,
+        [saleId]: {
+          loading: false,
+          error: null,
+          items: movement.items as any[],
+        },
+      }));
+      return;
+    }
+
+    setSaleItemsById((prev) => ({
+      ...prev,
+      [saleId]: { loading: true, error: null, items: [] },
+    }));
+    try {
+      const { data } = await api.get(`/main/pos/sales/${saleId}/`);
+      const items = Array.isArray(data?.items) ? data.items : [];
+      setSaleItemsById((prev) => ({
+        ...prev,
+        [saleId]: { loading: false, error: null, items },
+      }));
+    } catch (e: any) {
+      const message = validateResErrors(
+        e,
+        t("crm.shifts.detail.positionsLoadError"),
+      );
+      setSaleItemsById((prev) => ({
+        ...prev,
+        [saleId]: { loading: false, error: message, items: [] },
+      }));
+    }
+  };
+
   // Преобразование данных продаж для отображения
   const productMovements = salesHistory.map((sale) => ({
-    id: sale.id,
+    // У summary-ответа позиции обычно отсутствуют, но количество приходит
+    // отдельным полем. Не показываем «0 позиций» до открытия чека.
+    id: String(sale.id),
     docNumber: sale.doc_number,
     type: "sale",
     date: sale.created_at || sale.paid_at,
-    store: sale.branch || shift?.branch || "—",
-    client: sale.client_name || "—",
+    store: sale.branch || shift?.branch || null,
+    client: sale.client_name || null,
     cashier: sale.cashier_display || "—",
     status: sale.status || "paid",
-    positions: sale.items?.length || 0,
+    positions: Number(
+      sale.items_count ??
+        sale.itemsCount ??
+        sale.item_count ??
+        sale.itemCount ??
+        sale.items?.length ??
+        0,
+    ),
+    items: Array.isArray(sale.items) ? sale.items : null,
     amount: parseFloat(sale.total || 0),
   }));
 
@@ -376,7 +455,9 @@ const ShiftDetail = () => {
         {shift.closed_at && (
           <span className="shift-detail-page__meta-line">
             <Calendar size={14} />
-            {t("crm.shifts.detail.closed", { date: formatDate(shift.closed_at) })}
+            {t("crm.shifts.detail.closed", {
+              date: formatDate(shift.closed_at),
+            })}
           </span>
         )}
       </div>
@@ -386,15 +467,27 @@ const ShiftDetail = () => {
           label={t("crm.shifts.revenue")}
           value={`${parseFloat(shift.sales_total || 0).toFixed(2)} ${t("common.currencySom")}`}
         />
-        <StatCard label={t("crm.shifts.sales")} value={shift.sales_count || 0} />
-        <StatCard label={t("crm.shifts.cashbox")} value={shift.cashbox_name || "—"} />
-        <StatCard label={t("crm.shifts.detail.store")} value={shift.branch || "—"} />
+        <StatCard
+          label={t("crm.shifts.sales")}
+          value={shift.sales_count || 0}
+        />
+        <StatCard
+          label={t("crm.shifts.cashbox")}
+          value={shift.cashbox_name || "—"}
+        />
+        <StatCard
+          label={t("crm.shifts.detail.store")}
+          value={shift.branch || "—"}
+        />
       </StatGrid>
 
       <div className="shift-detail-page__details">
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
-            <TrendingUp size={20} className="shift-detail-page__icon--success" />
+            <TrendingUp
+              size={20}
+              className="shift-detail-page__icon--success"
+            />
             <h3 className="shift-detail-page__detail-title">
               {t("crm.shifts.detail.revenueCard")}
             </h3>
@@ -536,17 +629,17 @@ const ShiftDetail = () => {
                     {t("crm.shifts.detail.discrepancy")}
                   </div>
                   <div
-                    className={`shift-detail-page__detail-value ${parseFloat(shift.cash_diff || 0) === 0
+                    className={`shift-detail-page__detail-value ${
+                      parseFloat(shift.cash_diff || 0) === 0
                         ? "shift-detail-page__detail-value--green"
                         : parseFloat(shift.cash_diff || 0) > 0
                           ? "shift-detail-page__detail-value--green"
                           : "shift-detail-page__detail-value--red"
-                      }`}
+                    }`}
                   >
                     {parseFloat(shift.cash_diff || 0) === 0 ? (
                       <>
-                        ✓{" "}
-                        {Number(Math.abs(shift.cash_diff || 0)).toFixed(2)}{" "}
+                        ✓ {Number(Math.abs(shift.cash_diff || 0)).toFixed(2)}{" "}
                         сом
                       </>
                     ) : parseFloat(shift.cash_diff || 0) > 0 ? (
@@ -563,7 +656,10 @@ const ShiftDetail = () => {
 
         <div className="shift-detail-page__detail-card">
           <div className="shift-detail-page__detail-header">
-            <TrendingUp size={20} className="shift-detail-page__icon--success" />
+            <TrendingUp
+              size={20}
+              className="shift-detail-page__icon--success"
+            />
             <h3 className="shift-detail-page__detail-title">
               {t("crm.shifts.detail.incomeExpense")}
             </h3>
@@ -652,7 +748,9 @@ const ShiftDetail = () => {
                 >
                   <option value="">{t("common.all")}</option>
                   <option value="paid">{t("crm.shifts.detail.paid")}</option>
-                  <option value="unpaid">{t("crm.shifts.detail.unpaid")}</option>
+                  <option value="unpaid">
+                    {t("crm.shifts.detail.unpaid")}
+                  </option>
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">
@@ -667,7 +765,9 @@ const ShiftDetail = () => {
                   }
                 >
                   <option value="">{t("common.all")}</option>
-                  <option value="cash">{t("crm.shifts.detail.cashPlain")}</option>
+                  <option value="cash">
+                    {t("crm.shifts.detail.cashPlain")}
+                  </option>
                   <option value="transfer">
                     {t("crm.shifts.detail.noncashShort")}
                   </option>
@@ -699,7 +799,6 @@ const ShiftDetail = () => {
 
             {/* Список продаж */}
             <DataContainer className="gap-2 flex flex-col">
-
               {!salesLoading && !salesError && (
                 <>
                   {productMovements.length === 0 ? (
@@ -708,66 +807,206 @@ const ShiftDetail = () => {
                       text={t("crm.shifts.detail.salesNotFoundHint")}
                     />
                   ) : (
-                    productMovements.map((movement, idx) => (
-                      <div
-                        key={movement.id}
-                        className="shift-detail-page__operation"
-                      >
-                        <div className="shift-detail-page__operation-indicator shift-detail-page__operation-indicator--blue" />
-                        <div className="shift-detail-page__operation-content">
-                          <div className="shift-detail-page__operation-title">
-                            {t("crm.shifts.detail.saleTitle", {
-                              number: idx + 1,
-                            })}
-                            {movement.docNumber || movement.id.slice(0, 8)}
-                          </div>
-                          <div className="shift-detail-page__operation-info">
-                            {t("crm.shifts.detail.saleInfo", {
-                              store: movement.store,
-                              client: movement.client,
-                            })}
-                          </div>
-                          <div className="shift-detail-page__operation-info">
-                            {movement.cashier}, {formatDate(movement.date)}
-                          </div>
-                          <div
-                            className={`shift-detail-page__operation-status shift-detail-page__operation-status--${movement.status === "paid" ? "paid" : "unpaid"
-                              }`}
+                    productMovements.map((movement, idx) => {
+                      const isExpanded = expandedSaleId === movement.id;
+                      const itemsState = saleItemsById[movement.id];
+                      const isPaid = movement.status === "paid";
+                      return (
+                        <div
+                          key={movement.id}
+                          className={`shift-detail-page__operation-card${
+                            isExpanded
+                              ? " shift-detail-page__operation-card--open"
+                              : ""
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            className="shift-detail-page__operation"
+                            aria-expanded={isExpanded}
+                            onClick={() => toggleSaleExpand(movement)}
                           >
-                            {movement.status === "paid" ? (
-                              <>
-                                <CheckCircle size={16} />
-                                <span>{t("crm.shifts.detail.documentPaid")}</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle size={16} />
-                                <span>
-                                  {t("crm.shifts.detail.documentUnpaid")}
+                            <span
+                              className={`shift-detail-page__operation-avatar${
+                                isPaid
+                                  ? " shift-detail-page__operation-avatar--paid"
+                                  : " shift-detail-page__operation-avatar--unpaid"
+                              }`}
+                            >
+                              <Receipt size={19} />
+                            </span>
+
+                            <div className="shift-detail-page__operation-main">
+                              <div className="shift-detail-page__operation-heading">
+                                <span className="shift-detail-page__operation-title">
+                                  {t("crm.shifts.detail.saleTitle", {
+                                    number: idx + 1,
+                                  })}
                                 </span>
-                              </>
-                            )}
-                          </div>
-                          <div className="shift-detail-page__operation-positions">
-                            {t("crm.shifts.detail.positions", {
-                              count: movement.positions,
-                            })}
-                          </div>
+                                <span className="shift-detail-page__operation-doc">
+                                  #
+                                  {movement.docNumber ||
+                                    movement.id.slice(0, 8)}
+                                </span>
+                              </div>
+
+                              <div className="shift-detail-page__operation-meta">
+                                <span className="shift-detail-page__operation-meta-item">
+                                  <User size={13} />
+                                  {movement.cashier}
+                                </span>
+                                <span className="shift-detail-page__operation-dot" />
+                                <span className="shift-detail-page__operation-meta-item">
+                                  <Calendar size={13} />
+                                  {formatDate(movement.date)}
+                                </span>
+                                {movement.store && (
+                                  <>
+                                    <span className="shift-detail-page__operation-dot" />
+                                    <span className="shift-detail-page__operation-meta-item">
+                                      <Store size={13} />
+                                      {movement.store}
+                                    </span>
+                                  </>
+                                )}
+                                {movement.client && (
+                                  <>
+                                    <span className="shift-detail-page__operation-dot" />
+                                    <span className="shift-detail-page__operation-meta-item">
+                                      <User size={13} />
+                                      {movement.client}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+
+                              <span className="shift-detail-page__operation-positions">
+                                <Package size={12} />
+                                {t("crm.shifts.detail.positions", {
+                                  count: movement.positions,
+                                })}
+                              </span>
+                            </div>
+
+                            <div className="shift-detail-page__operation-side">
+                              <span
+                                className={`shift-detail-page__operation-status shift-detail-page__operation-status--${
+                                  isPaid ? "paid" : "unpaid"
+                                }`}
+                              >
+                                {isPaid ? (
+                                  <CheckCircle size={13} />
+                                ) : (
+                                  <XCircle size={13} />
+                                )}
+                                {isPaid
+                                  ? t("crm.shifts.detail.documentPaid")
+                                  : t("crm.shifts.detail.documentUnpaid")}
+                              </span>
+                              <span className="shift-detail-page__operation-amount">
+                                {movement.amount.toFixed(2)}
+                                <span className="shift-detail-page__operation-currency">
+                                  {t("common.currencySom")}
+                                </span>
+                              </span>
+                            </div>
+
+                            <span className="shift-detail-page__operation-chevron">
+                              <ChevronDown
+                                size={18}
+                                className={
+                                  isExpanded
+                                    ? "shift-detail-page__operation-expand shift-detail-page__operation-expand--open"
+                                    : "shift-detail-page__operation-expand"
+                                }
+                              />
+                            </span>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="shift-detail-page__operation-items">
+                              <div className="shift-detail-page__operation-items-header">
+                                <Package size={14} />
+                                {t(
+                                  "crm.shifts.detail.positionsTitle",
+                                  "Позиции чека",
+                                )}
+                              </div>
+                              {itemsState?.loading && (
+                                <div className="shift-detail-page__operation-items-state">
+                                  {t("common.loading")}
+                                </div>
+                              )}
+                              {itemsState?.error && (
+                                <div className="shift-detail-page__operation-items-state shift-detail-page__operation-items-state--error">
+                                  {itemsState.error}
+                                </div>
+                              )}
+                              {!itemsState?.loading &&
+                                !itemsState?.error &&
+                                (itemsState?.items?.length ? (
+                                  <div className="shift-detail-page__operation-items-scroll">
+                                    <table className="shift-detail-page__operation-items-table">
+                                      <thead>
+                                        <tr>
+                                          <th>
+                                            {t("crm.shifts.detail.product")}
+                                          </th>
+                                          <th>
+                                            {t("crm.shifts.detail.productQty")}
+                                          </th>
+                                          <th>{t("common.price")}</th>
+                                          <th>{t("common.amount")}</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {itemsState.items.map(
+                                          (item: any, i: number) => {
+                                            const qty = Number(
+                                              item.qty ?? item.quantity ?? 0,
+                                            );
+                                            const price = Number(
+                                              item.unit_price ??
+                                                item.price ??
+                                                0,
+                                            );
+                                            const lineTotal = Number(
+                                              item.line_total ??
+                                                item.total ??
+                                                price * qty,
+                                            );
+                                            return (
+                                              <tr key={item.id ?? i}>
+                                                <td>
+                                                  {item.product_name ||
+                                                    item.name_snapshot ||
+                                                    item.name ||
+                                                    "—"}
+                                                </td>
+                                                <td>{qty}</td>
+                                                <td>{price.toFixed(2)}</td>
+                                                <td>{lineTotal.toFixed(2)}</td>
+                                              </tr>
+                                            );
+                                          },
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <div className="shift-detail-page__operation-items-state">
+                                    {t("crm.shifts.detail.noPositions")}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
-                        <div className="shift-detail-page__operation-amount">
-                          {movement.amount.toFixed(2)} сом
-                        </div>
-                        <ChevronDown
-                          size={20}
-                          className="shift-detail-page__operation-expand"
-                        />
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </>
               )}
             </DataContainer>
-
           </div>
         )}
 
@@ -788,7 +1027,9 @@ const ShiftDetail = () => {
                 >
                   <option value="">{t("common.all")}</option>
                   <option value="paid">{t("crm.shifts.detail.paid")}</option>
-                  <option value="unpaid">{t("crm.shifts.detail.unpaid")}</option>
+                  <option value="unpaid">
+                    {t("crm.shifts.detail.unpaid")}
+                  </option>
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">
@@ -806,7 +1047,9 @@ const ShiftDetail = () => {
                   }
                 >
                   <option value="">{t("common.all")}</option>
-                  <option value="cash">{t("crm.shifts.detail.cashPlain")}</option>
+                  <option value="cash">
+                    {t("crm.shifts.detail.cashPlain")}
+                  </option>
                   <option value="transfer">
                     {t("crm.shifts.detail.noncashShort")}
                   </option>
@@ -926,7 +1169,9 @@ const ShiftDetail = () => {
         type={alertModal.type}
         title={alertModal.title}
         message={alertModal.message}
-        okText={alertModal.type === "warning" ? t("common.yes") : t("common.ok")}
+        okText={
+          alertModal.type === "warning" ? t("common.yes") : t("common.ok")
+        }
         onClose={closeAlert}
         onConfirm={handleConfirm}
       />

@@ -130,7 +130,7 @@ export default function SellHistoryTable({ vm }: Props) {
                         className="sellTable__refund"
                         onClick={(event) => handleOpenRefund(item, event)}
                       >
-                        Возврат
+                        {t("crm.sell.refundModal.returnBtn")}
                       </button>
                     )}
                   </td>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import SearchSelect from "@shared/ui/SearchSelect/SearchSelect";
 import { formatMoneyRu } from "../paymentPage.utils";
 import type { SaleConsultant } from "@entities/sale";
@@ -31,6 +32,7 @@ export function PaymentPageConsultant({
   onPercentChange,
   previewAmount,
 }: Props) {
+  const { t } = useTranslation();
   const options = consultants.map((item) => ({
     value: item.id,
     label: item.full_name,
@@ -39,20 +41,22 @@ export function PaymentPageConsultant({
 
   return (
     <div className="payment-page__section">
-      <h3 className="payment-page__section-title">КОНСУЛЬТАНТ</h3>
+      <h3 className="payment-page__section-title">
+        {t("crm.cashier.paymentAlerts.consultant").toUpperCase()}
+      </h3>
       <label className="payment-page__consultant-toggle">
         <input
           type="checkbox"
           checked={specify}
           onChange={(e) => onSpecifyChange(e.target.checked)}
         />
-        <span>Указать консультанта</span>
+        <span>{t("crm.cashier.consultantSection.specify")}</span>
       </label>
 
       {specify ? (
         <div className="payment-page__consultant">
           <label className="payment-page__consultant-field">
-            <span>Консультант</span>
+            <span>{t("crm.cashier.paymentAlerts.consultant")}</span>
             <SearchSelect
               value={consultantId}
               valueLabel={consultantName}
@@ -62,10 +66,14 @@ export function PaymentPageConsultant({
               }}
               options={options}
               placeholder={
-                consultantsLoading ? "Загрузка…" : "Поиск / список сотрудников"
+                consultantsLoading
+                  ? t("crm.cashier.consultantSection.loading")
+                  : t("crm.cashier.consultantSection.searchPlaceholder")
               }
               emptyText={
-                consultantsLoading ? "Загрузка..." : "Сотрудники не найдены"
+                consultantsLoading
+                  ? t("crm.cashier.consultantSection.loading")
+                  : t("crm.cashier.consultantSection.emptyEmployees")
               }
               loading={consultantsLoading}
             />
@@ -77,13 +85,13 @@ export function PaymentPageConsultant({
               checked={commissionEnabled}
               onChange={(e) => onCommissionEnabledChange(e.target.checked)}
             />
-            <span>Начислять процент от продажи</span>
+            <span>{t("crm.cashier.consultantSection.commissionToggle")}</span>
           </label>
 
           {commissionEnabled ? (
             <>
               <label className="payment-page__consultant-field">
-                <span>Процент</span>
+                <span>{t("crm.cashier.consultantSection.percent")}</span>
                 <div className="payment-page__consultant-percent-row">
                   <input
                     type="number"
@@ -100,13 +108,15 @@ export function PaymentPageConsultant({
                 </div>
               </label>
               <div className="payment-page__consultant-preview">
-                Комиссия ≈ {formatMoneyRu(previewAmount)} сом
+                {t("crm.cashier.consultantSection.commissionPreview", {
+                  amount: formatMoneyRu(previewAmount),
+                })}
               </div>
             </>
           ) : null}
 
           <p className="payment-page__consultant-hint">
-            Кассир чека — вы. Процент получит консультант.
+            {t("crm.cashier.consultantSection.hint")}
           </p>
         </div>
       ) : null}

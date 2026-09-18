@@ -229,6 +229,22 @@ export const getProductByBarcodeApi = async (barcode: any) => {
   }
 };
 
+/**
+ * Партии прихода товара со своим сроком годности (FEFO), за флагом
+ * `VITE_PRODUCT_BATCH_EXPIRY`. См. docs/backend/product-batch-expiry-backend.md.
+ * Мирроит `GET /main/products/{id}/purchase-batches/` (история закупок).
+ */
+export const fetchProductExpiryBatchesApi = async (
+  productId: any,
+  params: any = {},
+) => {
+  const response = await api.get(
+    `/main/products/${encodeURIComponent(String(productId))}/expiry-batches/`,
+    { params },
+  );
+  return response.data;
+};
+
 // Добавление товара в склад с количеством
 export const addProductToWarehouseApi = async (productData: any) => {
   try {

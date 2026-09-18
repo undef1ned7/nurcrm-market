@@ -11,7 +11,9 @@ import {
   getInstallmentRemaining,
   getInstallmentStatus,
   dealHasPayments,
+  resolveDealSaleId,
 } from "../clientDetails.helpers";
+import ReceiptPreviewModal from "@pages/documents/ui/components/ReceiptPreviewModal";
 import { useClient } from "@entities/client";
 import { postCashflowIfNeeded } from "@entities/cash";
 import { useUser } from "@entities/user";
@@ -43,6 +45,7 @@ import {
   Landmark,
   Check,
   ChevronDown,
+  Receipt,
 } from "lucide-react";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
 import "../ClientModals.scss";
@@ -380,6 +383,11 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
   );
 
   const [payingAll, setPayingAll] = useState(false);
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+  const linkedSaleId = useMemo(
+    () => resolveDealSaleId(dealDetail),
+    [dealDetail],
+  );
 
   const onPayFullDebt = () => {
     if (payingAll || pendingInstallments.length === 0) return;
@@ -519,13 +527,33 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
                 </p>
               </div>
             </div>
-            <button
-              className="cmx__close"
-              onClick={onClose}
-              aria-label={t("common.close")}
-            >
-              <X />
-            </button>
+            <div className="cmx__header-actions">
+              {linkedSaleId != null ? (
+                <button
+                  type="button"
+                  className="cmx__btn cmx__btn--secondary cmx__btn--sm"
+                  onClick={() => setShowReceiptPreview(true)}
+                >
+                  <Receipt size={16} />
+                  {t("crm.clients.details.viewReceipt", { id: linkedSaleId })}
+                </button>
+              ) : (
+                <span
+                  className="cmx__no-receipt-hint"
+                  title={t("crm.clients.details.noLinkedReceiptHint")}
+                >
+                  <Receipt size={14} />
+                  {t("crm.clients.details.noLinkedReceipt")}
+                </span>
+              )}
+              <button
+                className="cmx__close"
+                onClick={onClose}
+                aria-label={t("common.close")}
+              >
+                <X />
+              </button>
+            </div>
           </div>
 
           <div className="cmx__body">
@@ -1192,6 +1220,15 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
           />
         </div>
       </div>
+
+      {showReceiptPreview && linkedSaleId != null && (
+        <ReceiptPreviewModal
+          receiptId={linkedSaleId}
+          receiptData={undefined}
+          onClose={() => setShowReceiptPreview(false)}
+          onEdit={undefined}
+        />
+      )}
     </ClientModalPortal>
   );
 };

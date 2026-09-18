@@ -17,6 +17,24 @@ export {
   type CashflowPartialFailureContext,
 } from "./lib/postCashflowIfNeeded";
 export {
+  CASHBOX_ROLE,
+  isCashboxDeleteEnabled,
+  isCashboxDebtRoleEnabled,
+  isConsumptionCashbox,
+  isPosMainCashbox,
+  hasActivePosMainCashbox,
+  isDebtCashbox,
+  hasActiveDebtCashbox,
+  cashboxRoleLabel,
+  buildCreateCashboxPayload,
+  selectMergeCandidates,
+  mergeRoleMismatchWarning,
+  cashboxDeleteErrorCode,
+  cashboxDeleteErrorMessage,
+  type CashboxDeleteErrorCode,
+  type CreateCashboxKind,
+} from "./lib/cashboxMutations";
+export {
   fetchCashboxDailyReport,
   fetchCashboxMonthlyReport,
   fetchCashboxReportsAnalytics,

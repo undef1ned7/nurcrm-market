@@ -29,7 +29,7 @@ export function hasBlockValue(
     case "barcode":
       return filled(item.barcode);
     case "alternateBarcodes":
-      return filled(market.alternateBarcodesText);
+      return filled(market.alternateBarcodes);
     case "article":
       return filled(market.article);
     case "hotkey":

@@ -24,7 +24,7 @@ import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { useAppDispatch } from "@app/store";
 import {
   buildPromotionRulesInput,
-  parseAlternateBarcodesForApi,
+  buildAlternateBarcodesForApi,
 } from "../AddProductPage/utils/productUtils";
 
 // Функция для создания долга
@@ -79,7 +79,7 @@ export const useAddProductBarcode = ({
     markup: "0",
     plu: "",
     scale_type: "",
-    alternateBarcodesText: "",
+    alternateBarcodes: [] as any[],
   });
   const [isPriceManuallyChanged, setIsPriceManuallyChanged] = useState(false);
   const [isMarkupManuallyChanged, setIsMarkupManuallyChanged] = useState(false);
@@ -527,8 +527,8 @@ export const useAddProductBarcode = ({
         barcode: scannedProduct.barcode,
         ...state,
         client: clientId || null,
-        alternate_barcodes: parseAlternateBarcodesForApi(
-          state.alternateBarcodesText,
+        alternate_barcodes: buildAlternateBarcodesForApi(
+          state.alternateBarcodes,
           scannedProduct.barcode,
         ),
         markup_percent: normalizedMarkup,
@@ -628,7 +628,7 @@ export const useAddProductBarcode = ({
         markup: "0",
         plu: "",
         scale_type: "",
-        alternateBarcodesText: "",
+        alternateBarcodes: [] as any[],
       });
       setStockPromo(false);
       setPromotionRules([]);
@@ -692,7 +692,7 @@ export const useAddProductBarcode = ({
       markup: "0",
       plu: "",
       scale_type: "",
-      alternateBarcodesText: "",
+      alternateBarcodes: [] as any[],
     });
     setStockPromo(false);
     setPromotionRules([]);

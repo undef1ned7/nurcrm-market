@@ -3,7 +3,10 @@ import useScanDetection from "@shared/hooks/useScanDetection";
 import { fetchProductsApi } from "@entities/product/api/products";
 import { getSale, sendBarCode } from "@entities/sale";
 import { fetchShiftsAsync } from "@entities/shift";
-import { productMatchesBarcode } from "@shared/lib/tools/productBarcode";
+import {
+  productMatchesBarcode,
+  getAlternateBarcodeVariantName,
+} from "@shared/lib/tools/productBarcode";
 import {
   getBarcodeAmbiguity,
   isBarcodeNotFoundError,
@@ -72,6 +75,27 @@ export function useCashierBarcode(b: any) {
   const addToCartRef = React.useRef<any>(null);
 
   /**
+   * Название варианта (вкус/цвет), под которым товар был отсканирован по
+   * дополнительному штрихкоду — по productId. Читается в useCashierCartSync,
+   * чтобы подставить его после основного названия в корзине/чеке.
+   */
+  const variantNameByProductIdRef = React.useRef(new Map<string, string>());
+
+  const captureAlternateBarcodeVariant = useCallback(
+    (product: any, barcode: any) => {
+      if (!product?.id) return;
+      const variantName = getAlternateBarcodeVariantName(product, barcode);
+      const key = String(product.id);
+      if (variantName) {
+        variantNameByProductIdRef.current.set(key, variantName);
+      } else {
+        variantNameByProductIdRef.current.delete(key);
+      }
+    },
+    [],
+  );
+
+  /**
    * Фолбэк сканирования: POS-эндпоинт ищет товар только по основному
    * штрих-коду, поэтому при «товар не найден» пробуем добавить позицию по
    * дополнительному штрих-коду сами. Возвращает true, если товар добавлен.
@@ -80,11 +104,12 @@ export function useCashierBarcode(b: any) {
     async (barcode: any) => {
       const product = await findProductByAnyBarcode(barcode);
       if (!product) return false;
+      captureAlternateBarcodeVariant(product, barcode);
       if (openPieceSaleChoice(product, "click")) return true;
       await addToCartRef.current?.(product);
       return true;
     },
-    [findProductByAnyBarcode, openPieceSaleChoice],
+    [findProductByAnyBarcode, openPieceSaleChoice, captureAlternateBarcodeVariant],
   );
 
   useScanDetection({
@@ -249,6 +274,9 @@ export function useCashierBarcode(b: any) {
         }
 
         const scannedProduct = await findProductByAnyBarcode(barcode);
+        if (scannedProduct) {
+          captureAlternateBarcodeVariant(scannedProduct, barcode);
+        }
         if (
           scannedProduct &&
           typeof b.confirmAdultProduct === "function"
@@ -417,6 +445,7 @@ export function useCashierBarcode(b: any) {
     findProductByAnyBarcode,
     addToCartRef,
     addProductByAlternateBarcode,
+    variantNameByProductIdRef,
   });
   return b;
 }

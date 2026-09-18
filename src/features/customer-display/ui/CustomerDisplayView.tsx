@@ -15,6 +15,11 @@ const formatMoney = (value?: number) =>
     maximumFractionDigits: 2,
   })} сом`;
 
+const formatDueDate = (iso?: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || "").trim());
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : String(iso || "");
+};
+
 export function CustomerDisplayView({
   companyName,
   logoUrl,
@@ -104,6 +109,11 @@ export function CustomerDisplayView({
 
   const currentSlide = slides[slideIndex];
   const cartItems = message.type === "cart" ? message.items : [];
+  const payInfo =
+    message.type === "payment" || message.type === "thanks" ? message : null;
+  const paid = payInfo?.paid;
+  const change = payInfo?.change;
+  const debt = payInfo?.debt;
 
   const title = useMemo(() => {
     if (message.type === "thanks") return t("crm.customerDisplay.thanks");
@@ -179,6 +189,71 @@ export function CustomerDisplayView({
           <div className="customer-display__thanks">
             {message.total ? <strong>{formatMoney(message.total)}</strong> : null}
             <p>{t("crm.customerDisplay.seeYouAgain")}</p>
+          </div>
+        ) : null}
+
+        {payInfo && (paid != null || change != null) ? (
+          <div className="customer-display__cash">
+            {paid != null ? (
+              <div className="customer-display__cash-row">
+                <span>{t("crm.customerDisplay.cashReceived")}</span>
+                <strong>{formatMoney(paid)}</strong>
+              </div>
+            ) : null}
+            {change != null ? (
+              <div className="customer-display__cash-row customer-display__cash-row--change">
+                <span>{t("crm.customerDisplay.change")}</span>
+                <strong>{formatMoney(change)}</strong>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {payInfo && debt ? (
+          <div className="customer-display__debt">
+            <p className="customer-display__debt-title">
+              {t("crm.customerDisplay.debtTitle")}
+            </p>
+            <div className="customer-display__debt-meta">
+              {debt.customerName ? (
+                <div className="customer-display__debt-row">
+                  <span>{t("crm.customerDisplay.debtCustomer")}</span>
+                  <strong>{debt.customerName}</strong>
+                </div>
+              ) : null}
+              {debt.prepayment ? (
+                <div className="customer-display__debt-row">
+                  <span>{t("crm.customerDisplay.debtPrepayment")}</span>
+                  <strong>{formatMoney(debt.prepayment)}</strong>
+                </div>
+              ) : null}
+              {debt.totalDebt != null ? (
+                <div className="customer-display__debt-row customer-display__debt-row--total">
+                  <span>{t("crm.customerDisplay.debtRemaining")}</span>
+                  <strong>{formatMoney(debt.totalDebt)}</strong>
+                </div>
+              ) : null}
+            </div>
+            {debt.installments && debt.installments.length > 0 ? (
+              <table className="customer-display__debt-schedule">
+                <thead>
+                  <tr>
+                    <th>{t("crm.customerDisplay.debtInstallmentNo")}</th>
+                    <th>{t("crm.customerDisplay.debtInstallmentDate")}</th>
+                    <th>{t("crm.customerDisplay.debtInstallmentAmount")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {debt.installments.map((item) => (
+                    <tr key={item.number}>
+                      <td>{item.number}</td>
+                      <td>{formatDueDate(item.dueDate)}</td>
+                      <td>{formatMoney(item.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
           </div>
         ) : null}
 

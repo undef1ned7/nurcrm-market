@@ -41,6 +41,7 @@
 | Файл | Тема | Статус для BE |
 |------|------|----------------|
 | [product-expiry-tracking-backend.md](./product-expiry-tracking-backend.md) | Срок годности товара: `expiration_date`, аналитика «Товары», уведомление `market.product.expiring` | новое поле + новый GET + cron |
+| [product-batch-expiry-backend.md](./product-batch-expiry-backend.md) | Срок годности по партиям прихода (FEFO) — закрывает §7 предыдущего документа: `shelf_life_days` на товаре + модель `ProductExpiryBatch`, своя дата у каждой партии | новая модель + 2 сервис-функции + новый GET |
 | [tz-aug-2026-backend.md](./tz-aug-2026-backend.md) | ТЗ авг 2026: массовый приход, уведомления, F3, 18+ | частично нужен |
 | [procurement-recommendations-backend.md](./procurement-recommendations-backend.md) | Рекомендуемый заказ поставщика | новый GET |
 | [product-form-layout-backend.md](./product-form-layout-backend.md) | Раскладка формы товара (`hidden[]`) | новый singleton |

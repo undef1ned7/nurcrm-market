@@ -1,3 +1,5 @@
+import i18n from "i18next";
+
 export type NotificationTab = "all" | "tariff" | "system" | "news";
 
 export type NotificationCategory = "tariff" | "system" | "news" | "other";
@@ -60,13 +62,13 @@ export function buildTariffLocalNotification(endDate: unknown) {
     category: "tariff" as const,
     title:
       days <= 0
-        ? "Тариф заканчивается сегодня"
-        : `Тариф заканчивается через ${days} дн.`,
-    body: "Продлите подписку заранее, чтобы сохранить доступ ко всем функциям NurCRM.",
+        ? i18n.t("notifications.local.tariff.titleToday")
+        : i18n.t("notifications.local.tariff.titleInDays", { days }),
+    body: i18n.t("notifications.local.tariff.body"),
     is_read: false,
     created_at: new Date().toISOString(),
     cta_url: "/crm/additional-services",
-    cta_label: "Продлить",
+    cta_label: i18n.t("notifications.local.tariff.cta"),
     meta: { days_left: days, local: true },
   };
 }

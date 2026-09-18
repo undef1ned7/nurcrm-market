@@ -14,5 +14,9 @@ export {
   getExpiryStatus,
   translateExpiryStatus,
   buildProductExpiryLocalNotification,
+  isBatchExpiryEnabled,
+  getBatchDaysLeft,
+  getBatchExpiryStatus,
   type ProductExpiryStatus,
+  type ProductExpiryBatch,
 } from "./lib/productExpiry";

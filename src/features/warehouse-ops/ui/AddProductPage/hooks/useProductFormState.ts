@@ -49,7 +49,7 @@ export const useProductFormState = (_isEditMode = false) => {
     kitProducts: [],
     kitSearchTerm: "",
     packagings: [],
-    alternateBarcodesText: "",
+    alternateBarcodes: [],
   });
 
   // Тип товара

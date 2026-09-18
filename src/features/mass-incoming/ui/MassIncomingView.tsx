@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { ScanBarcode, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useMassIncoming } from "../model/useMassIncoming";
 import type { MassIncomingRow } from "../model/types";
 import "./MassIncomingView.scss";
@@ -24,6 +25,7 @@ function RowTable({
   onRemove: (key: string) => void;
   onCreate?: (row: MassIncomingRow) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="mass-incoming__list">
       <header>
@@ -31,15 +33,15 @@ function RowTable({
         <span>{rows.length}</span>
       </header>
       {rows.length === 0 ? (
-        <p className="mass-incoming__empty">Пока пусто</p>
+        <p className="mass-incoming__empty">{t("crm.warehouse.massIncoming.empty")}</p>
       ) : (
         <table>
           <thead>
             <tr>
-              <th>Название</th>
-              <th>Штрихкод</th>
-              {showStock ? <th>Остаток</th> : null}
-              <th>Количество</th>
+              <th>{t("common.name")}</th>
+              <th>{t("crm.warehouse.massIncoming.barcode")}</th>
+              {showStock ? <th>{t("crm.warehouse.massIncoming.stock")}</th> : null}
+              <th>{t("common.quantity")}</th>
               <th />
             </tr>
           </thead>
@@ -65,11 +67,11 @@ function RowTable({
                 <td>
                   {onCreate ? (
                     <button type="button" onClick={() => onCreate(row)}>
-                      Создать карточку
+                      {t("crm.warehouse.massIncoming.createCard")}
                     </button>
                   ) : (
                     <button type="button" onClick={() => onRemove(row.key)}>
-                      Удалить
+                      {t("common.delete")}
                     </button>
                   )}
                 </td>
@@ -83,6 +85,7 @@ function RowTable({
 }
 
 export function MassIncomingView({ onClose, onSaved }: Props) {
+  const { t } = useTranslation();
   const vm = useMassIncoming();
 
   useEffect(() => {
@@ -96,7 +99,10 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
   }, [vm.dirty]);
 
   const requestClose = () => {
-    if (vm.dirty && !window.confirm("У вас есть несохранённые данные. Закрыть?")) {
+    if (
+      vm.dirty &&
+      !window.confirm(t("crm.warehouse.massIncoming.confirmCloseUnsaved"))
+    ) {
       vm.focusInput();
       return;
     }
@@ -108,9 +114,9 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
       <header className="mass-incoming__top">
         <div>
           <h1>
-            <ScanBarcode size={22} /> Массовое сканирование
+            <ScanBarcode size={22} /> {t("crm.warehouse.massScan")}
           </h1>
-          <p>Сканируйте штрихкоды. Повторный скан увеличивает количество.</p>
+          <p>{t("crm.warehouse.massIncoming.scanHint")}</p>
         </div>
         <div className="mass-incoming__actions">
           <button
@@ -122,14 +128,16 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
               if (ok) onSaved?.();
             }}
           >
-            {vm.saving ? "Проведение…" : "Провести приход"}
+            {vm.saving
+              ? t("crm.warehouse.massIncoming.saving")
+              : t("crm.warehouse.massIncoming.submit")}
           </button>
           <button
             type="button"
             className="nur-btn nur-btn--secondary"
             onClick={requestClose}
           >
-            <X size={16} /> Закрыть
+            <X size={16} /> {t("common.close")}
           </button>
         </div>
       </header>
@@ -145,32 +153,32 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
           ref={vm.inputRef}
           value={vm.barcode}
           onChange={(e) => vm.setBarcode(e.target.value)}
-          placeholder="Наведите сканер или введите штрихкод"
+          placeholder={t("crm.warehouse.massIncoming.scanPlaceholder")}
           autoComplete="off"
           autoFocus
         />
         <button type="submit" className="nur-btn nur-btn--primary" disabled={vm.busy}>
-          Добавить
+          {t("common.add")}
         </button>
       </form>
       {vm.error ? <p className="mass-incoming__error">{vm.error}</p> : null}
 
       <div className="mass-incoming__columns">
         <RowTable
-          title="Есть на складе"
+          title={t("crm.warehouse.massIncoming.inStock")}
           rows={vm.lists.inStock}
           showStock
           onQty={vm.setQuantity}
           onRemove={vm.removeRow}
         />
         <RowTable
-          title="Есть в базе CRM"
+          title={t("crm.warehouse.massIncoming.inCatalog")}
           rows={vm.lists.inCatalog}
           onQty={vm.setQuantity}
           onRemove={vm.removeRow}
         />
         <RowTable
-          title="Неизвестный штрихкод"
+          title={t("crm.warehouse.massIncoming.unknown")}
           rows={vm.lists.unknown}
           onQty={vm.setQuantity}
           onRemove={vm.removeRow}
@@ -181,13 +189,13 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
       {vm.createFor ? (
         <div className="mass-incoming__modal" role="presentation">
           <div className="mass-incoming__dialog" role="dialog" aria-modal="true">
-            <h3>Создать карточку</h3>
+            <h3>{t("crm.warehouse.massIncoming.createCard")}</h3>
             <label>
-              Штрихкод
+              {t("crm.warehouse.massIncoming.barcode")}
               <input value={vm.createFor.barcode} readOnly />
             </label>
             <label>
-              Название
+              {t("common.name")}
               <input
                 value={vm.createName}
                 onChange={(e) => vm.setCreateName(e.target.value)}
@@ -195,7 +203,7 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
               />
             </label>
             <label>
-              Цена (необязательно)
+              {t("crm.warehouse.massIncoming.priceOptional")}
               <input
                 value={vm.createPrice}
                 onChange={(e) => vm.setCreatePrice(e.target.value)}
@@ -203,10 +211,10 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
             </label>
             <div className="mass-incoming__dialog-actions">
               <button type="button" className="nur-btn nur-btn--secondary" onClick={() => vm.setCreateFor(null)}>
-                Отмена
+                {t("common.cancel")}
               </button>
               <button type="button" className="nur-btn nur-btn--primary" onClick={() => void vm.submitCreate()}>
-                Сохранить
+                {t("common.save")}
               </button>
             </div>
           </div>

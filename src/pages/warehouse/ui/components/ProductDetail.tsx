@@ -17,11 +17,12 @@ import {
 } from "lucide-react";
 import "../Warehouse.scss";
 import PurchaseBatchHistory from "./PurchaseBatchHistory";
+import ExpiryBatchHistory from "./ExpiryBatchHistory";
 import api from "@shared/api";
 import noImage from "./placeholder.png";
 import AddProductModal from "@features/warehouse-ops/ui/AddProduct/AddProductModal";
 import MarriageModal from "@features/warehouse-ops/ui/MarriageModal";
-import { deleteProductAsync } from "@entities/product";
+import { deleteProductAsync, isBatchExpiryEnabled } from "@entities/product";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import {
   PageShell,
@@ -336,7 +337,18 @@ const ProductDetail = () => {
                     {t("crm.warehouse.detail.extraBarcodes")}
                   </span>
                   <span className="product-detail__detail-value">
-                    {product.alternate_barcodes.filter(Boolean).join(", ")}
+                    {product.alternate_barcodes
+                      .map((item) => {
+                        if (item && typeof item === "object") {
+                          const barcode = String(item.barcode ?? "").trim();
+                          if (!barcode) return "";
+                          const name = String(item.name ?? "").trim();
+                          return name ? `${barcode} (${name})` : barcode;
+                        }
+                        return String(item ?? "").trim();
+                      })
+                      .filter(Boolean)
+                      .join(", ")}
                   </span>
                 </div>
               ) : null}
@@ -516,6 +528,15 @@ const ProductDetail = () => {
             productName={product.name}
             batches={product.purchase_batches}
           />
+
+          {isBatchExpiryEnabled() &&
+            (product.shelf_life_days || (product.expiry_batches || []).length > 0) && (
+              <ExpiryBatchHistory
+                productId={product.id}
+                productName={product.name}
+                batches={product.expiry_batches}
+              />
+            )}
 
           {/* Warehouse Section */}
           {/* <div className="product-detail__section">

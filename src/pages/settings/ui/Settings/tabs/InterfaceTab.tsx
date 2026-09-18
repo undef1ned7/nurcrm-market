@@ -8,19 +8,18 @@ export function InterfaceTab(props) {
   const {
     Moon,
     Sun,
+    darkPalette,
     handleSaveInterfaceSettings,
     mode,
     saving,
+    setDarkPalette,
     setMode,
     setSidebarAutoClose,
     sidebarAutoClose,
   } = props;
 
   return (
-    <form
-      onSubmit={handleSaveInterfaceSettings}
-      className="settings__tab-form"
-    >
+    <form onSubmit={handleSaveInterfaceSettings} className="settings__tab-form">
       <div className="settings__section">
         <h2 className="settings__section-title">
           <span className="settings__emoji">🧩</span>{" "}
@@ -33,7 +32,9 @@ export function InterfaceTab(props) {
               {t("settings.interface.language")}
             </label>
             <p className="settings__prefHint">
-              <GlossaryText>{t("settings.interface.languageHint")}</GlossaryText>
+              <GlossaryText>
+                {t("settings.interface.languageHint")}
+              </GlossaryText>
             </p>
           </div>
           <LanguageSelect
@@ -116,6 +117,52 @@ export function InterfaceTab(props) {
             </button>
           </div>
         </div>
+
+        {mode === "dark" ? (
+          <div className="settings__themeBlock mt-3.5">
+            <div className="settings__prefText">
+              <span className="settings__prefLabel">
+                {t("settings.interface.darkStyle")}
+              </span>
+              <p className="settings__prefHint">
+                {t("settings.interface.darkStyleHint")}
+              </p>
+            </div>
+
+            <div
+              className="settings__themeToggle"
+              role="radiogroup"
+              aria-label={t("settings.interface.darkStyle")}
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={darkPalette !== "classic"}
+                className={`settings__themeOption${
+                  darkPalette !== "classic"
+                    ? " settings__themeOption--active"
+                    : ""
+                }`}
+                onClick={() => setDarkPalette("soft")}
+              >
+                <span>{t("settings.interface.darkStyleSoft")}</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={darkPalette === "classic"}
+                className={`settings__themeOption${
+                  darkPalette === "classic"
+                    ? " settings__themeOption--active"
+                    : ""
+                }`}
+                onClick={() => setDarkPalette("classic")}
+              >
+                <span>{t("settings.interface.darkStyleClassic")}</span>
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="settings__actions">

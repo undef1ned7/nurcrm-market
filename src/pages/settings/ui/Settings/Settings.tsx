@@ -34,6 +34,7 @@ import {
   normalizeMarketCashierSettings,
   updateMarketCashierSettings,
 } from "@shared/api/marketCashierSettings";
+import { cashflowRequestsSettingUpdated } from "@entities/cash";
 import { PageShell, PageHeader, PagePanel } from "@shared/ui/page-shell";
 import { CompanyTab } from "./tabs/CompanyTab";
 import { SubscriptionTab } from "./tabs/SubscriptionTab";
@@ -84,6 +85,15 @@ const Settings = () => {
   const canViewMarketCashierSettings = useMemo(
     () => isMarketSector && (isOwner || isAdmin),
     [isMarketSector, isOwner, isAdmin]
+  );
+  // «Запросы на кассе» — та же вкладка, но для любой сферы (владелец/админ)
+  const canViewCashboxRequestsSetting = useMemo(
+    () => isOwner || isAdmin,
+    [isOwner, isAdmin]
+  );
+  const canViewCashierTab = useMemo(
+    () => canViewMarketCashierSettings || canViewCashboxRequestsSetting,
+    [canViewMarketCashierSettings, canViewCashboxRequestsSetting]
   );
 
   const canViewOnline = useMemo(() => {
@@ -166,7 +176,7 @@ const Settings = () => {
             ? SETTINGS_TABS.scalesToken
             : SETTINGS_TABS.security,
       );
-    } else if (activeTab === SETTINGS_TABS.cashier && !canViewMarketCashierSettings) {
+    } else if (activeTab === SETTINGS_TABS.cashier && !canViewCashierTab) {
       setActiveTab(
         isOwner
           ? SETTINGS_TABS.company
@@ -181,14 +191,15 @@ const Settings = () => {
     activeTab,
     isInitialized,
     canViewOnline,
-    canViewMarketCashierSettings,
+    canViewCashierTab,
   ]);
 
-  /* ===== Вкладка «Касса»: код удаления из корзины и максимальная скидка ===== */
+  /* ===== Вкладка «Касса»: код удаления, лимит скидки, заявки на подтверждение ===== */
   const [cashierSettings, setCashierSettings] = useState({
     deleteCode: "",
     maxDiscountPercent: "",
     debtScheduleVersion: "v2" as "v1" | "v2",
+    cashflowRequestsEnabled: false,
   });
   const [cashierSettingsLoading, setCashierSettingsLoading] = useState(false);
   const [cashierSettingsSaving, setCashierSettingsSaving] = useState(false);
@@ -196,7 +207,7 @@ const Settings = () => {
   const [showCashierDeleteCode, setShowCashierDeleteCode] = useState(false);
 
   useEffect(() => {
-    if (!canViewMarketCashierSettings) return undefined;
+    if (!canViewCashierTab) return undefined;
     let cancelled = false;
 
     const load = async () => {
@@ -213,6 +224,7 @@ const Settings = () => {
               ? ""
               : String(normalized.maxDiscountPercent),
           debtScheduleVersion: normalized.debtScheduleVersion || "v2",
+          cashflowRequestsEnabled: normalized.cashflowRequestsEnabled,
         });
       } catch (err: any) {
         if (cancelled) return;
@@ -228,11 +240,11 @@ const Settings = () => {
     return () => {
       cancelled = true;
     };
-  }, [canViewMarketCashierSettings]);
+  }, [canViewCashierTab]);
 
   const handleSaveCashierSettings = async (e) => {
     e.preventDefault();
-    if (!canViewMarketCashierSettings) return;
+    if (!canViewCashierTab) return;
 
     const code = String(cashierSettings.deleteCode || "").trim();
     if (code && !/^\d{4,8}$/.test(code)) {
@@ -255,9 +267,14 @@ const Settings = () => {
     setCashierSettingsSaving(true);
     try {
       const data = await updateMarketCashierSettings({
-        delete_item_code: code || null,
-        max_discount_percent: percent === null ? null : String(percent),
-        debt_schedule_version: cashierSettings.debtScheduleVersion || "v2",
+        ...(isMarketSector
+          ? {
+              delete_item_code: code || null,
+              max_discount_percent: percent === null ? null : String(percent),
+              debt_schedule_version: cashierSettings.debtScheduleVersion || "v2",
+            }
+          : {}),
+        cashflow_requests_enabled: Boolean(cashierSettings.cashflowRequestsEnabled),
       });
       const normalized = normalizeMarketCashierSettings(data);
       setCashierSettings({
@@ -269,7 +286,9 @@ const Settings = () => {
               : String(percent)
             : String(normalized.maxDiscountPercent),
         debtScheduleVersion: normalized.debtScheduleVersion || "v2",
+        cashflowRequestsEnabled: normalized.cashflowRequestsEnabled,
       });
+      dispatch(cashflowRequestsSettingUpdated(normalized.cashflowRequestsEnabled) as any);
       setCashierSettingsError("");
       showAlert("success", t("settings.alerts.cashierSaved"));
     } catch (err: any) {
@@ -565,7 +584,8 @@ const Settings = () => {
     }
   };
 
-  const { mode, setMode } = useContext(ThemeModeContext);
+  const { mode, setMode, darkPalette, setDarkPalette } =
+    useContext(ThemeModeContext);
 
   /* ===== Онлайн: ссылки ===== */
   const sectorName = useMemo(
@@ -787,6 +807,7 @@ const Settings = () => {
     isCafeSector,
     isMarketSector,
     isProductionSector,
+    darkPalette,
     mode,
     onlineBookingUrl,
     onlineMenuUrl,
@@ -795,6 +816,7 @@ const Settings = () => {
     profile,
     saving,
     setCashierSettings,
+    setDarkPalette,
     setMode,
     setShowCashierDeleteCode,
     setSidebarAutoClose,

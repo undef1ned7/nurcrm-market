@@ -438,7 +438,9 @@ const ReceiptsModal = ({ onClose, userFilter = "" }) => {
           {/* Правая панель со списком чеков */}
           <div className="receipts-modal__content">
             <div className="receipts-modal__header">
-              <h2 className="receipts-modal__title">Журнал чеков</h2>
+              <h2 className="receipts-modal__title">
+                {t("crm.cashier.receiptsLogModal.title")}
+              </h2>
               <button className="receipts-modal__close" onClick={onClose}>
                 <X size={24} />
               </button>

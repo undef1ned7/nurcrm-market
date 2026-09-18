@@ -1,5 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { PromotionRulesEditor } from "../AddProductPage/components";
+import {
+  PromotionRulesEditor,
+  AlternateBarcodesField,
+} from "../AddProductPage/components";
 
 const AddProductBarcodeView = (vm) => {
   const { t } = useTranslation();
@@ -220,18 +223,13 @@ const AddProductBarcodeView = (vm) => {
           </div>
 
           <div className="add-product-barcode__form-group">
-            <label>{tp("altBarcodesLabel")}</label>
-            <textarea
-              className="add-product-page__input"
-              rows={3}
-              name="alternateBarcodesText"
-              placeholder={tp("altBarcodesPlaceholder")}
-              value={state.alternateBarcodesText ?? ""}
-              onChange={onChange}
+            <AlternateBarcodesField
+              compact
+              rows={state.alternateBarcodes}
+              onChange={(rows) =>
+                setState((prev) => ({ ...prev, alternateBarcodes: rows }))
+              }
             />
-            <p className="add-product-page__hint">
-              {tp("altBarcodesHint")}
-            </p>
           </div>
 
           <div className="add-product-barcode__form-group add-product-barcode__supplier-row">

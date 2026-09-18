@@ -35,13 +35,15 @@ export const useMarketProductState = ({
     supplier: "",
     minStock: "0",
     expiryDate: "",
+    shelfLifeValue: "",
+    shelfLifeUnit: "days" as "days" | "months",
     kitProducts: [] as any[],
     kitSearchTerm: "",
     enablePieceSale: false,
     packagings: [] as any[],
     stock: false,
     promotionRules: [] as any[],
-    alternateBarcodesText: "",
+    alternateBarcodes: [] as any[],
   });
 
   const {

@@ -44,6 +44,14 @@ export function isMarketStartShowcaseRequestOnly(tariffName: any, sectorName: an
   return isStartPlan(tariffName) && isMarketSectorName(sectorName);
 }
 
+/**
+ * Тариф «Старт» в Магазине — общий флаг для функций, урезанных на этом тарифе:
+ * массовое сканирование склада, настройка формы товара, касса с ролью «Для долгов».
+ */
+export function isMarketStartRestricted(tariffName: any, sectorName: any) {
+  return isStartPlan(tariffName) && isMarketSectorName(sectorName);
+}
+
 export function canAccessOnlineShowcase({
   tariffName,
   sectorName,

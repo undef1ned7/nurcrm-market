@@ -169,6 +169,28 @@
   min-width: 0;
 }
 
+.cmx__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.cmx__no-receipt-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--cmx-muted, #8a8f98);
+  white-space: nowrap;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
 .cmx__heading-icon {
   width: 42px;
   height: 42px;
@@ -491,6 +513,44 @@
   display: flex;
   justify-content: flex-end;
   // margin-top: 12px;
+}
+
+/* Оплата произвольной суммы «в счёт долга» (частичная, кросс-сделочная) */
+.cmx__pay-partial {
+  padding: 14px 24px;
+  border-top: 1px solid var(--cmx-border);
+  background: var(--cmx-bg-2);
+}
+.cmx__pay-partial-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cmx-muted);
+  margin-bottom: 8px;
+}
+.cmx__pay-partial-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cmx__pay-partial-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+
+  .cmx__input {
+    padding-right: 46px;
+  }
+}
+.cmx__pay-partial-currency {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cmx-muted);
+  pointer-events: none;
 }
 
 /* ============================================================

@@ -211,6 +211,7 @@ export function CashierCartPanel({ vm }: Props) {
                           <div className="cashier-page__cart-item-name-wrap">
                             <span className="cashier-page__cart-item-name">
                               {item.name}
+                              {item.variantName ? ` ${item.variantName}` : ""}
                               {formatCartLineNameSuffix(item)}
                             </span>
                             {Array.isArray(item.promotionRules) &&
@@ -738,7 +739,7 @@ export function CashierCartPanel({ vm }: Props) {
                                 if (item.isCustom) return removeCustomFromCart(item);
                                 return removeFromCart(item);
                               }}
-                              title="Удалить"
+                              title={t("crm.cashier.delete")}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -755,14 +756,14 @@ export function CashierCartPanel({ vm }: Props) {
                 <div className="cashier-page__cart-footer">
                   {currentSale?.order_discount_total > 0 && (
                     <div className="cashier-page__cart-discount">
-                      <span>Скидка:</span>
+                      <span>{t("crm.cashier.discount")}:</span>
                       <span>
                         -{formatPrice(currentSale.order_discount_total || 0)} сом
                       </span>
                     </div>
                   )}
                   <div className="cashier-page__cart-total">
-                    <span>Итого:</span>
+                    <span>{t("crm.cashier.cartTotal")}:</span>
                     <span>{formatPrice(total)} сом</span>
                   </div>
                   <button
@@ -770,7 +771,9 @@ export function CashierCartPanel({ vm }: Props) {
                     className="cashier-page__checkout-btn"
                     onClick={handleCheckout}
                   >
-                    Оплатить {formatPrice(total)} сом
+                    {t("crm.cashier.checkout", {
+                      amount: formatPrice(total),
+                    })}
                   </button>
                 </div>
               )}
