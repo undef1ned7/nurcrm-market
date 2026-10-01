@@ -188,6 +188,11 @@ src/main.tsx
 | `/crm/market/cashier` | Касса POS |
 | `/crm/market/history` | История продаж |
 | `/crm/market/analytics` | Аналитика магазина |
+| `/crm/market/summary` | Сводка: выручка, чеки, оплаты, остатки, ABC (автообновление 20 с) |
+| `/crm/market/calculator` | Калькуляция: цена и наценка, себестоимость партии, проверка цен, безубыточность, скидка |
+| `/crm/market/abc` | ABC-анализ: 6 срезов, выгрузка в Excel (CSV) и Word (.doc) |
+| `/crm/market/knowledge-base` | База знаний (статьи в `crm.tools.kb.articles.*`, реестр — `pages/knowledge-base/model/articles.ts`) |
+| `/crm/market/error-log` | Журнал ошибок (`@shared/lib/errorLog`, localStorage, два «файла» по 300 записей) |
 | `/crm/market/documents` | Документы продаж |
 | `/crm/market/documents/create` | Создание документа продажи |
 | `/crm/market/procurement` | Закупки: история приходов + возвраты |

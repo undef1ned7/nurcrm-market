@@ -8,6 +8,7 @@ export const MENU_GROUP_ORDER = [
   "Люди",
   "Финансы",
   "Система",
+  "Помощь",
   "Прочее",
 ];
 
@@ -35,6 +36,11 @@ const GROUP_BY_TO: Record<string, string> = {
   "/crm/additional-services": "Система",
   "/crm/set": "Система",
   "/crm/pos-print-settings": "Система",
+  "/crm/market/summary": "Продажи",
+  "/crm/market/calculator": "Склад",
+  "/crm/market/abc": "Финансы",
+  "/crm/market/knowledge-base": "Помощь",
+  "/crm/market/error-log": "Помощь",
 };
 
 const GROUP_BY_LABEL: Record<string, string> = {
@@ -55,6 +61,11 @@ const GROUP_BY_LABEL: Record<string, string> = {
   Аналитика: "Финансы",
   "Доп услуги": "Система",
   Настройки: "Система",
+  Сводка: "Продажи",
+  Калькуляция: "Склад",
+  "ABC-анализ": "Финансы",
+  "База знаний": "Помощь",
+  "Журнал ошибок": "Помощь",
 };
 
 /**

@@ -20,3 +20,4 @@ export {
   type ProductExpiryStatus,
   type ProductExpiryBatch,
 } from "./lib/productExpiry";
+export * from "./api/catalog";

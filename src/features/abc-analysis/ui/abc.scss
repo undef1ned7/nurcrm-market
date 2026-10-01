@@ -1,0 +1,137 @@
+// ABC-анализ: цвета групп A/B/C берутся отсюда, остальное — из токенов проекта
+.abc {
+  --abc-a: #10b981;
+  --abc-b: #f59e0b;
+  --abc-c: #94a3b8;
+
+  // ── Выбор среза ─────────────────────────────────────────
+  &__picker {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    @media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 520px) { grid-template-columns: minmax(0, 1fr); }
+  }
+  &__pick {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--nur-border);
+    background: var(--nur-surface);
+    color: var(--nur-text);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    &:hover { border-color: var(--nur-primary-dark); transform: translateY(-1px); }
+    &:focus-visible { outline: 2px solid var(--nur-primary-dark); outline-offset: 2px; }
+    &.is-active {
+      border-color: var(--nur-primary-dark);
+      background: var(--nur-primary-soft);
+      box-shadow: 0 0 0 2px var(--nur-primary-ring);
+    }
+  }
+  &__pick-icon {
+    flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--nur-primary); color: var(--nur-primary-ink);
+  }
+  &__pick-title { display: block; font-weight: 700; font-size: var(--nur-font-body); }
+  &__pick-q { display: block; margin-top: 2px; font-size: var(--nur-font-caption); color: var(--nur-muted); line-height: 1.35; }
+
+  // ── Как читать ──────────────────────────────────────────
+  &__how {
+    border: 1px solid var(--nur-border);
+    border-radius: 14px;
+    background: var(--nur-surface);
+    padding: 0 16px;
+    summary { cursor: pointer; padding: 12px 0; font-weight: 700; list-style: none; display: flex; justify-content: space-between; align-items: center; &::-webkit-details-marker { display: none; } }
+    &[open] summary { border-bottom: 1px solid var(--nur-border); }
+  }
+  &__how-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px 0 16px;
+    @media (max-width: 720px) { grid-template-columns: minmax(0, 1fr); }
+  }
+  &__how-item { display: flex; gap: 10px; align-items: flex-start; font-size: var(--nur-font-meta); line-height: 1.45; strong { display: block; font-size: var(--nur-font-body); } }
+
+  // ── График + вывод ──────────────────────────────────────
+  &__overview {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: 14px;
+    padding: 16px;
+    @media (max-width: 720px) { grid-template-columns: minmax(0, 1fr); }
+  }
+  &__chart { position: relative; height: 240px; }
+
+  // ── Вывод одной фразой ──────────────────────────────────
+  &__insight {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--nur-primary-soft);
+    border: 1px solid var(--nur-primary-ring);
+    font-size: var(--nur-font-body);
+    line-height: 1.5;
+    strong { font-weight: 800; }
+  }
+
+  // ── Полоса распределения результата ─────────────────────
+  &__split { display: flex; flex-direction: column; gap: 8px; }
+  &__split-bar { display: flex; height: 18px; border-radius: 999px; overflow: hidden; background: var(--nur-surface-3); }
+  &__split-seg { display: block; height: 100%; transition: width 0.3s ease; &--a { background: var(--abc-a); } &--b { background: var(--abc-b); } &--c { background: var(--abc-c); } }
+  &__split-title { font-size: var(--nur-font-meta); font-weight: 600; color: var(--nur-text-2); }
+
+  // ── Карточки групп ──────────────────────────────────────
+  &__cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; @media (max-width: 720px) { grid-template-columns: minmax(0, 1fr); } }
+  &__card {
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-top: 4px solid var(--abc-c);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+    &--a { border-top-color: var(--abc-a); }
+    &--b { border-top-color: var(--abc-b); }
+    &--c { border-top-color: var(--abc-c); }
+  }
+  &__card-head { display: flex; align-items: center; gap: 8px; font-size: var(--nur-font-body); font-weight: 700; }
+  &__card-value { font-size: 28px; font-weight: 800; line-height: 1.1; small { font-size: var(--nur-font-meta); font-weight: 500; color: var(--nur-muted); margin-left: 6px; } }
+  &__card-sub { font-size: var(--nur-font-meta); color: var(--nur-text-2); }
+  &__card-action { margin: 4px 0 0; padding-top: 8px; border-top: 1px dashed var(--nur-border); font-size: var(--nur-font-caption); color: var(--nur-muted); line-height: 1.4; }
+
+  &__badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 26px; height: 26px; border-radius: 8px; font-weight: 800; font-size: 13px; color: #fff;
+    &--a { background: var(--abc-a); }
+    &--b { background: var(--abc-b); }
+    &--c { background: var(--abc-c); }
+  }
+
+  // ── Список ──────────────────────────────────────────────
+  &__toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  &__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  &__chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px; font: inherit; font-size: var(--nur-font-meta); font-weight: 600; cursor: pointer;
+    border: 1px solid var(--nur-border); background: var(--nur-surface); color: var(--nur-text-2);
+    em { font-style: normal; font-weight: 700; padding: 0 6px; border-radius: 999px; background: var(--nur-surface-3); color: var(--nur-text); }
+    &:hover { border-color: var(--nur-primary-dark); }
+    &.is-active { background: var(--nur-primary); border-color: var(--nur-primary-dark); color: var(--nur-primary-ink); em { background: rgba(255, 255, 255, 0.55); } }
+  }
+  &__search { min-width: 220px; flex: 1 1 220px; max-width: 360px; }
+
+  &__rank { color: var(--nur-muted); width: 1%; white-space: nowrap; }
+  &__row-link { cursor: pointer; &:hover td { background: var(--nur-surface-3); } }
+  &__name { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  &__share { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 120px; }
+  &__share-bar { width: 100%; height: 6px; border-radius: 999px; background: var(--nur-surface-3); overflow: hidden; span { display: block; height: 100%; border-radius: 999px; &.is-a { background: var(--abc-a); } &.is-b { background: var(--abc-b); } &.is-c { background: var(--abc-c); } } }
+  &__more { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+}

@@ -2,6 +2,45 @@ import { menuIcons } from "../menuIcons";
 
 export const marketMenu = [
   {
+    label: "Сводка",
+    to: "/crm/market/summary",
+    icon: menuIcons.dashboard,
+    // Видна всем, кто вошёл (без отдельного права)
+    implemented: true,
+    group: "Продажи",
+  },
+  {
+    label: "Калькуляция",
+    to: "/crm/market/calculator",
+    icon: menuIcons.calculator,
+    permission: "can_view_analytics",
+    implemented: true,
+    group: "Склад",
+  },
+  {
+    label: "ABC-анализ",
+    to: "/crm/market/abc",
+    icon: menuIcons.chartPie,
+    permission: "can_view_analytics",
+    // С тарифа «Стандарт» (на «Старт» скрыт в useMenuItems)
+    implemented: true,
+    group: "Финансы",
+  },
+  {
+    label: "База знаний",
+    to: "/crm/market/knowledge-base",
+    icon: menuIcons.helpBook,
+    implemented: true,
+    group: "Помощь",
+  },
+  {
+    label: "Журнал ошибок",
+    to: "/crm/market/error-log",
+    icon: menuIcons.alertTriangle,
+    implemented: true,
+    group: "Помощь",
+  },
+  {
     label: "История",
     to: "/crm/market/history",
     icon: menuIcons.clipboard,

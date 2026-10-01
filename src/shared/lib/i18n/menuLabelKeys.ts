@@ -23,6 +23,11 @@ export const MENU_LABEL_I18N_KEYS: Record<string, string> = {
   "Интеграция с весами": "crm.nav.items.scales",
   "Интерфейс кассира": "crm.nav.items.cashierUi",
   Категории: "crm.nav.items.categories",
+  Сводка: "crm.nav.items.summary",
+  Калькуляция: "crm.nav.items.calculator",
+  "ABC-анализ": "crm.nav.items.abc",
+  "База знаний": "crm.nav.items.knowledgeBase",
+  "Журнал ошибок": "crm.nav.items.errorLog",
 };
 
 export const MENU_GROUP_I18N_KEYS: Record<string, string> = {
@@ -31,6 +36,7 @@ export const MENU_GROUP_I18N_KEYS: Record<string, string> = {
   Люди: "crm.nav.groups.people",
   Финансы: "crm.nav.groups.finance",
   Система: "crm.nav.groups.system",
+  Помощь: "crm.nav.groups.help",
   Прочее: "crm.nav.groups.other",
 };
 

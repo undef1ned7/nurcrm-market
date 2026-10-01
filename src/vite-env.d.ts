@@ -21,3 +21,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Версия из package.json (подставляется Vite, см. vite.config.js). */
+declare const __APP_VERSION__: string;

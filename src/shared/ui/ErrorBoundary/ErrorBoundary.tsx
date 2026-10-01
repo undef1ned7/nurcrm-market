@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import { logCritical } from "@shared/lib/errorLog";
 
 /**
  * Ловит runtime-ошибки React и показывает fallback вместо белого экрана.
@@ -15,6 +16,7 @@ class ErrorBoundary extends Component<{ children?: ReactNode }, { hasError: bool
 
   componentDidCatch(error: any, info: any) {
     console.error("ErrorBoundary:", error, info?.componentStack);
+    logCritical(error?.message || "Render crash", { code: "render_crash" });
   }
 
   handleReload = () => {

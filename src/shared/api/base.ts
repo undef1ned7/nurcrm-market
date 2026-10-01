@@ -3,6 +3,7 @@ import { createAuthResponseInterceptor } from "./authInterceptors";
 import { getOfflineFallback } from "@shared/services/cafeOfflineFallback";
 import "@shared/config/i18n";
 import { applyBranchScope } from "@shared/lib/tools/branchContext";
+import { captureApiError, captureApiSuccess } from "@shared/lib/errorLog";
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "https://app.nurcrm.kg/api",
   timeout: 20000,
@@ -73,6 +74,19 @@ api.interceptors.response.use(
       }
     }
 
+    return Promise.reject(error);
+  },
+);
+
+// Журнал ошибок (Помощь → Журнал ошибок): обрывы связи, 403/5xx, таймауты.
+// Стоит последним, чтобы не писать ошибки, которые уже погасили другие перехватчики.
+api.interceptors.response.use(
+  (res) => {
+    if (!(res as any)?.offline) captureApiSuccess();
+    return res;
+  },
+  (error) => {
+    captureApiError(error);
     return Promise.reject(error);
   },
 );

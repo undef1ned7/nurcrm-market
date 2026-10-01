@@ -27,6 +27,10 @@ import {
   ReceiptText,
   Store,
   ClipboardList,
+  Calculator,
+  LayoutDashboard,
+  ChartPie,
+  TriangleAlert,
 } from "lucide-react";
 import { BsFileEarmarkPerson, BsListCheck } from "react-icons/bs";
 import {
@@ -115,6 +119,13 @@ export const menuIcons = {
   // Дополнительные
   instagramIcon: () => createIcon(InstagramIcon),
   documentScanner: () => createIcon(MdDocumentScanner),
+
+  // Сводка, калькуляция, ABC, помощь
+  dashboard: () => createIcon(LayoutDashboard),
+  calculator: () => createIcon(Calculator),
+  chartPie: () => createIcon(ChartPie),
+  helpBook: () => createIcon(BookOpenText),
+  alertTriangle: () => createIcon(TriangleAlert),
 
   // Логистика
   logistics: () => createIcon(CiDeliveryTruck),

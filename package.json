@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "printer-bridge": "node tools/printer-bridge.mjs"
+    "printer-bridge": "node tools/printer-bridge.mjs",
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -60,11 +61,16 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.6.0",
     "sass": "^1.97.3",
     "typescript": "~5.8.0",
     "typescript-eslint": "^8.66.0",
     "vite": "^8.0.12",
     "vitest": "^4.1.10"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs}": "eslint --max-warnings 0"
   }
 }

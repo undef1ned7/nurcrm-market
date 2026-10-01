@@ -124,11 +124,18 @@ export const useMenuItems = (
           (item: any) => !skip.has(item.to) && hasPermission(item.permission),
         );
       }
+      // «Старт»: аналитика + Сводка, Калькуляция, База знаний и Журнал ошибок
+      // (ABC-анализ — с тарифа «Стандарт»)
+      const startAllowed = new Set([
+        "/crm/market/analytics",
+        "/crm/market/summary",
+        "/crm/market/calculator",
+        "/crm/market/knowledge-base",
+        "/crm/market/error-log",
+      ]);
       const filteredItems = sectorConfig.filter((item: any) => {
-        if (item.to === "/crm/market/analytics") {
-          return hasPermission(item.permission);
-        }
-        return false;
+        if (!startAllowed.has(item.to)) return false;
+        return !item.permission || hasPermission(item.permission);
       });
       return filteredItems;
     }
@@ -167,6 +174,8 @@ export const useMenuItems = (
       ) {
         return true;
       }
+      // Пункты без права (Сводка, База знаний, Журнал ошибок) видны всем
+      if (!item.permission) return true;
       return hasPermission(item.permission);
     });
 

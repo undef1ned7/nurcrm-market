@@ -1,0 +1,96 @@
+// Общие элементы страниц «Сводка», «Калькуляция», «ABC-анализ», «База знаний», «Журнал ошибок»
+
+.tk-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--nur-surface-3);
+  border: 1px solid var(--nur-border);
+
+  &__btn {
+    border: 0;
+    background: transparent;
+    color: var(--nur-text-2);
+    font: inherit;
+    font-size: var(--nur-font-meta);
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover { background: var(--nur-surface); }
+
+    &--active {
+      background: var(--nur-primary);
+      color: var(--nur-primary-ink);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--nur-primary-dark);
+      outline-offset: 1px;
+    }
+  }
+}
+
+.tk-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+
+  &__dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-end;
+  }
+}
+
+.tk-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: var(--nur-font-meta);
+  border: 1px solid var(--nur-border-strong);
+  background: var(--nur-surface-3);
+  color: var(--nur-text);
+
+  &--warning { background: #fff7e0; border-color: #f2d98a; color: #6b4e00; }
+  &--danger  { background: #fdecec; border-color: #f2b8b8; color: #8a1f1f; }
+  &--success { background: #e8f6ee; border-color: #a9dcbc; color: #1f6b3a; }
+}
+
+html.dark {
+  .tk-banner--warning { background: rgba(247, 215, 79, 0.12); border-color: rgba(247, 215, 79, 0.35); color: #f3e3a0; }
+  .tk-banner--danger  { background: rgba(239, 68, 68, 0.14); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+  .tk-banner--success { background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.4); color: #86efac; }
+}
+
+.tk-muted { color: var(--nur-muted); font-size: var(--nur-font-meta); }
+.tk-right { text-align: right; font-variant-numeric: tabular-nums; }
+.tk-stack { display: flex; flex-direction: column; gap: 16px; }
+.tk-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  @media (max-width: 960px) { grid-template-columns: minmax(0, 1fr); }
+}
+.tk-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  @media (max-width: 960px) { grid-template-columns: minmax(0, 1fr); }
+}
+.tk-delta {
+  font-size: var(--nur-font-caption);
+  font-weight: 600;
+  &--up { color: #1f8a4c; }
+  &--down { color: #c0392b; }
+  &--flat { color: var(--nur-muted); }
+}
+.tk-chart { position: relative; height: 240px; }

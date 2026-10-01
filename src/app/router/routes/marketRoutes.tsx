@@ -42,6 +42,11 @@ const CreateSaleDocument = lazy(() =>
   import("@pages/documents").then((m) => ({ default: m.CreateSaleDocument })),
 );
 const MarketAnalytics = lazy(() => import("@pages/analytics"));
+const MarketSummary = lazy(() => import("@pages/market-summary"));
+const MarketCalculator = lazy(() => import("@pages/market-calculator"));
+const MarketAbc = lazy(() => import("@pages/market-abc"));
+const MarketKnowledgeBase = lazy(() => import("@pages/knowledge-base"));
+const MarketErrorLog = lazy(() => import("@pages/error-log"));
 
 export const marketRoutes = (_profile?: any) => [
   createProtectedRoute("market/bar", MarketBar),
@@ -73,4 +78,9 @@ export const marketRoutes = (_profile?: any) => [
   createProtectedRoute("market/documents", MarketDocuments),
   createProtectedRoute("market/documents/create", CreateSaleDocument),
   createProtectedRoute("market/analytics", MarketAnalytics),
+  createProtectedRoute("market/summary", MarketSummary),
+  createProtectedRoute("market/calculator", MarketCalculator),
+  createProtectedRoute("market/abc", MarketAbc),
+  createProtectedRoute("market/knowledge-base", MarketKnowledgeBase),
+  createProtectedRoute("market/error-log", MarketErrorLog),
 ];

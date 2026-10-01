@@ -29,6 +29,7 @@ import {
   ensureUsbReadyAuto,
 } from "./usb";
 import { transferEscPosBytes } from "./usbTransfer";
+import { logError, logWarning } from "@shared/lib/errorLog";
 import {
   applyDrawerToChunks,
   applyDrawerToEscPosBuffer,
@@ -76,9 +77,20 @@ export async function kickCashDrawer(
     Array.isArray(bytes) && bytes.length > 0
       ? bytes
       : getDrawerSettings().bytes;
-  await sendEscPosBytes(buildDrawerKickPayload(cmd), options, {
-    skipWake: true,
+  // ESC p m t1 t2: m = 0 → контакт 2, m = 1 → контакт 5
+  const port = cmd[2] === 1 ? 5 : 2;
+  logWarning(`Cash drawer pulse, pin ${port}`, {
+    code: "drawer_pulse",
+    params: { port },
   });
+  try {
+    await sendEscPosBytes(buildDrawerKickPayload(cmd), options, {
+      skipWake: true,
+    });
+  } catch (err: any) {
+    logError(err?.message || "Cash drawer error", { code: "printer_error" });
+    throw err;
+  }
 }
 
 function resolveDrawerPrintOptions(options: any = {}) {
@@ -277,7 +289,14 @@ export async function handleCheckoutResponseForPrinting(res: any, options: any =
   const printOptions = resolveDrawerPrintOptions(
     resolveMarketPrintOptions(options),
   );
-  return printCheckoutPayload(res, printOptions);
+  try {
+    return await printCheckoutPayload(res, printOptions);
+  } catch (err: any) {
+    logError(err?.message || "Receipt printing failed", {
+      code: "printer_error",
+    });
+    throw err;
+  }
 }
 
 async function printCheckoutPayload(res: any, printOptions: any = {}) {

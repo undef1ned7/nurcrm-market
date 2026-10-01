@@ -1,0 +1,36 @@
+.msum {
+  &__kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    @media (max-width: 1100px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 560px) { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  &__total { font-size: var(--nur-font-meta); color: var(--nur-muted); margin: 0 0 8px; }
+
+  &__pay-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--nur-border);
+    font-size: var(--nur-font-body);
+    &:last-child { border-bottom: 0; }
+    &--returns { color: #c0392b; font-weight: 600; }
+  }
+
+  &__list { list-style: none; margin: 0; padding: 0; }
+  &__list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--nur-border);
+    &:last-child { border-bottom: 0; }
+  }
+  &__list-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  &__updated { display: inline-flex; align-items: center; gap: 6px; color: var(--nur-muted); font-size: var(--nur-font-meta); }
+}
