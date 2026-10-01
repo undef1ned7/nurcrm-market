@@ -1,8 +1,9 @@
-import { FaSpinner } from "react-icons/fa";
+import { FaFolderOpen } from "react-icons/fa";
 import {
   getSectorRowValues,
   getSectorTableColumns,
 } from "../branchDetails.utils";
+import { BranchSection, SectionState, ShowMore, useShowMore } from "./BranchSection";
 
 type SectorTabSectionProps = {
   label: string;
@@ -19,20 +20,19 @@ export default function SectorTabSection({
 }: SectorTabSectionProps) {
   const routeLower = route.toLowerCase();
   const columns = getSectorTableColumns(routeLower);
+  const { visible, rest, more } = useShowMore(items);
 
   return (
-    <div className="branch-details__section">
-      <h2 className="branch-details__section-title">{label}</h2>
-      {loading ? (
-        <div className="branch-details__loading">
-          <FaSpinner className="spinner" />
-          <p>Загрузка данных...</p>
-        </div>
-      ) : items.length === 0 ? (
-        <p className="branch-details__empty">Нет данных для этого раздела</p>
-      ) : (
-        <div className="nur-table-wrap branch-details__table-wrapper">
-          <table className="nur-table branch-details__table">
+    <BranchSection title={label} count={loading ? null : items.length}>
+      <SectionState
+        loading={loading}
+        empty={items.length === 0}
+        icon={<FaFolderOpen />}
+        emptyTitle="Нет данных"
+        emptyText={`В разделе «${label}» для этого филиала пока пусто.`}
+      >
+        <div className="nur-table-wrap">
+          <table className="nur-table bd-table">
             <thead>
               <tr>
                 {columns.map((col, idx) => (
@@ -41,10 +41,10 @@ export default function SectorTabSection({
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => {
+              {visible.map((item, i) => {
                 const values = getSectorRowValues(item, routeLower);
                 return (
-                  <tr key={item.id || item.uuid || Math.random()}>
+                  <tr key={item.id || item.uuid || i}>
                     {values.map((val, idx) => (
                       <td key={idx}>{val}</td>
                     ))}
@@ -54,7 +54,8 @@ export default function SectorTabSection({
             </tbody>
           </table>
         </div>
-      )}
-    </div>
+        <ShowMore rest={rest} onClick={more} />
+      </SectionState>
+    </BranchSection>
   );
 }

@@ -263,6 +263,9 @@ const AddProductPage = ({
                 handleReturn={p.handleReturn}
                 handleSubmit={p.handleSubmit}
                 creating={p.creating}
+                paidFromShiftDrawer={p.paidFromShiftDrawer}
+                setPaidFromShiftDrawer={p.setPaidFromShiftDrawer}
+                shiftDrawerFundingTarget={p.shiftDrawerFundingTarget}
               />
             )}
           </PagePanel>

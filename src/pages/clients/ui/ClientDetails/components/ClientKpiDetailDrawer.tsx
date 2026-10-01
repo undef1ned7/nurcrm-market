@@ -18,6 +18,10 @@ import {
   buildExpenseVariableRouting,
   buildPosRoutingFromUser,
 } from "@shared/lib/tools/cashboxResolution";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import ClientModalPortal from "./ClientModalPortal";
 
@@ -56,10 +60,13 @@ export function ClientKpiDetailDrawer({
   const { t } = useTranslation();
   const { profile, company } = useUser();
   const isSupplier = String(clientType || "").toLowerCase() === "suppliers";
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
 
   const [payingAll, setPayingAll] = useState(false);
   const [partialAmount, setPartialAmount] = useState("");
   const [payingPartial, setPayingPartial] = useState(false);
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<any>({
     open: false,
     message: "",
@@ -197,6 +204,30 @@ export function ClientKpiDetailDrawer({
           }
         }
 
+        const paidTotal = amountToPay - Math.max(remainingToPay, 0);
+        if (
+          paidTotal > 0 &&
+          paidFromShiftDrawer &&
+          isSupplier &&
+          shiftDrawerFundingTarget.available &&
+          shiftDrawerFundingTarget.cashboxId
+        ) {
+          const drawerResult = await recordShiftDrawerOutflow({
+            cashboxId: shiftDrawerFundingTarget.cashboxId,
+            amount: paidTotal,
+            name: "Оплата долга поставщику из кассы смены",
+          });
+          if (!drawerResult.ok) {
+            setAlert({
+              open: true,
+              type: "error",
+              message:
+                "Долг оплачен, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+            });
+          }
+        }
+        setPaidFromShiftDrawer(false);
+
         setPayingPartial(false);
         onChanged?.();
 
@@ -206,7 +237,7 @@ export function ClientKpiDetailDrawer({
             type: "error",
             message: paidAnything
               ? t("crm.clients.details.payPartialPartialFail", {
-                  paid: (amountToPay - Math.max(remainingToPay, 0)).toFixed(2),
+                  paid: paidTotal.toFixed(2),
                 })
               : t("crm.clients.details.paymentError"),
           });
@@ -236,6 +267,7 @@ export function ClientKpiDetailDrawer({
           : buildPosRoutingFromUser(profile, company);
         const today = toYYYYMMDD(new Date());
         let paidDeals = 0;
+        let paidAmountTotal = 0;
         let failed = false;
 
         for (const row of debtRows) {
@@ -285,6 +317,7 @@ export function ClientKpiDetailDrawer({
                 },
                 { warnOnFailure: true, failureContext: "debt" },
               );
+              paidAmountTotal += remaining;
             }
             paidDeals += 1;
           } catch (e: any) {
@@ -293,6 +326,29 @@ export function ClientKpiDetailDrawer({
             break;
           }
         }
+
+        if (
+          paidAmountTotal > 0 &&
+          paidFromShiftDrawer &&
+          isSupplier &&
+          shiftDrawerFundingTarget.available &&
+          shiftDrawerFundingTarget.cashboxId
+        ) {
+          const drawerResult = await recordShiftDrawerOutflow({
+            cashboxId: shiftDrawerFundingTarget.cashboxId,
+            amount: paidAmountTotal,
+            name: "Оплата долга поставщику из кассы смены",
+          });
+          if (!drawerResult.ok) {
+            setAlert({
+              open: true,
+              type: "error",
+              message:
+                "Долг оплачен, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+            });
+          }
+        }
+        setPaidFromShiftDrawer(false);
 
         setPayingAll(false);
         onChanged?.();
@@ -446,6 +502,26 @@ export function ClientKpiDetailDrawer({
               </div>
             </div>
           )}
+
+          {isSupplier &&
+            debtRows.length > 0 &&
+            shiftDrawerFundingTarget.available && (
+              <label
+                className="cmx__pay-partial-label"
+                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={paidFromShiftDrawer}
+                  onChange={(e) => setPaidFromShiftDrawer(e.target.checked)}
+                  disabled={payingAll || payingPartial}
+                />
+                Я заплатил из кассы (ящика) смены
+                {shiftDrawerFundingTarget.cashboxName
+                  ? ` — спишется с кассы «${shiftDrawerFundingTarget.cashboxName}»`
+                  : ""}
+              </label>
+            )}
 
           <div className="cmx__footer">
             <div className="cmx__footer-left">

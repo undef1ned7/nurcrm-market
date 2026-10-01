@@ -1,6 +1,15 @@
-import { useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
-import { PageShell, PageHeader } from "@shared/ui/page-shell";
+import { useNavigate } from "react-router";
+import {
+  FaArrowLeft,
+  FaBuilding,
+  FaClock,
+  FaEnvelope,
+  FaExchangeAlt,
+  FaHashtag,
+  FaMapMarkerAlt,
+  FaPhone,
+} from "react-icons/fa";
+import { PageShell, PageHeader, StatusChip } from "@shared/ui/page-shell";
 import { useBranchDetails } from "./hooks/useBranchDetails";
 import BranchDetailsLoading from "./components/BranchDetailsLoading";
 import BranchDetailsError from "./components/BranchDetailsError";
@@ -9,9 +18,14 @@ import KassaSection from "./components/KassaSection";
 import WarehouseSection from "./components/WarehouseSection";
 import SalesSection from "./components/SalesSection";
 import AnalyticsSection from "./components/AnalyticsSection";
-import EmployeesSection from "./components/EmployeesSection";
-import ClientsSection from "./components/ClientsSection";
 import SectorTabSection from "./components/SectorTabSection";
+import BranchEmbeddedPage, {
+  ANALYTICS_ROUTE,
+  CLIENTS_ROUTE,
+  EMPLOYEES_ROUTE,
+  isEmbeddedRoute,
+} from "./components/BranchEmbeddedPage";
+import TransfersSection from "./components/TransfersSection";
 import "./BranchDetails.scss";
 
 const BranchDetails = () => {
@@ -23,7 +37,9 @@ const BranchDetails = () => {
     loading,
     error,
     tabs,
+    filteredBaseTabs,
     filteredSectorTabs,
+    isMarketSector,
     cashLoading,
     filteredCashFlows,
     productsLoading,
@@ -62,19 +78,72 @@ const BranchDetails = () => {
     <PageShell className="branch-details">
       <PageHeader
         title={branch.name || "Филиал"}
-        subtitle={branch.address || "Данные филиала"}
+        subtitle="Карточка филиала"
         actions={
-          <button
-            type="button"
-            className="nur-btn nur-btn--ghost"
-            onClick={() => navigate("/crm/branch")}
-          >
-            <FaArrowLeft /> Назад
-          </button>
+          <>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => navigate(`/crm/branch/transfers/new?to=${branch.id}`)}
+            >
+              <FaExchangeAlt /> Переместить товары
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--ghost"
+              onClick={() => navigate("/crm/branch")}
+            >
+              <FaArrowLeft /> К филиалам
+            </button>
+          </>
         }
       />
 
+      <section className="bd-info" aria-label="Сведения о филиале">
+        <span className="bd-info__avatar" aria-hidden="true">
+          <FaBuilding />
+        </span>
+        <div className="bd-info__main">
+          <div className="bd-info__title">
+            <h2>{branch.name || "Филиал"}</h2>
+            <StatusChip tone={branch.is_active === false ? "default" : "success"}>
+              {branch.is_active === false ? "Неактивен" : "Активен"}
+            </StatusChip>
+          </div>
+          <ul className="bd-info__meta">
+            {branch.address && (
+              <li>
+                <FaMapMarkerAlt aria-hidden="true" /> {branch.address}
+              </li>
+            )}
+            {branch.phone && (
+              <li>
+                <FaPhone aria-hidden="true" />
+                <a href={`tel:${branch.phone}`}>{branch.phone}</a>
+              </li>
+            )}
+            {branch.email && (
+              <li>
+                <FaEnvelope aria-hidden="true" />
+                <a href={`mailto:${branch.email}`}>{branch.email}</a>
+              </li>
+            )}
+            {branch.code && (
+              <li>
+                <FaHashtag aria-hidden="true" /> {branch.code}
+              </li>
+            )}
+            {branch.timezone && (
+              <li>
+                <FaClock aria-hidden="true" /> {branch.timezone}
+              </li>
+            )}
+          </ul>
+        </div>
+      </section>
+
       <BranchDetailsTabs
+        baseCount={filteredBaseTabs.length}
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -94,7 +163,11 @@ const BranchDetails = () => {
 
         {activeTab === "sales" && <SalesSection items={filteredSales} />}
 
-        {activeTab === "analytics" && (
+        {activeTab === "analytics" && isMarketSector && (
+          <BranchEmbeddedPage route={ANALYTICS_ROUTE} branchId={branch.id} />
+        )}
+
+        {activeTab === "analytics" && !isMarketSector && (
           <AnalyticsSection
             analyticsData={analyticsData}
             dateFrom={dateFrom}
@@ -106,17 +179,23 @@ const BranchDetails = () => {
         )}
 
         {activeTab === "employees" && (
-          <EmployeesSection
-            loading={employeesLoading}
-            items={filteredEmployees}
-          />
+          <BranchEmbeddedPage route={EMPLOYEES_ROUTE} branchId={branch.id} />
         )}
 
         {activeTab === "clients" && (
-          <ClientsSection loading={clientsLoading} items={filteredClients} />
+          <BranchEmbeddedPage route={CLIENTS_ROUTE} branchId={branch.id} />
         )}
 
-        {activeSectorTab && (
+        {activeTab === "transfers" && <TransfersSection branchId={branch.id} />}
+
+        {activeSectorTab && isEmbeddedRoute(activeSectorTab.route) && (
+          <BranchEmbeddedPage
+            route={activeSectorTab.route}
+            branchId={branch.id}
+          />
+        )}
+
+        {activeSectorTab && !isEmbeddedRoute(activeSectorTab.route) && (
           <SectorTabSection
             label={activeSectorTab.label}
             route={activeSectorTab.route}

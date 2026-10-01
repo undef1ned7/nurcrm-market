@@ -13,6 +13,12 @@ const SellDetail = lazy(() =>
 const Debts = lazy(() => import("@features/debts"));
 const Pending = lazy(() => import("@pages/pending"));
 const Branch = lazy(() => import("@pages/branches"));
+const BranchTransfers = lazy(() =>
+  import("@pages/branches").then((m) => ({ default: m.BranchTransfers })),
+);
+const TransferCreatePage = lazy(() =>
+  import("@pages/branches").then((m) => ({ default: m.TransferCreatePage })),
+);
 const BranchDetails = lazy(() =>
   import("@pages/branches").then((m) => ({ default: m.BranchDetails })),
 );
@@ -49,6 +55,8 @@ export const commonRoutes = (_profile?: any) => [
   createProtectedRoute("shifts", Shifts),
   createProtectedRoute("shifts/:id", ShiftDetail),
   createProtectedRoute("branch", Branch),
+  createProtectedRoute("branch/transfers", BranchTransfers),
+  createProtectedRoute("branch/transfers/new", TransferCreatePage),
   createProtectedRoute("branch/:id", BranchDetails),
   createProtectedRoute("kassa/*", Kassa),
   createProtectedRoute("kassa/:id", KassaDet),

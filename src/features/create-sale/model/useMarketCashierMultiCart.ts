@@ -23,6 +23,15 @@ export function useMarketCashierMultiCart({
   } = useSale();
   const [switching, setSwitching] = useState(false);
   const switchingTargetRef = useRef<any>(null);
+  // id продажи, которую только что оплатили в этой же сессии — страховка от
+  // гонки URL/Redux: эффект синхронизации в useCashierShifts.ts может успеть
+  // попытаться "переключиться" на неё раньше, чем URL поправится на новую
+  // корзину. См. docs/sale-flow-bugs.md, пункт 12.
+  const lastCheckedOutSaleIdRef = useRef<string | null>(null);
+
+  const markSaleJustCheckedOut = useCallback((saleId: any) => {
+    lastCheckedOutSaleIdRef.current = saleId != null ? String(saleId) : null;
+  }, []);
 
   const carts = useMemo(() => posCarts, [posCarts]);
 
@@ -79,6 +88,13 @@ export function useMarketCashierMultiCart({
       if (String(activeSaleId) === id && String(currentSale?.id) === id) {
         return;
       }
+      if (id === lastCheckedOutSaleIdRef.current) {
+        // Гонка URL/Redux сразу после оплаты: URL ещё указывает на только
+        // что закрытую продажу — не пытаемся её загрузить (получим 404),
+        // разово гасим флаг, а не блокируем навсегда.
+        lastCheckedOutSaleIdRef.current = null;
+        return;
+      }
       const requestId = id;
       switchingTargetRef.current = requestId;
       setSwitching(true);
@@ -100,7 +116,13 @@ export function useMarketCashierMultiCart({
     if (!shiftId) return null;
     setSwitching(true);
     try {
-      const data = await refreshCartsFromStart({ is_new: true });
+      // Ключ идемпотентности на реальное создание новой корзины (не на
+      // фоновые refreshCartsFromStart) — защита от гонки при двойном клике
+      // /двух устройствах. См. docs/sale-flow-bugs.md, пункт 1.
+      const data = await refreshCartsFromStart({
+        is_new: true,
+        idempotencyKey: crypto.randomUUID(),
+      });
       const { activeSaleId: newId } = normalizePosStartResponse(data);
       return newId;
     } finally {
@@ -149,6 +171,7 @@ export function useMarketCashierMultiCart({
     mainSaleId,
     switching,
     registerMainSale,
+    markSaleJustCheckedOut,
     switchToCart,
     parkAndNewCart,
     deleteCart,

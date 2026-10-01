@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import "./Warehouse.scss";
 import api from "@shared/api";
 import FilterModal from "./components/FilterModal";
@@ -28,7 +28,7 @@ import {
   useWarehouseData,
   useWarehouseReferences,
 } from "./hooks/useWarehouseData";
-import { STORAGE_KEY, VIEW_MODES } from "./constants";
+import { PAGE_SIZE, STORAGE_KEY, VIEW_MODES } from "./constants";
 import { formatDeleteMessage } from "./utils";
 import { lookupMarketWarehouseProductByBarcode } from "@entities/product/lib/marketWarehouseBarcodeScan";
 import { getBarcodeAmbiguity } from "@shared/lib/tools/barcodeAmbiguity";
@@ -38,7 +38,8 @@ import {
 } from "@shared/lib/tools/marketWarehouseFilters";
 
 const WAREHOUSE_SELECTED_IDS_KEY = "marketWarehouseSelectedProductIds";
-const WAREHOUSE_SELECTED_SNAPSHOTS_KEY = "marketWarehouseSelectedProductSnapshots";
+const WAREHOUSE_SELECTED_SNAPSHOTS_KEY =
+  "marketWarehouseSelectedProductSnapshots";
 
 const loadSnapshotsFromStorage = () => {
   if (typeof sessionStorage === "undefined") return {};
@@ -93,7 +94,8 @@ const Warehouse = () => {
   const [bulkDeleting, setBulkDeleting] = useState<any>(false);
   const [bulkUpdating, setBulkUpdating] = useState<any>(false);
   const [showBulkEditModal, setShowBulkEditModal] = useState<any>(false);
-  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<any>(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] =
+    useState<any>(false);
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window === "undefined") return VIEW_MODES.TABLE;
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -101,7 +103,6 @@ const Warehouse = () => {
     const isSmall = window.matchMedia("(max-width: 1199px)").matches;
     return isSmall ? VIEW_MODES.CARDS : VIEW_MODES.TABLE;
   });
-
 
   // Хуки для управления данными
   const { searchTerm, debouncedSearchTerm, setSearchTerm } = useSearch();
@@ -141,13 +142,14 @@ const Warehouse = () => {
   // Получаем текущую страницу из URL
   const currentPageFromUrl = useMemo(
     () => parseInt(searchParams.get("page") || "1", 10),
-    [searchParams]
+    [searchParams],
   );
 
   // Параметры запроса
   const requestParams = useMemo(() => {
     const params = {
       page: currentPageFromUrl,
+      page_size: PAGE_SIZE,
       ...filters,
     };
     if (debouncedSearchTerm?.trim()) {
@@ -164,8 +166,6 @@ const Warehouse = () => {
     () => filterProductsBySaleUnit(products, filters.sale_unit),
     [products, filters.sale_unit],
   );
-
-
 
   useEffect(() => {
     if (loading) return;
@@ -186,10 +186,10 @@ const Warehouse = () => {
       prevProducts[0]?.id !== currentProducts[0]?.id;
 
     if (isNewData) {
-      (document.getElementById('root') as any)?.scrollTo({
+      (document.getElementById("root") as any)?.scrollTo({
         top: 0,
-        behavior: 'smooth'
-      })
+        behavior: "smooth",
+      });
     }
     prevProductsRef.current = currentProducts;
   }, [products, loading]);
@@ -206,8 +206,10 @@ const Warehouse = () => {
   } = usePagination(count, next, previous);
 
   // Сброс на первую страницу при изменении поиска
+  const prevSearchRef = useRef(debouncedSearchTerm);
   useEffect(() => {
-    if (debouncedSearchTerm) {
+    if (prevSearchRef.current !== debouncedSearchTerm) {
+      prevSearchRef.current = debouncedSearchTerm;
       resetToFirstPage();
     }
   }, [debouncedSearchTerm, resetToFirstPage]);
@@ -267,7 +269,7 @@ const Warehouse = () => {
     (product: any) => {
       navigate(`/crm/sklad/${product.id}`);
     },
-    [navigate]
+    [navigate],
   );
 
   const handlePageChange = useCallback(
@@ -291,7 +293,7 @@ const Warehouse = () => {
           ids: Array.from(selectedRows),
           soft: true,
           require_all: false,
-        })
+        }),
       ).unwrap();
 
       setSelectedRows(new Set());
@@ -319,7 +321,7 @@ const Warehouse = () => {
             ids: Array.from(selectedRows),
             ...changes,
             require_all: false,
-          })
+          }),
         ).unwrap();
 
         setShowBulkEditModal(false);
@@ -467,7 +469,7 @@ const Warehouse = () => {
   // Мемоизация сообщения для модального окна удаления
   const deleteModalMessage = useMemo(
     () => formatDeleteMessage(selectedCount),
-    [selectedCount]
+    [selectedCount],
   );
 
   return (
@@ -488,14 +490,18 @@ const Warehouse = () => {
               }
               aria-label={
                 selectedCount > 0
-                  ? t("crm.warehouse.inventoryWithSelected", { count: selectedCount })
+                  ? t("crm.warehouse.inventoryWithSelected", {
+                      count: selectedCount,
+                    })
                   : t("crm.warehouse.inventory")
               }
             >
               <ClipboardList size={16} />
               <span className="nur-btn__label">
                 {selectedCount > 0
-                  ? t("crm.warehouse.inventoryWithSelected", { count: selectedCount })
+                  ? t("crm.warehouse.inventoryWithSelected", {
+                      count: selectedCount,
+                    })
                   : t("crm.warehouse.inventory")}
               </span>
             </button>
@@ -507,7 +513,9 @@ const Warehouse = () => {
               aria-label={t("crm.warehouse.massScan")}
             >
               <ScanBarcode size={16} />
-              <span className="nur-btn__label">{t("crm.warehouse.massScan")}</span>
+              <span className="nur-btn__label">
+                {t("crm.warehouse.massScan")}
+              </span>
             </button>
             <button
               type="button"
@@ -517,7 +525,9 @@ const Warehouse = () => {
               aria-label={t("crm.warehouse.createProduct")}
             >
               <Plus size={16} />
-              <span className="nur-btn__label">{t("crm.warehouse.createProduct")}</span>
+              <span className="nur-btn__label">
+                {t("crm.warehouse.createProduct")}
+              </span>
             </button>
           </>
         }

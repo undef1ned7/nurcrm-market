@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { subscribeCustomerDisplay } from "../lib/channel";
 import {
+  CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT,
   getCustomerDisplaySlides,
   getCustomerDisplayTheme,
   getCustomerDisplayWelcome,
+  syncCustomerDisplaySettingsFromBackend,
 } from "../model/settings";
 import type { CustomerDisplayMessage } from "../model/types";
 import "./CustomerDisplayView.scss";
@@ -51,6 +53,29 @@ export function CustomerDisplayView({
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
+
+  // Этот экран может открываться на отдельном устройстве, где ещё нет
+  // локально настроенного приветствия/слайдов/темы — подтягиваем с бэка.
+  useEffect(() => {
+    syncCustomerDisplaySettingsFromBackend();
+  }, []);
+
+  useEffect(() => {
+    const onSynced = () => {
+      setTheme(getCustomerDisplayTheme());
+      setMessage((prev) => {
+        if (prev.type !== "idle" && prev.type !== "hello") return prev;
+        return {
+          ...prev,
+          welcomeText: getCustomerDisplayWelcome(companyName),
+          slides: getCustomerDisplaySlides(),
+        } as CustomerDisplayMessage;
+      });
+    };
+    window.addEventListener(CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT, onSynced);
+    return () =>
+      window.removeEventListener(CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT, onSynced);
+  }, [companyName]);
 
   useEffect(() => {
     return subscribeCustomerDisplay((next) => {

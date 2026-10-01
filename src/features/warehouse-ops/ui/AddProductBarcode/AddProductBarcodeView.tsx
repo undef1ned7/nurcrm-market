@@ -52,7 +52,10 @@ const AddProductBarcodeView = (vm) => {
     totalAmount,
     warehouseUuid,
     pickClient,
-    initialSupplierFormState
+    initialSupplierFormState,
+    paidFromShiftDrawer,
+    setPaidFromShiftDrawer,
+    shiftDrawerFundingTarget,
   } = vm;
 
   return (
@@ -442,6 +445,24 @@ const AddProductBarcodeView = (vm) => {
               </div>
             )}
           </div>
+
+          {debt !== "Долги" && shiftDrawerFundingTarget?.available && (
+            <div className="add-product-barcode__debt-section">
+              <label className="add-product-barcode__debt-checkbox">
+                <input
+                  type="checkbox"
+                  checked={paidFromShiftDrawer}
+                  onChange={(e) => setPaidFromShiftDrawer(e.target.checked)}
+                />
+                <strong>
+                  Я заплатил из кассы (ящика) смены
+                  {shiftDrawerFundingTarget.cashboxName
+                    ? ` — спишется с кассы «${shiftDrawerFundingTarget.cashboxName}»`
+                    : ""}
+                </strong>
+              </label>
+            </div>
+          )}
 
           {/* Кнопки действий */}
           <div className="add-product-barcode__actions">

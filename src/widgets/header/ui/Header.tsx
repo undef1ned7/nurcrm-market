@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Bell, Menu, ShoppingCart, X } from "lucide-react";
 import { useUser } from "@entities/user";
@@ -11,6 +11,11 @@ import {
 import { usePageChrome } from "@shared/ui/page-shell";
 import "./Header.scss";
 import { useAppDispatch, useAppSelector } from "@app/store";
+import {
+  getLatestDesktopCashierDownloadUrl,
+  isCashierDesktopButtonEnabled,
+  triggerFileDownload,
+} from "@shared/lib/desktopCashierApp";
 
 function resolvePageMeta(pathname: string, t: ReturnType<typeof useTranslation>["t"]) {
   const pages = t("header.pages", { returnObjects: true }) as unknown as Record<
@@ -75,15 +80,29 @@ const Header = ({ isSidebarOpen = false, onToggleSidebar }: HeaderProps) => {
   );
   const unreadBadge = formatUnreadBadge(unreadCount);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [downloadingCashier, setDownloadingCashier] = useState(false);
 
   useEffect(() => {
     dispatch(fetchNotificationsAsync({} as any) as any);
   }, [dispatch]);
 
-  const showCashierButton = useMemo(() => {
-    if (!userProfile) return false;
-    return userProfile.can_view_cashier === true;
-  }, [userProfile]);
+  const showCashierButton =
+    Boolean(userProfile) && userProfile.can_view_cashier === true;
+
+  const handleCashierClick = async () => {
+    if (!isCashierDesktopButtonEnabled()) {
+      navigate("/crm/market/cashier");
+      return;
+    }
+    if (downloadingCashier) return;
+    setDownloadingCashier(true);
+    try {
+      const url = await getLatestDesktopCashierDownloadUrl();
+      triggerFileDownload(url);
+    } finally {
+      setDownloadingCashier(false);
+    }
+  };
 
   const usernameToDisplay = userProfile
     ? `${userProfile.first_name || ""} ${userProfile.last_name || ""}`.trim() ||
@@ -128,13 +147,26 @@ const Header = ({ isSidebarOpen = false, onToggleSidebar }: HeaderProps) => {
         {showCashierButton && (
           <button
             className="header__cashier-btn"
-            onClick={() => navigate("/crm/market/cashier")}
-            title={t("header.openCashier")}
+            onClick={handleCashierClick}
+            title={
+              isCashierDesktopButtonEnabled()
+                ? t("header.downloadCashier")
+                : t("header.openCashier")
+            }
             type="button"
-            aria-label={t("header.openCashier")}
+            aria-label={
+              isCashierDesktopButtonEnabled()
+                ? t("header.downloadCashier")
+                : t("header.openCashier")
+            }
+            disabled={downloadingCashier}
           >
             <ShoppingCart size={18} />
-            <span>{t("header.cashier")}</span>
+            <span>
+              {downloadingCashier
+                ? t("header.downloadingCashier")
+                : t("header.cashier")}
+            </span>
           </button>
         )}
         <button

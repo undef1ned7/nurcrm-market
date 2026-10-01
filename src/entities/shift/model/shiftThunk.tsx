@@ -56,7 +56,10 @@ export const openShiftAsync = createAsyncThunk<any, void | any>(
   async (shiftData: any, { rejectWithValue }) => {
     try {
       const body: Record<string, string> = {
-        cashier: String(shiftData.cashier),
+        // без id кассира бэк берёт текущего пользователя из токена
+        ...(shiftData.cashier != null && String(shiftData.cashier).trim()
+          ? { cashier: String(shiftData.cashier) }
+          : {}),
         opening_cash: String(shiftData.opening_cash || "0"),
         ...buildCashRoutingPayload({
           branch_id: shiftData.branch_id,
@@ -107,6 +110,9 @@ export const closeShiftAsync = createAsyncThunk<any, void | any>(
  *   - date_to: YYYY-MM-DD
  *   - ordering: -total (убывание по сумме), total (возрастание)
  *   - q: поиск по номеру чека
+ *   - cashier: uuid продавца чека (можно несколько через запятую) — фильтр
+ *     по cashier_id, не по cashier_display (тёзки в компании иначе смешаются)
+ *   - page_size: до 500 (см. docs/backend/kassa/shift-sales-cashier-filter-backend.md)
  */
 export const fetchShiftSalesAsync = createAsyncThunk<any, void | any>(
   "shifts/fetchSales",

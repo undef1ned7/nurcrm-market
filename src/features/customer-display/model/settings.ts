@@ -1,7 +1,17 @@
+import {
+  fetchCustomerDisplaySettings,
+  updateCustomerDisplaySettings,
+  type CustomerDisplaySettingsDto,
+} from "@shared/api/customerDisplaySettings";
+
 const ENABLED_KEY = "market_customer_display_enabled";
 const WELCOME_KEY = "market_customer_display_welcome";
 const SLIDES_KEY = "market_customer_display_slides";
 const THEME_KEY = "market_customer_display_theme";
+
+/** Событие на window: локальный кэш настроек второго экрана обновился с бэка. */
+export const CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT =
+  "customer-display-settings-synced";
 
 export type CustomerDisplayTheme = "dark" | "light";
 
@@ -91,4 +101,38 @@ export function openCustomerDisplayWindow() {
   if (typeof window === "undefined") return null;
   const url = `${window.location.origin}${CUSTOMER_DISPLAY_PATH}`;
   return window.open(url, "nur-market-customer-display", "noopener,noreferrer");
+}
+
+/** Пишет пришедшие с бэка поля в localStorage и уведомляет открытые компоненты. */
+function applyCustomerDisplaySettingsToStorage(dto: CustomerDisplaySettingsDto) {
+  if (typeof dto.enabled === "boolean") setCustomerDisplayEnabled(dto.enabled);
+  if (typeof dto.welcome_text === "string") setCustomerDisplayWelcome(dto.welcome_text);
+  if (dto.theme === "light" || dto.theme === "dark") setCustomerDisplayTheme(dto.theme);
+  if (Array.isArray(dto.slides)) {
+    safeSet(SLIDES_KEY, JSON.stringify(dto.slides));
+  }
+  window.dispatchEvent(new Event(CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT));
+}
+
+/**
+ * Подтягивает настройки второго экрана с бэка — они общие на всю компанию,
+ * а не на браузер, где их когда-то настроили. Не блокирует UI: пока бэка нет,
+ * запрос молча падает и экран продолжает работать по локальному кэшу.
+ */
+export async function syncCustomerDisplaySettingsFromBackend() {
+  try {
+    const dto = await fetchCustomerDisplaySettings();
+    if (dto && typeof dto === "object") {
+      applyCustomerDisplaySettingsToStorage(dto);
+    }
+  } catch {
+    // Бэк недоступен/не задеплоен — остаёмся на локальном кэше этого браузера.
+  }
+}
+
+/** Отправляет изменённую настройку на бэк. Fire-and-forget — UI уже обновлён локально. */
+export function pushCustomerDisplaySettingsUpdate(patch: CustomerDisplaySettingsDto) {
+  updateCustomerDisplaySettings(patch).catch(() => {
+    // Молча игнорируем: значение уже сохранено в localStorage как локальный кэш.
+  });
 }

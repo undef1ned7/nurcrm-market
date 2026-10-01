@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router";
 import api from "@shared/api";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { fetchClientsAsync } from "@entities/client";
@@ -276,16 +276,21 @@ export const useAddProductBootstrap = ({
     }
   }, [location.state, isEditMode, navigate, location.pathname, setImages]);
 
-  // Генерируем EAN-13 штрих-код автоматически при загрузке (только для создания)
+  // Генерируем EAN-13 штрих-код автоматически при загрузке (только для создания).
+  // Один раз за монтирование — иначе очистка поля (чтобы вписать существующий
+  // штрих-код руками) тут же триггерит эффект заново и стирает ввод пользователя.
+  const autoBarcodeGeneratedRef = useRef(false);
   useEffect(() => {
-    if (!isEditMode && !newItemData.barcode) {
+    if (autoBarcodeGeneratedRef.current || isEditMode) return;
+    if (!newItemData.barcode) {
+      autoBarcodeGeneratedRef.current = true;
       const barcode = utils.generateEAN13Barcode();
       setNewItemData((prev) => ({
         ...prev,
         barcode: barcode,
       }));
     }
-  }, [isEditMode, newItemData.barcode]);
+  }, [isEditMode, newItemData.barcode, setNewItemData]);
 
   // ПЛУ не заполняем автоматически: пустое значение = «код не задан».
   // Автогенерация для весовых товаров происходит ниже и в buildProductPayload.

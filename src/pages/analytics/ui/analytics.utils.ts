@@ -90,6 +90,8 @@ export const mapTabToAPI = (tab) => {
     suppliers: "suppliers",
     users: "users",
     finance: "finance",
+    procurement: "procurement",
+    abc: "abc",
   };
   return tabMap[tab] || "sales";
 };

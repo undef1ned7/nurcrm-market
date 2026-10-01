@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  MONTH_TERM_SLIDER_STEPS,
+  MONTH_TERM_SLIDER_TICKS,
+  DAY_COUNT_SLIDER_STEPS,
+  DAY_COUNT_SLIDER_TICKS,
+  MAX_DAY_INSTALLMENTS,
+  MAX_MONTH_INSTALLMENTS,
+  paymentsForMonthTerm,
+  scheduleInstallmentsCount,
   addDaysToIso,
   addMonthsToIso,
   buildDebtSchedule,
@@ -131,5 +139,56 @@ describe("buildDebtSchedule", () => {
         firstDueDate: "2026-08-12",
       }),
     ).toBeNull();
+  });
+});
+
+describe("paymentsForMonthTerm", () => {
+  it("каждый месяц: платежей столько же, сколько месяцев", () => {
+    expect(paymentsForMonthTerm(3, 1)).toBe(3);
+    expect(paymentsForMonthTerm(12, 1)).toBe(12);
+  });
+
+  it("интервал делит срок: срок / интервал", () => {
+    expect(paymentsForMonthTerm(6, 2)).toBe(3);
+    expect(paymentsForMonthTerm(12, 6)).toBe(2);
+  });
+
+  it("не делится: последний платёж всё ещё внутри срока (округление вверх)", () => {
+    // 3 мес. раз в 2 мес. → 1-й и 3-й месяц
+    expect(paymentsForMonthTerm(3, 2)).toBe(2);
+    expect(paymentsForMonthTerm(1, 6)).toBe(1);
+  });
+
+  it("пустой срок → 0 платежей", () => {
+    expect(paymentsForMonthTerm(0, 1)).toBe(0);
+  });
+});
+
+describe("scheduleInstallmentsCount", () => {
+  it("месяцы: значение — срок, считаем через интервал", () => {
+    expect(scheduleInstallmentsCount("month", 6, 3)).toBe(2);
+    expect(scheduleInstallmentsCount("month", 6, "")).toBe(6);
+  });
+
+  it("дни: значение — сразу число платежей", () => {
+    expect(scheduleInstallmentsCount("day", 14, 3)).toBe(14);
+    expect(scheduleInstallmentsCount("day", "", 1)).toBe(0);
+  });
+});
+
+describe("шкалы слайдера", () => {
+  it("засечки лежат на шагах, шаги в пределах максимума", () => {
+    for (const tick of MONTH_TERM_SLIDER_TICKS) {
+      expect(MONTH_TERM_SLIDER_STEPS).toContain(tick);
+    }
+    for (const tick of DAY_COUNT_SLIDER_TICKS) {
+      expect(DAY_COUNT_SLIDER_STEPS).toContain(tick);
+    }
+    expect(Math.max(...MONTH_TERM_SLIDER_STEPS)).toBeLessThanOrEqual(
+      MAX_MONTH_INSTALLMENTS,
+    );
+    expect(Math.max(...DAY_COUNT_SLIDER_STEPS)).toBeLessThanOrEqual(
+      MAX_DAY_INSTALLMENTS,
+    );
   });
 });

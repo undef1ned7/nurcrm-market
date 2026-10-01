@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import {
   ArrowLeft,
   LayoutGrid,
@@ -28,6 +28,7 @@ import {
 import { AccordionSection } from "./counterpartyDetail/components/AccordionSection";
 import { CounterpartyPayDebtModal } from "./counterpartyDetail/components/CounterpartyPayDebtModal";
 import { CounterpartyRowsContent } from "./counterpartyDetail/components/CounterpartyRowsContent";
+import { getProfileBranchId } from "@shared/lib/tools/branchContext";
 
 const CounterpartyDetail = () => {
   const { id } = useParams();
@@ -88,9 +89,10 @@ const CounterpartyDetail = () => {
   const getBranchParams = useCallback(() => {
     const params: any = {};
     if (company?.id) params.company = company.id;
-    if (company?.branch) params.branch = company.branch;
+    const branchId = getProfileBranchId(profile, company);
+    if (branchId) params.branch = branchId;
     return params;
-  }, [company]);
+  }, [company, profile]);
 
   useEffect(() => {
     if (!id) return;

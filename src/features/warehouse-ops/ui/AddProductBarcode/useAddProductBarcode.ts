@@ -12,6 +12,10 @@ import {
 } from "@entities/product";
 import { postCashflowIfNeeded } from "@entities/cash";
 import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import { useUser } from "@entities/user";
 import {
   fetchClientsAsync,
@@ -67,6 +71,8 @@ export const useAddProductBarcode = ({
   } = useProducts();
   const { company } = useUser();
   const { list: clients = [] } = useClient();
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
 
   const [barcodeScan, setBarcodeScan] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -90,6 +96,7 @@ export const useAddProductBarcode = ({
   const [debtMonths, setDebtMonths] = useState("");
   const [clientId, setClientId] = useState("");
   const [showDebtForm, setShowDebtForm] = useState(false);
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const showSupplierFormRef = useRef(showSupplierForm);
   showSupplierFormRef.current = showSupplierForm;
@@ -611,6 +618,23 @@ export const useAddProductBarcode = ({
             },
             { warnOnFailure: true, failureContext: "product" },
           );
+
+          if (
+            paidFromShiftDrawer &&
+            shiftDrawerFundingTarget.available &&
+            shiftDrawerFundingTarget.cashboxId
+          ) {
+            const drawerResult = await recordShiftDrawerOutflow({
+              cashboxId: shiftDrawerFundingTarget.cashboxId,
+              amount: Number(amountForCash),
+              name: `Закупка товара — оплата из кассы смены: ${state.name || "Товар"}`,
+            });
+            if (!drawerResult.ok && onShowErrorAlert) {
+              onShowErrorAlert(
+                "Товар добавлен, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+              );
+            }
+          }
         }
       }
 
@@ -646,6 +670,7 @@ export const useAddProductBarcode = ({
       setDebtMonths("");
       setClientId("");
       setShowDebtForm(false);
+      setPaidFromShiftDrawer(false);
       setDebtState({
         phone: "",
         dueDate: "",
@@ -766,6 +791,9 @@ export const useAddProductBarcode = ({
     setClientId,
     showDebtForm,
     setShowDebtForm,
+    paidFromShiftDrawer,
+    setPaidFromShiftDrawer,
+    shiftDrawerFundingTarget,
     showSupplierForm,
     setShowSupplierForm,
     supplierFormState,

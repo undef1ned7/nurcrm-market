@@ -10,6 +10,9 @@ import {
   Calendar,
   HelpCircle,
   X,
+  RotateCcw,
+  Wallet,
+  Percent,
 } from "lucide-react";
 import {
   normalizeLowStockStatusType,
@@ -71,6 +74,11 @@ export function useAnalyticsTabData({
       cash: t("crm.analytics.sales.cash"),
       card: t("crm.analytics.sales.card"),
       transfer: t("crm.analytics.sales.transfer"),
+      qr: t("crm.analytics.sales.qr"),
+      bank_transfer: t("crm.analytics.sales.bankTransfer"),
+      mixed: t("crm.analytics.sales.mixed"),
+      debt: t("crm.analytics.cashiers.debt"),
+      deferred: t("crm.analytics.cashiers.deferred"),
     }),
     [t],
   );
@@ -80,21 +88,26 @@ export function useAnalyticsTabData({
       cash: t("crm.analytics.sales.cash"),
       transfer: t("crm.analytics.cashiers.transfer"),
       card: t("crm.analytics.cashiers.card"),
+      qr: t("crm.analytics.sales.qr"),
+      bank_transfer: t("crm.analytics.sales.bankTransfer"),
+      mixed: t("crm.analytics.sales.mixed"),
       debt: t("crm.analytics.cashiers.debt"),
       deferred: t("crm.analytics.cashiers.deferred"),
     }),
     [t],
   );
 
+  // Контракт analytics.md: transactions_by_weekday.weekday — 0 = понедельник
+  // (местное время), поэтому индекс подписи = weekday из ответа.
   const weekdayLabels = useMemo(
     () => [
-      t("crm.analytics.weekdays.sun"),
       t("crm.analytics.weekdays.mon"),
       t("crm.analytics.weekdays.tue"),
       t("crm.analytics.weekdays.wed"),
       t("crm.analytics.weekdays.thu"),
       t("crm.analytics.weekdays.fri"),
       t("crm.analytics.weekdays.sat"),
+      t("crm.analytics.weekdays.sun"),
     ],
     [t],
   );
@@ -140,8 +153,24 @@ export function useAnalyticsTabData({
             icon: Users,
             color: "#f7d617",
           },
+          {
+            titleKey: "crm.analytics.sales.returns",
+            title: t("crm.analytics.sales.returns"),
+            value: "0",
+            currency: som,
+            icon: RotateCcw,
+            color: "#f7d617",
+          },
+          {
+            titleKey: "crm.analytics.sales.netRevenue",
+            title: t("crm.analytics.sales.netRevenue"),
+            value: "0",
+            currency: som,
+            icon: Wallet,
+            color: "#f7d617",
+          },
         ]),
-        salesChart: { labels: [], data: [] },
+        salesChart: { labels: [], data: [], transactions: [] },
         topProducts: [],
         documents: [],
         paymentMethods: { labels: [], data: [] },
@@ -151,6 +180,19 @@ export function useAnalyticsTabData({
     const cards = analyticsData.cards || {};
     const charts = analyticsData.charts || {};
     const tables = analyticsData.tables || {};
+    const returnsTotal = Number(cards.returns_total || 0);
+    const returnsCount = Number(cards.returns_count || 0);
+    // net_revenue — выручка за вычетом возвратов; старый бэк его не отдаёт
+    const netRevenue =
+      cards.net_revenue != null
+        ? Number(cards.net_revenue)
+        : Number(cards.revenue || 0) - returnsTotal;
+    const dynamics = Array.isArray(charts.sales_dynamics)
+      ? charts.sales_dynamics
+      : [];
+    const payments = Array.isArray(charts.payment_methods)
+      ? charts.payment_methods
+      : [];
 
     return {
       kpis: filterSalesKpis([
@@ -188,22 +230,54 @@ export function useAnalyticsTabData({
           icon: Users,
           color: "#f7d617",
         },
+        {
+          titleKey: "crm.analytics.sales.returns",
+          title: t("crm.analytics.sales.returns"),
+          value: formatNumber(returnsTotal),
+          raw: returnsTotal,
+          currency: som,
+          subtitle: t("crm.analytics.sales.returnsCount", {
+            count: returnsCount,
+          }),
+          icon: RotateCcw,
+          color: "#f7d617",
+        },
+        {
+          titleKey: "crm.analytics.sales.netRevenue",
+          title: t("crm.analytics.sales.netRevenue"),
+          value: formatNumber(netRevenue),
+          raw: netRevenue,
+          currency: som,
+          icon: Wallet,
+          color: "#f7d617",
+        },
       ]),
+      revenueBreakdown: {
+        gross: Number(
+          cards.gross_revenue ??
+            cards.revenue_before_returns ??
+            cards.revenue ??
+            0,
+        ),
+        returnsTotal,
+        returnsCount,
+        net: netRevenue,
+      },
       salesChart: {
-        labels:
-          charts.sales_dynamics?.map((item: any) =>
-            formatDateForChart(item.date),
-          ) || [],
-        data:
-          charts.sales_dynamics?.map((item: any) =>
-            parseFloat(item.value || 0),
-          ) || [],
+        labels: dynamics.map((item: any) => formatDateForChart(item.date)),
+        // Новый контракт: { date, revenue, transactions }; старый — { date, value }
+        data: dynamics.map((item: any) =>
+          parseFloat(item.revenue ?? item.value ?? 0),
+        ),
+        transactions: dynamics.map((item: any) =>
+          Number(item.transactions || 0),
+        ),
       },
       topProducts:
         tables.top_products?.map((product: any) => ({
           name: product.name,
-          sold: product.sold || 0,
-          revenue: parseFloat(product.revenue || 0),
+          sold: product.qty ?? product.sold ?? 0,
+          revenue: parseFloat(product.sum ?? product.revenue ?? 0),
         })) || [],
       documents:
         tables.documents?.map((doc: any) => ({
@@ -212,18 +286,20 @@ export function useAnalyticsTabData({
           amount: parseFloat(doc.sum || 0),
           warehouse: doc.stock ? parseFloat(doc.stock) : 0,
         })) || [],
+      // Новый контракт: { name, value, percent } (name — уже подпись);
+      // старый: { method, total|count }
       paymentMethods: {
-        labels:
-          charts.payment_methods?.map(
-            (item: any) =>
-              salesPaymentLabels[
-                item.method as keyof typeof salesPaymentLabels
-              ] || item.method,
-          ) || [],
-        data:
-          charts.payment_methods?.map((item: any) =>
-            parseFloat(item.total || item.count || 0),
-          ) || [],
+        labels: payments.map((item: any) => {
+          const key = item.method ?? item.name;
+          return (
+            salesPaymentLabels[key as keyof typeof salesPaymentLabels] ||
+            key ||
+            "—"
+          );
+        }),
+        data: payments.map((item: any) =>
+          parseFloat(item.value ?? item.total ?? item.count ?? 0),
+        ),
       },
     };
   }, [analyticsData, activeTab, isStartTariff, t, som, salesPaymentLabels]);
@@ -267,8 +343,33 @@ export function useAnalyticsTabData({
         categoryChart: { labels: [], data: [], colors: [] },
         movementChart: { labels: [], data: [] },
         lowStock: [],
+        lowStockOnly: [],
       };
     }
+
+    // Статус остатка: из ответа, либо по quantity/min_limit (новый контракт
+    // его не отдаёт в строках products_stock / low_stock)
+    const stockStatus = (item: any) => {
+      if (item?.status) return item.status;
+      const qty = Number(item?.quantity ?? item?.qty ?? 0);
+      const min = Number(item?.min_limit ?? item?.min ?? 0);
+      if (qty <= 0) return "critical";
+      if (min > 0 && qty <= min) return "low";
+      return "";
+    };
+    const mapStockRow = (item: any) => {
+      const status = stockStatus(item);
+      return {
+        id: item.id,
+        name: item.name,
+        stock: item.quantity ?? item.qty ?? 0,
+        minimum: item.min_limit ?? item.min ?? 0,
+        price: item.price,
+        purchasePrice: item.purchase_price,
+        status: status ? translateLowStock(status) : "",
+        statusType: status ? normalizeLowStockStatusType(status) : "",
+      };
+    };
 
     const cards = analyticsData.cards || {};
     const charts = analyticsData.charts || {};
@@ -326,6 +427,26 @@ export function useAnalyticsTabData({
           icon: BarChart3,
           color: "#f7d617",
         },
+        {
+          titleKey: "crm.analytics.warehouse.runningOut",
+          title: t("crm.analytics.warehouse.runningOut"),
+          value: formatNumber(cards.low_stock_count || 0),
+          subtitle: t("crm.analytics.warehouse.needReorder"),
+          icon: Package,
+          color: "#f7d617",
+        },
+        {
+          titleKey: "crm.analytics.warehouse.turnover",
+          title: t("crm.analytics.warehouse.turnover"),
+          value:
+            cards.turnover_days != null
+              ? t("crm.analytics.warehouse.daysShort", {
+                  count: formatAnalyticsQty(cards.turnover_days) as any,
+                })
+              : "—",
+          icon: Calendar,
+          color: "#f7d617",
+        },
       ],
       categoryChart: {
         labels: charts.category_distribution?.map((item: any) => item.name) || [],
@@ -342,14 +463,13 @@ export function useAnalyticsTabData({
             (item: any) => item.units || 0,
           ) || [],
       },
-      lowStock:
-        (tables.products_stock || tables.low_stock || []).map((item: any) => ({
-          name: item.name,
-          stock: item.quantity ?? item.qty ?? 0,
-          minimum: item.min || 0,
-          status: translateLowStock(item.status),
-          statusType: normalizeLowStockStatusType(item.status),
-        })) || [],
+      lowStock: (tables.products_stock || tables.low_stock || []).map(
+        mapStockRow,
+      ),
+      // Отдельная таблица «Требуют дозаказа» — только если бэк отдал оба списка
+      lowStockOnly: tables.products_stock
+        ? (tables.low_stock || []).map(mapStockRow)
+        : [],
     };
   }, [analyticsData, activeTab, t, som]);
 
@@ -463,7 +583,15 @@ export function useAnalyticsTabData({
               ] || item.name,
           ) || [],
         data: charts.payment_methods?.map((item: any) => item.percent) || [],
-        colors: ["#f7d617", "#f59e0b", "#10b981"],
+        colors: [
+          "#f7d617",
+          "#f59e0b",
+          "#10b981",
+          "#3b82f6",
+          "#8b5cf6",
+          "#ec4899",
+          "#06b6d4",
+        ],
       },
       weeklyTransactions: {
         labels: weekdayLabels,
@@ -501,6 +629,8 @@ export function useAnalyticsTabData({
       if (!dateString) return "-";
       try {
         const date = new Date(dateString);
+        // Новый контракт отдаёт уже отформатированное "30.09.2026, 18:02"
+        if (Number.isNaN(date.getTime())) return String(dateString);
         const hours = String(date.getHours()).padStart(2, "0");
         const minutes = String(date.getMinutes()).padStart(2, "0");
         return `${hours}:${minutes}`;
@@ -552,6 +682,7 @@ export function useAnalyticsTabData({
       };
     }
 
+
     const cards = analyticsData.cards || {};
     const charts = analyticsData.charts || {};
     const tables = analyticsData.tables || {};
@@ -593,6 +724,32 @@ export function useAnalyticsTabData({
           icon: DollarSign,
           color: "#f7d617",
         },
+        ...(!isStartTariff && cards.gross_profit_total != null
+          ? [
+              {
+                titleKey: "crm.analytics.shifts.grossProfitTotal",
+                title: t("crm.analytics.sales.grossProfit"),
+                value: formatNumber(cards.gross_profit_total || "0"),
+                currency: som,
+                icon: TrendingUp,
+                color: "#f7d617",
+              },
+            ]
+          : []),
+        ...(!isStartTariff && cards.margin_percent_total != null
+          ? [
+              {
+                titleKey: "crm.analytics.shifts.marginTotal",
+                title: t("crm.analytics.sales.margin"),
+                value: `${Number(cards.margin_percent_total || 0).toLocaleString(
+                  "ru-RU",
+                  { maximumFractionDigits: 2 },
+                )}%`,
+                icon: Percent,
+                color: "#f7d617",
+              },
+            ]
+          : []),
       ],
       shiftsChart: {
         labels: charts.sales_by_shift_bucket?.map((item: any) => item.name) || [],
@@ -621,7 +778,7 @@ export function useAnalyticsTabData({
           avgCheck: parseFloat(cashier.avg_check || 0),
         })) || [],
     };
-  }, [analyticsData, activeTab, t, som]);
+  }, [analyticsData, activeTab, isStartTariff, t, som]);
 
   const productsData = useMemo(() => {
     const filterProductsKpis = (kpis: any) =>
@@ -672,6 +829,7 @@ export function useAnalyticsTabData({
         icon: X,
         color: "#f7d617",
         subtitle: "rejected_products_count",
+        anchorKey: "rejectedProducts",
       },
       {
         titleKey: "crm.analytics.products.salesWithoutProduct",
@@ -692,6 +850,7 @@ export function useAnalyticsTabData({
         brands: [],
         lowStockProducts: [],
         expiringProducts: [],
+        rejectedProducts: [],
       };
     }
 
@@ -743,6 +902,15 @@ export function useAnalyticsTabData({
           status: translateExpiryStatus(item.status),
           statusType: normalizeExpiryStatusType(item.status),
         })) || [],
+      rejectedProducts: (tables.rejected_products || []).map((item: any) => ({
+        id: item.id ?? item.product_id,
+        name: item.name ?? item.product_name ?? item.product ?? "—",
+        code: item.code ?? item.barcode ?? "",
+        quantity: item.quantity ?? item.qty ?? item.rejected_qty,
+        amount: item.amount ?? item.sum ?? item.value,
+        reason: item.reason ?? item.comment ?? item.status ?? "",
+        date: item.created_at ?? item.date ?? "",
+      })),
     };
   }, [analyticsData, activeTab, isStartTariff, t, som]);
 

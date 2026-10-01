@@ -20,6 +20,22 @@ export const EMPTY_EMP_FORM = {
   track_number: "",
   phone_number: "",
   branch: "",
+  branches: [] as string[],
+};
+
+/** id филиалов сотрудника из ответа API (массив id/объектов или одиночное поле). */
+export const employeeBranchIds = (u: any): string[] => {
+  const raw = Array.isArray(u?.branches)
+    ? u.branches
+    : Array.isArray(u?.branch_ids)
+      ? u.branch_ids
+      : u?.branch
+        ? [u.branch]
+        : [];
+  return raw
+    .map((b: any) => (b && typeof b === "object" ? b.id : b))
+    .filter((b: any) => b != null && b !== "")
+    .map(String);
 };
 
 export const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

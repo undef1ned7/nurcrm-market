@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import api from "@shared/api";
 import { payDebtDeal } from "@entities/client";
+import { getSale } from "@entities/sale";
 import {
   postCashflowIfNeeded,
 } from "@entities/cash";
@@ -278,6 +279,15 @@ const DebtPaymentModal = ({
       setClientDeals((prev: any) =>
         prev.map((d: any) => (d.id === deal.id ? updatedDeal : d))
       );
+
+      // Пока Sale и Deal не связаны на бэке (см. docs/sale-flow-bugs.md,
+      // пункт 9), это поле не приходит и блок ничего не делает. Как только
+      // бэк начнёт отдавать связь — статус исходной продажи (paid/debt)
+      // обновится сам, без доп. правок на фронте.
+      const linkedSaleId = updatedDeal?.sale_id ?? updatedDeal?.sale?.id ?? null;
+      if (linkedSaleId) {
+        dispatch(getSale({ id: linkedSaleId }));
+      }
 
       await postCashflowIfNeeded(
         dispatch,

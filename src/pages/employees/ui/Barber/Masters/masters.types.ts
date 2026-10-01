@@ -18,6 +18,7 @@ export type EmployeeForm = {
   track_number: string;
   phone_number: string;
   branch: string;
+  branches: string[];
 };
 
 export type NormalizedEmployee = {

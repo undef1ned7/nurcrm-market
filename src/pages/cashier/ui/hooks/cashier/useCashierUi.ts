@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useStore } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import useScanDetection from "@shared/hooks/useScanDetection";
 import { useDebounce, useDebounceByKey } from "@shared/hooks/useDebounce";
 import { useCashierQtyScanGuard } from "@shared/hooks/useCashierQtyScanGuard";
@@ -22,6 +22,7 @@ import { getCashBoxes, useCash } from "@entities/cash";
 import api from "@shared/api";
 import { productMatchesBarcode } from "@shared/lib/tools/productBarcode";
 import { isMarketWarehouseServiceProduct } from "@shared/lib/tools/marketWarehouseFilters";
+import { toMoney } from "@shared/lib/tools/money";
 import { useClient } from "@entities/client";
 import { useProducts } from "@entities/product";
 import { useSale } from "@entities/sale";
@@ -89,9 +90,14 @@ export function useCashierUi(b) {
     setShowOpenShiftPage, products, getProductFavorite, hotkeyProducts,
   } = b;
 
-  const total =
-    parseFloat(currentSale?.total || 0) ||
-    cart.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+  // currentSale?.total из API — источник истины (учитывает скидки). toMoney
+  // возвращает NaN, а не 0, когда данных нет — поэтому честный нулевой итог
+  // (100% скидка, бесплатный товар) не подменяется несконтованной суммой
+  // корзины через ||. См. docs/sale-flow-bugs.md, пункты 3 и 10.
+  const parsedServerTotal = toMoney(currentSale?.total);
+  const total = Number.isFinite(parsedServerTotal)
+    ? parsedServerTotal
+    : cart.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
   const handleMenuAction = (action) => {
     setShowMenuModal(false);

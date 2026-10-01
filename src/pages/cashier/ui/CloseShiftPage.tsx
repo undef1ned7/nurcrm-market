@@ -18,10 +18,14 @@ import {
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import "./CloseShiftPage.scss";
 
-const CloseShiftPage = ({ onBack, shift: initialShift }: any) => {
+const CloseShiftPage = ({ onBack, shift: shiftProp }: any) => {
   const { t } = useTranslation();
   const dispatch = useDispatch() as any;
   const { shifts, currentShift } = useShifts();
+  // После закрытия родитель перестаёт считать смену открытой и отдаёт null, а
+  // экран ещё показывает итог закрытия — держим смену, с которой страницу открыли.
+  const [openedShift] = useState(shiftProp);
+  const initialShift = shiftProp ?? openedShift;
 
   const shift = React.useMemo(() => {
     if (currentShift?.id === initialShift?.id) {

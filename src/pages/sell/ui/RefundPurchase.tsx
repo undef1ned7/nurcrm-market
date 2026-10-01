@@ -7,10 +7,19 @@ import {
 } from "@entities/sale";
 import { useUser } from "@entities/user";
 import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+  useShifts,
+} from "@entities/shift";
+import {
   buildSaleReturnSignature,
   isReturnableSaleStatus,
   normalizeSaleStatus,
 } from "@shared/lib/tools/saleReturn";
+import {
+  findOwnOpenShiftInList,
+  resolveCashierId,
+} from "@shared/lib/tools/cashierOpenShift";
 import Modal from "@shared/ui/Modal/Modal";
 import i18n from "@shared/config/i18n";
 import { kindTranslate } from "./sell.constants";
@@ -42,21 +51,39 @@ const extractApiError = (errorLike: any) => {
 const RefundPurchase = ({ onClose, onChanged, item }: any) => {
   const { t } = useTranslation();
   const dispatch = useDispatch() as any;
-  const { profile } = useUser();
+  const { currentUser, profile, userId } = useUser();
+  const { shifts } = useShifts();
+  // Смена текущего кассира — чтобы компенсирующее движение по кассе
+  // привязывалось к тому, кто оформил возврат. См. docs/sale-flow-bugs.md, пункт 5.
+  const cashierId = useMemo(
+    () => resolveCashierId({ currentUser, userId, profile }),
+    [currentUser, userId, profile],
+  );
+  const openShift = useMemo(
+    () => findOwnOpenShiftInList(shifts, cashierId),
+    [shifts, cashierId],
+  );
 
   const [submitting, setSubmitting] = useState<any>(false);
   const [error, setError] = useState<any>("");
   const [saleData, setSaleData] = useState<any>(null);
   const [loading, setLoading] = useState<any>(true);
   const [quantities, setQuantities] = useState<any>({});
+  const [refundedInCash, setRefundedInCash] = useState<any>(false);
+  const [drawerWarning, setDrawerWarning] = useState<any>("");
 
   const isAgent = String(profile?.role || "")
     .trim()
     .toLowerCase() === "agent";
 
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
+
   useEffect(() => {
     setQuantities({});
     setError("");
+    setRefundedInCash(false);
+    setDrawerWarning("");
   }, [item?.id]);
 
   useEffect(() => {
@@ -150,6 +177,53 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
   }, [quantities, saleItems]);
 
   const partialCount = partialItems.length;
+
+  // Сумма возврата по конкретному набору позиций (используется и для показа
+  // в UI, и для суммы ручной записи в кассу смены — считаем от тех же
+  // itemsForReturn, что реально ушли в запрос, а не от «живого» стейта на
+  // момент ответа сервера).
+  const computeItemsRefundAmount = useCallback(
+    (items: any) => {
+      if (!Array.isArray(items)) return 0;
+      return items.reduce((sum: number, entry: any) => {
+        const sourceItem = saleItems.find(
+          (saleItem: any) => String(saleItem.id) === String(entry.sale_item_id),
+        );
+        if (!sourceItem) return sum;
+        return sum + Number(entry.quantity || 0) * sourceItem.unitPrice;
+      }, 0);
+    },
+    [saleItems],
+  );
+
+  const fullRefundAmount = Number(currentItem?.total ?? currentItem?.amount ?? 0) || 0;
+  const partialRefundAmount = useMemo(
+    () => computeItemsRefundAmount(partialItems),
+    [computeItemsRefundAmount, partialItems],
+  );
+
+  // Переопределение способа возврата денег показываем только для чека,
+  // оплаченного целиком одним безналичным способом — см. границы фикса в
+  // документации (split-оплата и «нал → вернули безналом» сознательно не
+  // покрыты на фронте, это ждёт поля refund_method на backend).
+  //
+  // Список безналичных методов открытый: помимо общих "card"/"transfer" чекаут
+  // на `/crm/market/cashier` шлёт конкретный банк как payment_method напрямую
+  // (mapBankToApiMethod → "mbank" | "optima" | "obank" | "bakai" | "transfer",
+  // см. src/pages/cashier/ui/paymentPage.utils.ts). Поэтому вместо белого
+  // списка — чёрный: любой способ, кроме cash/debt/split.
+  const rawPaymentMethod = String(
+    currentItem?.payment_method ?? item?.payment_method ?? "",
+  ).trim();
+  const isNonCashSingleMethod =
+    rawPaymentMethod !== "" &&
+    !["cash", "debt", "split"].includes(rawPaymentMethod);
+  const cashOverrideRefundAmount =
+    partialCount > 0 ? partialRefundAmount : fullRefundAmount;
+  const showCashOverride =
+    isNonCashSingleMethod &&
+    cashOverrideRefundAmount > 0 &&
+    shiftDrawerFundingTarget.available;
   const isReturnableStatus = isReturnableSaleStatus(currentItem?.status);
   const normalizedStatus = normalizeSaleStatus(currentItem?.status);
   const statusLabel =
@@ -218,10 +292,35 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
         const payload: any = {
           saleId: currentItem.id,
           idempotencyKey: idempotencyRef.current.key,
+          shiftId: openShift?.id,
         };
         if (itemsForReturn?.length) payload.items = itemsForReturn;
         const returnedSale = await dispatch(returnSale(payload)).unwrap();
         idempotencyRef.current = null;
+
+        if (
+          refundedInCash &&
+          isNonCashSingleMethod &&
+          shiftDrawerFundingTarget.available &&
+          shiftDrawerFundingTarget.cashboxId
+        ) {
+          const amountForThisReturn = itemsForReturn?.length
+            ? computeItemsRefundAmount(itemsForReturn)
+            : fullRefundAmount;
+          if (amountForThisReturn > 0) {
+            const drawerResult = await recordShiftDrawerOutflow({
+              cashboxId: shiftDrawerFundingTarget.cashboxId,
+              amount: amountForThisReturn,
+              name: t("crm.sell.refundModal.cashOverrideDrawerName", {
+                id: String(currentItem?.id || "").slice(0, 8) || "—",
+              }),
+            });
+            if (!drawerResult.ok) {
+              setDrawerWarning(t("crm.sell.refundModal.cashOverrideFailed"));
+            }
+          }
+        }
+
         onChanged?.(returnedSale);
         if (!onChanged) onClose?.();
       } catch (e: any) {
@@ -230,7 +329,21 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
         setSubmitting(false);
       }
     },
-    [currentItem?.id, dispatch, onChanged, onClose],
+    [
+      computeItemsRefundAmount,
+      currentItem?.id,
+      dispatch,
+      fullRefundAmount,
+      isNonCashSingleMethod,
+      onChanged,
+      onClose,
+      openShift?.id,
+      recordShiftDrawerOutflow,
+      refundedInCash,
+      shiftDrawerFundingTarget.available,
+      shiftDrawerFundingTarget.cashboxId,
+      t,
+    ],
   );
 
   const onConfirmFull = useCallback(async () => {
@@ -316,6 +429,25 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
               </div>
             </div>
 
+            {showCashOverride && (
+              <label className="sellReturn__cashOverride">
+                <input
+                  type="checkbox"
+                  checked={refundedInCash}
+                  onChange={(e: any) => setRefundedInCash(e.target.checked)}
+                  disabled={submitting}
+                />
+                <span>
+                  {t("crm.sell.refundModal.cashOverrideLabel")}
+                  {shiftDrawerFundingTarget.cashboxName
+                    ? ` — ${t("crm.sell.refundModal.cashOverrideCashbox", {
+                        name: shiftDrawerFundingTarget.cashboxName,
+                      })}`
+                    : ""}
+                </span>
+              </label>
+            )}
+
             {saleItems.length > 0 && (
               <div className="sellReturn__items">
                 <div className="sellReturn__itemsHead">
@@ -372,6 +504,11 @@ const RefundPurchase = ({ onClose, onChanged, item }: any) => {
             )}
 
             {error && <div className="sellReturn__error">{error}</div>}
+            {drawerWarning && (
+              <div className="sellReturn__error sellReturn__error--warning">
+                {drawerWarning}
+              </div>
+            )}
 
             <div className="sellReturn__actions">
               <button

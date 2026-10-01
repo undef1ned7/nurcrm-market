@@ -10,9 +10,13 @@ export function useAnalyticsFetch({ activeTab, period, filters }: any) {
   const [error, setError] = useState<any>(null);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [salaryAnalyticsRows, setSalaryAnalyticsRows] = useState<any[]>([]);
+  // Защита от гонки: ответ предыдущей вкладки/фильтра не перезаписывает новый
+  const requestSeqRef = React.useRef(0);
 
 const fetchAnalytics = React.useCallback(
   async (tab = "sales") => {
+    const seq = ++requestSeqRef.current;
+    const isStale = () => seq !== requestSeqRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -68,6 +72,15 @@ const fetchAnalytics = React.useCallback(
         if (filters.low_only) (params as any).low_only = "1";
       }
 
+      if (tab === "products" && filters.supplier) {
+        (params as any).supplier = filters.supplier;
+      }
+
+      if (tab === "abc") {
+        (params as any).by = filters.abc_by || "product";
+        (params as any).metric = filters.abc_metric || "revenue";
+      }
+
       if (tab === "shifts") {
         if (filters.status) (params as any).status = filters.status;
         if (filters.cashbox) (params as any).cashbox = filters.cashbox;
@@ -83,6 +96,7 @@ const fetchAnalytics = React.useCallback(
         params,
         timeout: MARKET_ANALYTICS_TIMEOUT_MS,
       });
+      if (isStale()) return;
       setAnalyticsData(response.data);
       if (tab === "finance") {
         try {
@@ -103,6 +117,7 @@ const fetchAnalytics = React.useCallback(
             params: salaryParams,
             timeout: MARKET_ANALYTICS_TIMEOUT_MS,
           });
+          if (isStale()) return;
           setSalaryAnalyticsRows(
             Array.isArray(salaryResponse?.data?.rows)
               ? salaryResponse.data.rows
@@ -118,6 +133,7 @@ const fetchAnalytics = React.useCallback(
         setSalaryAnalyticsRows([]);
       }
     } catch (err: any) {
+      if (isStale()) return;
       console.error("Ошибка при загрузке аналитики:", err);
       const isTimeout =
         err?.code === "ECONNABORTED" ||
@@ -131,7 +147,7 @@ const fetchAnalytics = React.useCallback(
       );
       setSalaryAnalyticsRows([]);
     } finally {
-      setLoading(false);
+      if (!isStale()) setLoading(false);
     }
   },
   [period.from, period.to, filters, t],

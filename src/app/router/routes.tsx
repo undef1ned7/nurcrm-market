@@ -1,5 +1,5 @@
  
-import { Route, Navigate } from "react-router-dom";
+import { Route, Navigate } from "react-router";
 import { lazy, Suspense } from "react";
 import Login from "@features/auth/ui/Login/Login";
 import RouteFallback from "@shared/ui/RouteFallback/RouteFallback";

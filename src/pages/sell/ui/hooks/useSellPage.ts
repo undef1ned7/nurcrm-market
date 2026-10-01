@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { useDebounce } from "@shared/hooks/useDebounce";
 import api from "@shared/api";
@@ -71,6 +71,11 @@ export function useSellPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [itemId, setItemId] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
+  // Если возврат открыт кнопкой из модалки «Детали продажи» — после закрытия
+  // (крестик/«Отмена») нужно вернуться в неё же, а не просто закрыть всё.
+  const [refundReturnToDetailId, setRefundReturnToDetailId] = useState<
+    string | null
+  >(null);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [historyView, setHistoryView] = useState("table"); // table | cards (по умолчанию таблица)
   const [dateFrom, setDateFrom] = useState(searchParams.get("date_from") || "");
@@ -347,6 +352,26 @@ export function useSellPage() {
     setShowRefundModal(true);
   };
 
+  // Кнопка «Возврат» внутри модалки «Детали продажи»: закрываем детали,
+  // открываем возврат и запоминаем, куда вернуться при отмене/крестике.
+  const handleOpenRefundFromDetail = (sale) => {
+    setRefundReturnToDetailId(sale?.id || sellId || null);
+    setShowDetailSell(false);
+    setItemId(sale);
+    setShowRefundModal(true);
+  };
+
+  const handleCloseRefundModal = () => {
+    setShowRefundModal(false);
+    setItemId(null);
+    if (refundReturnToDetailId) {
+      const restoreId = refundReturnToDetailId;
+      setRefundReturnToDetailId(null);
+      setSellId(restoreId);
+      setShowDetailSell(true);
+    }
+  };
+
   const canReturnSale = (sale) => {
     if (!isMarketCompany) return false;
     if (!canMarketEmployeeReturn) return false;
@@ -510,6 +535,9 @@ export function useSellPage() {
     itemId,
     setItemId,
     handleOpenRefund,
+    handleOpenRefundFromDetail,
+    handleCloseRefundModal,
+    setRefundReturnToDetailId,
     hideSaleId,
     canReturnSale,
     historyBaseParams,

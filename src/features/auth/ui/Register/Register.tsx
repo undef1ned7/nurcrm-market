@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   registerUserAsync,
   getIndustriesAsync,
   getSubscriptionPlansAsync,
 } from "@entities/user";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import RegisterLayout from "./RegisterLayout";
 import "./Register.scss";
 import { useAppDispatch, useAppSelector } from "@app/store";

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaBuilding } from "react-icons/fa";
 import { getCashFlows, useCash } from "@entities/cash";
-import { fetchProductsAsync, useProducts } from "@entities/product";
 import { historySellProduct } from "@entities/sale";
 import { fetchEmployeesAsync } from "@entities/employee";
 import { useClient, fetchClientsAsync } from "@entities/client";
 import { fetchBranchesAsync } from "@entities/branch";
 import { useUser } from "@entities/user";
+import { isEmbeddedRoute } from "../components/BranchEmbeddedPage";
 import { MENU_CONFIG } from "@widgets/sidebar/ui/config/menuConfig";
 import {
   BASE_TABS,
@@ -19,6 +19,8 @@ import {
   baseTabIconMap,
   computeAnalyticsData,
   filterByDateRange,
+  fetchAllPages,
+  filterByBranch,
   filterSalesByBranch,
   getIconByRoute,
   getSectorKey,
@@ -29,13 +31,30 @@ import {
 export function useBranchDetails() {
   const { id } = useParams();
   const dispatch = useDispatch() as any;
-  const [activeTab, setActiveTab] = useState("kassa");
-
-  const { list: branches, loading: branchesLoading } = useSelector(
-    (state: any) => state.branches
+  // Вкладка в URL: «Назад» из истории перемещений и обновление страницы
+  // возвращают на ту же вкладку.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab") || "";
+  const setActiveTab = useCallback(
+    (tab: string) =>
+      setSearchParams(
+        (prev) => {
+          const p = new URLSearchParams(prev);
+          p.set("tab", tab);
+          return p;
+        },
+        { replace: true }
+      ),
+    [setSearchParams]
   );
+
+  const {
+    list: branches,
+    loading: branchesLoading,
+    error: branchesError,
+  } = useSelector((state: any) => state.branches);
   const { cashFlows, loading: cashLoading } = useCash();
-  const { list: products, loading: productsLoading } = useProducts();
+  const [productsLoading, setProductsLoading] = useState(false);
   const { history: salesHistory } = useSelector((state: any) => state.sale);
   const { list: employees, loading: employeesLoading } = useSelector(
     (state: any) => state.employee
@@ -51,41 +70,44 @@ export function useBranchDetails() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const filteredCashFlows = useMemo(() => {
-    if (!cashFlows || !Array.isArray(cashFlows)) return [];
-    return cashFlows.filter((item) => item.branch === id);
-  }, [cashFlows, id]);
+  // Запросы уходят с `branch=id`, сервер уже отфильтровал данные. В ответе
+  // товаров и движений кассы поля `branch` может не быть, поэтому строгая
+  // проверка `item.branch === id` скрывала всё. Фильтруем на клиенте только
+  // если у записей поле филиала есть.
+  const filteredCashFlows = useMemo(
+    () => filterByBranch(kassaData.length ? kassaData : cashFlows, id),
+    [kassaData, cashFlows, id],
+  );
 
-  const filteredProducts = useMemo(() => {
-    if (!products || !Array.isArray(products)) return [];
-    return products.filter((item) => item.branch === id);
-  }, [products, id]);
+  const filteredProducts = useMemo(
+    () => filterByBranch(warehouseData, id),
+    [warehouseData, id],
+  );
 
   const filteredSales = useMemo(() => {
     const sales = salesData.length > 0 ? salesData : salesHistory || [];
     return filterSalesByBranch(sales, id);
   }, [salesData, salesHistory, id]);
 
-  const filteredEmployees = useMemo(() => {
-    if (!employees || !Array.isArray(employees)) return [];
-    return employees.filter((item) => {
-      const itemBranches = Array.isArray(item.branches)
-        ? item.branches
-        : item.branch
-        ? [item.branch]
-        : [];
-      return itemBranches.includes(id);
-    });
-  }, [employees, id]);
+  const filteredEmployees = useMemo(
+    () => filterByBranch(Array.isArray(employees) ? employees : [], id),
+    [employees, id],
+  );
 
   const filteredClients = useMemo(() => {
     if (!clients || !Array.isArray(clients)) return [];
-    return clients.filter((item) => !id || item.branch === id);
+    return filterByBranch(clients, id);
   }, [clients, id]);
 
   const branch = branches.find((b) => b.id === id);
-  const loading = branchesLoading;
-  const error = branch ? "" : "Филиал не найден";
+  // Пока список филиалов не пришёл, это загрузка, а не «не найден».
+  const loading =
+    branchesLoading || (!branch && !branches.length && !branchesError);
+  const error = branch
+    ? ""
+    : branchesError
+      ? "Не удалось загрузить филиал"
+      : "Филиал не найден";
   const currentSector = sector || company?.sector?.name;
 
   const sectorTabs = useMemo(() => {
@@ -122,16 +144,17 @@ export function useBranchDetails() {
   };
 
   const fetchWarehouse = async () => {
+    setProductsLoading(true);
     try {
-      const result = await dispatch(
-        fetchProductsAsync({ branch: id })
-      ).unwrap();
-      if (fetchProductsAsync.fulfilled.match(result)) {
-        const data = result.payload?.results || result.payload || [];
-        setWarehouseData(Array.isArray(data) ? data : []);
-      }
+      const data = await fetchAllPages("/main/products/list/", {
+        branch: id,
+        page_size: 100,
+      });
+      setWarehouseData(data);
     } catch (err: any) {
       console.error("Ошибка загрузки склада:", err);
+    } finally {
+      setProductsLoading(false);
     }
   };
 
@@ -164,9 +187,7 @@ export function useBranchDetails() {
         dispatch(historySellProduct({ branch: id })).catch(() => ({
           payload: [],
         })),
-        dispatch(fetchProductsAsync({ branch: id })).catch(() => ({
-          payload: [],
-        })),
+        fetchAllPages("/main/products/list/", { branch: id, page_size: 100 }),
       ]);
 
       if (getCashFlows.fulfilled.match(kassaResult)) {
@@ -179,11 +200,7 @@ export function useBranchDetails() {
         setSalesData(Array.isArray(salesRaw) ? salesRaw : []);
       }
 
-      if (fetchProductsAsync.fulfilled.match(warehouseResult)) {
-        const warehouseRaw =
-          warehouseResult.payload?.results || warehouseResult.payload || [];
-        setWarehouseData(Array.isArray(warehouseRaw) ? warehouseRaw : []);
-      }
+      setWarehouseData(warehouseResult);
     } catch (err: any) {
       console.error("Ошибка загрузки аналитики:", err);
     }
@@ -242,12 +259,17 @@ export function useBranchDetails() {
   );
 
   const filteredBaseTabs = useMemo(
-    () =>
-      applyBranchTabsRules(
+    () => {
+      const visible = applyBranchTabsRules(
         baseTabsWithIcons,
         currentSector,
         tariff || company?.subscription_plan?.name
-      ),
+      );
+      // Перемещения имеют смысл только там, где есть склад.
+      return visible.some((tab) => tab.id === "warehouse")
+        ? visible
+        : visible.filter((tab) => tab.id !== "transfers");
+    },
     [baseTabsWithIcons, currentSector, tariff, company?.subscription_plan?.name]
   );
 
@@ -266,12 +288,19 @@ export function useBranchDetails() {
     [filteredBaseTabs, filteredSectorTabs]
   );
 
+  const activeTab = tabs.some((t) => t.id === requestedTab)
+    ? requestedTab
+    : tabs[0]?.id || "kassa";
+
   useEffect(() => {
     if (!id) return;
 
     const sectorTab = filteredSectorTabs.find((tab) => tab.id === activeTab);
     if (sectorTab) {
-      fetchSectorTabData(activeTab, sectorTab.route);
+      // Встроенные страницы сами грузят данные (с branch через интерсептор).
+      if (!isEmbeddedRoute(sectorTab.route)) {
+        fetchSectorTabData(activeTab, sectorTab.route);
+      }
     } else {
       switch (activeTab) {
         case "kassa":
@@ -286,12 +315,7 @@ export function useBranchDetails() {
         case "analytics":
           fetchAnalytics();
           break;
-        case "employees":
-          fetchEmployees();
-          break;
-        case "clients":
-          fetchClients();
-          break;
+        // «Сотрудники» и «Клиенты» — встроенные страницы, грузят сами.
         default:
           break;
       }
@@ -312,7 +336,9 @@ export function useBranchDetails() {
     loading,
     error,
     tabs,
+    filteredBaseTabs,
     filteredSectorTabs,
+    isMarketSector: getSectorKey(currentSector) === "market",
     cashLoading,
     filteredCashFlows,
     productsLoading,

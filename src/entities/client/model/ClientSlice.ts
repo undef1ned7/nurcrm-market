@@ -158,9 +158,13 @@ const clientSlice = createSlice({
       .addCase(updateDealDetail.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateDealDetail.fulfilled, (state) => {
+      .addCase(updateDealDetail.fulfilled, (state, { payload }) => {
         state.loading = false;
-        // state.dealDetail = payload;
+        // Бэк на PATCH может вернуть частичный объект — не затираем
+        // dealDetail, если ответ пуст/без id.
+        if (payload && typeof payload === "object" && payload.id) {
+          state.dealDetail = payload;
+        }
       })
       .addCase(updateDealDetail.rejected, (state, { payload }) => {
         state.error = payload;
@@ -169,9 +173,14 @@ const clientSlice = createSlice({
       .addCase(payDebtDeal.pending, (state) => {
         state.loading = true;
       })
-      .addCase(payDebtDeal.fulfilled, (state) => {
+      .addCase(payDebtDeal.fulfilled, (state, { payload }) => {
         state.loading = false;
-        // state.dealDetail = payload;
+        // Сохраняем актуальный остаток/статус долга после оплаты — раньше
+        // строка была закомментирована, и dealDetail оставался устаревшим
+        // до ручного рефетча. См. docs/sale-flow-bugs.md, пункт 9.
+        if (payload && typeof payload === "object" && payload.id) {
+          state.dealDetail = payload;
+        }
       })
       .addCase(payDebtDeal.rejected, (state, { payload }) => {
         state.error = payload;
@@ -180,9 +189,11 @@ const clientSlice = createSlice({
       .addCase(onPayDebtDeal.pending, (state) => {
         state.loading = true;
       })
-      .addCase(onPayDebtDeal.fulfilled, (state) => {
+      .addCase(onPayDebtDeal.fulfilled, (state, { payload }) => {
         state.loading = false;
-        // state.dealDetail = payload;
+        if (payload && typeof payload === "object" && payload.id) {
+          state.dealDetail = payload;
+        }
       })
       .addCase(onPayDebtDeal.rejected, (state, { payload }) => {
         state.error = payload;

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router";
 import { useClient } from "@entities/client";
 import { useProducts } from "@entities/product";
 import { useUser } from "@entities/user";
@@ -11,6 +11,10 @@ import { useBrandCategoryDict } from "./useBrandCategoryDict";
 import { useAddProductBootstrap } from "./useAddProductBootstrap";
 import { useAddProductSubmitFlow } from "./useAddProductSubmitFlow";
 import { sanitizePriceTo3Decimals } from "./addProductHelpers";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import * as utils from "../utils";
 
 /**
@@ -136,6 +140,9 @@ export const useAddProductPage = ({
 
   const [fieldErrors, setFieldErrors] = useState<any>({});
   const [initialProductImageIds, setInitialProductImageIds] = useState<any[]>([]);
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
 
   const {
     debt,
@@ -216,6 +223,10 @@ export const useAddProductPage = ({
     setDebtMonths,
     setShowDebtForm,
     setDebtState,
+    paidFromShiftDrawer,
+    setPaidFromShiftDrawer,
+    shiftDrawerFundingTarget,
+    recordShiftDrawerOutflow,
   });
 
   const filterClient = list.filter((item) => item.type === "suppliers");
@@ -321,5 +332,8 @@ export const useAddProductPage = ({
     pickSupplier,
     handleSubmit,
     generateBarcode,
+    paidFromShiftDrawer,
+    setPaidFromShiftDrawer,
+    shiftDrawerFundingTarget,
   };
 };

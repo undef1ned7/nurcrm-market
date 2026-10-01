@@ -1,5 +1,5 @@
 import { Plus, Package, Scale } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 /**
  * Компонент заголовка склада с иконкой и кнопками

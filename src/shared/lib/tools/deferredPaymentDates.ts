@@ -1,10 +1,23 @@
-export const getTodayIsoDate = () => new Date().toISOString().split("T")[0];
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+const formatIsoDate = (year: number, month: number, day: number) =>
+  `${year}-${pad2(month)}-${pad2(day)}`;
+
+// Не через `new Date().toISOString()`: setHours(0,0,0,0) — локальная полночь,
+// toISOString() конвертирует её в UTC — для UTC+6 (Бишкек) это 18:00
+// предыдущего дня, дата всегда съезжала на день назад. Считаем через
+// getFullYear/getMonth/getDate без конвертации в UTC.
+// См. docs/sale-flow-bugs.md, пункт 4.
+export const getTodayIsoDate = () => {
+  const now = new Date();
+  return formatIsoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+};
 
 export const addCalendarDaysToIso = (days: any) => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + (Number(days) || 0));
-  return d.toISOString().split("T")[0];
+  return formatIsoDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
 };
 
 export const calcDaysUntilIsoDate = (isoDate: any) => {

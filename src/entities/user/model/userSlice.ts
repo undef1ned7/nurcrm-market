@@ -14,6 +14,8 @@ import {
 } from "./userCreators";
 import { useSelector } from "react-redux";
 import api from "@shared/api";
+import { syncUiPreferencesFromBackend } from "@shared/lib/uiPreferences";
+import { clearBranchScope, syncBranchScopeFromProfile } from "@shared/lib/tools/branchContext";
 
 const initialState = {
   currentUser: null as any,
@@ -39,6 +41,10 @@ export const getProfile = createAsyncThunk<any, void | any>(
   async (_: any, { rejectWithValue }) => {
     try {
       const { data } = await api.get("/users/profile/");
+      // Не блокируем профиль: подтягиваем персональные UI-настройки (сайдбар,
+      // тема, кнопка кассы) с бэка и обновляем локальный кэш в фоне.
+      syncUiPreferencesFromBackend();
+      syncBranchScopeFromProfile(data);
       return data;
     } catch (e: any) {
       return rejectWithValue(e);
@@ -59,6 +65,7 @@ const userSlice = createSlice({
       state.profile = null;
       state.company = null;
       localStorage.removeItem("accessToken");
+      clearBranchScope();
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userId");
       localStorage.removeItem("userData");
@@ -105,6 +112,7 @@ const userSlice = createSlice({
         state.isAuthenticated = false;
         state.accessToken = null;
         localStorage.removeItem("accessToken");
+        clearBranchScope();
         state.error = action.payload; // тут уже лежит нормализованный payload (detail/non_field_errors/и т.п.)
       })
 

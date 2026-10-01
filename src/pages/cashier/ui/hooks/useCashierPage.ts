@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useCustomerDisplayPublisher } from "@features/customer-display";
+import { useDebtDealQueueProcessor } from "@features/create-sale";
 import { useCashierShifts } from "./cashier/useCashierShifts";
 import { useCashierProducts } from "./cashier/useCashierProducts";
 import { useCashierBarcode } from "./cashier/useCashierBarcode";
@@ -16,6 +17,10 @@ export function useCashierPage() {
   useCashierCartSync(b);
   useCashierCart(b);
   useCashierUi(b);
+  // Пока открыта касса — сам допробует недооформленные долги из очереди
+  // (checkout прошёл, а createDeal/«Старт»-фолбэк упали). См.
+  // docs/sale-flow-bugs.md, пункт 7.
+  useDebtDealQueueProcessor();
 
   useCustomerDisplayPublisher({
     phase: b.showPaymentPage || b.ageCheckActive

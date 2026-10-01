@@ -1,0 +1,52 @@
+.cashbox-warning-banner {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  /* quoted: Sass 1.79+ hijacks color-mix() at compile time */
+  background: #{"color-mix(in srgb, var(--nur-warning) 12%, var(--nur-surface))"};
+  border: 1px solid #{"color-mix(in srgb, var(--nur-warning) 45%, transparent)"};
+  border-radius: var(--nur-radius-lg, 12px);
+
+  &__icon {
+    flex: none;
+    margin-top: 1px;
+    color: var(--nur-warning);
+  }
+
+  &__body {
+    min-width: 0;
+  }
+
+  &__message {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--nur-text);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__list-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--nur-text-secondary, var(--nur-text));
+  }
+
+  &__list-amount {
+    font-weight: 700;
+    color: var(--nur-text);
+    white-space: nowrap;
+  }
+}

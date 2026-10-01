@@ -1,4 +1,12 @@
-import { FaSpinner } from "react-icons/fa";
+import { useMemo, useState } from "react";
+import { FaSearch, FaUserFriends } from "react-icons/fa";
+import {
+  BranchSection,
+  SectionState,
+  ShowMore,
+  initials,
+  useShowMore,
+} from "./BranchSection";
 
 type ClientsSectionProps = {
   loading: boolean;
@@ -12,44 +20,71 @@ type ClientsSectionProps = {
   }>;
 };
 
-export default function ClientsSection({
-  loading,
-  items,
-}: ClientsSectionProps) {
+export default function ClientsSection({ loading, items }: ClientsSectionProps) {
+  const [query, setQuery] = useState("");
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((it) =>
+      [it.name, it.full_name, it.phone, it.email]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [items, query]);
+  const { visible, rest, more } = useShowMore(filtered);
+
   return (
-    <div className="branch-details__section">
-      <h2 className="branch-details__section-title">Клиенты</h2>
-      {loading ? (
-        <div className="branch-details__loading">
-          <FaSpinner className="spinner" />
-          <p>Загрузка клиентов...</p>
-        </div>
-      ) : items.length === 0 ? (
-        <p className="branch-details__empty">Нет клиентов в этом филиале</p>
-      ) : (
-        <div className="nur-table-wrap branch-details__table-wrapper">
-          <table className="nur-table branch-details__table">
-            <thead>
-              <tr>
-                <th>Имя</th>
-                <th>Телефон</th>
-                <th>Email</th>
-                <th>Адрес</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.name || item.full_name || "—"}</td>
-                  <td>{item.phone || "—"}</td>
-                  <td>{item.email || "—"}</td>
-                  <td>{item.address || "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    <BranchSection
+      title="Клиенты"
+      count={loading ? null : items.length}
+      actions={
+        items.length > 0 && (
+          <label className="bd-search">
+            <FaSearch aria-hidden="true" />
+            <input
+              className="nur-input"
+              placeholder="Имя, телефон, email"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+        )
+      }
+    >
+      <SectionState
+        loading={loading}
+        empty={items.length === 0}
+        icon={<FaUserFriends />}
+        emptyTitle="Клиентов пока нет"
+        emptyText="Клиенты, закреплённые за филиалом, появятся здесь."
+      >
+        {filtered.length === 0 ? (
+          <p className="bd-section__hint">По запросу «{query}» ничего не найдено</p>
+        ) : (
+          <ul className="bd-people">
+            {visible.map((item) => {
+              const name = item.name || item.full_name || "Без имени";
+              return (
+                <li key={item.id} className="bd-person">
+                  <span className="bd-person__avatar" aria-hidden="true">
+                    {initials(name)}
+                  </span>
+                  <span className="bd-person__info">
+                    <b>{name}</b>
+                    <span>{item.address || item.email || "—"}</span>
+                  </span>
+                  {item.phone && (
+                    <a className="bd-person__phone" href={`tel:${item.phone}`}>
+                      {item.phone}
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <ShowMore rest={rest} onClick={more} />
+      </SectionState>
+    </BranchSection>
   );
 }

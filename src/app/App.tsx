@@ -1,5 +1,5 @@
 import { Suspense, useState, useCallback, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router";
 import "./App.scss";
 import { AuthGuard, Logout } from "@features/auth";
 import { Layout } from "@widgets/layout";

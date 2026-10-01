@@ -1,7 +1,7 @@
 import { Minus, Plus, X } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 
 import { useDebounce } from "@shared/hooks/useDebounce";
 import {
@@ -79,7 +79,10 @@ const SellModal = ({ onClose, id }) => {
   const [inline, setInline] = useState({ id: null, field: null });
   const [quantity, setQuantity] = useState("");
   const [discount, setDiscount] = useState("");
-  const [editingQuantity, setEditingQuantity] = useState({
+  const [editingQuantity, setEditingQuantity] = useState<{
+    id: string | number | null;
+    value: string;
+  }>({
     id: null,
     value: "",
   });
@@ -428,7 +431,7 @@ const SellModal = ({ onClose, id }) => {
               clientId: clientId,
               title: `${debt || "Продажа"} ${pickClient?.full_name}`,
               statusRu: debt,
-              amount: start?.total,
+              amount: start?.total as any,
               prepayment: debt === "Предоплата" ? Number(amount) : undefined,
               debtMonths:
                 debt === "Долги" || debt === "Предоплата"
@@ -440,7 +443,7 @@ const SellModal = ({ onClose, id }) => {
 
         const result = await run(
           productCheckout({
-            id: start?.id,
+            id: start?.id as any,
             bool: withReceipt,
             clientId,
             ...buildPosRoutingFromUser(profile, company),
@@ -453,8 +456,8 @@ const SellModal = ({ onClose, id }) => {
             {
               type: cashData.type,
               name: cashData.name === "" ? "Продажа" : cashData.name,
-              amount: debt === "Предоплата" ? amount : start.total,
-              source_cashbox_flow_id: start.id,
+              amount: debt === "Предоплата" ? amount : start!.total,
+              source_cashbox_flow_id: start!.id,
             },
             { warnOnFailure: true, failureContext: "sale" },
           );
@@ -805,7 +808,12 @@ const SellModal = ({ onClose, id }) => {
                       >
                         <span>
                           {p.quantity} x {p.unit_price} ≡{" "}
-                          {p.quantity * p.unit_price}
+                          {/* quantity/unit_price из API иногда строки — раньше
+                              "2" * "10" молча работало как умножение через
+                              неявный JS-каст, но при не-числовой строке дало
+                              бы NaN без явного Number(...). Не баг поведения,
+                              просто типобезопасно. */}
+                          {Number(p.quantity) * Number(p.unit_price ?? 0)}
                         </span>
                         <button
                           type="button"

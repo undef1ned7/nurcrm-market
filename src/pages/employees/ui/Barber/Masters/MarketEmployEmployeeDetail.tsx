@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
   FaArrowLeft,
@@ -23,6 +23,8 @@ import {
 } from "./saleEmployeePayroll";
 import { RoleSelect } from "./RoleSelect";
 import "./Masters.scss";
+import { employeeBranchIds } from "./masters.utils";
+import { getProfileBranchId } from "@shared/lib/tools/branchContext";
 
 const EMPLOYEES_LIST_URL = "/users/employees/";
 const EMPLOYEE_ITEM_URL = (id: any) => `/users/employees/${id}/`;
@@ -96,6 +98,7 @@ const emptyEmp = {
   track_number: "",
   phone_number: "",
   branch: "",
+  branches: [] as string[],
 };
 
 const fmtMoney = (n: any) =>
@@ -239,7 +242,7 @@ const MarketEmployEmployeeDetail = () => {
         period_start: dateFrom,
         period_end: dateTo,
       };
-      const branch = profile?.active_branch || profile?.branch;
+      const branch = getProfileBranchId(profile);
       if (branch) params.branch = String(branch);
       const { data } = await api.get("/main/analytics/market/", { params });
       const rows = Array.isArray(data?.rows)
@@ -261,8 +264,7 @@ const MarketEmployEmployeeDetail = () => {
     isSalePayroll,
     dateFrom,
     dateTo,
-    profile?.active_branch,
-    profile?.branch,
+    profile,
     t,
   ]);
 
@@ -275,7 +277,7 @@ const MarketEmployEmployeeDetail = () => {
         period_start: dateFrom,
         period_end: dateTo,
       };
-      const branch = profile?.active_branch || profile?.branch;
+      const branch = getProfileBranchId(profile);
       if (branch) common.branch = String(branch);
       const [salesRes, shiftsRes] = await Promise.all([
         api.get("/main/analytics/market/", {
@@ -299,8 +301,7 @@ const MarketEmployEmployeeDetail = () => {
     isSalePayroll,
     dateFrom,
     dateTo,
-    profile?.active_branch,
-    profile?.branch,
+    profile,
     t,
   ]);
 
@@ -433,10 +434,7 @@ const MarketEmployEmployeeDetail = () => {
       : display.custom_role
         ? `cus:${display.custom_role}`
         : "";
-    const branchValue =
-      Array.isArray(display.branches) && display.branches.length > 0
-        ? display.branches[0]
-        : display.branch || "";
+    const branchIds = employeeBranchIds(display);
     setEditingEmpId(display.id);
     setEmpForm({
       email: display.email || "",
@@ -445,7 +443,8 @@ const MarketEmployEmployeeDetail = () => {
       roleChoice,
       track_number: display.track_number || "",
       phone_number: display.phone_number || "",
-      branch: branchValue,
+      branch: branchIds[0] || "",
+      branches: branchIds,
     });
     setEmpAlerts([]);
     setEmpFieldErrors({});
@@ -499,7 +498,8 @@ const MarketEmployEmployeeDetail = () => {
       payload.role = empForm.roleChoice.slice(4);
     if (empForm.roleChoice.startsWith("cus:"))
       payload.custom_role = empForm.roleChoice.slice(4);
-    if (showBranchSelect && empForm.branch) payload.branches = [empForm.branch];
+    if (showBranchSelect && empForm.branches.length > 0)
+      payload.branches = empForm.branches;
     setEmpSaving(true);
     try {
       await api.patch(EMPLOYEE_ITEM_URL(editingEmpId), payload);

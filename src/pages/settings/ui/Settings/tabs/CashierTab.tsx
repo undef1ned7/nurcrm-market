@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   getDrawerSettings,
   saveDrawerSettings,
@@ -8,15 +8,19 @@ import {
 import type { DrawerWhen } from "@pages/sell/ui/services/print/drawer";
 import { GlossaryText } from "@shared/ui/GlossaryText/GlossaryText";
 import {
+  CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT,
+  getCustomerDisplaySlides,
   getCustomerDisplaySlidesText,
   getCustomerDisplayTheme,
   getCustomerDisplayWelcome,
   isCustomerDisplayEnabled,
   openCustomerDisplayWindow,
+  pushCustomerDisplaySettingsUpdate,
   setCustomerDisplayEnabled,
   setCustomerDisplaySlides,
   setCustomerDisplayTheme,
   setCustomerDisplayWelcome,
+  syncCustomerDisplaySettingsFromBackend,
 } from "@features/customer-display";
 import type { CustomerDisplayTheme } from "@features/customer-display";
 
@@ -48,6 +52,24 @@ export function CashierTab(props) {
   const [displayTheme, setDisplayTheme] = useState<CustomerDisplayTheme>(
     getCustomerDisplayTheme,
   );
+
+  // Настройки второго экрана общие на компанию — их мог задать другой кассир
+  // с другого устройства. Подтягиваем актуальное состояние при открытии вкладки.
+  useEffect(() => {
+    syncCustomerDisplaySettingsFromBackend();
+  }, []);
+
+  useEffect(() => {
+    const onSynced = () => {
+      setDisplayEnabled(isCustomerDisplayEnabled());
+      setWelcomeText(getCustomerDisplayWelcome());
+      setSlidesText(getCustomerDisplaySlidesText());
+      setDisplayTheme(getCustomerDisplayTheme());
+    };
+    window.addEventListener(CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT, onSynced);
+    return () =>
+      window.removeEventListener(CUSTOMER_DISPLAY_SETTINGS_SYNCED_EVENT, onSynced);
+  }, []);
 
   return (
     <form onSubmit={handleSaveCashierSettings} className="settings__tab-form">
@@ -350,6 +372,7 @@ export function CashierTab(props) {
               onChange={(e) => {
                 setDisplayEnabled(e.target.checked);
                 setCustomerDisplayEnabled(e.target.checked);
+                pushCustomerDisplaySettingsUpdate({ enabled: e.target.checked });
               }}
             />
             <span className="settings__switch-track" aria-hidden="true">
@@ -369,6 +392,7 @@ export function CashierTab(props) {
               const next = e.target.value === "light" ? "light" : "dark";
               setDisplayTheme(next);
               setCustomerDisplayTheme(next);
+              pushCustomerDisplaySettingsUpdate({ theme: next });
             }}
           >
             <option value="dark">{t("settings.cashier.customerDisplayThemeDark")}</option>
@@ -384,7 +408,10 @@ export function CashierTab(props) {
             className="nur-input"
             value={welcomeText}
             onChange={(e) => setWelcomeText(e.target.value)}
-            onBlur={() => setCustomerDisplayWelcome(welcomeText)}
+            onBlur={() => {
+              setCustomerDisplayWelcome(welcomeText);
+              pushCustomerDisplaySettingsUpdate({ welcome_text: welcomeText });
+            }}
           />
         </div>
         <div className="settings__form-group nur-field">
@@ -397,7 +424,12 @@ export function CashierTab(props) {
             rows={3}
             value={slidesText}
             onChange={(e) => setSlidesText(e.target.value)}
-            onBlur={() => setCustomerDisplaySlides(slidesText)}
+            onBlur={() => {
+              setCustomerDisplaySlides(slidesText);
+              pushCustomerDisplaySettingsUpdate({
+                slides: getCustomerDisplaySlides(),
+              });
+            }}
           />
         </div>
         <button

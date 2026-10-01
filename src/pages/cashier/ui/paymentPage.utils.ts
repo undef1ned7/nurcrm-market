@@ -3,6 +3,7 @@ import {
   ensurePrinterConnectedInteractively,
   isPrintFormatError,
 } from "@pages/sell/ui/services/printService";
+import { addDaysToIso, todayIsoDate } from "@entities/sale";
 import type { PaymentAmounts, PaymentMethodId } from "./paymentPage.types";
 
 export const KYRGYZSTAN_BILLS = [20, 50, 100, 200, 500, 1000, 2000, 5000];
@@ -32,15 +33,19 @@ export const PAYMENT_METHODS = [
   },
 ];
 
+// Раньше здесь были собственные реализации через `new Date().toISOString()`:
+// `setHours(0,0,0,0)` выставляет локальную полночь, а `.toISOString()`
+// конвертирует её в UTC — для Бишкека (UTC+6) локальная полночь это 18:00
+// предыдущего дня по UTC, поэтому дата всегда съезжала на день назад.
+// `todayIsoDate`/`addDaysToIso` из entities/sale считают через
+// getFullYear/getMonth/getDate без конвертации в UTC — переиспользуем их.
+// См. docs/sale-flow-bugs.md, пункт 4.
 export function getTodayIsoDate() {
-  return new Date().toISOString().split("T")[0];
+  return todayIsoDate();
 }
 
 export function addCalendarDaysToIso(days) {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + (Number(days) || 0));
-  return d.toISOString().split("T")[0];
+  return addDaysToIso(todayIsoDate(), Number(days) || 0);
 }
 
 export function calcDaysUntilIsoDate(isoDate) {
@@ -103,12 +108,22 @@ export function mapBankToApiMethod(bankId) {
   return "transfer";
 }
 
+/**
+ * Способ оплаты предоплаты долга в API-формате checkout (`prepayment_method`).
+ * Та же конвенция, что у погашения долга (debt-payment-method-backend.md):
+ * "cash" | id банка из SUPPORTED_CHECKOUT_BANKS | "transfer".
+ */
+export function resolvePrepaymentApiMethod(method, bankId) {
+  return method === "cashless" ? mapBankToApiMethod(bankId) : "cash";
+}
+
 export function getPaymentAmounts({
   paymentMethod,
   total,
   splitOnlineAmount,
   splitTransferAmount,
   deferredPrepaymentValue,
+  deferredPrepaymentMethod,
   deferredSaleDebtRemaining,
 }: {
   paymentMethod: PaymentMethodId | string;
@@ -116,6 +131,7 @@ export function getPaymentAmounts({
   splitOnlineAmount?: string | number;
   splitTransferAmount?: string | number;
   deferredPrepaymentValue?: number;
+  deferredPrepaymentMethod?: string;
   deferredSaleDebtRemaining?: number;
 }): PaymentAmounts {
   if (paymentMethod === "cash") {
@@ -129,9 +145,11 @@ export function getPaymentAmounts({
     const cash = parseFloat(String(splitTransferAmount)) || 0;
     return { cash, cashless: online, deferred: 0 };
   }
+  const prepayment = deferredPrepaymentValue || 0;
+  const isCashlessPrepayment = deferredPrepaymentMethod === "cashless";
   return {
-    cash: deferredPrepaymentValue || 0,
-    cashless: 0,
+    cash: isCashlessPrepayment ? 0 : prepayment,
+    cashless: isCashlessPrepayment ? prepayment : 0,
     deferred: deferredSaleDebtRemaining || 0,
   };
 }

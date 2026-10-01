@@ -11,9 +11,15 @@
 
 | | |
 |---|---|
-| **🔴 Баг на проде** | 4 активные кассы `role=pos_main` на одной компании — см. [pos-main-duplicate-role-bug.md](./pos-main-duplicate-role-bug.md) |
+| **🔴 Баг на проде** | 4 активные кассы `role=pos_main` на одной компании — см. [pos-main-duplicate-role-bug.md](./pos-main-duplicate-role-bug.md). Смягчено (не устранено): [cashbox-warning-wrong-shift-backend.md](./cashbox-warning-wrong-shift-backend.md) — явный `cashbox` при однозначном резолве + предупреждение, если всё же неоднозначно |
+| **🔴 Баг на проде (29.09)** | Долг v2 «по месяцам» падает 400 `"Нельзя одновременно указывать debt_days и debt_months"`, хотя `debt_days` в запросе нет — см. [debt-v2-months-xor-bug-backend.md](./debt-v2-months-xor-bug-backend.md). «По дням» работает, это временный обход |
+| **✅ Уведомления — закрыто (23.09)** | Было: с бэка не приходило ни одного push. Стало: 9 типов событий реально летят, cron для срока годности/тарифа работает — клиентские fallback'ы отключены. См. [notifications-why-not-working.md](./notifications-why-not-working.md) |
 | **Новое (11.09)** | Удаление кассы + наследование отчёта ([cashbox-delete-backend.md](./cashbox-delete-backend.md)); роль «Для долгов» ([cashbox-debt-role-backend.md](./cashbox-debt-role-backend.md)) — FE готов за флагами, ждём BE |
 | **Новое (16.09)** | Выключатель «Запросы на подтверждение» ([cashflow-requests-toggle-backend.md](./cashflow-requests-toggle-backend.md)), default **выключено** — FE готов (мягкая деградация), нужно поле в `MarketCashierSettings` + ответы Q1–Q5 |
+| **Новое (22.09)** | «Оплачено из кассы смены» на закупках/долге поставщику ([shift-drawer-funding-purchases-backend.md](./shift-drawer-funding-purchases-backend.md)) — **FE готов и включён для всех, доработок BE не требуется**; один опциональный запрос — отдать `cashbox` (id) на Shift API |
+| **Новое (23.09)** | Фильтр «Кассир» на общей смене — ✅ закрыто с обеих сторон ([shift-sales-cashier-filter-backend.md](./shift-sales-cashier-filter-backend.md)); `cashbox_warning` — ✅ закрыто ([cashbox-warning-wrong-shift-backend.md](./cashbox-warning-wrong-shift-backend.md)) |
+| **Новое (23.09) — возврат** | Возврат безналичного чека, деньги фактически отданы наличными — воркэраунд на FE не требует BE (см. [sale-return-cashflow-backend.md §9.1](./sale-return-cashflow-backend.md#91-переопределение-способа-возврата-денег-реальный-инцидент)); нужен `refund_method` в `POST .../return/`, чтобы закрыть и обратный случай |
+| **Новое (01.10) — долг** | Предоплата по долгу переводом считалась наличными → недостача ящика при закрытии смены. FE шлёт новое поле `prepayment_method` в checkout, нужно учесть его в `pos_prepayment` (`affects_shift_drawer`) — см. [debt-prepayment-method-backend.md](./debt-prepayment-method-backend.md). Синхронный выкат не нужен |
 | **P0 (блокирует prod)** | `Cashbox.role`, `resolve_cashbox()`, atomic auto-cashflows, `expected_cash = drawer_expected_cash`, reject cascade |
 | **P1** | `payment_breakdown`, `non_drawer_expenses_total`, `affects_shift_drawer` |
 | **Phase 2** | `shift_drawer_outflow`, transfer POS → expense |
@@ -55,22 +61,31 @@
 | [BACKEND-IMPLEMENTATION.md](./BACKEND-IMPLEMENTATION.md) | Implementation guide + Django tests |
 | [shift-cash-reconciliation-backend.md](./shift-cash-reconciliation-backend.md) | Сверка ящика |
 | [shift-payment-breakdown-backend.md](./shift-payment-breakdown-backend.md) | payment_breakdown |
+| [shift-drawer-funding-purchases-backend.md](./shift-drawer-funding-purchases-backend.md) | «Оплачено из кассы смены» на закупках/долге поставщику — FE готов, использует существующий ручной эндпоинт кассы, доработок BE не требуется |
+| [scenario-shift-drawer-funding.md](./scenario-shift-drawer-funding.md) | Сценарий «Оплачено из кассы смены» — сквозной пример смены + чек-лист QA |
 | [shift-sale-positions-backend.md](./shift-sale-positions-backend.md) | Позиции чека по клику на продажу в списке смены — фронт работает на существующем `GET /main/pos/sales/{id}/`, нужно подтвердить совместимость id и (опционально) добавить `items` сразу в список |
+| [shift-sales-cashier-filter-backend.md](./shift-sales-cashier-filter-backend.md) | ✅ Фильтр «Кассир» на общей смене (одна касса, несколько кассиров) — реализовано на бэке (`cashier=<id>`, `cashier_breakdown`, `page_size` до 500) и на фронте (клиентская фильтрация удалена из `ShiftDetail.tsx`) |
+| [cashbox-warning-wrong-shift-backend.md](./cashbox-warning-wrong-shift-backend.md) | ✅ `cashbox_warning` в `POST /shifts/open/` и `GET /shifts/{id}/` — предупреждение о чужом остатке в кассе (защита от инцидента с попаданием на чужую кассу); баннер на `ShiftDetail.tsx`/`ShiftPage.tsx`, модалка на открытии, явный `cashbox` при однозначном резолве |
 | [QA-CLIENT-CHECKLIST.md](./QA-CLIENT-CHECKLIST.md) | QA: клиентские сценарии на staging |
 | [BACKEND-QUESTIONS.md](./BACKEND-QUESTIONS.md) | Вопросы к бэкенду (post-implementation) |
 | [debt-installment-schedule-backend.md](./debt-installment-schedule-backend.md) | Долг v1/v2 — контракт API |
 | [debt-v2-backend-implementation.md](./debt-v2-backend-implementation.md) | **Долг v2 — implementation guide + баг stage** |
+| [debt-v2-months-xor-bug-backend.md](./debt-v2-months-xor-bug-backend.md) | 🔴 Долг v2 «по месяцам» → 400 `debt_days`/`debt_months` одновременно (ложное срабатывание из-за дефолта модели), «по дням» работает |
 | [debt-pay-all-backend.md](./debt-pay-all-backend.md) | «Оплатить весь долг» одной кнопкой — фронт работает циклом, предложен bulk-эндпоинт `pay-all/` |
 | [debt-pay-arbitrary-amount-backend.md](./debt-pay-arbitrary-amount-backend.md) | Оплата произвольной суммы по нескольким долгам клиента сразу (KPI «Долг») — фронт работает циклом с FIFO-распределением, предложен bulk-эндпоинт `deals/pay-any/` |
 | [debt-payment-method-backend.md](./debt-payment-method-backend.md) | Погашение долга (v1 `/main/debts/` + v2 `deals/.../pay/`): способ оплаты наличные / перевод + банк — новое поле `payment_method`, маршрутизация прихода |
+| [debt-prepayment-method-backend.md](./debt-prepayment-method-backend.md) | Предоплата по долгу в checkout: способ наличные / перевод + банк — новое поле `prepayment_method`, `pos_prepayment` переводом не должен попадать в ящик смены |
 | [procurement-history-returns-backend.md](./procurement-history-returns-backend.md) | Закупки + возвраты |
 | [supplier-receipt-selling-price-backend.md](./supplier-receipt-selling-price-backend.md) | Приход: цена по наценке |
 | [quick-restock-purchase-batch-backend.md](./quick-restock-purchase-batch-backend.md) | «Добавление товара» на карточке склада не попадало в «Историю закупок» — фикс + вопросы |
+| [notifications-why-not-working.md](./notifications-why-not-working.md) | **🔴 Диагноз: почему уведомления до сих пор не приходят с бэка** — читать первым |
 | [notifications-backend-implementation.md](./notifications-backend-implementation.md) | **Уведомления — implementation guide (BE)** |
 | [realtime-notifications-backend.md](./realtime-notifications-backend.md) | WS market.* — контракт FE |
 | [cashier-settings.md](./cashier-settings.md) | Настройки кассира |
+| [customer-display-settings-backend.md](./customer-display-settings-backend.md) | **Новое** — второй экран покупателя (приветствие/слайды/тема): per-company singleton вместо только-localStorage |
 | [cashbox-reports-backend.md](./cashbox-reports-backend.md) | Отчёты кассы (BE API) |
 | [sale-return-cashflow-backend.md](./sale-return-cashflow-backend.md) | Возврат POS-чека: компенсирующий expense, идемпотентность, split/долг |
+| [scenario-sale-return-cash-override.md](./scenario-sale-return-cash-override.md) | Сценарий «Деньги фактически отдал наличными» при возврате безналичного чека — сквозной пример + чек-лист QA |
 | [cashflow-edit-cancel-request-backend.md](./cashflow-edit-cancel-request-backend.md) | Редактирование/отмена движения кассы через заявку на конкретную кассу |
 | [cashflow-requests-toggle-backend.md](./cashflow-requests-toggle-backend.md) | **Новое** — выключатель «Запросы на подтверждение» (владелец/админ, любая сфера), default **выключено**: отключает pending для ручных записей, компенсации возврата и правки/отмены движения разом |
 | [cashbox-delete-backend.md](./cashbox-delete-backend.md) | Удаление кассы: `DELETE /construction/cashboxes/{id}/` — мягкий архив, **наследование отчёта** (`merge_into`), массовое удаление (`bulk-delete/`), гарды (открытая смена, последняя роль-критичная касса, pending) |

@@ -70,7 +70,7 @@ export default function SellMainStartProducts({ vm }: Props) {
                   }
                   dispatch(
                     manualFilling({
-                      id: start?.id,
+                      id: start?.id as any,
                       productId: product?.id,
                     })
                   ).unwrap();

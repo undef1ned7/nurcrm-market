@@ -1,3 +1,4 @@
+import BranchMultiSelect from "./BranchMultiSelect";
 import { useTranslation } from "react-i18next";
 import { FaTimes } from "react-icons/fa";
 import BarberMastersPortal from "./BarberMastersPortal";
@@ -257,20 +258,17 @@ const EmployeeEditModal = ({
                   }`}
                 >
                   <span className="barbermasters__label">{tm("branch")}</span>
-                  <RoleSelect
-                    options={[
-                      { key: "", label: tm("branchNotSelected") },
-                      ...branches.map((b) => ({
-                        key: b.id,
-                        label: b.name || t("crm.employees.noTitle"),
-                      })),
-                    ]}
-                    value={empForm.branch || ""}
-                    onChange={(key) =>
-                      setEmpForm((p) => ({ ...p, branch: key }))
+                  <BranchMultiSelect
+                    branches={branches}
+                    value={empForm.branches || []}
+                    onChange={(next) =>
+                      setEmpForm((p) => ({
+                        ...p,
+                        branches: next,
+                        branch: next[0] || "",
+                      }))
                     }
-                    placeholder={tm("branchPlaceholder")}
-                    className="barbermasters__roleSelect"
+                    emptyLabel={tm("branchNotSelected")}
                   />
                 </div>
               )}

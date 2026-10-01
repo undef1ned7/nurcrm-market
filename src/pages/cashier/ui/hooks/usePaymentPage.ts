@@ -5,6 +5,8 @@ import {
   productCheckout,
   getProductCheckout,
   createDeal,
+  enqueuePendingDebtDeal,
+  processPendingDebtDeals,
 } from "@entities/sale";
 import { postCashflowIfNeeded } from "@entities/cash";
 import { useUser } from "@entities/user";
@@ -33,6 +35,7 @@ import {
   MAX_DAY_INTERVAL,
   MAX_MONTH_INTERVAL,
   normalizeScheduleInterval,
+  scheduleInstallmentsCount,
   toDealInstallments,
   todayIsoDate,
   validateConsultantDraft,
@@ -47,6 +50,7 @@ import {
   mapBankToApiMethod,
   normalizeSplitAmountInput,
   printReceiptSmart,
+  resolvePrepaymentApiMethod,
 } from "../paymentPage.utils";
 import type { PaymentPageProps } from "../paymentPage.types";
 import { useCustomerDisplayPublisher } from "@features/customer-display";
@@ -131,6 +135,12 @@ export function usePaymentPage({
   const amountReceivedInputRef = useRef<any>(null);
   const deferredDueDateInputRef = useRef<any>(null);
   const payingInFlightRef = useRef(false);
+  // Ключ идемпотентности на попытку оплаты — переживает ретраи (сетевой сбой,
+  // 409 от бэка), но обнуляется при реальной смене интента (сумма/способ
+  // оплаты/сумма к получению). См. docs/sale-flow-bugs.md, пункт 1, и
+  // src/pages/sell/ui/RefundPurchase.tsx — тот же паттерн уже используется
+  // для возвратов (idempotencyRef/buildSaleReturnSignature).
+  const checkoutIdempotencyRef = useRef<{ signature: string; key: string } | null>(null);
   const acceptPaymentRef = useRef(async () => {});
   const showSuccessModalRef = useRef(false);
   const showCustomerModalRef = useRef(false);
@@ -152,6 +162,19 @@ export function usePaymentPage({
     );
     return Number.isFinite(n) && n > 0 ? n : 0;
   }, [deferredPrepaymentEnabled, deferredPrepaymentAmount]);
+
+  // Чем внесена предоплата долга: "cash" | банк | "transfer". Уходит в
+  // checkout как `prepayment_method` — иначе бэк считает `cash_received`
+  // наличными и раздувает ожидаемую наличность смены.
+  const deferredPrepaymentApiMethod = useMemo(
+    () =>
+      resolvePrepaymentApiMethod(
+        deferredPrepaymentMethod,
+        deferredPrepaymentBank,
+      ),
+    [deferredPrepaymentMethod, deferredPrepaymentBank],
+  );
+  const isCashlessPrepayment = deferredPrepaymentApiMethod !== "cash";
 
   const deferredSaleDebtRemaining = useMemo(
     () => Math.max(0, total - deferredPrepaymentValue),
@@ -175,7 +198,13 @@ export function usePaymentPage({
       buildDebtSchedule({
         remainingAmount: deferredSaleDebtRemaining,
         unit: scheduleUnit,
-        count: typeof scheduleCount === "number" ? scheduleCount : 0,
+        // В режиме «по месяцам» scheduleCount — срок в месяцах (слайдер),
+        // число платежей выводится из срока и интервала.
+        count: scheduleInstallmentsCount(
+          scheduleUnit,
+          scheduleCount,
+          dayInterval,
+        ),
         firstDueDate: deferredDueDate,
         intervalDays:
           typeof dayInterval === "number"
@@ -201,33 +230,6 @@ export function usePaymentPage({
     setDayInterval(defaultIntervalForUnit(unit));
     setDeferredDueDate(defaultFirstDueDate(unit));
   }, []);
-
-  const handleScheduleCountChange = useCallback(
-    (value: string) => {
-      if (value === "") {
-        setScheduleCount("");
-        return;
-      }
-      const numValue = parseInt(value, 10);
-      if (Number.isNaN(numValue)) return;
-      const max = maxInstallmentsForUnit(scheduleUnit);
-      setScheduleCount(Math.min(max, Math.max(1, numValue)));
-    },
-    [scheduleUnit],
-  );
-
-  const handleScheduleCountBlur = useCallback(
-    (value: string) => {
-      const numValue = parseInt(value, 10);
-      const max = maxInstallmentsForUnit(scheduleUnit);
-      if (Number.isNaN(numValue) || numValue < 1) {
-        setScheduleCount(defaultScheduleCount(scheduleUnit));
-        return;
-      }
-      setScheduleCount(Math.min(max, numValue));
-    },
-    [scheduleUnit],
-  );
 
   const handleSchedulePreset = useCallback((count: number) => {
     setScheduleCount(count);
@@ -408,25 +410,47 @@ export function usePaymentPage({
       } else if (paymentMethod === "cashless") {
         paidCard = total;
       } else if (paymentMethod === "deferred" && deferredPrepaymentValue > 0) {
-        paidCash = deferredPrepaymentValue;
+        if (isCashlessPrepayment) paidCard = deferredPrepaymentValue;
+        else paidCash = deferredPrepaymentValue;
       }
+      const isCardPrepaymentReceipt = paymentMethod === "deferred" && paidCard > 0;
 
       try {
         const enriched = enrichMarketReceiptPayload(apiPayload, {
           paymentMethod,
           total,
-          amountReceived: paymentMethod === "cash" ? received : undefined,
+          // Предоплата переводом: бэк эхом возвращает cash_received = сумма
+          // предоплаты — явный 0, чтобы чек не напечатал её как наличные.
+          amountReceived:
+            paymentMethod === "cash"
+              ? received
+              : isCardPrepaymentReceipt
+                ? 0
+                : undefined,
           paidCash,
           paidCard,
           change: paymentMethod === "cash" ? Math.max(0, received - total) : 0,
         });
-        if (enriched && Array.isArray(enriched.items)) return enriched;
+        if (enriched && Array.isArray(enriched.items)) {
+          if (isCardPrepaymentReceipt) {
+            enriched.paid_cash = 0;
+            enriched.cash_received = 0;
+            enriched.change = 0;
+          }
+          return enriched;
+        }
       } catch (err: any) {
         console.warn("[PaymentPage] enrich receipt payload failed:", err);
       }
       return apiPayload;
     },
-    [deferredPrepaymentValue, paymentMethod, readAmountReceived, total],
+    [
+      deferredPrepaymentValue,
+      isCashlessPrepayment,
+      paymentMethod,
+      readAmountReceived,
+      total,
+    ],
   );
 
   const handleAcceptPayment = useCallback(async () => {
@@ -578,15 +602,20 @@ export function usePaymentPage({
       let paymentMethodApi = "cash";
       let checkoutPayments: any = null;
       let checkoutCashReceived: any = null;
+      let checkoutPrepaymentMethod: string | null = null;
 
       if (paymentMethod === "cashless") {
         paymentMethodApi = mapBankToApiMethod(selectedBank);
       } else if (paymentMethod === "deferred") {
         paymentMethodApi = "debt";
+        // При долге `cash_received` — сумма предоплаты (из неё бэк берёт
+        // `prepayment` сделки), независимо от способа. Способ — отдельно.
         checkoutCashReceived =
           deferredPrepaymentValue > 0
             ? deferredPrepaymentValue.toFixed(2)
             : null;
+        checkoutPrepaymentMethod =
+          deferredPrepaymentValue > 0 ? deferredPrepaymentApiMethod : null;
       } else if (paymentMethod === "split" && splitParts) {
         const onlineMethod = mapBankToApiMethod(splitOnlineBank);
         checkoutPayments = [
@@ -609,6 +638,31 @@ export function usePaymentPage({
         }
       }
 
+      const cashReceivedForCheckout =
+        paymentMethod === "split" || paymentMethod === "deferred"
+          ? checkoutCashReceived
+          : paymentMethod === "cash"
+            ? readAmountReceived() || total
+            : null;
+
+      // Ключ идемпотентности: один и тот же для повторов той же попытки
+      // (ретрай после сетевого сбоя/409), новый — если реально поменялся
+      // интент (сумма/способ оплаты/сколько получено).
+      const checkoutSignature = [
+        saleId,
+        paymentMethodApi,
+        total,
+        cashReceivedForCheckout ?? "",
+        checkoutPrepaymentMethod ?? "",
+      ].join("|");
+      if (checkoutIdempotencyRef.current?.signature !== checkoutSignature) {
+        checkoutIdempotencyRef.current = {
+          signature: checkoutSignature,
+          key: crypto.randomUUID(),
+        };
+      }
+      const checkoutIdempotencyKey = checkoutIdempotencyRef.current.key;
+
       const result = await dispatch(
         productCheckout({
           id: saleId,
@@ -617,12 +671,9 @@ export function usePaymentPage({
           payment_method: checkoutPayments ? null : paymentMethodApi,
           payments: checkoutPayments,
           ...buildPosRoutingFromUser(profile, company, shiftId),
-          cash_received:
-            paymentMethod === "split" || paymentMethod === "deferred"
-              ? checkoutCashReceived
-              : paymentMethod === "cash"
-                ? readAmountReceived() || total
-                : null,
+          cash_received: cashReceivedForCheckout,
+          prepayment_method: checkoutPrepaymentMethod,
+          idempotencyKey: checkoutIdempotencyKey,
           ...buildCheckoutConsultantPayload(consultant.draft),
           ...(isDebtScheduleV2 &&
           paymentMethod === "deferred" &&
@@ -650,104 +701,123 @@ export function usePaymentPage({
 
       if (result.type === "products/productCheckout/fulfilled") {
         if (paymentMethod === "deferred" && selectedCustomer?.id) {
-          try {
-            const schedule = isDebtScheduleV2 ? debtSchedule : null;
-            const daysAdd =
-              typeof debtDays === "number" && debtDays >= 1
-                ? debtDays
-                : calcDaysUntilIsoDate(deferredDueDate);
-            const dueDateString = isDebtScheduleV2
-              ? schedule?.lastDueDate || deferredDueDate || todayIsoDate()
-              : deferredDueDate || addCalendarDaysToIso(daysAdd);
-            const hasPrepayment =
-              deferredPrepaymentValue > 0 && deferredPrepaymentValue < total;
-            const debtRecordAmount = hasPrepayment
-              ? deferredSaleDebtRemaining
-              : total;
+          const schedule = isDebtScheduleV2 ? debtSchedule : null;
+          const daysAdd =
+            typeof debtDays === "number" && debtDays >= 1
+              ? debtDays
+              : calcDaysUntilIsoDate(deferredDueDate);
+          const dueDateString = isDebtScheduleV2
+            ? schedule?.lastDueDate || deferredDueDate || todayIsoDate()
+            : deferredDueDate || addCalendarDaysToIso(daysAdd);
+          const hasPrepayment =
+            deferredPrepaymentValue > 0 && deferredPrepaymentValue < total;
+          const debtRecordAmount = hasPrepayment
+            ? deferredSaleDebtRemaining
+            : total;
+          const clientDisplayName =
+            selectedCustomer.full_name ||
+            selectedCustomer.name ||
+            t("crm.cashier.paymentAlerts.client");
 
-            if (company?.subscription_plan?.name === "Старт") {
-              try {
-                await api.post("/main/debts/", {
-                  name:
-                    selectedCustomer.full_name ||
-                    selectedCustomer.name ||
-                    t("crm.cashier.paymentAlerts.client"),
+          // checkout уже прошёл к этому моменту — откатывать нечего.
+          // createDeal и /main/debts/ (тариф «Старт») собираем и пробуем
+          // независимо: если что-то упадёт, кладём недостающее в очередь
+          // автоповтора вместо блокирующего alert. См.
+          // docs/sale-flow-bugs.md, пункт 7.
+          const startDebtPayload =
+            company?.subscription_plan?.name === "Старт"
+              ? {
+                  name: clientDisplayName,
                   phone: selectedCustomer.phone || "",
                   due_date: dueDateString,
                   amount:
                     typeof debtRecordAmount === "number"
                       ? debtRecordAmount.toFixed(2)
                       : String(debtRecordAmount),
-                });
-              } catch (startDebtError) {
-                console.warn(
-                  "Ошибка при создании долга для тарифа Старт:",
-                  startDebtError,
-                );
-                showAlert(
-                  "warning",
-                  "Предупреждение",
-                  validateResErrors(
-                    startDebtError,
-                    "Оплата оформлена, но не удалось создать запись о долге для тарифа Старт. ",
-                  ),
-                );
-              }
-            }
+                }
+              : null;
 
-            await dispatch(
-              createDeal(
-                isDebtScheduleV2
-                  ? {
-                      clientId: selectedCustomer.id,
-                      title: `${hasPrepayment ? "Предоплата" : "Долг"} ${
-                        selectedCustomer.full_name ||
-                        selectedCustomer.name ||
-                        t("crm.cashier.paymentAlerts.client")
-                      }`,
-                      statusRu: t("crm.cashier.paymentAlerts.debts"),
-                      amount: total,
-                      prepayment: hasPrepayment
-                        ? deferredPrepaymentValue
-                        : undefined,
-                      debtDays:
-                        schedule?.unit === "day" ? schedule.count : undefined,
-                      debtMonths:
-                        schedule?.unit === "month" ? schedule.count : undefined,
-                      first_due_date:
-                        schedule?.firstDueDate || deferredDueDate,
-                      intervalDays:
-                        schedule?.unit === "day"
-                          ? schedule.intervalDays
-                          : undefined,
-                      intervalMonths:
-                        schedule?.unit === "month"
-                          ? schedule.intervalMonths
-                          : undefined,
-                      installments: toDealInstallments(schedule),
-                      scheduleVersion: "v2",
-                    }
-                  : {
-                      clientId: selectedCustomer.id,
-                      title: `${hasPrepayment ? "Предоплата" : "Долг"} ${
-                        selectedCustomer.full_name ||
-                        selectedCustomer.name ||
-                        t("crm.cashier.paymentAlerts.client")
-                      }`,
-                      statusRu: hasPrepayment ? t("crm.cashier.paymentAlerts.prepaymentLabel") : t("crm.cashier.paymentAlerts.debts"),
-                      amount: total,
-                      prepayment: hasPrepayment
-                        ? deferredPrepaymentValue
-                        : undefined,
-                      debtDays: daysAdd,
-                      first_due_date: dueDateString,
-                      scheduleVersion: "v1",
-                    },
-              ),
-            ).unwrap();
+          let startDebtOk = !startDebtPayload;
+          if (startDebtPayload) {
+            try {
+              await api.post("/main/debts/", startDebtPayload);
+              startDebtOk = true;
+            } catch (startDebtError) {
+              console.warn(
+                "Ошибка при создании долга для тарифа Старт:",
+                startDebtError,
+              );
+              startDebtOk = false;
+            }
+          }
+
+          const createDealPayload = isDebtScheduleV2
+            ? {
+                clientId: selectedCustomer.id,
+                title: `${hasPrepayment ? "Предоплата" : "Долг"} ${clientDisplayName}`,
+                statusRu: t("crm.cashier.paymentAlerts.debts"),
+                amount: total,
+                prepayment: hasPrepayment
+                  ? deferredPrepaymentValue
+                  : undefined,
+                debtDays:
+                  schedule?.unit === "day" ? schedule.count : undefined,
+                debtMonths:
+                  schedule?.unit === "month" ? schedule.count : undefined,
+                first_due_date:
+                  schedule?.firstDueDate || deferredDueDate,
+                intervalDays:
+                  schedule?.unit === "day"
+                    ? schedule.intervalDays
+                    : undefined,
+                intervalMonths:
+                  schedule?.unit === "month"
+                    ? schedule.intervalMonths
+                    : undefined,
+                installments: toDealInstallments(schedule),
+                scheduleVersion: "v2",
+              }
+            : {
+                clientId: selectedCustomer.id,
+                title: `${hasPrepayment ? "Предоплата" : "Долг"} ${clientDisplayName}`,
+                statusRu: hasPrepayment
+                  ? t("crm.cashier.paymentAlerts.prepaymentLabel")
+                  : t("crm.cashier.paymentAlerts.debts"),
+                amount: total,
+                prepayment: hasPrepayment
+                  ? deferredPrepaymentValue
+                  : undefined,
+                debtDays: daysAdd,
+                first_due_date: dueDateString,
+                scheduleVersion: "v1",
+              };
+
+          let createDealOk = false;
+          try {
+            await dispatch(createDeal(createDealPayload)).unwrap();
+            createDealOk = true;
           } catch (debtError) {
             console.warn("Ошибка при создании долга:", debtError);
-            showAlert("warning", t("crm.cashier.paymentAlerts.warning"), validateResErrors(debtError, t("crm.cashier.paymentAlerts.debtCreateFailed")));
+            createDealOk = false;
+          }
+
+          if (!createDealOk || !startDebtOk) {
+            enqueuePendingDebtDeal({
+              saleId:
+                result.payload?.sale_id || result.payload?.id || saleId,
+              clientName: clientDisplayName,
+              createDealPayload,
+              createDealDone: createDealOk,
+              startDebtPayload,
+              startDebtDone: startDebtOk,
+            });
+            // Ненавязчивый toast вместо блокирующей модалки — система сама
+            // дооформит долг в фоне, кассир может продолжать работать.
+            notify.info(
+              "Оплата оформлена. Не удалось сразу оформить долг — система повторит попытку автоматически.",
+              { duration: 8000 },
+            );
+            void processPendingDebtDeals(dispatch);
           }
         }
 
@@ -905,6 +975,16 @@ export function usePaymentPage({
           ),
           skipDrawer: skipDrawerOpen,
         });
+      } else if (result.payload?.status === 409) {
+        // Тот же Idempotency-Key уже обрабатывается — второе устройство/вкладка
+        // отправили этот же платёж почти одновременно. Не показываем как
+        // обычную ошибку и не трогаем ключ — следующий клик «Оплатить»
+        // переиспользует его же и получит уже готовый результат от бэка.
+        showAlert(
+          "info",
+          "Оплата обрабатывается",
+          "Этот платёж уже обрабатывается — подождите немного и проверьте результат.",
+        );
       } else {
         showAlert(
           "error",
@@ -929,6 +1009,7 @@ export function usePaymentPage({
     debtDays,
     debtSchedule,
     deferredDueDate,
+    deferredPrepaymentApiMethod,
     deferredPrepaymentBank,
     deferredPrepaymentEnabled,
     deferredPrepaymentMethod,
@@ -1022,9 +1103,11 @@ export function usePaymentPage({
         splitOnlineAmount,
         splitTransferAmount,
         deferredPrepaymentValue,
+        deferredPrepaymentMethod,
         deferredSaleDebtRemaining,
       }),
     [
+      deferredPrepaymentMethod,
       deferredPrepaymentValue,
       deferredSaleDebtRemaining,
       paymentMethod,
@@ -1175,8 +1258,6 @@ export function usePaymentPage({
     scheduleUnit,
     onScheduleUnitChange: handleScheduleUnitChange,
     scheduleCount,
-    onScheduleCountChange: handleScheduleCountChange,
-    onScheduleCountBlur: handleScheduleCountBlur,
     onSchedulePreset: handleSchedulePreset,
     dayInterval,
     onDayIntervalChange: handleDayIntervalChange,

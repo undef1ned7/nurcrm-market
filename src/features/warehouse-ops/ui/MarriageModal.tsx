@@ -7,7 +7,7 @@ import {
   buildExpenseVariableRouting,
   buildPosRoutingFromUser,
 } from "@shared/lib/tools/cashboxResolution";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { useAlert, useConfirm } from "@shared/hooks/useDialog";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import "./MarriageModal.scss";

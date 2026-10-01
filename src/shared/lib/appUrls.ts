@@ -85,12 +85,25 @@ export const isAllowedBuildingAppOrigin = (originOrUrl: any) => {
   }
 };
 
-export const getMainAppUrl = () =>
-  trimTrailingSlash(
-    import.meta.env.VITE_MAIN_APP_URL || window.location.origin,
-  );
+const isLocalHost = () =>
+  ["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+const MAIN_APP_URL = "https://nurcrm.kg";
+
+/** Market один на stage и prod — выход всегда ведёт на основной домен. */
+export const getMainAppUrl = () => {
+  const fromEnv = trimTrailingSlash(import.meta.env.VITE_MAIN_APP_URL);
+  if (fromEnv) return fromEnv;
+  if (isLocalHost()) return window.location.origin;
+  return MAIN_APP_URL;
+};
 
 export const getMainAppLoginUrl = () => `${getMainAppUrl()}/login`;
+
+/** Выход из market: возвращаем в основное приложение и гасим там сессию. */
+export const redirectToMainAppLogin = () => {
+  window.location.replace(`${getMainAppLoginUrl()}?logout=1`);
+};
 
 export const getMainAppCrmUrl = () => `${getMainAppUrl()}/crm`;
 

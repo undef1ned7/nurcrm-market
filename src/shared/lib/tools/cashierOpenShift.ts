@@ -1,6 +1,36 @@
+/** id пользователя из payload access-JWT (claim user_id / sub) — если профиль его не отдаёт. */
+const getUserIdFromAccessToken = (): unknown => {
+  try {
+    const token = localStorage.getItem("accessToken");
+    const part = token?.split(".")[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, "=")));
+    return payload?.user_id ?? payload?.sub ?? null;
+  } catch {
+    return null;
+  }
+};
+
 export const resolveCashierId = ({ currentUser, userId, profile }: any = {}) => {
-  const id = currentUser?.id ?? userId ?? profile?.id;
-  return id != null && String(id).trim() ? String(id) : "";
+  const profileUser = profile?.user;
+  const candidates = [
+    currentUser?.id,
+    userId,
+    profile?.id,
+    profile?.user_id,
+    profileUser != null && typeof profileUser === "object"
+      ? profileUser.id
+      : profileUser,
+  ];
+  // Пустая строка (userId по умолчанию "") — не значение: пропускаем, а не `??`
+  for (const c of candidates) {
+    if (c != null && String(c).trim()) return String(c).trim();
+  }
+  const fromToken = getUserIdFromAccessToken();
+  return fromToken != null && String(fromToken).trim()
+    ? String(fromToken).trim()
+    : "";
 };
 
 export const getShiftCashierId = (shift: any) => {

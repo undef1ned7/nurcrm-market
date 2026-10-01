@@ -7,7 +7,9 @@ export type AnalyticsTab =
   | "products"
   | "suppliers"
   | "users"
-  | "finance";
+  | "finance"
+  | "procurement"
+  | "abc";
 
 export type AnalyticsPeriod = {
   from: Date;
@@ -32,6 +34,9 @@ export type AnalyticsFilters = Record<string, unknown> & {
   low_only?: boolean;
   status?: string;
   limit?: string | number;
+  supplier?: string;
+  abc_by?: "product" | "category" | "brand";
+  abc_metric?: "revenue" | "qty" | "profit";
 };
 
 export type AnalyticsData = Record<string, unknown> | null;

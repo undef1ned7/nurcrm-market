@@ -1,4 +1,14 @@
-import { formatCurrency, formatDateTable } from "../branchDetails.utils";
+import { useMemo } from "react";
+import { FaShoppingCart } from "react-icons/fa";
+import { StatusChip } from "@shared/ui/page-shell";
+import {
+  BranchSection,
+  SectionState,
+  ShowMore,
+  dateTime,
+  money,
+  useShowMore,
+} from "./BranchSection";
 
 type SalesSectionProps = {
   items: Array<{
@@ -12,38 +22,78 @@ type SalesSectionProps = {
   }>;
 };
 
+const STATUS: Record<string, { label: string; tone: string }> = {
+  paid: { label: "Оплачена", tone: "success" },
+  new: { label: "Новая", tone: "info" },
+  debt: { label: "В долг", tone: "warning" },
+  canceled: { label: "Отменена", tone: "danger" },
+  cancelled: { label: "Отменена", tone: "danger" },
+  partially_returned: { label: "Частичный возврат", tone: "warning" },
+  returned: { label: "Возврат", tone: "danger" },
+};
+
+const statusOf = (s?: string) =>
+  STATUS[String(s || "").toLowerCase()] || { label: s || "—", tone: "default" };
+
 export default function SalesSection({ items }: SalesSectionProps) {
+  const total = useMemo(
+    () => items.reduce((a, it) => a + (Number(it.total ?? it.amount) || 0), 0),
+    [items],
+  );
+  const { visible, rest, more } = useShowMore(items);
+
   return (
-    <div className="branch-details__section">
-      <h2 className="branch-details__section-title">Продажи</h2>
-      {items.length === 0 ? (
-        <p className="branch-details__empty">Нет данных о продажах</p>
-      ) : (
-        <div className="nur-table-wrap branch-details__table-wrapper">
-          <table className="nur-table branch-details__table">
+    <BranchSection title="Продажи" count={items.length}>
+      <SectionState
+        empty={items.length === 0}
+        icon={<FaShoppingCart />}
+        emptyTitle="Продаж пока нет"
+        emptyText="Продажи кассы этого филиала появятся здесь."
+      >
+        <div className="bd-stats">
+          <div className="bd-stat">
+            <span>Продаж</span>
+            <b>{items.length}</b>
+          </div>
+          <div className="bd-stat bd-stat--success">
+            <span>Выручка</span>
+            <b>{money(total)} сом</b>
+          </div>
+          <div className="bd-stat">
+            <span>Средний чек</span>
+            <b>{money(items.length ? total / items.length : 0)} сом</b>
+          </div>
+        </div>
+
+        <div className="nur-table-wrap">
+          <table className="nur-table bd-table">
             <thead>
               <tr>
                 <th>Дата</th>
-                <th>Сумма</th>
-                <th>Статус</th>
                 <th>Клиент</th>
+                <th>Статус</th>
+                <th className="is-num">Сумма, сом</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td className="table-cell--date">
-                    {formatDateTable(item.created_at)}
-                  </td>
-                  <td>{formatCurrency(item.total || item.amount)}</td>
-                  <td>{item.status || "—"}</td>
-                  <td>{item.client_display || item.client_name || "—"}</td>
-                </tr>
-              ))}
+              {visible.map((item) => {
+                const st = statusOf(item.status);
+                return (
+                  <tr key={item.id}>
+                    <td className="bd-table__date">{dateTime(item.created_at)}</td>
+                    <td>{item.client_display || item.client_name || "Без клиента"}</td>
+                    <td>
+                      <StatusChip tone={st.tone}>{st.label}</StatusChip>
+                    </td>
+                    <td className="is-num">{money(item.total ?? item.amount)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-      )}
-    </div>
+        <ShowMore rest={rest} onClick={more} />
+      </SectionState>
+    </BranchSection>
   );
 }

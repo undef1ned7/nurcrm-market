@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { getProfileBranchId } from "@shared/lib/tools/branchContext";
+import { useNavigate } from "react-router";
 import api from "@shared/api";
 import { useUser } from "@entities/user";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
@@ -108,7 +109,7 @@ export function useProcurementRecommendations() {
         supplierId: selectedSupplierId,
         supplierName: buildSupplierLabel(selectedSupplier),
         settings: settingsRef.current,
-        branchId: profile?.branch || profile?.branch_id || undefined,
+        branchId: getProfileBranchId(profile),
       });
       setPayload(next);
     } catch (err) {
@@ -122,7 +123,7 @@ export function useProcurementRecommendations() {
     } finally {
       setLoading(false);
     }
-  }, [profile?.branch, profile?.branch_id, selectedSupplier, selectedSupplierId]);
+  }, [profile, selectedSupplier, selectedSupplierId]);
 
   useEffect(() => {
     void loadSuppliers();

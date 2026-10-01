@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { UserCircle, Package, Users, Filter } from "lucide-react";
 import "./Counterparties.scss";
 import {

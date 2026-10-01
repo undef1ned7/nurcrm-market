@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useUser } from "@entities/user";
 import { useAlert } from "@shared/hooks/useDialog";

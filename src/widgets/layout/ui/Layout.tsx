@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@widgets/sidebar/ui/Sidebar";
 import Header from "@widgets/header/ui/Header";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router";
 import "./Layout.scss";
 import { X, ArrowUp } from "lucide-react";
 import { useUser } from "@entities/user";
 import { useDebounce } from "@shared/hooks/useDebounce";
 import { PageChromeProvider } from "@shared/ui/page-shell";
+import { UI_PREFERENCES_SYNCED_EVENT } from "@shared/lib/uiPreferences";
 
 const useAnnouncement = (company: any, setHideAnnouncement: any) => {
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
@@ -75,6 +76,21 @@ const Layout = () => {
     const sidebarAutoClose = savedSetting === "true";
     if (sidebarAutoClose) setIsSidebarOpen(false);
   }, [location.pathname]);
+
+  // Настройка "автозакрытие сайдбара" могла синхронизироваться с бэка уже
+  // после первой отрисовки (новое устройство/браузер) — применяем на лету.
+  useEffect(() => {
+    const handleSynced = () => {
+      const sidebarAutoClose =
+        localStorage.getItem("sidebarAutoClose") === "true";
+      if (sidebarAutoClose && window.innerWidth >= 769) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener(UI_PREFERENCES_SYNCED_EVENT, handleSynced);
+    return () =>
+      window.removeEventListener(UI_PREFERENCES_SYNCED_EVENT, handleSynced);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {

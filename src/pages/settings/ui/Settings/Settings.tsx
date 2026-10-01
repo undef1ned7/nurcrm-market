@@ -20,7 +20,7 @@ import {
   finalizeSlug,
   validateSlug,
 } from "@shared/lib/slug";
-import { useNavigate } from "react-router-dom";
+import { redirectToMainAppLogin } from "@shared/lib/appUrls";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
 import { ThemeModeContext } from "@shared/theme/ThemeModeProvider";
 import { Sun, Moon } from "lucide-react";
@@ -29,6 +29,7 @@ import CafeKitchenPrintersSettings from "./CafeKitchenPrintersSettings";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
 import { canAccessOnlineShowcase } from "@shared/lib/subscriptionPlan";
+import { CASHIER_DESKTOP_BUTTON_STORAGE_KEY } from "@shared/lib/desktopCashierApp";
 import {
   fetchMarketCashierSettings,
   normalizeMarketCashierSettings,
@@ -45,6 +46,7 @@ import { InterfaceTab } from "./tabs/InterfaceTab";
 import { OnlineTab } from "./tabs/OnlineTab";
 import { PrintTab } from "./tabs/PrintTab";
 import {
+  ALL_SETTINGS_TABS,
   SETTINGS_TABS,
   type SettingsTabId,
 } from "../settingsTabs";
@@ -62,7 +64,6 @@ const SCALE_BARCODE_MODE_VALUES = [
 const Settings = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch() as any;
-  const navigate = useNavigate();
 
   const { tariff, errorChange: errors, company, profile } = useUser();
 
@@ -117,6 +118,15 @@ const Settings = () => {
 
   // Определяем начальный активный таб в зависимости от доступных табов
   const initialTab = useMemo((): SettingsTabId => {
+    // Глубокая ссылка `/crm/set?tab=subscription` (напр. из карточки тарифа
+    // в Аналитике). Недоступный роли таб поправит эффект ниже.
+    const requested =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("tab")
+        : null;
+    if (requested && ALL_SETTINGS_TABS.includes(requested as SettingsTabId)) {
+      return requested as SettingsTabId;
+    }
     if (isOwner) return SETTINGS_TABS.company;
     if (isMarketSector) return SETTINGS_TABS.scalesToken;
     if (canViewOnline) return SETTINGS_TABS.online;
@@ -325,6 +335,16 @@ const Settings = () => {
     return false;
   });
 
+  // --- Кнопка "Касса" (скачивание desktop-приложения) в шапке
+  const [cashierDesktopButtonEnabled, setCashierDesktopButtonEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(CASHIER_DESKTOP_BUTTON_STORAGE_KEY);
+      if (saved === null) return true;
+      return saved === "true";
+    }
+    return true;
+  });
+
   // --- Пароли
   const [formData, setFormData] = useState({
     current_password: "",
@@ -470,6 +490,10 @@ const Settings = () => {
     e.preventDefault();
     try {
       localStorage.setItem("sidebarAutoClose", String(sidebarAutoClose));
+      localStorage.setItem(
+        CASHIER_DESKTOP_BUTTON_STORAGE_KEY,
+        String(cashierDesktopButtonEnabled),
+      );
       showAlert("success", t("settings.alerts.interfaceSaved"));
     } catch (err: any) {
       const errorMessage = validateResErrors(err, t("settings.alerts.interfaceSaveFailed"));
@@ -820,6 +844,8 @@ const Settings = () => {
     setMode,
     setShowCashierDeleteCode,
     setSidebarAutoClose,
+    cashierDesktopButtonEnabled,
+    setCashierDesktopButtonEnabled,
     showAlert,
     showCashierDeleteCode,
     showPassword,
@@ -880,10 +906,7 @@ const Settings = () => {
           type="button"
           onClick={async () => {
             dispatch(logoutUser());
-            navigate("/", {
-              replace: true,
-            });
-            window.location.reload();
+            redirectToMainAppLogin();
           }}
         >
           {t("settings.logout")}

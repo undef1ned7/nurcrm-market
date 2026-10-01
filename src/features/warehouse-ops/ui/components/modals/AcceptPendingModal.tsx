@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@app/store";
 import { X } from "lucide-react";
 import {
@@ -7,12 +7,19 @@ import {
 } from "@entities/product";
 import { postCashflowIfNeeded } from "@entities/cash";
 import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import { useUser } from "@entities/user";
 
 const AcceptPendingModal = ({ onClose, onChanged }: any) => {
   const dispatch = useAppDispatch();
   const { list: products, loading } = useAppSelector((s: any) => s.product);
   const { company } = useUser();
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
 
   const pending = useMemo(
     () =>
@@ -69,6 +76,23 @@ const AcceptPendingModal = ({ onClose, onChanged }: any) => {
         } as any,
         { warnOnFailure: true, failureContext: "accept" },
       );
+
+      if (
+        paidFromShiftDrawer &&
+        shiftDrawerFundingTarget.available &&
+        shiftDrawerFundingTarget.cashboxId
+      ) {
+        const drawerResult = await recordShiftDrawerOutflow({
+          cashboxId: shiftDrawerFundingTarget.cashboxId,
+          amount,
+          name: `Принятие товара — оплата из кассы смены: ${item.name}`,
+        });
+        if (!drawerResult.ok) {
+          alert(
+            `Товар «${item.name}» принят, но списание из кассы смены не записалось — добавьте вручную в «Касса».`,
+          );
+        }
+      }
     }
     refresh();
   };
@@ -94,6 +118,24 @@ const AcceptPendingModal = ({ onClose, onChanged }: any) => {
           <h3>Принятие товаров (статус: pending)</h3>
           <X className="add-modal__close-icon" size={20} onClick={onClose} />
         </div>
+
+        {!loading && pending.length > 0 && shiftDrawerFundingTarget.available && (
+          <div className="add-modal__section">
+            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={paidFromShiftDrawer}
+                onChange={(e) => setPaidFromShiftDrawer(e.target.checked)}
+              />
+              <strong>
+                Списывать эти закупки из кассы (ящика) смены
+                {shiftDrawerFundingTarget.cashboxName
+                  ? ` — «${shiftDrawerFundingTarget.cashboxName}»`
+                  : ""}
+              </strong>
+            </label>
+          </div>
+        )}
 
         {loading ? (
           <div className="add-modal__section">Загрузка…</div>

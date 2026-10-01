@@ -25,7 +25,10 @@ export type SectorIconName =
   | "userTie"
   | "bed"
   | "book"
-  | "checkSquare";
+  | "checkSquare"
+  | "clock"
+  | "truck"
+  | "file";
 
 export type BaseTabIconKey =
   | "cashRegister"
@@ -33,7 +36,8 @@ export type BaseTabIconKey =
   | "shoppingCart"
   | "chartLine"
   | "users"
-  | "userFriends";
+  | "userFriends"
+  | "exchange";
 
 export type BranchTab = {
   id: string;

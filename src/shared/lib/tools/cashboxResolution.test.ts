@@ -81,3 +81,18 @@ describe("cashboxResolution", () => {
     expect(estimateShiftWarehouseDrain(50, 33768, -20806)).toBeCloseTo(54624, 0);
   });
 });
+
+describe("resolveBranchId — поля профиля бэка", () => {
+  it("читает primary_branch (id или объект)", () => {
+    expect(resolveBranchId({ primary_branch: "b1" })).toBe("b1");
+    expect(resolveBranchId({ primary_branch: { id: "b2" } })).toBe("b2");
+  });
+  it("единственный allowed_branch_ids считается рабочим филиалом", () => {
+    expect(resolveBranchId({ allowed_branch_ids: ["b3"] })).toBe("b3");
+    expect(resolveBranchId({ allowed_branch_ids: ["b3", "b4"] })).toBeUndefined();
+  });
+  it("запасные старые имена полей работают", () => {
+    expect(resolveBranchId({ active_branch: "a" })).toBe("a");
+    expect(resolveBranchId({ branch: "b" })).toBe("b");
+  });
+});

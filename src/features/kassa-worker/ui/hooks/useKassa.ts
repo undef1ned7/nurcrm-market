@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useUser } from "@entities/user";
 import { isMarketSectorName } from "@shared/lib/subscriptionPlan";
@@ -118,11 +118,23 @@ export function useKassa() {
     setLoading(true);
     setError(null);
     try {
-      const endpoint =
-        company?.subscription_plan?.name === "Старт"
-          ? `/construction/cashboxes/${idToFetch}/`
-          : `/construction/cashboxes/${idToFetch}/detail/owner/`;
-      const { data } = await api.get(endpoint);
+      let data: any = null;
+      // Эндпоинт .../detail/owner/ доступен только владельцу/админу (бэк отдаёт 404
+      // сотруднику, у которого нет прав видеть этот срез) — при отказе откатываемся
+      // на менее детальные контракты, как и в src/features/kassa/ui/Kassa.tsx.
+      if (company?.subscription_plan?.name !== "Старт") {
+        try {
+          data = (await api.get(`/construction/cashboxes/${idToFetch}/detail/owner/`)).data;
+        } catch { /* нет прав владельца — пробуем менее детальный контракт */ }
+        if (!data) {
+          try {
+            data = (await api.get(`/construction/cashboxes/${idToFetch}/detail/`)).data;
+          } catch { /* тоже недоступно — берём базовую карточку кассы */ }
+        }
+      }
+      if (!data) {
+        data = (await api.get(`/construction/cashboxes/${idToFetch}/`)).data;
+      }
       setCashboxDetails(data);
       setSelectedCashbox(data);
     } catch (err: any) {

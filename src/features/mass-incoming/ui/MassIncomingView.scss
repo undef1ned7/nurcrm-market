@@ -53,6 +53,19 @@
     font-weight: 600;
   }
 
+  &__pending {
+    margin: 0;
+    color: var(--nur-muted, #64748b);
+    font-size: 13px;
+  }
+
+  &__source {
+    display: block;
+    margin-top: 2px;
+    color: var(--nur-muted, #64748b);
+    font-size: 11px;
+  }
+
   &__columns {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -108,6 +121,11 @@
       border: 1px solid var(--nur-border, #e9ecf1);
       border-radius: 8px;
       padding: 0 8px;
+
+      &.is-invalid {
+        border-color: #dc2626;
+        background: #fef2f2;
+      }
     }
 
     button {

@@ -86,6 +86,27 @@ export const consumeAuthParamsFromUrl = () => {
   return { access, refresh, sector };
 };
 
+/**
+ * Handoff из основного приложения: кладёт токены из URL в localStorage.
+ * Вызывать до рендера, чтобы AuthGuard и axios видели токен.
+ */
+export const applyAuthHandoffFromUrl = () => {
+  const { access, refresh } = consumeAuthParamsFromUrl();
+  if (!access) return false;
+
+  try {
+    localStorage.setItem("accessToken", access);
+    if (refresh) localStorage.setItem("refreshToken", refresh);
+    // профиль прошлой сессии не должен переехать к новому пользователю
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userData");
+  } catch (err) {
+    console.error("applyAuthHandoffFromUrl:", err);
+    return false;
+  }
+  return true;
+};
+
 export const getStoredAuthTokens = () => ({
   access: localStorage.getItem("accessToken"),
   refresh: localStorage.getItem("refreshToken"),

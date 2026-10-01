@@ -79,8 +79,24 @@ export function AnalyticsTabs({ vm }: Props) {
           >
             {t("crm.analytics.tabs.employees")}
           </button>
+          <button
+            className={`analytics-page__tab ${
+              activeTab === "procurement" ? "analytics-page__tab--active" : ""
+            }`}
+            onClick={() => setActiveTab("procurement")}
+          >
+            {t("crm.analytics.tabs.procurement")}
+          </button>
         </>
       )}
+      <button
+        className={`analytics-page__tab ${
+          activeTab === "abc" ? "analytics-page__tab--active" : ""
+        }`}
+        onClick={() => setActiveTab("abc")}
+      >
+        {t("crm.analytics.tabs.abc")}
+      </button>
       <button
         className={`analytics-page__tab ${
           activeTab === "finance" ? "analytics-page__tab--active" : ""

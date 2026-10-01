@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Plus, RefreshCw, Undo2, Wand2, X } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { pdf } from "@react-pdf/renderer";
 import api from "@shared/api";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";

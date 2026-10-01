@@ -45,6 +45,7 @@ export function useAnalyticsModals({ period, filters }: any) {
       };
       if (filters.payment_method) params.payment_method = filters.payment_method;
       if (filters.cashbox) params.cashbox = filters.cashbox;
+      if (filters.shift) params.shift = filters.shift;
       if (filters.cashier) params.cashier = filters.cashier;
       if (filters.consultant) params.consultant = filters.consultant;
       if (filters.min_total !== "") params.min_total = filters.min_total;
@@ -64,8 +65,11 @@ export function useAnalyticsModals({ period, filters }: any) {
       const cb = filters.cashbox ? String(filters.cashbox) : "";
       const minT = filters.min_total !== "" ? Number(filters.min_total) : null;
       const maxT = filters.max_total !== "" ? Number(filters.max_total) : null;
+      // Время чека по контракту analytics.md: paid_at, fallback created_at
+      const saleTime = (s: any) =>
+        new Date(s.paid_at || s.created_at || s.date || 0).getTime();
       const filtered = list.filter((s: any) => {
-        const t = new Date(s.created_at || s.paid_at || s.date).getTime();
+        const t = saleTime(s);
         if (Number.isFinite(t) && (t < fromT || t > toT)) return false;
         if (pm && String(s.payment_method || "") !== String(pm)) return false;
         if (cb && String(s.cashbox || "") !== cb) return false;
@@ -74,11 +78,7 @@ export function useAnalyticsModals({ period, filters }: any) {
         if (maxT != null && Number.isFinite(maxT) && total > maxT) return false;
         return true;
       });
-      filtered.sort(
-        (a: any, b: any) =>
-          (new Date(b.created_at || b.paid_at || 0) as any) -
-          (new Date(a.created_at || a.paid_at || 0) as any),
-      );
+      filtered.sort((a: any, b: any) => saleTime(b) - saleTime(a));
       setTxSales(filtered);
     } catch {
       setTxError(t("crm.analytics.errors.salesLoadFailed"));

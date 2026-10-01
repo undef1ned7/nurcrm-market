@@ -2,6 +2,7 @@ import axios from "axios";
 import { createAuthResponseInterceptor } from "./authInterceptors";
 import { getOfflineFallback } from "@shared/services/cafeOfflineFallback";
 import "@shared/config/i18n";
+import { applyBranchScope } from "@shared/lib/tools/branchContext";
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "https://app.nurcrm.kg/api",
   timeout: 20000,
@@ -36,7 +37,7 @@ api.interceptors.request.use(
         delete config.headers["content-type"];
       }
     }
-    return config;
+    return applyBranchScope(config);
   },
   (error) => {
     return Promise.reject(error);

@@ -1,41 +1,68 @@
 /** Нормализация ответа POST /main/pos/sales/start/ и связанных POS-операций */
 import i18n from "@shared/config/i18n";
 
-const countItems = (sale: any) => {
+// `shared` — нижний слой (см. src/ARCHITECTURE.md), не может импортировать
+// типы из `entities/sale` — поэтому минимальные структурные типы объявлены
+// локально, а не переиспользуют PosSale/PosCartTab из entities/sale/model/types.ts.
+// Бэк отдаёт как минимум 4 разных формы ответа (sale, {carts, sale}, массив
+// продаж, одна строка корзины) — внутри функций сознательно остаётся `any`
+// там, где код реально разбирает разнородные объекты; типизированы вход и
+// выход публичных функций. См. docs/sale-flow-bugs.md, пункт 10.
+
+export type PosCartTabLike = {
+  saleId: string;
+  label: string;
+  isMain: boolean;
+  itemCount: number;
+  total: string | number | null;
+  status: string;
+};
+
+/** Минимальный срез стейта sale-слайса, который читают/пишут функции этого файла. */
+export type MutablePosSaleState = {
+  start?: Record<string, any> | null;
+  posCarts?: PosCartTabLike[];
+  activeSaleId?: string | null;
+  [key: string]: unknown;
+};
+
+const countItems = (sale: any): number => {
   const items = sale?.items || sale?.cart?.items;
   return Array.isArray(items) ? items.length : 0;
 };
 
-export const mapCartTabFromApi = (raw: any, index = 0) => {
+export const mapCartTabFromApi = (
+  raw: unknown,
+  index = 0,
+): PosCartTabLike | null => {
   if (!raw || typeof raw !== "object") return null;
-  const saleId = raw.id ?? raw.sale_id ?? raw.saleId;
+  const r = raw as Record<string, any>;
+  const saleId = r.id ?? r.sale_id ?? r.saleId;
   if (!saleId) return null;
-  const isMain = Boolean(
-    raw.is_default ?? raw.isDefault ?? raw.is_main ?? raw.isMain,
-  );
+  const isMain = Boolean(r.is_default ?? r.isDefault ?? r.is_main ?? r.isMain);
   return {
     saleId: String(saleId),
     label:
-      raw.label ||
-      raw.name ||
+      r.label ||
+      r.name ||
       (isMain
         ? i18n.t("crm.cashier.main")
         : `${i18n.t("crm.cashier.cart")} ${index + 1}`),
     isMain,
-    itemCount: Number(
-      raw.items_count ?? raw.itemsCount ?? raw.item_count ?? 0,
-    ),
-    total: raw.total ?? raw.total_amount ?? null,
-    status: raw.status ?? "open",
+    itemCount: Number(r.items_count ?? r.itemsCount ?? r.item_count ?? 0),
+    total: r.total ?? r.total_amount ?? null,
+    status: r.status ?? "open",
   };
 };
 
-export const mapCartTabsFromApi = (list: any) => {
+export const mapCartTabsFromApi = (list: unknown): PosCartTabLike[] => {
   if (!Array.isArray(list)) return [];
-  return list.map((c: any, i: any) => mapCartTabFromApi(c, i)).filter(Boolean) as any[];
+  return list
+    .map((c, i) => mapCartTabFromApi(c, i))
+    .filter((c): c is PosCartTabLike => c !== null);
 };
 
-const cartTabFromSale = (sale: any) => {
+const cartTabFromSale = (sale: any): PosCartTabLike | null => {
   if (!sale?.id) return null;
   return {
     saleId: String(sale.id),
@@ -50,27 +77,28 @@ const cartTabFromSale = (sale: any) => {
   };
 };
 
-/**
- * @returns {{ sale: object|null, carts: Array, activeSaleId: string|null }}
- */
-export const normalizePosStartResponse = (data: any) => {
+export type NormalizedPosStartResponse = {
+  sale: Record<string, any> | null;
+  carts: PosCartTabLike[];
+  activeSaleId: string | null;
+};
+
+export const normalizePosStartResponse = (
+  data: unknown,
+): NormalizedPosStartResponse => {
   if (!data || typeof data !== "object") {
     return { sale: null, carts: [], activeSaleId: null };
   }
+  const d = data as Record<string, any>;
 
-  if (Array.isArray(data.carts)) {
-    const carts = mapCartTabsFromApi(data.carts);
-    const sale =
-      data.sale ??
-      data.active_sale ??
-      data.active ??
-      data.current_sale ??
-      null;
+  if (Array.isArray(d.carts)) {
+    const carts = mapCartTabsFromApi(d.carts);
+    const sale = d.sale ?? d.active_sale ?? d.active ?? d.current_sale ?? null;
     const activeSaleId = String(
       sale?.id ??
-        data.active_sale_id ??
-        data.active_saleId ??
-        data.active_id ??
+        d.active_sale_id ??
+        d.active_saleId ??
+        d.active_id ??
         carts.find((c) => c.isMain)?.saleId ??
         carts[0]?.saleId ??
         "",
@@ -82,17 +110,20 @@ export const normalizePosStartResponse = (data: any) => {
     };
   }
 
-  if (Array.isArray(data)) {
-    const carts = mapCartTabsFromApi(data);
+  if (Array.isArray(d)) {
+    const carts = mapCartTabsFromApi(d);
     const active = carts.find((c) => c.isMain) || carts[0];
     return {
-      sale: data.find((s) => String(s.id) === String(active?.saleId)) ?? data[0] ?? null,
+      sale:
+        (d as any[]).find((s) => String(s.id) === String(active?.saleId)) ??
+        (d as any[])[0] ??
+        null,
       carts,
       activeSaleId: active?.saleId ?? null,
     };
   }
 
-  const sale = data;
+  const sale = d;
   const tab = cartTabFromSale(sale);
   return {
     sale,
@@ -101,32 +132,34 @@ export const normalizePosStartResponse = (data: any) => {
   };
 };
 
+export type EnrichPosSaleOptions = { salePackageId?: string | number | null };
+
 /**
  * Бэк на add-item часто кладёт sale_package только в added_item, не в items[].
  * Без этого поштучная строка теряет sale_package и пачка PATCH-ит её же.
  */
-export const enrichPosSaleResponse = (data: any, options: any = {}) => {
+export const enrichPosSaleResponse = (
+  data: unknown,
+  options: EnrichPosSaleOptions = {},
+): any => {
   if (!data || typeof data !== "object") return data;
+  const d = data as Record<string, any>;
 
-  const addedItemId = data.added_item_id ?? data.added_item?.id ?? null;
+  const addedItemId = d.added_item_id ?? d.added_item?.id ?? null;
   const addedSalePackage =
-    data.added_item?.sale_package ??
-    data.added_item?.sale_package_id ??
+    d.added_item?.sale_package ??
+    d.added_item?.sale_package_id ??
     options.salePackageId ??
     null;
 
-  if (!Array.isArray(data.items) && !Array.isArray(data.cart?.items)) {
-    if (
-      options.salePackageId &&
-      isCartLineItemResponse(data) &&
-      !data.sale_package
-    ) {
-      return { ...data, sale_package: options.salePackageId };
+  if (!Array.isArray(d.items) && !Array.isArray(d.cart?.items)) {
+    if (options.salePackageId && isCartLineItemResponse(d) && !d.sale_package) {
+      return { ...d, sale_package: options.salePackageId };
     }
-    return data;
+    return d;
   }
 
-  const rawItems = data.items ?? data.cart?.items ?? [];
+  const rawItems = d.items ?? d.cart?.items ?? [];
   const items = rawItems.map((item: any) => {
     const existing = item.sale_package ?? item.sale_package_id ?? null;
     if (existing != null && String(existing) !== "") {
@@ -139,9 +172,9 @@ export const enrichPosSaleResponse = (data: any, options: any = {}) => {
     return { ...item, sale_package: pkg };
   });
 
-  const next = { ...data, items };
-  if (data.cart) {
-    next.cart = { ...data.cart, items };
+  const next: any = { ...d, items };
+  if (d.cart) {
+    next.cart = { ...d.cart, items };
   }
   return next;
 };
@@ -163,7 +196,11 @@ const preserveSalePackageFromPrevItems = (nextItems: any, prevItems: any) => {
   });
 };
 
-const mergeSaleIntoStateStart = (state: any, sale: any, options: any = {}) => {
+const mergeSaleIntoStateStart = (
+  state: MutablePosSaleState,
+  sale: any,
+  options: EnrichPosSaleOptions = {},
+): void => {
   if (!sale?.id) return;
   const prev = state.start;
   const prevId = prev?.id != null ? String(prev.id) : "";
@@ -199,24 +236,28 @@ const mergeSaleIntoStateStart = (state: any, sale: any, options: any = {}) => {
 };
 
 /** Ответ POST add-item / PATCH строки — одна позиция, не вся продажа */
-export const isCartLineItemResponse = (data: any) => {
+export const isCartLineItemResponse = (data: unknown): boolean => {
   if (!data || typeof data !== "object") return false;
-  if (Array.isArray(data.carts) || data.sale != null) return false;
-  if (Array.isArray(data.items) || Array.isArray(data.cart?.items)) return false;
-  const productId = data.product ?? data.product_id;
-  if (productId == null || data.id == null) return false;
+  const d = data as Record<string, any>;
+  if (Array.isArray(d.carts) || d.sale != null) return false;
+  if (Array.isArray(d.items) || Array.isArray(d.cart?.items)) return false;
+  const productId = d.product ?? d.product_id;
+  if (productId == null || d.id == null) return false;
   if (
-    data.shift != null &&
-    data.quantity == null &&
-    data.product_name == null &&
-    data.display_name == null
+    d.shift != null &&
+    d.quantity == null &&
+    d.product_name == null &&
+    d.display_name == null
   ) {
     return false;
   }
   return true;
 };
 
-export const mergeCartLineIntoStart = (state: any, lineItem: any) => {
+export const mergeCartLineIntoStart = (
+  state: MutablePosSaleState,
+  lineItem: any,
+): boolean => {
   if (!state.start?.id) return false;
   const prevItems = [...(state.start.items ?? state.start.cart?.items ?? [])];
   const lineId = lineItem.id;
@@ -256,7 +297,10 @@ export const mergeCartLineIntoStart = (state: any, lineItem: any) => {
   return true;
 };
 
-export const removeCartLineFromStart = (state: any, itemId: any) => {
+export const removeCartLineFromStart = (
+  state: MutablePosSaleState,
+  itemId: unknown,
+): boolean => {
   if (!state.start?.id || itemId == null) return false;
   const prevItems = state.start.items ?? state.start.cart?.items ?? [];
   if (!Array.isArray(prevItems)) return false;
@@ -276,7 +320,10 @@ export const removeCartLineFromStart = (state: any, itemId: any) => {
   return true;
 };
 
-export const applyPosStartToState = (state: any, data: any) => {
+export const applyPosStartToState = (
+  state: MutablePosSaleState,
+  data: unknown,
+): void => {
   const { sale, carts, activeSaleId } = normalizePosStartResponse(data);
   if (sale) {
     mergeSaleIntoStateStart(state, sale);
@@ -290,7 +337,11 @@ export const applyPosStartToState = (state: any, data: any) => {
  * PATCH /main/pos/carts/{saleId}/items/{itemId}/ — ответ с одной продажей.
  * Не подменяет список вкладок (posCarts), только активную продажу и метаданные вкладки.
  */
-export const applyPosCartItemPatchToState = (state: any, data: any, options: any = {}) => {
+export const applyPosCartItemPatchToState = (
+  state: MutablePosSaleState,
+  data: unknown,
+  options: EnrichPosSaleOptions = {},
+): void => {
   if (!data || typeof data !== "object") return;
 
   const payload = enrichPosSaleResponse(data, options);
@@ -326,7 +377,10 @@ export const applyPosCartItemPatchToState = (state: any, data: any, options: any
   }
 };
 
-export const patchCartTabFromSale = (carts: any, sale: any) => {
+export const patchCartTabFromSale = (
+  carts: PosCartTabLike[],
+  sale: any,
+): PosCartTabLike[] => {
   if (!sale?.id || !Array.isArray(carts)) return carts;
   const id = String(sale.id);
   const count = countItems(sale);
@@ -340,18 +394,20 @@ export const patchCartTabFromSale = (carts: any, sale: any) => {
   );
 };
 
-export const getMainCartSaleId = (carts: any) => {
+export const getMainCartSaleId = (
+  carts: PosCartTabLike[] | null | undefined,
+): string | null => {
   if (!Array.isArray(carts) || !carts.length) return null;
   const main = carts.find((c) => c.isMain);
   return main?.saleId ?? carts[0]?.saleId ?? null;
 };
 
 /** Тело POST /main/pos/sales/start/ */
-export const buildPosStartPayload = (args: any = {}) => {
+export const buildPosStartPayload = (args: unknown = {}): Record<string, any> => {
   const normalized: any =
     typeof args === "number" || typeof args === "string"
       ? { discount_total: Number(args) || 0 }
-      : { ...args };
+      : { ...(args as object) };
 
   const {
     discount_total,
@@ -364,7 +420,7 @@ export const buildPosStartPayload = (args: any = {}) => {
     ...rest
   } = normalized;
 
-  const payload: any = { ...rest };
+  const payload: Record<string, any> = { ...rest };
 
   const discount =
     order_discount_total !== undefined ? order_discount_total : discount_total;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import {
   FaSearch,
   FaPlus,
@@ -16,6 +16,7 @@ import {
   FaTimesCircle,
   FaEye,
   FaCalendarAlt,
+  FaExchangeAlt,
 } from "react-icons/fa";
 import {
   fetchBranchesAsync,
@@ -23,6 +24,8 @@ import {
   updateBranchAsync,
   deleteBranchAsync,
   toggleBranchActiveAsync,
+  fetchBranchUsage,
+  describeBranchUsage,
 } from "@entities/branch";
 import { clearErrors } from "@entities/branch";
 import AlertModal from "@shared/ui/AlertModal/AlertModal";
@@ -388,7 +391,7 @@ const Branch = () => {
           branchId: branch.id,
           isActive: !branch.is_active,
         })
-      );
+      ).unwrap();
     } catch (err: any) {
       console.error("Ошибка изменения статуса филиала:", err);
       const errorMessage = validateResErrors(err, "Ошибка при изменении статуса филиала. ")
@@ -401,26 +404,42 @@ const Branch = () => {
     }
   };
 
+  const showError = (err: any, fallback: string) => {
+    setAlertModal({
+      open: true,
+      type: "error",
+      title: "Ошибка",
+      message: validateResErrors(err, fallback),
+    });
+  };
+
   const handleDelete = async (id) => {
+    const usage = await fetchBranchUsage(String(id));
+    if (usage.openShifts) {
+      setAlertModal({
+        open: true,
+        type: "error",
+        title: "Удаление невозможно",
+        message: `В филиале есть открытые смены (${usage.openShifts}). Закройте их и повторите.`,
+      });
+      return;
+    }
+    const used = describeBranchUsage(usage);
     confirm(
-      "Вы уверены, что хотите удалить этот филиал?",
+      used
+        ? `К филиалу привязано: ${used}. Удалить филиал всё равно?`
+        : "Вы уверены, что хотите удалить этот филиал?",
       async (ok) => {
-        if (ok) {
-          try {
-            await dispatch(deleteBranchAsync(id));
-          } catch (err: any) {
-            console.error("Ошибка удаления филиала:", err);
-            const errorMessage = validateResErrors(err, "Ошибка при удалении филиала. ")
-            setAlertModal({
-              open: true,
-              type: "error",
-              title: "Ошибка",
-              message: errorMessage,
-            });
-          }
+        if (!ok) return;
+        try {
+          // unwrap: без него rejected-экшен не бросает, и ошибка бэка терялась
+          await dispatch(deleteBranchAsync(id)).unwrap();
+        } catch (err: any) {
+          console.error("Ошибка удаления филиала:", err);
+          showError(err, "Ошибка при удалении филиала. ");
         }
-      }
-    )
+      },
+    );
   };
 
   return (
@@ -429,16 +448,27 @@ const Branch = () => {
         title="Филиалы"
         subtitle="Управление филиалами компании"
         actions={
-          <button
-            type="button"
-            className="nur-btn nur-btn--primary"
-            onClick={openCreate}
-            title="Новый филиал"
-            aria-label="Новый филиал"
-          >
-            <FaPlus />
-            <span className="nur-btn__label">Новый филиал</span>
-          </button>
+          <>
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={() => navigate("/crm/branch/transfers")}
+              title="Перемещение товаров между складами"
+            >
+              <FaExchangeAlt />
+              <span className="nur-btn__label">Перемещения</span>
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={openCreate}
+              title="Новый филиал"
+              aria-label="Новый филиал"
+            >
+              <FaPlus />
+              <span className="nur-btn__label">Новый филиал</span>
+            </button>
+          </>
         }
       />
 

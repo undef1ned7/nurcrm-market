@@ -14,14 +14,22 @@ function RowTable({
   title,
   rows,
   showStock,
+  showPrice,
+  disabled,
   onQty,
+  onPrice,
+  isPriceMissing,
   onRemove,
   onCreate,
 }: {
   title: string;
   rows: MassIncomingRow[];
   showStock?: boolean;
+  showPrice?: boolean;
+  disabled?: boolean;
   onQty: (key: string, qty: number) => void;
+  onPrice?: (key: string, price: string) => void;
+  isPriceMissing?: (row: MassIncomingRow) => boolean;
   onRemove: (key: string) => void;
   onCreate?: (row: MassIncomingRow) => void;
 }) {
@@ -42,13 +50,21 @@ function RowTable({
               <th>{t("crm.warehouse.massIncoming.barcode")}</th>
               {showStock ? <th>{t("crm.warehouse.massIncoming.stock")}</th> : null}
               <th>{t("common.quantity")}</th>
+              {showPrice ? <th>{t("crm.warehouse.massIncoming.salePrice")}</th> : null}
               <th />
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.key}>
-                <td>{row.name}</td>
+                <td>
+                  {row.name}
+                  {row.source === "global" ? (
+                    <small className="mass-incoming__source">
+                      {t("crm.warehouse.massIncoming.fromGlobal")}
+                    </small>
+                  ) : null}
+                </td>
                 <td>{row.barcode}</td>
                 {showStock ? <td>{row.stockQty ?? "—"}</td> : null}
                 <td>
@@ -60,17 +76,38 @@ function RowTable({
                       min={0}
                       step="1"
                       value={row.quantity}
+                      disabled={disabled}
                       onChange={(e) => onQty(row.key, Number(e.target.value))}
                     />
                   )}
                 </td>
+                {showPrice ? (
+                  <td>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      inputMode="decimal"
+                      value={row.price}
+                      disabled={disabled}
+                      placeholder={
+                        row.source === "global"
+                          ? t("crm.warehouse.massIncoming.priceRequired")
+                          : "—"
+                      }
+                      aria-invalid={isPriceMissing?.(row) || undefined}
+                      className={isPriceMissing?.(row) ? "is-invalid" : undefined}
+                      onChange={(e) => onPrice?.(row.key, e.target.value)}
+                    />
+                  </td>
+                ) : null}
                 <td>
                   {onCreate ? (
-                    <button type="button" onClick={() => onCreate(row)}>
+                    <button type="button" disabled={disabled} onClick={() => onCreate(row)}>
                       {t("crm.warehouse.massIncoming.createCard")}
                     </button>
                   ) : (
-                    <button type="button" onClick={() => onRemove(row.key)}>
+                    <button type="button" disabled={disabled} onClick={() => onRemove(row.key)}>
                       {t("common.delete")}
                     </button>
                   )}
@@ -122,7 +159,11 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
           <button
             type="button"
             className="nur-btn nur-btn--primary"
-            disabled={vm.saving || (vm.lists.inStock.length + vm.lists.inCatalog.length === 0)}
+            disabled={
+              vm.saving ||
+              vm.pending > 0 ||
+              vm.lists.inStock.length + vm.lists.inCatalog.length === 0
+            }
             onClick={async () => {
               const ok = await vm.save();
               if (ok) onSaved?.();
@@ -146,7 +187,7 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
         className="mass-incoming__scan"
         onSubmit={(e) => {
           e.preventDefault();
-          void vm.handleBarcode(vm.barcode);
+          vm.handleBarcode(vm.barcode);
         }}
       >
         <input
@@ -157,10 +198,15 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
           autoComplete="off"
           autoFocus
         />
-        <button type="submit" className="nur-btn nur-btn--primary" disabled={vm.busy}>
+        <button type="submit" className="nur-btn nur-btn--primary" disabled={vm.saving}>
           {t("common.add")}
         </button>
       </form>
+      {vm.pending > 0 ? (
+        <p className="mass-incoming__pending">
+          {t("crm.warehouse.massIncoming.checking", { count: vm.pending })}
+        </p>
+      ) : null}
       {vm.error ? <p className="mass-incoming__error">{vm.error}</p> : null}
 
       <div className="mass-incoming__columns">
@@ -168,18 +214,24 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
           title={t("crm.warehouse.massIncoming.inStock")}
           rows={vm.lists.inStock}
           showStock
+          disabled={vm.saving}
           onQty={vm.setQuantity}
           onRemove={vm.removeRow}
         />
         <RowTable
           title={t("crm.warehouse.massIncoming.inCatalog")}
           rows={vm.lists.inCatalog}
+          showPrice
+          disabled={vm.saving}
           onQty={vm.setQuantity}
+          onPrice={vm.setPrice}
+          isPriceMissing={(row) => vm.showPriceErrors && vm.priceMissing(row)}
           onRemove={vm.removeRow}
         />
         <RowTable
           title={t("crm.warehouse.massIncoming.unknown")}
           rows={vm.lists.unknown}
+          disabled={vm.saving}
           onQty={vm.setQuantity}
           onRemove={vm.removeRow}
           onCreate={vm.openCreate}
@@ -188,7 +240,15 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
 
       {vm.createFor ? (
         <div className="mass-incoming__modal" role="presentation">
-          <div className="mass-incoming__dialog" role="dialog" aria-modal="true">
+          <form
+            className="mass-incoming__dialog"
+            role="dialog"
+            aria-modal="true"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void vm.submitCreate();
+            }}
+          >
             <h3>{t("crm.warehouse.massIncoming.createCard")}</h3>
             <label>
               {t("crm.warehouse.massIncoming.barcode")}
@@ -205,19 +265,31 @@ export function MassIncomingView({ onClose, onSaved }: Props) {
             <label>
               {t("crm.warehouse.massIncoming.priceOptional")}
               <input
+                type="number"
+                min={0}
+                step="0.01"
+                inputMode="decimal"
                 value={vm.createPrice}
                 onChange={(e) => vm.setCreatePrice(e.target.value)}
               />
             </label>
+            {vm.createError ? (
+              <p className="mass-incoming__error">{vm.createError}</p>
+            ) : null}
             <div className="mass-incoming__dialog-actions">
-              <button type="button" className="nur-btn nur-btn--secondary" onClick={() => vm.setCreateFor(null)}>
+              <button
+                type="button"
+                className="nur-btn nur-btn--secondary"
+                onClick={vm.closeCreate}
+                disabled={vm.creating}
+              >
                 {t("common.cancel")}
               </button>
-              <button type="button" className="nur-btn nur-btn--primary" onClick={() => void vm.submitCreate()}>
-                {t("common.save")}
+              <button type="submit" className="nur-btn nur-btn--primary" disabled={vm.creating}>
+                {vm.creating ? t("crm.warehouse.massIncoming.saving") : t("common.save")}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       ) : null}
     </div>

@@ -1,3 +1,5 @@
+import { redirectToMainAppLogin } from "@shared/lib/appUrls";
+
 /**
  * Axios response interceptor: attach Bearer token on 401 via refresh endpoint.
  * Extracted for unit testing; wired from src/api/index.js.
@@ -31,7 +33,7 @@ export function createAuthResponseInterceptor(api: any, axiosLib: any) {
       if (!refreshToken) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
+        redirectToMainAppLogin();
         return Promise.reject(err);
       }
 
@@ -78,7 +80,7 @@ export function createAuthResponseInterceptor(api: any, axiosLib: any) {
         processQueue(refreshErr, null);
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
+        redirectToMainAppLogin();
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

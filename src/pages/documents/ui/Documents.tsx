@@ -7,7 +7,7 @@ import {
   Printer,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { pdf } from "@react-pdf/renderer";
 import {
   fetchDocuments,
@@ -91,6 +91,7 @@ const Documents = () => {
   const [editReceiptId, setEditReceiptId] = useState<any>(null);
   const [editReceiptData, setEditReceiptData] = useState<any>(null);
   const debounceTimerRef = useRef<any>(null);
+  const lastSearchRef = useRef("");
 
   // Debounce для поиска
   useEffect(() => {
@@ -99,8 +100,11 @@ const Documents = () => {
     }
 
     debounceTimerRef.current = setTimeout(() => {
+      if (lastSearchRef.current !== searchTerm) {
+        lastSearchRef.current = searchTerm;
+        setCurrentPage(1); // Сбрасываем на первую страницу при изменении поиска
+      }
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Сбрасываем на первую страницу при изменении поиска
     }, 300);
 
     return () => {
@@ -185,7 +189,10 @@ const Documents = () => {
   }, [currentPage, activeTab, setSearchParams]);
 
   // Сброс страницы при смене таба
+  const prevTabRef = useRef(activeTab);
   useEffect(() => {
+    if (prevTabRef.current === activeTab) return;
+    prevTabRef.current = activeTab;
     setCurrentPage(1);
   }, [activeTab]);
 

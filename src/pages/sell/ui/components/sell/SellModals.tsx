@@ -25,6 +25,10 @@ export default function SellModals({ vm }: Props) {
     setShowRefundModal,
     itemId,
     setItemId,
+    handleOpenRefundFromDetail,
+    handleCloseRefundModal,
+    setRefundReturnToDetailId,
+    canReturnSale,
     hideSaleId,
     dispatch,
     historyBaseParams,
@@ -65,10 +69,7 @@ export default function SellModals({ vm }: Props) {
       {showRefundModal && itemId?.id && (
         <RefundPurchase
           item={itemId}
-          onClose={() => {
-            setShowRefundModal(false);
-            setItemId(null);
-          }}
+          onClose={handleCloseRefundModal}
           onChanged={(updatedSale) => {
             if (
               String(updatedSale?.status || "").toLowerCase() === "canceled"
@@ -76,6 +77,10 @@ export default function SellModals({ vm }: Props) {
               hideSaleId(updatedSale?.id || itemId?.id);
             }
             setShowRefundModal(false);
+            setItemId(null);
+            // Успешный возврат закрывает всё и обновляет список — модалку
+            // деталей, из которой открыли возврат, в этом случае не восстанавливаем.
+            setRefundReturnToDetailId(null);
             dispatch(
               historySellProduct({
                 ...historyBaseParams,
@@ -105,6 +110,8 @@ export default function SellModals({ vm }: Props) {
             setSellId("");
           }}
           id={sellId}
+          onRefund={handleOpenRefundFromDetail}
+          canReturn={canReturnSale}
         />
       )}
       {isMarketCompany && showFiltersModal && (

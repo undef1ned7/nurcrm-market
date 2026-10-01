@@ -2,20 +2,22 @@ import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Calendar } from "lucide-react";
 import {
+  DAY_COUNT_SLIDER_STEPS,
+  DAY_COUNT_SLIDER_TICKS,
   DAY_INTERVAL_PRESETS,
-  DAY_SCHEDULE_PRESETS,
   MAX_DAY_INTERVAL,
   MAX_MONTH_INTERVAL,
   MONTH_INTERVAL_PRESETS,
-  MONTH_SCHEDULE_PRESETS,
+  MONTH_TERM_SLIDER_STEPS,
+  MONTH_TERM_SLIDER_TICKS,
   dayIntervalLabel,
   dayIntervalPresetLabel,
   formatIsoDateRu,
-  maxInstallmentsForUnit,
   monthIntervalLabel,
   monthIntervalPresetLabel,
   paymentCountLabel,
   scheduleCountLabel,
+  scheduleInstallmentsCount,
   todayIsoDate,
   type DebtSchedule,
   type DebtScheduleUnit,
@@ -29,6 +31,7 @@ import {
   getTodayIsoDate,
 } from "../paymentPage.utils";
 import { PaymentPageBankGrid } from "./PaymentPageBankGrid";
+import { PaymentPageTermSlider } from "./PaymentPageTermSlider";
 
 type Props = {
   total: number;
@@ -51,8 +54,6 @@ type Props = {
   scheduleUnit: DebtScheduleUnit;
   onScheduleUnitChange: (unit: DebtScheduleUnit) => void;
   scheduleCount: number | "";
-  onScheduleCountChange: (value: string) => void;
-  onScheduleCountBlur: (value: string) => void;
   onSchedulePreset: (count: number) => void;
   dayInterval: number | "";
   onDayIntervalChange: (value: string) => void;
@@ -86,8 +87,6 @@ export function PaymentPageDebtSection({
   scheduleUnit,
   onScheduleUnitChange,
   scheduleCount,
-  onScheduleCountChange,
-  onScheduleCountBlur,
   onSchedulePreset,
   dayInterval,
   onDayIntervalChange,
@@ -100,13 +99,22 @@ export function PaymentPageDebtSection({
   onFirstDueDateChange,
 }: Props) {
   const { t } = useTranslation();
-  const presets =
-    scheduleUnit === "month" ? MONTH_SCHEDULE_PRESETS : DAY_SCHEDULE_PRESETS;
+  const isMonthly = scheduleUnit === "month";
   const intervalPresets =
     scheduleUnit === "month" ? MONTH_INTERVAL_PRESETS : DAY_INTERVAL_PRESETS;
   const previewRows = debtSchedule?.installments ?? [];
   const intervalMax =
     scheduleUnit === "month" ? MAX_MONTH_INTERVAL : MAX_DAY_INTERVAL;
+  // Слайдер в месячном режиме — срок в месяцах; бейдж показывает, во сколько
+  // платежей он превращается с учётом интервала. Считаем так же, как хук.
+  const sliderValue = typeof scheduleCount === "number" ? scheduleCount : 0;
+  const paymentsTotal = scheduleInstallmentsCount(
+    scheduleUnit,
+    scheduleCount,
+    dayInterval,
+  );
+  const monthsText = (n: number) => `${n} ${scheduleCountLabel("month", n)}`;
+  const paymentsText = (n: number) => `${n} ${paymentCountLabel(n)}`;
 
   return (
     <div className="payment-page__debt-section">
@@ -380,42 +388,47 @@ export function PaymentPageDebtSection({
         </div>
 
         <div className="payment-page__debt-days">
-          <label
-            className="payment-page__debt-days-label"
-            htmlFor="deferred-schedule-count"
-          >
-            {scheduleUnit === "month"
-              ? t("crm.cashier.debtSection.monthsCountLabel")
-              : t("crm.cashier.debtSection.paymentsCountLabel")}
-          </label>
-          <input
+          <PaymentPageTermSlider
             id="deferred-schedule-count"
-            type="text"
-            className="payment-page__debt-days-input"
+            title={
+              isMonthly
+                ? t("crm.cashier.debtSection.termTitle", {
+                    value: monthsText(sliderValue),
+                  })
+                : t("crm.cashier.debtSection.paymentsCountTitle", {
+                    value: sliderValue,
+                  })
+            }
+            badge={
+              isMonthly
+                ? t("crm.cashier.debtSection.totalPaymentsBadge", {
+                    value: paymentsText(paymentsTotal),
+                    count: paymentsTotal,
+                  })
+                : debtSchedule
+                  ? t("crm.cashier.debtSection.untilDate", {
+                      date: formatIsoDateRu(debtSchedule.lastDueDate),
+                    })
+                  : "—"
+            }
+            badgeHint={
+              debtSchedule
+                ? t("crm.cashier.debtSection.perPeriod", {
+                    amount: formatMoneyRu(debtSchedule.perPeriod),
+                  })
+                : null
+            }
             value={scheduleCount}
-            onChange={(e) => onScheduleCountChange(e.target.value)}
-            onBlur={(e) => onScheduleCountBlur(e.target.value)}
-            min="1"
-            max={maxInstallmentsForUnit(scheduleUnit)}
-            inputMode="numeric"
-            autoComplete="off"
+            steps={isMonthly ? MONTH_TERM_SLIDER_STEPS : DAY_COUNT_SLIDER_STEPS}
+            ticks={isMonthly ? MONTH_TERM_SLIDER_TICKS : DAY_COUNT_SLIDER_TICKS}
+            onChange={onSchedulePreset}
+            ariaLabel={
+              isMonthly
+                ? t("crm.cashier.debtSection.termSliderAria")
+                : t("crm.cashier.debtSection.paymentsCountLabel")
+            }
+            formatValueText={isMonthly ? monthsText : paymentsText}
           />
-          <div className="payment-page__schedule-presets">
-            {presets.map((count) => (
-              <button
-                key={`${scheduleUnit}-${count}`}
-                type="button"
-                className={`payment-page__schedule-preset${
-                  scheduleCount === count
-                    ? " payment-page__schedule-preset--active"
-                    : ""
-                }`}
-                onClick={() => onSchedulePreset(count)}
-              >
-                {count}
-              </button>
-            ))}
-          </div>
 
           <label
             className="payment-page__debt-days-label"
@@ -510,10 +523,7 @@ export function PaymentPageDebtSection({
           {debtSchedule ? (
             <>
               <p className="payment-page__debt-days-hint">
-                {debtSchedule.count}{" "}
-                {scheduleUnit === "month"
-                  ? scheduleCountLabel("month", debtSchedule.count)
-                  : paymentCountLabel(debtSchedule.count)}
+                {paymentsText(debtSchedule.count)}
                 {` · ${
                   scheduleUnit === "month"
                     ? monthIntervalLabel(debtSchedule.intervalMonths)
@@ -534,18 +544,48 @@ export function PaymentPageDebtSection({
                 })}
               </p>
               <div className="payment-page__schedule-table" role="table">
-                <div className="payment-page__schedule-row payment-page__schedule-row--head">
-                  <span>{t("crm.cashier.debtSection.tableNumber")}</span>
-                  <span>{t("crm.cashier.debtSection.tableDate")}</span>
-                  <span>{t("crm.cashier.debtSection.tableAmount")}</span>
+                <div
+                  className="payment-page__schedule-row payment-page__schedule-row--head"
+                  role="row"
+                >
+                  <span role="columnheader">
+                    {t("crm.cashier.debtSection.tableInstallment")}
+                  </span>
+                  <span role="columnheader">
+                    {t("crm.cashier.debtSection.tableDate")}
+                  </span>
+                  <span role="columnheader">
+                    {t("crm.cashier.debtSection.tableAmount")}
+                  </span>
                 </div>
-                {previewRows.map((row) => (
-                  <div key={row.number} className="payment-page__schedule-row">
-                    <span>{row.number}</span>
-                    <span>{formatIsoDateRu(row.dueDate)}</span>
-                    <span>{row.amountStr}</span>
-                  </div>
-                ))}
+                {previewRows.map((row, index) => {
+                  const isFinal = index === previewRows.length - 1;
+                  return (
+                    <div
+                      key={row.number}
+                      role="row"
+                      className={`payment-page__schedule-row${
+                        isFinal ? " payment-page__schedule-row--final" : ""
+                      }`}
+                    >
+                      <span
+                        role="cell"
+                        className="payment-page__schedule-ordinal"
+                      >
+                        {t("crm.cashier.debtSection.installmentOrdinal", {
+                          n: row.number,
+                        })}
+                        {isFinal ? (
+                          <span className="payment-page__schedule-final-tag">
+                            {t("crm.cashier.debtSection.finalTag")}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span role="cell">{formatIsoDateRu(row.dueDate)}</span>
+                      <span role="cell">{row.amountStr}</span>
+                    </div>
+                  );
+                })}
               </div>
             </>
           ) : (

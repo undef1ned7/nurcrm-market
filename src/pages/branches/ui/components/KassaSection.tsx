@@ -1,52 +1,112 @@
-import { FaSpinner } from "react-icons/fa";
-import { formatCurrency, formatDate } from "../branchDetails.utils";
+import { useMemo } from "react";
+import { FaCashRegister } from "react-icons/fa";
+import { StatusChip } from "@shared/ui/page-shell";
+import {
+  BranchSection,
+  SectionState,
+  ShowMore,
+  dateTime,
+  money,
+  useShowMore,
+} from "./BranchSection";
+
+type KassaItem = {
+  id: string | number;
+  created_at?: string;
+  type?: string;
+  amount?: number | string;
+  name?: string;
+  title?: string;
+  description?: string;
+};
 
 type KassaSectionProps = {
   loading: boolean;
-  items: Array<{
-    id: string | number;
-    created_at?: string;
-    type?: string;
-    amount?: number;
-    description?: string;
-  }>;
+  items: KassaItem[];
 };
 
+const isIncome = (t?: string) => String(t || "").toLowerCase() === "income";
+
 export default function KassaSection({ loading, items }: KassaSectionProps) {
+  const totals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const it of items) {
+      const a = Number(it.amount) || 0;
+      if (isIncome(it.type)) income += a;
+      else expense += a;
+    }
+    return { income, expense, balance: income - expense };
+  }, [items]);
+
+  const { visible, rest, more } = useShowMore(items);
+
   return (
-    <div className="branch-details__section">
-      <h2 className="branch-details__section-title">Касса</h2>
-      {loading ? (
-        <div className="branch-details__loading">
-          <FaSpinner className="spinner" />
-          <p>Загрузка данных кассы...</p>
+    <BranchSection title="Касса" count={loading ? null : items.length}>
+      <SectionState
+        loading={loading}
+        empty={items.length === 0}
+        icon={<FaCashRegister />}
+        emptyTitle="Движений по кассе нет"
+        emptyText="Здесь появятся приходы и расходы кассы этого филиала."
+      >
+        <div className="bd-stats">
+          <div className="bd-stat bd-stat--success">
+            <span>Приход</span>
+            <b>{money(totals.income)} сом</b>
+          </div>
+          <div className="bd-stat bd-stat--danger">
+            <span>Расход</span>
+            <b>{money(totals.expense)} сом</b>
+          </div>
+          <div className="bd-stat">
+            <span>Сальдо</span>
+            <b className={totals.balance < 0 ? "is-negative" : ""}>
+              {money(totals.balance)} сом
+            </b>
+          </div>
+          <div className="bd-stat">
+            <span>Операций</span>
+            <b>{items.length}</b>
+          </div>
         </div>
-      ) : items.length === 0 ? (
-        <p className="branch-details__empty">Нет данных о кассе</p>
-      ) : (
-        <div className="nur-table-wrap branch-details__table-wrapper">
-          <table className="nur-table branch-details__table">
+
+        <div className="nur-table-wrap">
+          <table className="nur-table bd-table">
             <thead>
               <tr>
                 <th>Дата</th>
                 <th>Тип</th>
-                <th>Сумма</th>
-                <th>Описание</th>
+                <th>Назначение</th>
+                <th className="is-num">Сумма, сом</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td>{formatDate(item.created_at)}</td>
-                  <td>{item.type || "—"}</td>
-                  <td>{formatCurrency(item.amount)}</td>
-                  <td>{item.description || "—"}</td>
-                </tr>
-              ))}
+              {visible.map((item) => {
+                const income = isIncome(item.type);
+                return (
+                  <tr key={item.id}>
+                    <td className="bd-table__date">{dateTime(item.created_at)}</td>
+                    <td>
+                      <StatusChip tone={income ? "success" : "danger"}>
+                        {income ? "Приход" : "Расход"}
+                      </StatusChip>
+                    </td>
+                    <td className="bd-table__muted">
+                      {item.name || item.title || item.description || "Без назначения"}
+                    </td>
+                    <td className={`is-num ${income ? "is-positive" : "is-negative"}`}>
+                      {income ? "+" : "−"}
+                      {money(item.amount)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-      )}
-    </div>
+        <ShowMore rest={rest} onClick={more} />
+      </SectionState>
+    </BranchSection>
   );
 }

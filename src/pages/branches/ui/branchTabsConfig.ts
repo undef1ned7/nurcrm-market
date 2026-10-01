@@ -11,6 +11,7 @@ export const BASE_TABS = [
   { id: "analytics", label: "Аналитика", icon: "chartLine" },
   { id: "employees", label: "Сотрудники", icon: "users" },
   { id: "clients", label: "Клиенты", icon: "userFriends" },
+  { id: "transfers", label: "Перемещения", icon: "exchange" },
 ];
 
 /**

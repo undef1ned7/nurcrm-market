@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -21,6 +21,10 @@ import {
   buildExpenseVariableRouting,
   buildPosRoutingFromUser,
 } from "@shared/lib/tools/cashboxResolution";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import {
   DEBT_PAYMENT_BANKS,
   DEBT_PAY_BANK_DEFAULT,
@@ -58,6 +62,8 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
   const { dealDetail } = useClient();
   const { profile, company } = useUser();
   const { id: clientId } = useParams();
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
 
   const isSupplier = String(clientType || "").toLowerCase() === "suppliers";
 
@@ -102,6 +108,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
   // Способ оплаты выбирается прямо в диалоге подтверждения оплаты.
   const [payMethod, setPayMethod] = useState<DebtPayMethod>("cash");
   const [payBank, setPayBank] = useState(DEBT_PAY_BANK_DEFAULT);
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
   // Диалог подтверждения хранит замороженный onConfirm-замыкание, поэтому
   // актуальный выбор способа читаем из ref, а не из stale-переменной.
   const paySelRef = useRef<{ method: DebtPayMethod; bank: string }>({
@@ -173,6 +180,24 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
           </select>
           <ChevronDown className="paymethod__bank-caret" size={16} />
         </div>
+      )}
+      {isSupplier && payMethod === "cash" && shiftDrawerFundingTarget.available && (
+        <label
+          className="paymethod__opt"
+          style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+        >
+          <input
+            type="checkbox"
+            checked={paidFromShiftDrawer}
+            onChange={(e) => setPaidFromShiftDrawer(e.target.checked)}
+          />
+          <span className="paymethod__opt-label">
+            Я заплатил из кассы (ящика) смены
+            {shiftDrawerFundingTarget.cashboxName
+              ? ` — спишется с кассы «${shiftDrawerFundingTarget.cashboxName}»`
+              : ""}
+          </span>
+        </label>
       )}
     </div>
   );
@@ -314,14 +339,14 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
     }
   };
 
-  const onPayDeal = async (data: any) => {
+  const onPayDeal = async (data: any): Promise<boolean> => {
     try {
       if (data.installment_id) {
         const installment = installments.find(
           (i: any) => i.id === data.installment_id,
         );
         if (installment && installment.paid_on) {
-          return;
+          return false;
         }
       }
 
@@ -332,6 +357,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
       await dispatch(payDebtDeal({ id, clientId, data })).unwrap();
       onChanged?.();
       dispatch(getClientDealDetail({ clientId, dealId: id }));
+      return true;
     } catch (e: any) {
       console.error(e);
       setAlert({
@@ -339,6 +365,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
         type: "error",
         message: t("crm.clients.details.paymentError"),
       });
+      return false;
     }
   };
 
@@ -419,6 +446,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
           : buildPosRoutingFromUser(profile, company);
         const today = toYYYYMMDD(new Date());
         let paidCount = 0;
+        let paidAmountTotal = 0;
 
         for (const p of pendingInstallments) {
           const remaining = getInstallmentRemaining(p);
@@ -439,6 +467,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
               }),
             ).unwrap();
             paidCount += 1;
+            paidAmountTotal += remaining;
             void postCashflowIfNeeded(
               dispatch,
               {
@@ -462,6 +491,29 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
             break;
           }
         }
+
+        if (
+          paidAmountTotal > 0 &&
+          paidFromShiftDrawer &&
+          isSupplier &&
+          shiftDrawerFundingTarget.available &&
+          shiftDrawerFundingTarget.cashboxId
+        ) {
+          const drawerResult = await recordShiftDrawerOutflow({
+            cashboxId: shiftDrawerFundingTarget.cashboxId,
+            amount: paidAmountTotal,
+            name: `Оплата долга поставщику из кассы смены: ${counterpartyName}`,
+          });
+          if (!drawerResult.ok) {
+            setAlert({
+              open: true,
+              type: "error",
+              message:
+                "Долг оплачен, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+            });
+          }
+        }
+        setPaidFromShiftDrawer(false);
 
         setPayingAll(false);
         onChanged?.();
@@ -990,7 +1042,7 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
                                           "crm.clients.details.confirmPayment",
                                           { amount: paymentAmount.toFixed(2) },
                                         ),
-                                        onConfirm: () => {
+                                        onConfirm: async () => {
                                           const payMethodApi =
                                             currentPaymentMethod();
                                           const payMethodLbl =
@@ -1015,7 +1067,8 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
                                               paymentAmount.toFixed(2);
                                           }
 
-                                          onPayDeal(paymentData);
+                                          const paidOk =
+                                            await onPayDeal(paymentData);
                                           void postCashflowIfNeeded(
                                             dispatch,
                                             {
@@ -1040,6 +1093,30 @@ const DebtModal = ({ id, onClose, onChanged, clientType }) => {
                                               failureContext: "debt",
                                             },
                                           );
+                                          if (
+                                            paidOk &&
+                                            paidFromShiftDrawer &&
+                                            isSupplier &&
+                                            shiftDrawerFundingTarget.available &&
+                                            shiftDrawerFundingTarget.cashboxId
+                                          ) {
+                                            const drawerResult =
+                                              await recordShiftDrawerOutflow({
+                                                cashboxId:
+                                                  shiftDrawerFundingTarget.cashboxId,
+                                                amount: paymentAmount,
+                                                name: `Оплата долга поставщику из кассы смены: ${counterpartyName}`,
+                                              });
+                                            if (!drawerResult.ok) {
+                                              setAlert({
+                                                open: true,
+                                                type: "error",
+                                                message:
+                                                  "Долг оплачен, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+                                              });
+                                            }
+                                          }
+                                          setPaidFromShiftDrawer(false);
                                           setPaymentAmounts((prev: any) => {
                                             const next = { ...prev };
                                             delete next[p.number];

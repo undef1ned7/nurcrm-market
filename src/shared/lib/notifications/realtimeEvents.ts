@@ -31,6 +31,8 @@ export const MARKET_REALTIME_EVENTS = {
   AGENT_TRANSFER: "agent_transfer",
   /** Возврат товара от агента */
   AGENT_RETURN: "agent_return",
+  /** Товар получен по перемещению (подтверждено бэком в §C.1, 2026-09-23) */
+  TRANSFER_RECEIVED: "market.transfer.received",
 } as const;
 
 /**

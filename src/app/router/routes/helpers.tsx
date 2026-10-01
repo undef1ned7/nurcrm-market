@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Route } from "react-router-dom";
+import { Route } from "react-router";
 import ProtectedRoute from "@app/providers/ProtectedRoute";
 import RouteFallback from "@shared/ui/RouteFallback/RouteFallback";
 

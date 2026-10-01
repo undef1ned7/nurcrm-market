@@ -2,13 +2,10 @@ import { useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, CheckCheck, BellOff, Bell, Loader2, Trash2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@app/store";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
-import { useUser } from "@entities/user";
-import { useProducts, buildProductExpiryLocalNotification } from "@entities/product";
 import classes from "./NotificationModal.module.scss";
 import {
-  buildTariffLocalNotification,
   deleteNotificationAsync,
   fetchNotificationsAsync,
   markAllNotificationsReadAsync,
@@ -60,8 +57,6 @@ const NotificationModal = ({ onClose }: any) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const listRef = useRef(null);
-  const { company } = useUser();
-  const { list: productList } = useProducts();
   const [tab, setTab] = useState<NotificationTab>("all");
   const [deleteUnsupported, setDeleteUnsupported] = useState(false);
 
@@ -73,16 +68,6 @@ const NotificationModal = ({ onClose }: any) => {
     loadingMore = false,
     markingAllRead = false,
   } = useAppSelector((state) => state.notification);
-
-  const localTariff = useMemo(
-    () => buildTariffLocalNotification(company?.end_date),
-    [company?.end_date],
-  );
-
-  const localExpiry = useMemo(
-    () => buildProductExpiryLocalNotification(productList),
-    [productList],
-  );
 
   useEffect(() => {
     dispatch(
@@ -98,16 +83,13 @@ const NotificationModal = ({ onClose }: any) => {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const visibleList = useMemo(() => {
-    const merged = [...list];
-    if (localTariff && !merged.some((n) => idOf(n) === localTariff.id)) {
-      merged.unshift(localTariff);
-    }
-    if (localExpiry && !merged.some((n) => idOf(n) === localExpiry.id)) {
-      merged.unshift(localExpiry);
-    }
-    return merged.filter((n) => matchesNotificationTab(n, tab));
-  }, [list, localTariff, localExpiry, tab]);
+  // Локальные fallback-уведомления (срок годности, тариф) отключены — бэк
+  // теперь реально присылает оба по cron, см.
+  // docs/backend/kassa/notifications-why-not-working.md.
+  const visibleList = useMemo(
+    () => list.filter((n) => matchesNotificationTab(n, tab)),
+    [list, tab],
+  );
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return;

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { pdf } from "@react-pdf/renderer";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import type { ProcurementReceiptDraft } from "@features/procurement-recommendations";
 import api from "@shared/api";
 import InvoicePdfDocument from "@pages/documents/ui/components/InvoicePdfDocument";
@@ -11,6 +11,10 @@ import {
   postCashflowIfNeeded,
 } from "@entities/cash";
 import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import { useUser } from "@entities/user";
 import { createDeal } from "@entities/sale";
 import {
@@ -52,6 +56,8 @@ export function useSupplierReceipt() {
   const alert = useAlert();
   const confirm = useConfirm();
   const { company } = useUser();
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
   const pendingDraftRef = useRef(readProcurementDraft(location.state));
   const appliedDraftRef = useRef(false);
 
@@ -85,6 +91,7 @@ export function useSupplierReceipt() {
   const [debtMonths, setDebtMonths] = useState("1");
   const [firstPaymentDate, setFirstPaymentDate] = useState(getTodayIsoDate);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [completedReceiptSnapshot, setCompletedReceiptSnapshot] = useState<any>(null);
 
@@ -242,6 +249,7 @@ export function useSupplierReceipt() {
     setPriceByProductId({});
     setPaymentType("full");
     setPrepayment("");
+    setPaidFromShiftDrawer(false);
     setDebtMonths("1");
     setFirstPaymentDate(getTodayIsoDate());
     if (!selectedSupplierId) {
@@ -725,6 +733,24 @@ export function useSupplierReceipt() {
         );
       }
 
+      if (
+        cashExpenseAmount > 0 &&
+        paidFromShiftDrawer &&
+        shiftDrawerFundingTarget.available &&
+        shiftDrawerFundingTarget.cashboxId
+      ) {
+        const drawerResult = await recordShiftDrawerOutflow({
+          cashboxId: shiftDrawerFundingTarget.cashboxId,
+          amount: cashExpenseAmount,
+          name: `Приход поставщика — оплата из кассы смены: ${supplierLabel}`,
+        });
+        if (!drawerResult.ok) {
+          sideEffectWarnings.push(
+            "Товары оприходованы, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+          );
+        }
+      }
+
       setCompletedReceiptSnapshot({
         supplier: selectedSupplier,
         items: [...receiptItemsForPdf],
@@ -759,12 +785,16 @@ export function useSupplierReceipt() {
     dispatch,
     firstPaymentDate,
     loadSupplierProducts,
+    paidFromShiftDrawer,
     paymentType,
     prepayment,
     receiptItems,
     receiptItemsForPdf,
+    recordShiftDrawerOutflow,
     selectedSupplier,
     selectedSupplierId,
+    shiftDrawerFundingTarget.available,
+    shiftDrawerFundingTarget.cashboxId,
     totalReceiptAmount,
   ]);
 
@@ -816,6 +846,9 @@ export function useSupplierReceipt() {
     setFirstPaymentDate,
     paymentModalOpen,
     setPaymentModalOpen,
+    paidFromShiftDrawer,
+    setPaidFromShiftDrawer,
+    shiftDrawerFundingTarget,
     successModalOpen,
     completedReceiptSnapshot,
     supplierOptions,

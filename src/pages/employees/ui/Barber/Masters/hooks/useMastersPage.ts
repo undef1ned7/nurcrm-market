@@ -37,6 +37,7 @@ import {
   focusFirstInvalid,
   validateEmployee,
   getMembershipCommonWarehouseIds,
+  employeeBranchIds,
 } from "../masters.utils";
 
 export function useMastersPage() {
@@ -426,8 +427,8 @@ export function useMastersPage() {
       payload.role = empForm.roleChoice.slice(4);
     else if (empForm.roleChoice.startsWith("cus:"))
       payload.custom_role = empForm.roleChoice.slice(4);
-    if (showBranchSelect && empForm.branch) {
-      payload.branches = [empForm.branch];
+    if (showBranchSelect && empForm.branches.length > 0) {
+      payload.branches = empForm.branches;
     }
 
     setEmpSaving(true);
@@ -467,10 +468,7 @@ export function useMastersPage() {
       : u.custom_role
         ? `cus:${u.custom_role}`
         : "";
-    const branchValue =
-      Array.isArray(u.branches) && u.branches.length > 0
-        ? u.branches[0]
-        : u.branch || "";
+    const branchIds = employeeBranchIds(u);
     setEditingEmpId(u.id);
     setEmpForm({
       email: u.email || "",
@@ -479,7 +477,8 @@ export function useMastersPage() {
       roleChoice,
       track_number: u.track_number || "",
       phone_number: u.phone_number || "",
-      branch: branchValue,
+      branch: branchIds[0] || "",
+      branches: branchIds,
     });
     setEmpAlerts([]);
     setEmpFieldErrors({});
@@ -515,8 +514,8 @@ export function useMastersPage() {
       payload.role = empForm.roleChoice.slice(4);
     else if (empForm.roleChoice.startsWith("cus:"))
       payload.custom_role = empForm.roleChoice.slice(4);
-    if (showBranchSelect && empForm.branch) {
-      payload.branches = [empForm.branch];
+    if (showBranchSelect && empForm.branches.length > 0) {
+      payload.branches = empForm.branches;
     }
 
     setEmpSaving(true);

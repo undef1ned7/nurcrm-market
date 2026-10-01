@@ -1,11 +1,13 @@
 import {
   FaCalendarAlt,
   FaCashRegister,
+  FaTimes,
   FaShoppingCart,
   FaWarehouse,
 } from "react-icons/fa";
 import { formatCurrency } from "../branchDetails.utils";
 import type { AnalyticsData } from "../branchDetails.types";
+import { BranchSection } from "./BranchSection";
 
 type AnalyticsSectionProps = {
   analyticsData: AnalyticsData;
@@ -25,40 +27,41 @@ export default function AnalyticsSection({
   onClearFilters,
 }: AnalyticsSectionProps) {
   return (
-    <div className="branch-details__section">
-      <div className="branch-details__section-header">
-        <h2 className="branch-details__section-title">Аналитика</h2>
-        <div className="branch-details__date-filters">
-          <div className="branch-details__date-filter">
-            <FaCalendarAlt />
-            <label>От:</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => onDateFromChange(e.target.value)}
-              className="branch-details__date-input"
-            />
-          </div>
-          <div className="branch-details__date-filter">
-            <FaCalendarAlt />
-            <label>До:</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => onDateToChange(e.target.value)}
-              className="branch-details__date-input"
-            />
-          </div>
+    <BranchSection
+      title="Аналитика"
+      actions={
+        <div className="bd-range">
+          <FaCalendarAlt aria-hidden="true" />
+          <span>с</span>
+          <input
+            type="date"
+            value={dateFrom}
+            max={dateTo || undefined}
+            onChange={(e) => onDateFromChange(e.target.value)}
+            aria-label="С даты"
+          />
+          <span>по</span>
+          <input
+            type="date"
+            value={dateTo}
+            min={dateFrom || undefined}
+            onChange={(e) => onDateToChange(e.target.value)}
+            aria-label="По дату"
+          />
           {(dateFrom || dateTo) && (
             <button
-              className="branch-details__clear-filter"
+              type="button"
+              className="bd-range__reset"
               onClick={onClearFilters}
+              aria-label="Сбросить период"
+              title="Сбросить период"
             >
-              Сбросить
+              <FaTimes />
             </button>
           )}
         </div>
-      </div>
+      }
+    >
       {!analyticsData ? (
         <p className="branch-details__empty">Нет данных аналитики</p>
       ) : (
@@ -133,7 +136,7 @@ export default function AnalyticsSection({
             </div>
             {Object.keys(analyticsData.sales.byStatus).length > 0 && (
               <div className="branch-details__analytics-status">
-                <h4>По статусам:</h4>
+                <h4>По статусам</h4>
                 <div className="branch-details__analytics-status-grid">
                   {Object.entries(analyticsData.sales.byStatus).map(
                     ([status, count]) => (
@@ -196,6 +199,6 @@ export default function AnalyticsSection({
           </div>
         </div>
       )}
-    </div>
+    </BranchSection>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import SocialModal from "./SocialModal";
 import "./AdditionalServices.scss";
 import { useMenuPermissions } from "@widgets/sidebar/ui/hooks/useMenuPermissions";

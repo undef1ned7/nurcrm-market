@@ -1,6 +1,6 @@
 // Детальная карточка сотрудника (сектор «Кафе»): /crm/employ/:employeeId
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router";
 import { FaArrowLeft, FaLock } from "react-icons/fa";
 import api from "@shared/api";
 import { useUser } from "@entities/user";

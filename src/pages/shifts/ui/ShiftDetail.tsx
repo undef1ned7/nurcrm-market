@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import {
   X,
@@ -29,6 +29,7 @@ import {
   fetchShiftSalesAsync,
   resolveShiftPaymentBreakdown,
   ShiftPaymentBreakdown,
+  CashboxWarningBanner,
 } from "@entities/shift";
 import {
   PageShell,
@@ -44,6 +45,10 @@ import {
 import "./ShiftDetail.scss";
 import DataContainer from "@shared/ui/DataContainer/DataContainer";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+
+// Бэк теперь поддерживает page_size до 500 (раньше был жёстко зафиксирован
+// на 100) — берём смену почти всегда одним запросом, без ручной пагинации.
+const SHIFT_SALES_PAGE_SIZE = 500;
 
 const ShiftDetail = () => {
   const { t } = useTranslation();
@@ -74,17 +79,21 @@ const ShiftDetail = () => {
     status: "",
     payment_method: "",
     q: "",
+    cashier: "",
   });
   const [moneyFilters, setMoneyFilters] = useState({
     status: "",
     payment_method: "",
     q: "",
+    cashier: "",
   });
 
   const shift = currentShift;
   const paymentBreakdown = resolveShiftPaymentBreakdown(
     shift,
-    filters.status || filters.payment_method || filters.q ? [] : salesHistory,
+    filters.status || filters.payment_method || filters.q || filters.cashier
+      ? []
+      : salesHistory,
   );
 
   useEffect(() => {
@@ -118,6 +127,12 @@ const ShiftDetail = () => {
           searchParams.q = filters.q;
         }
 
+        if (filters.cashier) {
+          searchParams.cashier = filters.cashier;
+        }
+
+        searchParams.page_size = SHIFT_SALES_PAGE_SIZE;
+
         const result = await dispatch(
           fetchShiftSalesAsync({
             shiftId: id,
@@ -143,7 +158,14 @@ const ShiftDetail = () => {
     );
 
     return () => clearTimeout(timeoutId);
-  }, [id, dispatch, filters.status, filters.payment_method, filters.q]);
+  }, [
+    id,
+    dispatch,
+    filters.status,
+    filters.payment_method,
+    filters.q,
+    filters.cashier,
+  ]);
 
   // Загрузка движения денег
   useEffect(() => {
@@ -167,6 +189,12 @@ const ShiftDetail = () => {
         if (moneyFilters.q) {
           searchParams.q = moneyFilters.q;
         }
+
+        if (moneyFilters.cashier) {
+          searchParams.cashier = moneyFilters.cashier;
+        }
+
+        searchParams.page_size = SHIFT_SALES_PAGE_SIZE;
 
         const result = await dispatch(
           fetchShiftSalesAsync({
@@ -217,6 +245,7 @@ const ShiftDetail = () => {
     moneyFilters.status,
     moneyFilters.payment_method,
     moneyFilters.q,
+    moneyFilters.cashier,
     shift?.cashbox_name,
   ]);
 
@@ -299,7 +328,23 @@ const ShiftDetail = () => {
     }
   };
 
-  // Преобразование данных продаж для отображения
+  // Опции фильтра «Кассир» — из готовой разбивки бэка (id + display + итоги
+  // по смене), а не из уже загруженной страницы продаж: так в списке виден
+  // весь фактический состав кассиров смены независимо от текущих status/q.
+  const cashierOptions: { id: string; display: string }[] = Array.isArray(
+    shift?.cashier_breakdown,
+  )
+    ? shift.cashier_breakdown
+        .filter((row: any) => row?.cashier_id)
+        .map((row: any) => ({
+          id: String(row.cashier_id),
+          display: row.cashier_display || "—",
+        }))
+    : [];
+
+  // Преобразование данных продаж для отображения. Фильтр по кассиру
+  // применяется на бэке (`cashier=<id>` в searchParams выше), клиент больше
+  // ничего не отсеивает.
   const productMovements = salesHistory.map((sale) => ({
     // У summary-ответа позиции обычно отсутствуют, но количество приходит
     // отдельным полем. Не показываем «0 позиций» до открытия чека.
@@ -462,6 +507,8 @@ const ShiftDetail = () => {
         )}
       </div>
 
+      <CashboxWarningBanner warning={shift.cashbox_warning} />
+
       <StatGrid className="shift-detail-page__metrics">
         <StatCard
           label={t("crm.shifts.revenue")}
@@ -551,18 +598,30 @@ const ShiftDetail = () => {
             </h3>
           </div>
           <div className="shift-detail-page__detail-content">
+            {/*
+              Раньше все 4 значения были захардкожены нулями — карточка ни к
+              чему не была привязана. Бэк пока не отдаёт returns_*-поля на
+              объекте смены (см. docs/sale-flow-bugs.md, пункт 11 и
+              docs/sale-flow-fixes/11-shift-returns-reporting.md) — поэтому
+              `?? 0` сейчас фактически всегда даёт тот же ноль, но как только
+              бэк добавит поля, карточка заработает без правок на фронте.
+            */}
             <div className="shift-detail-page__detail-row">
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
                   {t("crm.shifts.detail.returnsCount")}
                 </div>
-                <div className="shift-detail-page__detail-value">0</div>
+                <div className="shift-detail-page__detail-value">
+                  {shift.returns_count ?? 0}
+                </div>
               </div>
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
                   {t("crm.shifts.detail.cashPlain")}
                 </div>
-                <div className="shift-detail-page__detail-value">0.00 сом</div>
+                <div className="shift-detail-page__detail-value">
+                  {parseFloat(shift.returns_cash || 0).toFixed(2)} сом
+                </div>
               </div>
             </div>
             <div className="shift-detail-page__detail-row">
@@ -570,13 +629,17 @@ const ShiftDetail = () => {
                 <div className="shift-detail-page__detail-label">
                   {t("crm.shifts.detail.returnsAmount")}
                 </div>
-                <div className="shift-detail-page__detail-value">0.00 сом</div>
+                <div className="shift-detail-page__detail-value">
+                  {parseFloat(shift.returns_total || 0).toFixed(2)} сом
+                </div>
               </div>
               <div className="shift-detail-page__detail-item">
                 <div className="shift-detail-page__detail-label">
                   {t("crm.shifts.detail.noncash")}
                 </div>
-                <div className="shift-detail-page__detail-value">0.00 сом</div>
+                <div className="shift-detail-page__detail-value">
+                  {parseFloat(shift.returns_noncash || 0).toFixed(2)} сом
+                </div>
               </div>
             </div>
           </div>
@@ -771,6 +834,23 @@ const ShiftDetail = () => {
                   <option value="transfer">
                     {t("crm.shifts.detail.noncashShort")}
                   </option>
+                </select>
+              </div>
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">{t("crm.shifts.cashier")}</label>
+                <select
+                  className="nur-select"
+                  value={filters.cashier}
+                  onChange={(e) =>
+                    setFilters({ ...filters, cashier: e.target.value })
+                  }
+                >
+                  <option value="">{t("common.all")}</option>
+                  {cashierOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.display}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">
@@ -1053,6 +1133,26 @@ const ShiftDetail = () => {
                   <option value="transfer">
                     {t("crm.shifts.detail.noncashShort")}
                   </option>
+                </select>
+              </div>
+              <div className="nur-field shift-detail-page__filter-group">
+                <label className="nur-label">{t("crm.shifts.cashier")}</label>
+                <select
+                  className="nur-select"
+                  value={moneyFilters.cashier}
+                  onChange={(e) =>
+                    setMoneyFilters({
+                      ...moneyFilters,
+                      cashier: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">{t("common.all")}</option>
+                  {cashierOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.display}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="nur-field shift-detail-page__filter-group">

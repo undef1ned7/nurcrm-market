@@ -21,6 +21,9 @@ import {
   FaTruckLoading,
   FaTrashAlt,
   FaComments,
+  FaClock,
+  FaTruck,
+  FaFileAlt,
 } from "react-icons/fa";
 import { BsListCheck } from "react-icons/bs";
 import api from "@shared/api";
@@ -74,6 +77,9 @@ export const sectorTabIconMap = {
   bed: FaBed,
   book: FaBook,
   checkSquare: FaCheckSquare,
+  clock: FaClock,
+  truck: FaTruck,
+  file: FaFileAlt,
 };
 
 export const getSectorTabIcon = (iconName) => {
@@ -87,12 +93,19 @@ export const baseTabIconMap = {
   chartLine: FaChartLine,
   users: FaUsers,
   userFriends: FaUserFriends,
+  exchange: FaExchangeAlt,
 };
 
 export const getIconByRoute = (route, label) => {
   const routeLower = route.toLowerCase();
   const labelLower = label.toLowerCase();
 
+  if (routeLower.includes("shifts") || labelLower.includes("смен"))
+    return "clock";
+  if (routeLower.includes("supplier") || labelLower.includes("поставщик"))
+    return "truck";
+  if (routeLower.includes("documents") || labelLower.includes("документ"))
+    return "file";
   if (routeLower.includes("work") || routeLower.includes("process"))
     return "listCheck";
   if (routeLower.includes("objects") || routeLower.includes("apartments"))
@@ -209,11 +222,42 @@ export const getIconByRoute = (route, label) => {
   return "building";
 };
 
-export const filterByBranch = (data, id, branchField = "branch") => {
+const BRANCH_FIELDS = [
+  "branch",
+  "branch_id",
+  "branch_uuid",
+  "primary_branch_id",
+  "branches",
+  "branch_ids",
+  "allowed_branch_ids",
+];
+
+const branchIdsOf = (item: any): string[] => {
+  const out: string[] = [];
+  const push = (v: any) => {
+    if (v == null || v === "") return;
+    if (Array.isArray(v)) return v.forEach(push);
+    if (typeof v === "object") return push(v.id);
+    out.push(String(v));
+  };
+  BRANCH_FIELDS.forEach((f) => push(item?.[f]));
+  return out;
+};
+
+/**
+ * Запросы карточки филиала уходят с `branch=id`, сервер уже отфильтровал
+ * данные, а у записей поля филиала может не быть (товары, движения кассы,
+ * сотрудники). Строгий `item.branch === id` скрывал такие записи, поэтому
+ * клиентски фильтруем только те, у которых информация о филиале есть;
+ * записи без неё считаем отфильтрованными сервером.
+ */
+export const filterByBranch = (data, id, _branchField = "branch") => {
   if (!id || !Array.isArray(data)) return data;
+  const anyHasField = data.some((item) => branchIdsOf(item).length > 0);
+  if (!anyHasField) return data;
   return data.filter((item) => {
-    const itemBranch = item[branchField] || item.branch_id || item.branch;
-    return String(itemBranch) === String(id);
+    const ids = branchIdsOf(item);
+    return ids.length === 0 || ids.includes(String(id));
   });
 };
 

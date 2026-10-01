@@ -75,6 +75,14 @@
     }
   }
 
+  &__warning {
+    padding: 16px 24px 0;
+
+    .cashbox-warning-banner {
+      margin-bottom: 0;
+    }
+  }
+
   &__summary {
     display: grid;
     grid-template-columns: repeat(4, 1fr);

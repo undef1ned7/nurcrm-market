@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { useUser } from "@entities/user";
 import { useAlert } from "@shared/hooks/useDialog";
 import { validateResErrors } from "@shared/lib/tools/validateResErrors";

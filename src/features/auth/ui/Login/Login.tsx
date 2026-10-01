@@ -6,7 +6,7 @@ import {
   getCompany,
 } from "@entities/user";
 import { logoutUser } from "@entities/user";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { tryRedirectToBuildingApp } from "@shared/lib/crossAppAuth";
 import { getCompanySubscriptionStatus } from "@shared/lib/companySubscription";
 import { captureBuildingAppUrlFromSearch } from "@shared/lib/appUrls";

@@ -42,6 +42,15 @@ type UnwrapDispatch = (action: unknown) => { unwrap: () => Promise<unknown> };
 /**
  * Posts a cashflow only when backend auto-cashflows are disabled
  * (`VITE_BE_CASHFLOWS` not `"true"`). No-op when the backend owns creation.
+ *
+ * @deprecated Фактически no-op в текущей конфигурации продукта: с 2026-09-29
+ * все денежные движения (cashflows) создаёт бэкенд, и вызывающий код (страница
+ * оплаты кассы) никогда не передаёт явный `cashbox` — маршрутизацию выбирает
+ * бэк. Значит `hasExplicitCashbox(payload.cashbox)` всегда `false`, и эта
+ * функция всегда возвращает `undefined` без единого реального запроса.
+ * Оставлена как legacy-путь на случай отката `VITE_BE_CASHFLOWS`/явной кассы
+ * в будущем — иначе кандидат на удаление вместе со всеми вызовами.
+ * См. docs/sale-flow-bugs.md, пункт 6, и docs/sale-flow-fixes/06-post-cashflow-dead-code.md.
  */
 export async function postCashflowIfNeeded(
   dispatch: UnwrapDispatch | ((action: unknown) => unknown),

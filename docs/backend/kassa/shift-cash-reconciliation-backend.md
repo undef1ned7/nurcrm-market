@@ -136,14 +136,16 @@ expected_cash = opening_cash + cash_sales_total − shift_drawer_outflows
 
 ## Если деньги физически взяли из ящика
 
-Бизнес-процесс (будущее, опционально):
+**✅ Реализовано на фронте** — см. [shift-drawer-funding-purchases-backend.md](./shift-drawer-funding-purchases-backend.md).
+Кассир отмечает чекбокс «Я заплатил из кассы (ящика) смены» в приходе/закупке/оплате
+долга поставщику; фронт **дополнительно** к обычной записи на `expense_variable`
+создаёт ручной `expense` на POS-кассе смены через уже существующий эндпоинт
+`/crm/kassa` (`POST /construction/cashflows/`) — без изменений на backend,
+т.к. `affects_shift_drawer` для таких ручных записей уже реализован (см.
+[BACKEND-QUESTIONS.md п.51](./BACKEND-QUESTIONS.md)).
 
-1. Кассир: «Выдача в закупки» — `expense` на POS-кассе с `affects_shift_drawer=true`, `shift_id=текущая`.
-2. Склад: закупка — `expense` на `expense_variable` (без shift).
-
-Или одна операция «закупка из ящика» на бэке: два linked cashflow или один expense на variable + уменьшение drawer expected.
-
-**Пока этого нет:** закупка только на `expense_variable` — сверка смены = размен + наличные продажи.
+Единственный открытый вопрос к backend — отдать `cashbox` (id) на Shift API,
+чтобы фронту не приходилось резолвить кассу смены по роли (см. документ выше, §3).
 
 ---
 

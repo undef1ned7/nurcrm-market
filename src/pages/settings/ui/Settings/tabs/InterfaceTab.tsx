@@ -1,6 +1,13 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { GlossaryText } from "@shared/ui/GlossaryText/GlossaryText";
 import { LanguageSelect } from "@shared/ui/LanguageSelect/LanguageSelect";
+import { CASHIER_DESKTOP_BUTTON_STORAGE_KEY } from "@shared/lib/desktopCashierApp";
+import {
+  pushUiPreferenceUpdate,
+  SIDEBAR_AUTO_CLOSE_STORAGE_KEY,
+  UI_PREFERENCES_SYNCED_EVENT,
+} from "@shared/lib/uiPreferences";
 
 /** Settings tab: Интерфейс */
 export function InterfaceTab(props) {
@@ -16,7 +23,24 @@ export function InterfaceTab(props) {
     setMode,
     setSidebarAutoClose,
     sidebarAutoClose,
+    cashierDesktopButtonEnabled,
+    setCashierDesktopButtonEnabled,
   } = props;
+
+  // Настройки могли прийти с бэка (другое устройство) уже после открытия страницы.
+  useEffect(() => {
+    const handleSynced = () => {
+      setSidebarAutoClose(
+        localStorage.getItem(SIDEBAR_AUTO_CLOSE_STORAGE_KEY) === "true",
+      );
+      setCashierDesktopButtonEnabled(
+        localStorage.getItem(CASHIER_DESKTOP_BUTTON_STORAGE_KEY) !== "false",
+      );
+    };
+    window.addEventListener(UI_PREFERENCES_SYNCED_EVENT, handleSynced);
+    return () =>
+      window.removeEventListener(UI_PREFERENCES_SYNCED_EVENT, handleSynced);
+  }, [setSidebarAutoClose, setCashierDesktopButtonEnabled]);
 
   return (
     <form onSubmit={handleSaveInterfaceSettings} className="settings__tab-form">
@@ -64,6 +88,7 @@ export function InterfaceTab(props) {
                 const newValue = e.target.checked;
                 setSidebarAutoClose(newValue);
                 localStorage.setItem("sidebarAutoClose", String(newValue));
+                pushUiPreferenceUpdate({ sidebar_auto_close: newValue });
               }}
               className="settings__switch-input"
             />
@@ -72,6 +97,43 @@ export function InterfaceTab(props) {
             </span>
             <span className="settings__switch-sr">
               {t("settings.interface.sidebarAutoClose")}
+            </span>
+          </label>
+        </div>
+
+        <div className="settings__prefRow">
+          <div className="settings__prefText">
+            <span className="settings__prefLabel">
+              {t("settings.interface.cashierDesktopButton")}
+            </span>
+            <p className="settings__prefHint">
+              <GlossaryText>
+                {cashierDesktopButtonEnabled
+                  ? t("settings.interface.cashierDesktopButtonOn")
+                  : t("settings.interface.cashierDesktopButtonOff")}
+              </GlossaryText>
+            </p>
+          </div>
+          <label className="settings__switch">
+            <input
+              type="checkbox"
+              checked={cashierDesktopButtonEnabled}
+              onChange={(e) => {
+                const newValue = e.target.checked;
+                setCashierDesktopButtonEnabled(newValue);
+                localStorage.setItem(
+                  CASHIER_DESKTOP_BUTTON_STORAGE_KEY,
+                  String(newValue),
+                );
+                pushUiPreferenceUpdate({ cashier_desktop_download: newValue });
+              }}
+              className="settings__switch-input"
+            />
+            <span className="settings__switch-track" aria-hidden="true">
+              <span className="settings__switch-thumb" />
+            </span>
+            <span className="settings__switch-sr">
+              {t("settings.interface.cashierDesktopButton")}
             </span>
           </label>
         </div>

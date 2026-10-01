@@ -56,8 +56,6 @@ type Props = {
   scheduleUnit: DebtScheduleUnit;
   onScheduleUnitChange: (unit: DebtScheduleUnit) => void;
   scheduleCount: number | "";
-  onScheduleCountChange: (value: string) => void;
-  onScheduleCountBlur: (value: string) => void;
   onSchedulePreset: (count: number) => void;
   dayInterval: number | "";
   onDayIntervalChange: (value: string) => void;
@@ -118,8 +116,6 @@ export function PaymentPageForm({
   scheduleUnit,
   onScheduleUnitChange,
   scheduleCount,
-  onScheduleCountChange,
-  onScheduleCountBlur,
   onSchedulePreset,
   dayInterval,
   onDayIntervalChange,
@@ -316,8 +312,6 @@ export function PaymentPageForm({
             scheduleUnit={scheduleUnit}
             onScheduleUnitChange={onScheduleUnitChange}
             scheduleCount={scheduleCount}
-            onScheduleCountChange={onScheduleCountChange}
-            onScheduleCountBlur={onScheduleCountBlur}
             onSchedulePreset={onSchedulePreset}
             dayInterval={dayInterval}
             onDayIntervalChange={onDayIntervalChange}

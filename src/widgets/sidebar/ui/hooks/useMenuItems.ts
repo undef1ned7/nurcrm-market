@@ -5,11 +5,19 @@ import { HIDE_RULES } from "../config/hideRules";
 import { useMenuPermissions } from "./useMenuPermissions";
 import { getAdditionalServicesForMenu } from "../config/additionalServicesConfig";
 import { isStartPlan } from "@shared/lib/subscriptionPlan";
+import { isBranchBoundProfile } from "@shared/lib/tools/branchContext";
 
 /**
  * Хук для сборки финального списка пунктов меню
  */
-export const useMenuItems = (company: any, sector: any, tariff: any, profile: any = null) => {
+export const useMenuItems = (
+  company: any,
+  sector: any,
+  tariff: any,
+  profile: any = null,
+  cashflowRequestsEnabled: boolean = false,
+  pendingRequestsCount: number | null = null,
+) => {
   const { hasPermission, isAllowed, companyAllows } = useMenuPermissions();
   const hasMenuAccess = useCallback(
     (item: any) => {
@@ -67,6 +75,19 @@ export const useMenuItems = (company: any, sector: any, tariff: any, profile: an
     return result;
   }, [sector, tariff]);
 
+  /** Прикрепляет бейдж-счётчик к пункту «Запросы» (badge — уже отформатированная строка). */
+  const attachPendingBadge = useCallback(
+    (items: any[]) => {
+      const count = Number(pendingRequestsCount) || 0;
+      if (count <= 0) return items;
+      const badge = count > 99 ? "99+" : String(count);
+      return items.map((item: any) =>
+        item.to === "/crm/pending" ? { ...item, badge } : item,
+      );
+    },
+    [pendingRequestsCount],
+  );
+
   /**
    * Получает секторные пункты меню
    */
@@ -113,6 +134,9 @@ export const useMenuItems = (company: any, sector: any, tariff: any, profile: an
     }
 
     const filteredItems = sectorConfig.filter((item: any) => {
+      if (item.requiresCashflowRequests && !cashflowRequestsEnabled) {
+        return false;
+      }
       if (item.ownerAdminOnly) {
         const isOwnerOrAdmin =
           profile?.role === "owner" || profile?.role === "admin";
@@ -146,8 +170,8 @@ export const useMenuItems = (company: any, sector: any, tariff: any, profile: an
       return hasPermission(item.permission);
     });
 
-    return filteredItems;
-  }, [company, hasPermission, profile, tariff]);
+    return attachPendingBadge(filteredItems);
+  }, [company, hasPermission, profile, tariff, cashflowRequestsEnabled, attachPendingBadge]);
 
   /**
    * Получает дополнительные услуги
@@ -268,11 +292,7 @@ export const useMenuItems = (company: any, sector: any, tariff: any, profile: an
       // Скрываем "Филиалы" для пользователей-филиалов
       // Если у пользователя есть branch_ids, это означает, что он является филиалом
       if (item.label === "Филиалы") {
-        const isBranchUser =
-          profile?.branch_ids &&
-          Array.isArray(profile.branch_ids) &&
-          profile.branch_ids.length > 0;
-        if (isBranchUser) {
+        if (isBranchBoundProfile(profile)) {
           return false;
         }
       }

@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router";
 
 export default function SellLayout() {
   const { t } = useTranslation();

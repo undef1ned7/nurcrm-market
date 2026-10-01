@@ -18,6 +18,17 @@ export const marketMenu = [
     group: "Финансы",
   },
   {
+    label: "Запросы",
+    to: "/crm/pending",
+    icon: menuIcons.clipboardCheck,
+    permission: "can_view_cashbox",
+    implemented: true,
+    group: "Финансы",
+    // Показывается только когда включён тогл «Запросы на подтверждение».
+    // @see docs/backend/kassa/cashflow-requests-toggle-backend.md
+    requiresCashflowRequests: true,
+  },
+  {
     label: "Смены",
     to: "/crm/shifts",
     icon: menuIcons.calendar,

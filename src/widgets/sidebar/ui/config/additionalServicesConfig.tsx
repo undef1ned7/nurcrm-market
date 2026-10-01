@@ -2,11 +2,15 @@ import { Warehouse } from "lucide-react";
 import {
   FaBarcode,
   FaCashRegister,
+  FaChartBar,
+  FaClipboardList,
   FaConciergeBell,
   FaInstagram,
   FaReceipt,
   FaStore,
   FaTelegram,
+  FaTruck,
+  FaUserFriends,
   FaUtensils,
   FaUsers,
   FaWarehouse,
@@ -29,6 +33,14 @@ const matchConditionValue = (currentValue, expectedValue) => {
     );
   }
   return normalizeString(expectedValue) === normalizeString(currentValue);
+};
+
+const isMarketStart = (tariff, sector) => {
+  const normalizedSector = normalizeString(sector);
+  return (
+    normalizeString(tariff) === "старт" &&
+    (normalizedSector === "магазин" || normalizedSector === "цветочный магазин")
+  );
 };
 
 const checkPermissionAccess = ({
@@ -144,7 +156,10 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     permission: "can_view_documents",
     permissionModel: "company",
     implemented: true,
-    conditions: {},
+    conditions: {
+      // На тарифе "Старт" в "Маркете" вместо него — платная услуга "Документы (Инвентаризация)".
+      customCheck: ({ tariff, sector }) => !isMarketStart(tariff, sector),
+    },
     displayMeta: {
       title: "Документы",
       description:
@@ -183,7 +198,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Интеграция с весами",
       description:
-        "Абонентская плата 500. Отправка товарной номенклатуры на торговые весы.",
+        "Установка 3000 + абонентская плата 500. Отправка товарной номенклатуры на торговые весы.",
       price: 500,
       icon: FaBarcode,
     },
@@ -197,17 +212,7 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     permission: "can_view_cashier",
     permissionModel: "user",
     implemented: true,
-    conditions: {
-      customCheck: ({ tariff, sector }) => {
-        const isStart = normalizeString(tariff) === "старт";
-        const normalizedSector = normalizeString(sector);
-        const isMarket =
-          normalizedSector === "магазин" ||
-          normalizedSector === "цветочный магазин";
-        // На тарифе "Старт" в "Маркете" эта услуга не должна отображаться.
-        return !(isStart && isMarket);
-      },
-    },
+    conditions: {},
     displayMeta: {
       title: "Интерфейс кассира",
       description:
@@ -271,9 +276,89 @@ export const ADDITIONAL_SERVICES_CONFIG = [
     displayMeta: {
       title: "Онлайн витрина",
       description:
-        "Подключение по заявке: абонентская плата 300. Публикация товаров в онлайн-витрине.",
-      price: 300,
+        "Подключение по заявке: абонентская плата 900. Публикация товаров в онлайн-витрине.",
+      price: 900,
       icon: FaStore,
+    },
+  },
+  {
+    id: SERVICE_IDS.PROCUREMENT,
+    type: "extension",
+    label: "Закупки",
+    to: null,
+    icon: menuIcons.receiptText,
+    permission: null,
+    implemented: true,
+    conditions: {
+      tariff: "Старт",
+      sector: ["Магазин", "Цветочный магазин"],
+    },
+    displayMeta: {
+      title: "Закупки",
+      description:
+        "Абонентская плата 300. Оформление закупок товаров у поставщиков.",
+      price: 300,
+      icon: FaTruck,
+    },
+  },
+  {
+    id: SERVICE_IDS.ANALYTICS,
+    type: "extension",
+    label: "Аналитика",
+    to: null,
+    icon: menuIcons.chartBar,
+    permission: null,
+    implemented: true,
+    conditions: {
+      tariff: "Старт",
+      sector: ["Магазин", "Цветочный магазин"],
+    },
+    displayMeta: {
+      title: "Аналитика",
+      description:
+        "Абонентская плата 300. Отчёты по продажам, товарам и финансам.",
+      price: 300,
+      icon: FaChartBar,
+    },
+  },
+  {
+    id: SERVICE_IDS.INVENTORY_DOCUMENTS,
+    type: "extension",
+    label: "Документы (Инвентаризация)",
+    to: null,
+    icon: menuIcons.documentScanner,
+    permission: null,
+    implemented: true,
+    conditions: {
+      tariff: "Старт",
+      sector: ["Магазин", "Цветочный магазин"],
+    },
+    displayMeta: {
+      title: "Документы (Инвентаризация)",
+      description:
+        "Абонентская плата 300. Складские документы и проведение инвентаризации.",
+      price: 300,
+      icon: FaClipboardList,
+    },
+  },
+  {
+    id: SERVICE_IDS.CLIENTS,
+    type: "extension",
+    label: "Клиенты",
+    to: null,
+    icon: menuIcons.user,
+    permission: null,
+    implemented: true,
+    conditions: {
+      tariff: "Старт",
+      sector: ["Магазин", "Цветочный магазин"],
+    },
+    displayMeta: {
+      title: "Клиенты",
+      description:
+        "Абонентская плата 500. База клиентов, история покупок и долги.",
+      price: 500,
+      icon: FaUserFriends,
     },
   },
   {

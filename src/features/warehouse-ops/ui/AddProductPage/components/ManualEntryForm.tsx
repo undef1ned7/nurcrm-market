@@ -54,6 +54,9 @@ const ManualEntryForm = ({
   handleReturn,
   handleSubmit,
   creating,
+  paidFromShiftDrawer,
+  setPaidFromShiftDrawer,
+  shiftDrawerFundingTarget,
 }) => {
   const { t } = useTranslation();
   const tp = (k: string, o?: any): string => t(`crm.warehouse.addProduct.${k}`, o) as string;
@@ -551,6 +554,20 @@ const ManualEntryForm = ({
               </div>
             )}
           </div>
+        )}
+
+        {debt !== "Долги" && shiftDrawerFundingTarget?.available && (
+          <label className="add-product-page__checkbox-label">
+            <input
+              type="checkbox"
+              checked={paidFromShiftDrawer}
+              onChange={(e) => setPaidFromShiftDrawer(e.target.checked)}
+            />
+            Я заплатил из кассы (ящика) смены
+            {shiftDrawerFundingTarget.cashboxName
+              ? ` — спишется с кассы «${shiftDrawerFundingTarget.cashboxName}»`
+              : ""}
+          </label>
         )}
       </div>
     </div>

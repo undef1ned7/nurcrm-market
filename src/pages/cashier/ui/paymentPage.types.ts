@@ -26,12 +26,8 @@ export type ReceiptData = {
   checkoutResponse?: unknown;
 } | null;
 
-export type AlertModalState = {
-  open: boolean;
-  type: string;
-  title: string;
-  message: string;
-};
+// Единое определение — см. docs/sale-flow-bugs.md, пункт 10.
+export type { AlertModalState } from "@shared/ui/AlertModal/AlertModal.types";
 
 export type PaymentCustomer = {
   id?: string | number;

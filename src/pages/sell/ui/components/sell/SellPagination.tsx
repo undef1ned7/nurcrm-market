@@ -45,7 +45,7 @@ export default function SellPagination({ vm }: Props) {
         disabled={
           loading ||
           !hasNextPage ||
-          (totalPages && currentPage >= totalPages)
+          Boolean(totalPages && currentPage >= totalPages)
         }
       >
         {t("common.forward")}

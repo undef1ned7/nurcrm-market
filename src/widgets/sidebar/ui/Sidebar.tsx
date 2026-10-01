@@ -7,11 +7,18 @@ import "./Sidebar.scss";
 import { Menu, Settings, X } from "lucide-react";
 
 import Logo from "@shared/ui/Photo/logo2.png";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { getCompany } from "@entities/user";
 import { groupMenuItems } from "./config/menuGroups";
 import { translateMenuGroup } from "@shared/lib/i18n/menuLabelKeys";
 import { useAppDispatch } from "@app/store";
+import {
+  fetchCashflowRequestsSetting,
+  fetchPendingCashflowsCount,
+  useCashflowRequestsEnabled,
+  usePendingCashflowsCount,
+  useCashFlowRealtimeEvent,
+} from "@entities/cash";
 
 const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
   const { t } = useTranslation();
@@ -55,11 +62,17 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
   const currentTariff = tariff || company?.subscription_plan?.name || "Старт";
   const currentSector = sector || company?.sector?.name;
 
+  const cashflowRequestsEnabled = useCashflowRequestsEnabled();
+  const pendingRequestsCount = usePendingCashflowsCount();
+  const cashFlowRealtimeEvent = useCashFlowRealtimeEvent();
+
   const menuItems = useMenuItems(
     company,
     currentSector,
     currentTariff,
-    profile
+    profile,
+    cashflowRequestsEnabled,
+    pendingRequestsCount
   );
 
   const menuSections = groupMenuItems(menuItems);
@@ -107,7 +120,15 @@ const Sidebar = ({ isOpen, toggleSidebar, closeSidebar }: any) => {
   useEffect(() => {
     dispatch(getCompany({} as any) as any);
     dispatch(getProfile({} as any) as any);
+    dispatch(fetchCashflowRequestsSetting() as any);
   }, [dispatch]);
+
+  // Бейдж пункта «Запросы»: считаем только когда тогл включён, и подхватываем
+  // изменения по WS (одобрение/создание заявки на другом устройстве/вкладке).
+  useEffect(() => {
+    if (!cashflowRequestsEnabled) return;
+    dispatch(fetchPendingCashflowsCount() as any);
+  }, [dispatch, cashflowRequestsEnabled, cashFlowRealtimeEvent.version]);
 
   const isLoading = !company || !profile;
   useEffect(() => {

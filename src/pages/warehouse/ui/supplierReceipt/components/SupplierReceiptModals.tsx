@@ -67,6 +67,9 @@ export function SupplierReceiptModals({ vm }: Props) {
     setFirstPaymentDate,
     paymentSummaryDebt,
     cashExpenseAmount,
+    paidFromShiftDrawer,
+    setPaidFromShiftDrawer,
+    shiftDrawerFundingTarget,
     handleConfirmReceipt,
     successModalOpen,
     completedReceiptSnapshot,
@@ -345,6 +348,24 @@ export function SupplierReceiptModals({ vm }: Props) {
                     </>
                   )}
                 </div>
+                {cashExpenseAmount > 0 && shiftDrawerFundingTarget.available && (
+                  <label className="market-receipt-page__checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={paidFromShiftDrawer}
+                      onChange={(e: any) =>
+                        setPaidFromShiftDrawer(e.target.checked)
+                      }
+                      disabled={submitting}
+                    />
+                    <span>
+                      Я заплатил из кассы (ящика) смены
+                      {shiftDrawerFundingTarget.cashboxName
+                        ? ` — спишется с кассы «${shiftDrawerFundingTarget.cashboxName}»`
+                        : ""}
+                    </span>
+                  </label>
+                )}
                 <p className="market-receipt-page__payment-hint">
                   {paymentType === "debt" ? (
                     <>

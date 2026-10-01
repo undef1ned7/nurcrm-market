@@ -17,6 +17,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
     openProductAnchorSection,
     formatNumber,
     formatCurrency,
+    formatAnalyticsQty,
   } = vm;
 
   const renderProductsAccordion = (key: string, title: string, tableContent: ReactNode) => {
@@ -109,9 +110,11 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 <table className="analytics-page__table">
                   <thead>
                     <tr>
+                      <th>{t("crm.analytics.products.code")}</th>
                       <th>{t("crm.analytics.products.goods")}</th>
                       <th>{t("crm.analytics.products.category")}</th>
                       <th>{t("crm.analytics.products.brand")}</th>
+                      <th>{t("crm.analytics.products.currentStock")}</th>
                       <th>{t("crm.analytics.sales.sold")}</th>
                       <th>{t("crm.analytics.sales.revenue")}</th>
                       <th>{t("crm.analytics.sales.transactions")}</th>
@@ -119,12 +122,18 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                   </thead>
                   <tbody>
                     {productsData.topByRevenue.length > 0 ? (
-                      productsData.topByRevenue.map((row) => (
-                        <tr key={row.product_id}>
+                      productsData.topByRevenue.map((row, index) => (
+                        <tr key={`${row.product_id ?? "none"}-${index}`}>
+                          <td>{row.code || row.barcode || "—"}</td>
                           <td>{row.name}</td>
-                          <td>{row.category}</td>
-                          <td>{row.brand}</td>
-                          <td>{row.qty_sold}</td>
+                          <td>{row.category || "—"}</td>
+                          <td>{row.brand || "—"}</td>
+                          <td>
+                            {row.current_stock != null
+                              ? formatAnalyticsQty(row.current_stock)
+                              : "—"}
+                          </td>
+                          <td>{formatAnalyticsQty(row.qty_sold)}</td>
                           <td>{formatCurrency(row.revenue, 0)}</td>
                           <td>{row.transactions}</td>
                         </tr>
@@ -132,7 +141,7 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                     ) : (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={8}
                           style={{ textAlign: "center", color: "#6b7280" }}
                         >
                           {t("crm.analytics.noData")}
@@ -155,10 +164,10 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 </thead>
                 <tbody>
                   {productsData.topByQuantity.length > 0 ? (
-                    productsData.topByQuantity.map((row) => (
-                      <tr key={row.product_id}>
+                    productsData.topByQuantity.map((row, index) => (
+                      <tr key={`${row.product_id ?? "none"}-${index}`}>
                         <td>{row.name}</td>
-                        <td>{row.qty_sold}</td>
+                        <td>{formatAnalyticsQty(row.qty_sold)}</td>
                       </tr>
                     ))
                   ) : (
@@ -192,8 +201,8 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 </thead>
                 <tbody>
                   {productsData.categories.length > 0 ? (
-                    productsData.categories.map((row) => (
-                      <tr key={row.category_id}>
+                    productsData.categories.map((row, index) => (
+                      <tr key={`${row.category_id ?? "none"}-${index}`}>
                         <td>{row.category}</td>
                         <td>{formatCurrency(row.revenue, 0)}</td>
                         <td>{row.qty_sold}</td>
@@ -228,8 +237,8 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 </thead>
                 <tbody>
                   {productsData.brands.length > 0 ? (
-                    productsData.brands.map((row) => (
-                      <tr key={row.brand_id}>
+                    productsData.brands.map((row, index) => (
+                      <tr key={`${row.brand_id ?? "none"}-${index}`}>
                         <td>{row.brand}</td>
                         <td>{row.products_count}</td>
                         <td>{formatCurrency(row.revenue, 0)}</td>
@@ -267,8 +276,8 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 </thead>
                 <tbody>
                   {productsData.lowStockProducts.length > 0 ? (
-                    productsData.lowStockProducts.map((row) => (
-                      <tr key={row.id}>
+                    productsData.lowStockProducts.map((row, index) => (
+                      <tr key={`${row.id ?? "none"}-${index}`}>
                         <td>{row.code}</td>
                         <td>{row.name}</td>
                         <td>{row.quantity}</td>
@@ -313,8 +322,8 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 </thead>
                 <tbody>
                   {productsData.expiringProducts.length > 0 ? (
-                    productsData.expiringProducts.map((row) => (
-                      <tr key={row.id}>
+                    productsData.expiringProducts.map((row, index) => (
+                      <tr key={`${row.id ?? "none"}-${index}`}>
                         <td>{row.code}</td>
                         <td>{row.name}</td>
                         <td>{row.quantity}</td>
@@ -342,6 +351,55 @@ export function ProductsAnalyticsTab({ vm }: Props) {
                 </tbody>
               </table>,
             )}
+          {renderProductsAccordion(
+            "rejectedProducts",
+            t("crm.analytics.products.rejectedProducts"),
+            <table className="analytics-page__table">
+              <thead>
+                <tr>
+                  <th>{t("crm.analytics.products.code")}</th>
+                  <th>{t("crm.analytics.products.goods")}</th>
+                  <th>{t("crm.analytics.products.quantity")}</th>
+                  <th>{t("crm.analytics.sales.amount")}</th>
+                  <th>{t("crm.analytics.products.reason")}</th>
+                  <th>{t("crm.analytics.products.date")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productsData.rejectedProducts.length > 0 ? (
+                  productsData.rejectedProducts.map((row, index) => (
+                    <tr key={`${row.id ?? "none"}-${index}`}>
+                      <td>{row.code || "—"}</td>
+                      <td>{row.name}</td>
+                      <td>
+                        {row.quantity != null
+                          ? formatAnalyticsQty(row.quantity)
+                          : "—"}
+                      </td>
+                      <td>
+                        {row.amount != null ? formatCurrency(row.amount, 0) : "—"}
+                      </td>
+                      <td>{row.reason || "—"}</td>
+                      <td>
+                        {row.date
+                          ? new Date(row.date).toLocaleDateString("ru-RU")
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      style={{ textAlign: "center", color: "#6b7280" }}
+                    >
+                      {t("crm.analytics.noData")}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>,
+          )}
         </div>
     </>
   );

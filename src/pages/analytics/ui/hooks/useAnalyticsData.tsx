@@ -42,9 +42,19 @@ const DEFAULT_FILTERS: any = {
   low_only: false,
   status: "",
   limit: "",
+  supplier: "",
+  abc_by: "product",
+  abc_metric: "revenue",
 };
 
 const DEFAULT_CASHBOX_NAME = "Основная касса";
+
+const START_HIDDEN_TABS = new Set([
+  "purchases",
+  "suppliers",
+  "users",
+  "procurement",
+]);
 
 export function useAnalyticsData() {
   const { t } = useTranslation();
@@ -96,7 +106,18 @@ export function useAnalyticsData() {
   const [filters, setFilters] = useState(() => {
     try {
       const raw = localStorage.getItem("market_analytics_filters");
-      if (raw) return { ...DEFAULT_FILTERS, ...JSON.parse(raw) };
+      if (raw) {
+        const saved = { ...DEFAULT_FILTERS, ...JSON.parse(raw) };
+        // Значения из старого контракта: payment_method=transfer,
+        // kind=product|service|bundle (теперь bank_transfer, weight|piece)
+        if (saved.payment_method === "transfer") {
+          saved.payment_method = "bank_transfer";
+        }
+        if (!["", "weight", "piece"].includes(String(saved.kind || ""))) {
+          saved.kind = "";
+        }
+        return saved;
+      }
     } catch {
       /* ignore */
     }
@@ -145,11 +166,6 @@ export function useAnalyticsData() {
     }
   }, [filters]);
 
-  const currentDate = new Date();
-  const monthName = currentDate.toLocaleDateString("ru-RU", {
-    month: "long",
-    year: "numeric",
-  });
 
   const mainCashbox = useMemo(() => {
     if (!Array.isArray(cashBoxes) || cashBoxes.length === 0) return null;
@@ -169,6 +185,13 @@ export function useAnalyticsData() {
   }, [cashBoxes]);
 
   const mainCashboxId = mainCashbox?.id ? String(mainCashbox.id) : "";
+
+  // Вкладки, скрытые на «Старт», могли остаться в localStorage
+  useEffect(() => {
+    if (isStartTariff && START_HIDDEN_TABS.has(activeTab)) {
+      setActiveTab("sales");
+    }
+  }, [isStartTariff, activeTab]);
 
   const mainCashboxTitle =
     mainCashbox?.name ||
@@ -193,6 +216,30 @@ export function useAnalyticsData() {
   } = useAnalyticsFetch({ activeTab, period, filters });
 
   const modals = useAnalyticsModals({ period, filters });
+
+  // Подзаголовок: фактический период из ответа (`period.from/to`), иначе выбранный.
+  // `period.to` у бэка — исключающая граница 00:00 следующего дня.
+  const monthName = useMemo(() => {
+    const resp: any = (analyticsData as any)?.period;
+    const from = resp?.from ? new Date(resp.from) : period.from;
+    let to = resp?.to ? new Date(resp.to) : period.to;
+    if (
+      resp?.to &&
+      to.getHours() === 0 &&
+      to.getMinutes() === 0 &&
+      to.getSeconds() === 0
+    ) {
+      to = new Date(to.getTime() - 1);
+    }
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return "";
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    return `${fmt(from)} — ${fmt(to)}`;
+  }, [analyticsData, period.from, period.to]);
 
   const resetFilters = () => {
     setFilters({

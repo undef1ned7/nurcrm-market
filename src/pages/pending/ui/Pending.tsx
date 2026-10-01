@@ -22,7 +22,7 @@ import {
 import { shouldPostCashflowFallback } from "@shared/lib/tools/backendCashflows";
 import api from "@shared/api";
 import "./Pending.scss";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router";
 import { HeaderTabs } from "@shared/ui/legacy-hostel/kassa/kassa";
 import { deleteSale } from "@entities/sale";
 import { onPayDebtDeal } from "@entities/client";

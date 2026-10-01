@@ -1,5 +1,14 @@
 import { Line, Bar } from "react-chartjs-2";
-import { TrendingUp, DollarSign, X, Package, BarChart3, ShoppingCart } from "lucide-react";
+import {
+  TrendingUp,
+  DollarSign,
+  X,
+  Package,
+  BarChart3,
+  ShoppingCart,
+  RotateCcw,
+  Wallet,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactPortal from "@shared/ui/Portal/ReactPortal";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
@@ -21,6 +30,7 @@ export function SalesAnalyticsTab({ vm }: any) {
     openTransactions,
     formatNumber,
     formatCurrency,
+    formatAnalyticsQty,
     saleStatusInfo,
     barPercentOfMax,
   } = vm;
@@ -80,6 +90,11 @@ export function SalesAnalyticsTab({ vm }: any) {
                       </span>
                     )}
                   </div>
+                  {kpi.subtitle && (
+                    <div className="analytics-page__kpi-subtitle">
+                      {kpi.subtitle}
+                    </div>
+                  )}
                   {kpi.change && (
                     <div className="analytics-page__kpi-change analytics-page__kpi-change--positive">
                       <TrendingUp size={14} />
@@ -130,6 +145,51 @@ export function SalesAnalyticsTab({ vm }: any) {
                     </button>
                   </div>
 
+                  {salesData.revenueBreakdown && (
+                    <div className="analytics-revenue-modal__grid">
+                      <div className="analytics-revenue-modal__tile">
+                        <span className="analytics-revenue-modal__tile-icon">
+                          <DollarSign size={18} />
+                        </span>
+                        <span className="analytics-revenue-modal__tile-label">
+                          {t("crm.analytics.sales.grossRevenue")}
+                        </span>
+                        <span className="analytics-revenue-modal__tile-value">
+                          {formatNumber(salesData.revenueBreakdown.gross)}
+                          <em>{som}</em>
+                        </span>
+                      </div>
+                      <div className="analytics-revenue-modal__tile">
+                        <span className="analytics-revenue-modal__tile-icon">
+                          <RotateCcw size={18} />
+                        </span>
+                        <span className="analytics-revenue-modal__tile-label">
+                          {t("crm.analytics.sales.returns")} (
+                          {t("crm.analytics.sales.returnsCount", {
+                            count: salesData.revenueBreakdown.returnsCount,
+                          })}
+                          )
+                        </span>
+                        <span className="analytics-revenue-modal__tile-value">
+                          −{formatNumber(salesData.revenueBreakdown.returnsTotal)}
+                          <em>{som}</em>
+                        </span>
+                      </div>
+                      <div className="analytics-revenue-modal__tile">
+                        <span className="analytics-revenue-modal__tile-icon">
+                          <Wallet size={18} />
+                        </span>
+                        <span className="analytics-revenue-modal__tile-label">
+                          {t("crm.analytics.sales.netRevenue")}
+                        </span>
+                        <span className="analytics-revenue-modal__tile-value">
+                          {formatNumber(salesData.revenueBreakdown.net)}
+                          <em>{som}</em>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="analytics-revenue-modal__grid">
                     <div className="analytics-revenue-modal__tile analytics-revenue-modal__tile--cost">
                       <span className="analytics-revenue-modal__tile-icon">
@@ -178,7 +238,9 @@ export function SalesAnalyticsTab({ vm }: any) {
 
                   {analyticsData?.cards?.cogs_warning && (
                     <div className="analytics-revenue-modal__warn">
-                      {analyticsData.cards.cogs_warning}
+                      {typeof analyticsData.cards.cogs_warning === "string"
+                        ? analyticsData.cards.cogs_warning
+                        : t("crm.analytics.sales.cogsWarning")}
                     </div>
                   )}
                 </div>
@@ -336,6 +398,16 @@ export function SalesAnalyticsTab({ vm }: any) {
                 maintainAspectRatio: false,
                 plugins: {
                   legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      afterLabel: (ctx: any) => {
+                        const tx = salesData.salesChart.transactions?.[ctx.dataIndex];
+                        return tx
+                          ? t("crm.analytics.sales.chartTransactions", { count: tx })
+                          : "";
+                      },
+                    },
+                  },
                 },
                 scales: {
                   x: {
@@ -425,7 +497,11 @@ export function SalesAnalyticsTab({ vm }: any) {
                     salesData.topProducts.map((product, index) => (
                       <tr key={index}>
                         <td>{product.name}</td>
-                        <td>{t("crm.analytics.sales.unitsPcs", { count: product.sold })}</td>
+                        <td>
+                          {t("crm.analytics.sales.unitsPcs", {
+                            count: formatAnalyticsQty(product.sold) as any,
+                          })}
+                        </td>
                         <td>
                           <div className="analytics-page__bar-cell">
                             <div className="analytics-page__bar-track">

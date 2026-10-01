@@ -65,7 +65,13 @@ export const toNum = (value) => {
   return Number.isFinite(num) ? num : 0;
 };
 
-export const getTodayIsoDate = () => new Date().toISOString().split("T")[0];
+// Не через toISOString(): для UTC+6 (Бишкек) это всегда день назад
+// (см. docs/sale-flow-bugs.md, пункт 4) — считаем по локальным Y/M/D.
+export const getTodayIsoDate = () => {
+  const now = new Date();
+  const pad2 = (v) => String(v).padStart(2, "0");
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+};
 
 export const downloadBlob = (blob, filename) => {
   if (typeof window === "undefined" || !window.URL || !window.document) {

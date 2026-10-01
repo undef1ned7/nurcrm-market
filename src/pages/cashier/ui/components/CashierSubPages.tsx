@@ -55,11 +55,10 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
       <OpenShiftPage
         onBack={() => {
           setShowOpenShiftPage(false);
-          // Обновляем список смен после возврата
-          dispatch((fetchShiftsAsync as any)()).then(() => {
-            // После обновления списка ищем открытую смену
-            findOpenShift();
-          });
+          // Полный GET /shifts/ без фильтров на проде отвечает дольше таймаута (20с) —
+          // берём только открытые и не ждём его: смену ищем сразу (status=open).
+          dispatch((fetchShiftsAsync as any)({ status: "open" }));
+          findOpenShift();
         }}
       />
     );
@@ -73,7 +72,7 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
           // Сбрасываем состояние открытой смены
           setOpenShiftState(null);
           // Обновляем список смен после возврата
-          dispatch((fetchShiftsAsync as any)());
+          dispatch((fetchShiftsAsync as any)({ status: "open" }));
           // Очищаем корзину и текущую продажу (после закрытия смены она невалидна)
           dispatch(resetPosSale());
           setCart([]);
@@ -106,6 +105,7 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
           setSelectedCustomer(customer);
         }}
         onComplete={async () => {
+          if (saleKey) multiCart.markSaleJustCheckedOut(saleKey);
           setShowPaymentPage(false);
           setCart([]);
           cartOrderRef.current = [];
@@ -119,6 +119,21 @@ export function CashierSubPages({ vm }: Props): ReactElement | null {
           }
           setDiscountValue("");
           if (openShiftId) {
+            // Убираем sale_id только что оплаченной продажи из URL ДО того,
+            // как начнём создавать новую корзину — иначе в промежуточном
+            // рендере currentSale.id (уже новый, из Redux) не совпадёт с
+            // urlSaleId (ещё старый), и эффект синхронизации URL/Redux в
+            // useCashierShifts.ts попытается "переключиться" на только что
+            // оплаченную продажу — GET на неё вернёт 404.
+            // См. docs/sale-flow-bugs.md, пункт 12.
+            setSearchParams(
+              (prev) => {
+                const p = new URLSearchParams(prev);
+                p.delete(MARKET_CASHIER_SALE_ID_PARAM);
+                return p;
+              },
+              { replace: true },
+            );
             try {
               await multiCart.refreshCartsFromStart();
             } catch (e: any) {

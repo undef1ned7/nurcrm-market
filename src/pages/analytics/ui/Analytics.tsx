@@ -6,6 +6,7 @@ import "./analytics.charts";
 import { useAnalyticsData } from "./hooks/useAnalyticsData";
 import { AnalyticsFiltersPanel } from "./components/AnalyticsFiltersPanel";
 import { AnalyticsTabs } from "./components/AnalyticsTabs";
+import { AnalyticsSubscriptionCard } from "./components/AnalyticsSubscriptionCard";
 import { SalesAnalyticsTab } from "./components/SalesAnalyticsTab";
 import { WarehouseAnalyticsTab } from "./components/WarehouseAnalyticsTab";
 import { CashiersAnalyticsTab } from "./components/CashiersAnalyticsTab";
@@ -15,6 +16,8 @@ import { SuppliersAnalyticsTab } from "./components/SuppliersAnalyticsTab";
 import { PurchasesAnalyticsTab } from "./components/PurchasesAnalyticsTab";
 import { UsersAnalyticsTab } from "./components/UsersAnalyticsTab";
 import { FinanceAnalyticsTab } from "./components/FinanceAnalyticsTab";
+import { ProcurementAnalyticsTab } from "./components/ProcurementAnalyticsTab";
+import { AbcAnalyticsTab } from "./components/AbcAnalyticsTab";
 
 const Analytics = () => {
   const { t } = useTranslation();
@@ -48,6 +51,7 @@ const Analytics = () => {
         }
       />
 
+      <AnalyticsSubscriptionCard vm={vm} />
       <AnalyticsFiltersPanel vm={vm} />
       <AnalyticsTabs vm={vm} />
 
@@ -91,6 +95,12 @@ const Analytics = () => {
       )}
       {activeTab === "finance" && !loading && !error && (
         <FinanceAnalyticsTab vm={vm} />
+      )}
+      {activeTab === "procurement" && !loading && !error && (
+        <ProcurementAnalyticsTab vm={vm} />
+      )}
+      {activeTab === "abc" && !loading && !error && (
+        <AbcAnalyticsTab vm={vm} />
       )}
     </PageShell>
   );

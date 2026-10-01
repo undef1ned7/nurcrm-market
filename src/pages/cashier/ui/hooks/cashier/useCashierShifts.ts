@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import useScanDetection from "@shared/hooks/useScanDetection";
 import { useDebounce, useDebounceByKey } from "@shared/hooks/useDebounce";
 import { useCashierQtyScanGuard } from "@shared/hooks/useCashierQtyScanGuard";
@@ -265,12 +265,19 @@ export function useCashierShifts(b: any) {
         return sale.id;
       }
 
+      // Один и тот же ключ на обе попытки (первую и ретрай после гонки
+      // condition callback) — это одна и та же логическая попытка создать
+      // корзину для этой смены, не два разных намерения.
+      // См. docs/sale-flow-bugs.md, пункт 1.
+      const createCartIdempotencyKey = crypto.randomUUID();
+
       try {
         const result = await dispatch(
           startSale({
             discount_total: 0,
             shift: shiftId,
             is_wholesale: Boolean(preferredWholesaleModeRef.current),
+            idempotencyKey: createCartIdempotencyKey,
           }),
         ).unwrap();
         return result?.id ?? null;
@@ -297,6 +304,7 @@ export function useCashierShifts(b: any) {
             discount_total: 0,
             shift: shiftId,
             is_wholesale: Boolean(preferredWholesaleModeRef.current),
+            idempotencyKey: createCartIdempotencyKey,
           }),
         ).unwrap();
         return retry?.id ?? null;
@@ -341,6 +349,9 @@ export function useCashierShifts(b: any) {
             ...(saleId ? { sale_id: saleId } : {}),
             shift: openShiftId,
             is_wholesale: nextMode,
+            // Без saleId это фактически создание новой корзины — защита от
+            // гонки та же, что при первичном создании.
+            ...(saleId ? {} : { idempotencyKey: crypto.randomUUID() }),
           }),
         ).unwrap();
       } catch (_e) {

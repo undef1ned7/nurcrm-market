@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useOutletContext, useParams } from "react-router-dom";
+import { useLocation, useOutletContext, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import api from "@shared/api";

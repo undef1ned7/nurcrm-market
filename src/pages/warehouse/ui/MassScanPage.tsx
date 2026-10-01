@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { MassIncomingView } from "@features/mass-incoming";
 
 export default function MassScanPage() {

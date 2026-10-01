@@ -40,6 +40,10 @@ export const useAddProductSubmitFlow = ({
   setDebtMonths,
   setShowDebtForm,
   setDebtState,
+  paidFromShiftDrawer,
+  setPaidFromShiftDrawer,
+  shiftDrawerFundingTarget,
+  recordShiftDrawerOutflow,
 }: any) => {
   const dispatch = useAppDispatch();
 
@@ -263,6 +267,23 @@ export const useAddProductSubmitFlow = ({
             },
             { warnOnFailure: true, failureContext: "product" },
           );
+
+          if (
+            paidFromShiftDrawer &&
+            shiftDrawerFundingTarget?.available &&
+            shiftDrawerFundingTarget?.cashboxId
+          ) {
+            const drawerResult = await recordShiftDrawerOutflow({
+              cashboxId: shiftDrawerFundingTarget.cashboxId,
+              amount: Number(amountForCash),
+              name: `Закупка товара — оплата из кассы смены: ${name || product?.name || "Новый товар"}`,
+            });
+            if (!drawerResult.ok) {
+              imageUploadWarning =
+                imageUploadWarning ||
+                "Товар сохранён, но списание из кассы смены не записалось — добавьте вручную в «Касса».";
+            }
+          }
         }
       }
 
@@ -282,6 +303,7 @@ export const useAddProductSubmitFlow = ({
       setAmount("");
       setDebtMonths("");
       setShowDebtForm(false);
+      setPaidFromShiftDrawer(false);
       setDebtState({
         phone: "",
         dueDate: "",

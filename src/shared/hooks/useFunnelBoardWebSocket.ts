@@ -37,7 +37,8 @@ function isChatMessageEvent(type: any) {
 }
 function buildWebSocketUrl(token: any) {
   const encoded = encodeURIComponent(token);
-  const envBase = import.meta.env.VITE_WS_API_URL;
+  // Не задано → прод (как baseURL в shared/api/base.ts); пустая строка → тот же origin через dev-прокси.
+  const envBase = import.meta.env.VITE_WS_API_URL ?? "https://app.nurcrm.kg";
 
   if (envBase) {
     const wsBase = envBase.replace(/^http/i, (m) =>

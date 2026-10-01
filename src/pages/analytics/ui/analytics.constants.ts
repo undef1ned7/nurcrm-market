@@ -24,5 +24,8 @@ export const DEFAULT_FILTERS = {
   low_only: false,
   status: "",
   limit: "",
+  supplier: "",
+  abc_by: "product",
+  abc_metric: "revenue",
 };
 export const DEFAULT_CASHBOX_NAME = "Основная касса";

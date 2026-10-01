@@ -209,6 +209,14 @@
           }
         }
 
+        .sidebar__menu-badge {
+          position: absolute;
+          top: 2px;
+          right: 10px;
+          margin-left: 0;
+          box-shadow: 0 0 0 2px var(--nur-sidebar-solid, #1a1a1a);
+        }
+
         &:hover .sidebar__menu-icon,
         &--active .sidebar__menu-icon {
           color: var(--nur-primary, #f7d74f);
@@ -472,6 +480,21 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     transition: opacity var(--nur-duration-fast) var(--nur-ease-standard);
+  }
+
+  &__menu-badge {
+    flex-shrink: 0;
+    margin-left: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
   }
 
   &__loading {

@@ -14,6 +14,10 @@ import {
 } from "@entities/client";
 import { postCashflowIfNeeded } from "@entities/cash";
 import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import { createDeal } from "@entities/sale";
 import AddProductBarcode from "../../AddProductBarcode";
 import { createProductAsync } from "@entities/product";
@@ -39,6 +43,8 @@ const AddModal = ({
   const { creating, createError, brands, categories, barcodeError } =
     useProducts();
   const { company } = useUser();
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
 
   const [activeTab, setActiveTab] = useState(0);
   const [isTabSelected, setIsTabSelected] = useState(true); // Автоматически открываем первую вкладку (сканирование)
@@ -87,6 +93,7 @@ const AddModal = ({
   const [amount, setAmount] = useState("");
   const [debtMonths, setDebtMonths] = useState("");
   const [showDebtForm, setShowDebtForm] = useState(false);
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
   const [debtState, setDebtState] = useState({
     phone: "",
     dueDate: "",
@@ -248,6 +255,24 @@ const AddModal = ({
           },
           { warnOnFailure: true, failureContext: "purchase" },
         );
+
+        if (
+          paidFromShiftDrawer &&
+          shiftDrawerFundingTarget.available &&
+          shiftDrawerFundingTarget.cashboxId &&
+          Number(amountForCash) > 0
+        ) {
+          const drawerResult = await recordShiftDrawerOutflow({
+            cashboxId: shiftDrawerFundingTarget.cashboxId,
+            amount: Number(amountForCash),
+            name: `Закупка товара — оплата из кассы смены: ${name}`,
+          });
+          if (!drawerResult.ok) {
+            onShowErrorAlert?.(
+              "Товар добавлен, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+            );
+          }
+        }
       }
 
       if (client !== "" && !debt) {
@@ -266,6 +291,7 @@ const AddModal = ({
       setAmount("");
       setDebtMonths("");
       setShowDebtForm(false);
+      setPaidFromShiftDrawer(false);
       setDebtState({
         phone: "",
         dueDate: "",
@@ -613,6 +639,26 @@ const AddModal = ({
               </div>
             )}
           </div>
+
+          {debt !== "Долги" && shiftDrawerFundingTarget.available && (
+            <div className="add-modal__section">
+              <label className="sklad-add-modal__checkboxRow">
+                <input
+                  type="checkbox"
+                  checked={paidFromShiftDrawer}
+                  onChange={(e) => setPaidFromShiftDrawer(e.target.checked)}
+                  className="sklad-add-modal__checkbox"
+                  onWheel={(e) => e.preventDefault()}
+                />
+                <strong className="sklad-add-modal__checkboxText">
+                  Я заплатил из кассы (ящика) смены
+                  {shiftDrawerFundingTarget.cashboxName
+                    ? ` — спишется с кассы «${shiftDrawerFundingTarget.cashboxName}»`
+                    : ""}
+                </strong>
+              </label>
+            </div>
+          )}
 
           <div className="add-modal__section">
             <label>Розничная цена *</label>

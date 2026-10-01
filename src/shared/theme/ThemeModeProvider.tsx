@@ -1,8 +1,13 @@
 import * as React from "react";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
+import { THEME_MODE_STORAGE_KEY, DARK_PALETTE_STORAGE_KEY } from "./themeStorageKeys";
+import {
+  UI_PREFERENCES_SYNCED_EVENT,
+  pushUiPreferenceUpdate,
+} from "@shared/lib/uiPreferences";
 
-const THEME_KEY = "mui-theme-mode";
-const DARK_PALETTE_KEY = "nur-dark-palette";
+const THEME_KEY = THEME_MODE_STORAGE_KEY;
+const DARK_PALETTE_KEY = DARK_PALETTE_STORAGE_KEY;
 
 export type DarkPalette = "soft" | "classic";
 
@@ -57,7 +62,7 @@ export const ThemeModeContext = React.createContext<any>({
 
 export function ThemeModeProvider({ children }: any) {
   // Default: light theme (ignore OS preference for CRM consistency)
-  const [mode, setMode] = React.useState<"light" | "dark">(() => {
+  const [mode, setModeState] = React.useState<"light" | "dark">(() => {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
     return "light";
@@ -81,12 +86,37 @@ export function ThemeModeProvider({ children }: any) {
     applyDarkPaletteAttr(darkPalette);
   }, [darkPalette]);
 
+  // Другое устройство/вкладка синхронизировало значения с бэка — подхватываем их.
+  React.useEffect(() => {
+    const handleSynced = () => {
+      const savedMode = localStorage.getItem(THEME_KEY);
+      if (savedMode === "light" || savedMode === "dark") setModeState(savedMode);
+
+      const savedPalette = localStorage.getItem(DARK_PALETTE_KEY);
+      setDarkPaletteState(savedPalette === "classic" ? "classic" : "soft");
+    };
+    window.addEventListener(UI_PREFERENCES_SYNCED_EVENT, handleSynced);
+    return () =>
+      window.removeEventListener(UI_PREFERENCES_SYNCED_EVENT, handleSynced);
+  }, []);
+
   const toggleMode = React.useCallback(() => {
-    setMode((m) => (m === "dark" ? "light" : "dark"));
+    setModeState((m) => {
+      const next = m === "dark" ? "light" : "dark";
+      pushUiPreferenceUpdate({ theme_mode: next });
+      return next;
+    });
+  }, []);
+
+  const setMode = React.useCallback((next: "light" | "dark") => {
+    setModeState(next);
+    pushUiPreferenceUpdate({ theme_mode: next });
   }, []);
 
   const setDarkPalette = React.useCallback((p: DarkPalette) => {
-    setDarkPaletteState(p === "classic" ? "classic" : "soft");
+    const next = p === "classic" ? "classic" : "soft";
+    setDarkPaletteState(next);
+    pushUiPreferenceUpdate({ theme_dark_palette: next });
   }, []);
 
   const theme = React.useMemo(() => {

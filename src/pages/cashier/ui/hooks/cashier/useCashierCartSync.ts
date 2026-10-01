@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useStore } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import useScanDetection from "@shared/hooks/useScanDetection";
 import { useDebounce, useDebounceByKey } from "@shared/hooks/useDebounce";
 import { useCashierQtyScanGuard } from "@shared/hooks/useCashierQtyScanGuard";

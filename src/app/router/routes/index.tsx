@@ -1,4 +1,4 @@
-import { Route } from "react-router-dom";
+import { Route } from "react-router";
 import { marketRoutes } from "./marketRoutes";
 import { commonRoutes } from "./commonRoutes";
 

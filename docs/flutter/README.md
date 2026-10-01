@@ -21,6 +21,7 @@ i18n (те же ключи, что веб): [`../i18n.md`](../i18n.md).
 | [product-expiry.md](./product-expiry.md) | Сроки годности: простая модель (готово) + партионная FEFO (только ТЗ) |
 | [analytics.md](./analytics.md) | Аналитика/отчёты по вкладкам, известные баги фильтрации по времени |
 | [add-product.md](./add-product.md) | Создание / редактирование товара |
+| [mass-scan.md](./mass-scan.md) | **Массовое сканирование на склад:** классификация, цена для товаров из базы NurCRM, создание карточек, приход без склада |
 | [adult-products.md](./adult-products.md) | Товар 18+: флаг, касса, второй экран |
 | [cashier-settings.md](./cashier-settings.md) | Код удаления из корзины + max скидка |
 | [cash-and-cashflows.md](./cash-and-cashflows.md) | **Денежные средства:** auto-cashflows на бэке (BE готов), смены, pending |
@@ -37,6 +38,6 @@ i18n (те же ключи, что веб): [`../i18n.md`](../i18n.md).
 | [receipt-price-edit-discount.md](./receipt-price-edit-discount.md) | Ручная цена ≠ скидка в чеке |
 | [receipts-and-fiscal.md](./receipts-and-fiscal.md) | Сопоставление позиций с ekassa, флаг ручной цены, весовые товары в чеке |
 | [printer-and-subscription.md](./printer-and-subscription.md) | Синхронизация настроек принтера (черновик) + экран подписки/аккаунта (ТЗ) |
-| [tz-aug-2026.md](./tz-aug-2026.md) | ТЗ авг 2026: mass-scan, уведомления, F3, 18+ |
+| [tz-aug-2026.md](./tz-aug-2026.md) | ТЗ авг 2026: уведомления, F3, 18+ (mass-scan — см. [mass-scan.md](./mass-scan.md)) |
 
 Если API ещё нет (`404`/`405`/`501`) — смотрите раздел fallback в каждом файле: веб уже так работает.

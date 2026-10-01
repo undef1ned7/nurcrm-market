@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useMemo, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router";
 import { PAGE_SIZE } from "../constants";
 
 /**
@@ -11,20 +11,28 @@ import { PAGE_SIZE } from "../constants";
  */
 export const usePagination = (count, next, previous) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageFromUrl = useMemo(
-    () => parseInt(searchParams.get("page") || "1", 10),
-    [searchParams]
-  );
-  const [currentPage, setCurrentPage] = useState(() => pageFromUrl || 1);
-  const prevPageRef = useRef(currentPage);
+  // setSearchParams меняется при каждом изменении URL — храним в ref,
+  // чтобы колбэки ниже были стабильными (иначе useEffect-сбросы срабатывают повторно)
+  const setSearchParamsRef = useRef(setSearchParams);
+  setSearchParamsRef.current = setSearchParams;
 
-  // Синхронизация currentPage с URL (если URL изменился извне)
-  useEffect(() => {
-    if (pageFromUrl !== currentPage && pageFromUrl > 0) {
-      setCurrentPage(pageFromUrl);
-      prevPageRef.current = pageFromUrl;
-    }
-  }, [pageFromUrl, currentPage]);
+  // URL — единственный источник правды для текущей страницы
+  const currentPage = useMemo(() => {
+    const p = parseInt(searchParams.get("page") || "1", 10);
+    return p > 0 ? p : 1;
+  }, [searchParams]);
+
+  const setCurrentPage = useCallback((page) => {
+    setSearchParamsRef.current(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (page > 1) params.set("page", String(page));
+        else params.delete("page");
+        return params;
+      },
+      { replace: true }
+    );
+  }, []);
 
   // Расчет общего количества страниц
   const totalPages = useMemo(
@@ -34,20 +42,6 @@ export const usePagination = (count, next, previous) => {
 
   const hasNextPage = useMemo(() => !!next, [next]);
   const hasPrevPage = useMemo(() => !!previous, [previous]);
-
-  // Синхронизация URL с состоянием страницы (оптимизировано)
-  useEffect(() => {
-    if (prevPageRef.current !== currentPage) {
-      prevPageRef.current = currentPage;
-      const params = new URLSearchParams(searchParams);
-      if (currentPage > 1) {
-        params.set("page", currentPage.toString());
-      } else {
-        params.delete("page");
-      }
-      setSearchParams(params, { replace: true });
-    }
-  }, [currentPage, searchParams, setSearchParams]);
 
   // Функция для получения номера строки
   const getRowNumber = useCallback(
@@ -65,15 +59,13 @@ export const usePagination = (count, next, previous) => {
       if (onPageChange) onPageChange();
       setCurrentPage(newPage);
     },
-    [totalPages]
+    [totalPages, setCurrentPage]
   );
 
-  // Сброс на первую страницу
+  // Сброс на первую страницу (стабильная ссылка)
   const resetToFirstPage = useCallback(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [currentPage]);
+    setCurrentPage(1);
+  }, [setCurrentPage]);
 
   return {
     currentPage,
@@ -86,4 +78,3 @@ export const usePagination = (count, next, previous) => {
     setCurrentPage,
   };
 };
-

@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { postCashflowIfNeeded } from "@entities/cash";
 import { buildExpenseVariableRouting } from "@shared/lib/tools/cashboxResolution";
+import {
+  useRecordShiftDrawerOutflow,
+  useShiftDrawerFundingTarget,
+} from "@entities/shift";
 import { useUser } from "@entities/user";
 import { useClient } from "@entities/client";
 import { fetchClientsAsync } from "@entities/client";
@@ -22,13 +26,21 @@ const toNum = (v) => {
 const DECIMAL_QTY_PATTERN = /^\d*([.,]\d*)?$/;
 const INTEGER_QTY_PATTERN = /^\d*$/;
 
-const getTodayIsoDate = () => new Date().toISOString().split("T")[0];
+// Не через toISOString(): для UTC+6 (Бишкек) это всегда день назад
+// (см. docs/sale-flow-bugs.md, пункт 4) — считаем по локальным Y/M/D.
+const getTodayIsoDate = () => {
+  const now = new Date();
+  const pad2 = (v: number) => String(v).padStart(2, "0");
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+};
 
 const AddProductModal = ({ onClose, onChanged, item }: any) => {
   const alert = useAlert();
   const dispatch = useAppDispatch();
   const { company } = useUser();
   const { list: clients } = useClient();
+  const shiftDrawerFundingTarget = useShiftDrawerFundingTarget();
+  const recordShiftDrawerOutflow = useRecordShiftDrawerOutflow();
 
   // если item не передан — блокируем форму
   const itemId = item?.id;
@@ -51,6 +63,7 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
   const [prepayment, setPrepayment] = useState("");
   const [firstPaymentDate, setFirstPaymentDate] = useState(getTodayIsoDate());
   const [error, setError] = useState("");
+  const [paidFromShiftDrawer, setPaidFromShiftDrawer] = useState(false);
 
   // Фильтруем поставщиков из списка клиентов
   const suppliers = useMemo(
@@ -232,6 +245,24 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
           },
           { warnOnFailure: true, failureContext: "purchase" },
         );
+
+        if (
+          paidFromShiftDrawer &&
+          shiftDrawerFundingTarget.available &&
+          shiftDrawerFundingTarget.cashboxId
+        ) {
+          const drawerResult = await recordShiftDrawerOutflow({
+            cashboxId: shiftDrawerFundingTarget.cashboxId,
+            amount: cashAmount,
+            name: `Закупка товара — оплата из кассы смены: ${itemName}`,
+          });
+          if (!drawerResult.ok) {
+            alert(
+              "Товар добавлен, но списание из кассы смены не записалось — добавьте вручную в «Касса».",
+              true,
+            );
+          }
+        }
       }
       alert('Товар добавлен', () => {
         onChanged?.();
@@ -342,6 +373,7 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
                 setDebtMonths("1");
                 setPrepayment("");
                 setFirstPaymentDate(getTodayIsoDate());
+                setPaidFromShiftDrawer(false);
               }}
               disabled={!itemId}
             >
@@ -417,6 +449,25 @@ const AddProductModal = ({ onClose, onChanged, item }: any) => {
           )}
 
           {/* касса автоматически выбирается - скрыто от пользователя */}
+
+          {paymentType !== "debt" && shiftDrawerFundingTarget.available && (
+            <div className="add-modal__section">
+              <label className="sklad-add-modal__checkboxRow">
+                <input
+                  type="checkbox"
+                  checked={paidFromShiftDrawer}
+                  onChange={(e) => setPaidFromShiftDrawer(e.target.checked)}
+                  className="sklad-add-modal__checkbox"
+                />
+                <strong className="sklad-add-modal__checkboxText">
+                  Я заплатил из кассы (ящика) смены
+                  {shiftDrawerFundingTarget.cashboxName
+                    ? ` — спишется с кассы «${shiftDrawerFundingTarget.cashboxName}»`
+                    : ""}
+                </strong>
+              </label>
+            </div>
+          )}
 
           <div className="sklad-add-product-modal__summary">
             <span>Итог к списанию</span>

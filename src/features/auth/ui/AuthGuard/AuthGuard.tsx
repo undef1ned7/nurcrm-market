@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { getCompany } from "@entities/user";
 import { getProfile, useUser } from "@entities/user";
 import {

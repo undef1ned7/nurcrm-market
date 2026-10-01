@@ -70,14 +70,7 @@ export type SaleShiftRef = {
   [key: string]: unknown;
 } | null;
 
-export type AlertModalState = {
-  open: boolean;
-  type: string;
-  title: string;
-  message: string;
-  okText?: string;
-  onConfirm?: () => void;
-  onClose?: () => void;
-};
+// Единое определение — см. docs/sale-flow-bugs.md, пункт 10.
+export type { AlertModalState } from "@shared/ui/AlertModal/AlertModal.types";
 
 export type CartDiscountMode = "amount" | "percent";

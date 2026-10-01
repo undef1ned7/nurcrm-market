@@ -72,7 +72,7 @@ const saleAmount = (sale: any) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const isSkippedSale = (sale: any) => {
+export const isSkippedSale = (sale: any) => {
   const status = String(sale?.status ?? "")
     .trim()
     .toLowerCase();

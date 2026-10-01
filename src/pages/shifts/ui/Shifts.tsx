@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAppDispatch, useAppSelector } from "@app/store";
 import {
   Calendar,
@@ -86,6 +86,7 @@ const Shifts = () => {
     const params = {
       ...(activeTab === "open" ? { status: "open" } : { status: "closed" }),
       page: currentPage,
+      page_size: PAGE_SIZE,
     };
     dispatch(fetchShiftsAsync(params));
   }, [dispatch, activeTab, currentPage]);

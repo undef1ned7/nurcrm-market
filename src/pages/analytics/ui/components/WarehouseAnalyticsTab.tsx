@@ -174,6 +174,50 @@ export function WarehouseAnalyticsTab({ vm }: any) {
               </table>
             </div>
           )}
+
+          {warehouseData.lowStockOnly.length > 0 && (
+            <div className="analytics-page__table-card">
+              <h3 className="analytics-page__table-title">
+                {t("crm.analytics.warehouse.needReorder")}
+              </h3>
+              <table className="analytics-page__table">
+                <thead>
+                  <tr>
+                    <th>{t("crm.analytics.sales.goods")}</th>
+                    <th>{t("crm.analytics.warehouse.stock")}</th>
+                    <th>{t("crm.analytics.warehouse.minimum")}</th>
+                    <th>{t("crm.analytics.products.price")}</th>
+                    <th>{t("common.status")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {warehouseData.lowStockOnly.map((item, index) => (
+                    <tr key={`${item.id ?? "none"}-${index}`}>
+                      <td>{item.name}</td>
+                      <td>{formatAnalyticsQty(item.stock)}</td>
+                      <td>{formatAnalyticsQty(item.minimum)}</td>
+                      <td>
+                        {item.price != null
+                          ? formatNumber(item.price)
+                          : "—"}
+                      </td>
+                      <td>
+                        {item.status ? (
+                          <span
+                            className={`analytics-page__status analytics-page__status--${item.statusType}`}
+                          >
+                            {item.status}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
     </>
   );

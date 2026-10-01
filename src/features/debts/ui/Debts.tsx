@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import api from "@shared/api";
 import "./debts.scss";
@@ -126,7 +126,9 @@ const Debts = () => {
   const dispatch = useAppDispatch();
   const { profile, company } = useUser();
 
+  const loadSeqRef = useRef(0);
   const load = async () => {
+    const seq = ++loadSeqRef.current;
     try {
       setLoading(true);
       setLoadErr("");
@@ -137,6 +139,7 @@ const Debts = () => {
         dateFrom,
         dateTo,
       });
+      if (seq !== loadSeqRef.current) return; // устаревший ответ
 
       // data в формате DRF: { count, next, previous, results }
       const nextItems = Array.isArray(data?.results) ? data.results : listFrom({ data });
@@ -151,6 +154,7 @@ const Debts = () => {
       const newNotifications = checkNotifications(nextItems || []);
       setNotifications(newNotifications);
     } catch (e: any) {
+      if (seq !== loadSeqRef.current) return;
       console.error(e);
       setLoadErr(extractApiErr(e, t("crm.debts.loadError")));
       setItems([]);
@@ -158,7 +162,7 @@ const Debts = () => {
       setHasNextPage(false);
       setHasPrevPage(false);
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
   };
 

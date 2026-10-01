@@ -1,5 +1,5 @@
 import { useLayoutEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { AnimatedNumber } from "@shared/ui/AnimatedNumber";
 import { usePageChrome } from "./PageChromeContext";
 import "./PageShell.scss";
@@ -141,7 +141,7 @@ export function PagePanel({
     <section className={`nur-page__panel ${className}`.trim()}>
       {hasChrome ? (
         <div className="nur-page__panel-head">
-          <div className="nur-page__panel-head-text">
+          <div className="nur-page__panel-head-text flex justify-between items-center w-full">
             {title ? <h2 className="nur-page__panel-title">{title}</h2> : null}
             {description ? (
               <p className="nur-page__panel-desc">{description}</p>
@@ -209,8 +209,14 @@ export function ErrorState({
   className = "",
 }: any) {
   return (
-    <div className={`nur-empty nur-empty--error ${className}`.trim()} role="alert">
-      <div className="nur-empty__icon nur-empty__icon--error" aria-hidden="true">
+    <div
+      className={`nur-empty nur-empty--error ${className}`.trim()}
+      role="alert"
+    >
+      <div
+        className="nur-empty__icon nur-empty__icon--error"
+        aria-hidden="true"
+      >
         !
       </div>
       <h3 className="nur-empty__title">{title}</h3>
@@ -238,7 +244,11 @@ export function LoadingState({ rows = 4, className = "" }: any) {
   );
 }
 
-export function StatusChip({ children, tone = "default", className = "" }: any) {
+export function StatusChip({
+  children,
+  tone = "default",
+  className = "",
+}: any) {
   const toneClass = tone !== "default" ? `nur-chip--${tone}` : "";
   return (
     <span className={`nur-chip ${toneClass} ${className}`.trim()}>
@@ -247,7 +257,12 @@ export function StatusChip({ children, tone = "default", className = "" }: any) 
   );
 }
 
-export function SectionTabs({ items = [], value, onChange, className = "" }: any) {
+export function SectionTabs({
+  items = [],
+  value,
+  onChange,
+  className = "",
+}: any) {
   return (
     <div className={`nur-tabs ${className}`.trim()} role="tablist">
       {items.map((item) => {

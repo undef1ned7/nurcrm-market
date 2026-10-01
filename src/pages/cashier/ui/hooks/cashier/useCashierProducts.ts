@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useStore } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import useScanDetection from "@shared/hooks/useScanDetection";
 import { useDebounce, useDebounceByKey } from "@shared/hooks/useDebounce";
 import { useCashierQtyScanGuard } from "@shared/hooks/useCashierQtyScanGuard";
@@ -59,6 +59,7 @@ import {
   getBarcodeAmbiguity,
   isBarcodeNotFoundError,
 } from "@shared/lib/tools/barcodeAmbiguity";
+import { toMoneyOrZero } from "@shared/lib/tools/money";
 import {
   CART_LINE_PRODUCT_TTL_MS,
   MARKET_CASHIER_WHOLESALE_MODE_KEY,
@@ -98,7 +99,7 @@ export function useCashierProducts(b: any) {
     dispatch, openShiftId, openShiftIdRef, ensureActiveSaleId, refreshSaleFromStore,
     preferredWholesaleMode, preferredWholesaleModeRef, canMarketDiscount, discountLimitPercent,
     pageFromUrl, getSelectedSaleId, multiCartRef, products,
-    currentSale, deleteCodePrompt,
+    currentSale, deleteCodePrompt, confirm,
   } = b;
 
   // Forwarders for handlers defined later in useCashierCart
@@ -283,6 +284,13 @@ export function useCashierProducts(b: any) {
       );
       if (alreadyInCart) return Promise.resolve(true);
 
+      // Раньше здесь была отдельная AlertModal с одной кнопкой «ОК», у которой
+      // и onConfirm, и onClose (в т.ч. клик по фону/Escape) резолвили `true` —
+      // отказаться от продажи 18+ было физически невозможно ни одним
+      // действием. useConfirm() — уже существующий в проекте, отдельный от
+      // AlertModal диалог с честными «Подтвердить»/«Отменить» (см.
+      // src/shared/context/modal.tsx — onConfirm(true)/onCancel(false)), без
+      // дополнительного закрытия по фону. См. docs/sale-flow-bugs.md, пункт 2.
       return new Promise<boolean>((resolve) => {
         let settled = false;
         const finish = (ok: boolean) => {
@@ -295,18 +303,13 @@ export function useCashierProducts(b: any) {
 
         setAgeCheckActive(true);
         publishAdultAgeCheck(product?.name);
-        setAlertModal({
-          open: true,
-          type: "warning",
-          title: "Товар 18+",
-          message: "Этот товар предназначен для совершеннолетних",
-          okText: "Подтвердить",
-          onConfirm: () => finish(true),
-          onClose: () => finish(true),
-        });
+        confirm(
+          `Товар «${product?.name || "18+"}» предназначен для совершеннолетних. Подтвердить продажу?`,
+          (ok: boolean) => finish(Boolean(ok)),
+        );
       });
     },
-    [company?.id],
+    [company?.id, confirm],
   );
 
   const getProductFavorite = useCallback(
@@ -528,7 +531,7 @@ export function useCashierProducts(b: any) {
           );
         }
       } else {
-        const subtotal = parseFloat(currentSale?.subtotal || 0) || 0;
+        const subtotal = toMoneyOrZero(currentSale?.subtotal);
         const maxDiscountSom = normalizePrice(
           (subtotal * discountLimitPercent) / 100,
         );

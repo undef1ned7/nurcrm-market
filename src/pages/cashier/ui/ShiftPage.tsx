@@ -8,8 +8,10 @@ import {
   closeShiftAsync,
   fetchAllShiftSales,
   formatShiftMoney,
+  isSkippedSale,
   resolveShiftPaymentBreakdown,
   ShiftPaymentBreakdown,
+  CashboxWarningBanner,
 } from "@entities/shift";
 import { useShifts } from "@entities/shift";
 import api from "@shared/api";
@@ -90,7 +92,14 @@ const ShiftPage = ({ onBack }: any) => {
         const response = await api.get(requestUrl, { params });
         const data = response.data;
 
-        const sales = (data?.results || []).map((sale: any) => ({
+        // Возвращённые/отменённые продажи не должны считаться «Долгом» в
+        // итогах смены — раньше сюда попадало всё, что не строго "paid"
+        // (в т.ч. canceled после полного возврата). См.
+        // docs/sale-flow-bugs.md, пункт 11 — та же проверка уже используется
+        // в resolveShiftPaymentBreakdown/CloseShiftPage.tsx/ShiftDetail.tsx.
+        const sales = (data?.results || [])
+          .filter((sale: any) => !isSkippedSale(sale))
+          .map((sale: any) => ({
           id: `#${String(sale.id || sale.code || "").padStart(6, "0")}`,
           date: formatDateTime(sale.created_at || sale.date),
           buyer:
@@ -522,6 +531,10 @@ const ShiftPage = ({ onBack }: any) => {
             {t("crm.cashier.shift.closeShiftBtn")}
           </button>
         )}
+      </div>
+
+      <div className="shift-page__warning">
+        <CashboxWarningBanner warning={shift.cashbox_warning} />
       </div>
 
       <div className="shift-page__summary">

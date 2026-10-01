@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { getCashBoxes, useCash } from "@entities/cash";
 import { useUser } from "@entities/user";
 import { useAppDispatch } from "@app/store";

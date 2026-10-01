@@ -37,6 +37,8 @@ const initialState = {
   // Заявки на подтверждение (пункт «Запросы») — company-level настройка,
   // default = выключено. @see docs/backend/kassa/cashflow-requests-toggle-backend.md
   cashflowRequestsEnabled: false,
+  // Счётчик pending-заявок для бейджа в сайдбаре (пункт «Запросы»). null — ещё не загружен.
+  pendingCount: null as number | null,
   realtime: {
     version: 0,
     kind: null,
@@ -290,6 +292,27 @@ export const fetchCashflowRequestsSetting = createAsyncThunk<boolean, void>(
   },
 );
 
+/**
+ * Лёгкий счётчик pending-заявок (для бейджа пункта «Запросы» в сайдбаре) —
+ * запрашивает только `count`, без списка (`page_size=1`), в отличие от
+ * `autoApprovePendingCashflows`, который вытягивает весь бэклог постранично.
+ */
+export const fetchPendingCashflowsCount = createAsyncThunk<number, void>(
+  "cash/fetchPendingCashflowsCount",
+  async (_arg, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get("/construction/cashflows/", {
+        params: { status: "pending", page_size: 1 },
+      });
+      if (typeof data?.count === "number") return data.count;
+      const flows = Array.isArray(data) ? data : data?.results || [];
+      return flows.length;
+    } catch (e: any) {
+      return handleThunkError(e, rejectWithValue);
+    }
+  },
+);
+
 export const bulkUpdateCashFlowsStatus = createAsyncThunk<any, void | any>(
   "cashFlows/bulkUpdateStatus",
   async (items: any, { rejectWithValue }) => {
@@ -380,6 +403,9 @@ const cashSlice = createSlice({
       .addCase(fetchCashflowRequestsSetting.fulfilled, (state, { payload }) => {
         state.cashflowRequestsEnabled = Boolean(payload);
       })
+      .addCase(fetchPendingCashflowsCount.fulfilled, (state, { payload }) => {
+        state.pendingCount = payload;
+      })
       .addCase(addCashFlows.pending, (state) => {
         state.loading = true;
       })
@@ -393,8 +419,18 @@ const cashSlice = createSlice({
       .addCase(updateCashFlows.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateCashFlows.fulfilled, (state) => {
+      .addCase(updateCashFlows.fulfilled, (state, action) => {
         state.loading = false;
+        // Оптимистичный сдвиг бейджа «Запросы»: заявка ушла из pending.
+        // Точное число подтягивает fetchPendingCashflowsCount по realtime-событию.
+        const newStatus = (action.meta?.arg as any)?.updatedData?.status;
+        if (
+          (newStatus === "approved" || newStatus === "rejected") &&
+          typeof state.pendingCount === "number" &&
+          state.pendingCount > 0
+        ) {
+          state.pendingCount -= 1;
+        }
       })
       .addCase(updateCashFlows.rejected, (state, { payload }) => {
         state.loading = false;
@@ -403,8 +439,15 @@ const cashSlice = createSlice({
       .addCase(bulkUpdateCashFlowsStatus.pending, (state) => {
         state.loading = true;
       })
-      .addCase(bulkUpdateCashFlowsStatus.fulfilled, (state) => {
+      .addCase(bulkUpdateCashFlowsStatus.fulfilled, (state, action) => {
         state.loading = false;
+        const items = (action.meta?.arg as any[]) || [];
+        const resolvedCount = items.filter(
+          (i) => i?.status === "approved" || i?.status === "rejected",
+        ).length;
+        if (resolvedCount > 0 && typeof state.pendingCount === "number") {
+          state.pendingCount = Math.max(0, state.pendingCount - resolvedCount);
+        }
       })
       .addCase(bulkUpdateCashFlowsStatus.rejected, (state, { payload }) => {
         state.loading = false;
@@ -505,4 +548,7 @@ export const useCashFlowRealtimeEvent = (): CashFlowRealtimeEvent =>
 /** true — ручные записи и правки движения требуют одобрения владельца. Default: false. */
 export const useCashflowRequestsEnabled = (): boolean =>
   useSelector((state: any) => Boolean(state.cash.cashflowRequestsEnabled));
+/** Число pending-заявок для бейджа пункта «Запросы» в сайдбаре. null, пока не загружено. */
+export const usePendingCashflowsCount = (): number | null =>
+  useSelector((state: any) => state.cash.pendingCount);
 export default cashSlice.reducer;

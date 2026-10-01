@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { useSelector } from "react-redux";
+import type { PosSale, PosCartTab } from "./types";
 import {
   deleteProductInCart,
   doSearch,
@@ -45,41 +46,92 @@ import {
   cashRejectWarehouseDocument,
 } from "@entities/warehouse";
 
-const initialState = {
-  start: null as any, // POS-продажа (товары) — активная корзина
-  posCarts: [] as any[], // вкладки корзин смены (из POST /start/)
-  activeSaleId: null as any,
-  startObject: null as any, // Object-продажа (строительные)
-  loading: false,
+// Слайс смешивает три разных домена (POS-продажи, object-продажи для
+// строительной вертикали, складские документы) — типизируем только то, что
+// реально относится к POS-продаже (start/posCarts/activeSaleId/history/
+// checkout), остальное осознанно остаётся `unknown`/`any`: заводить под них
+// PosSale-подобные типы было бы неверно по смыслу (это не продажи).
+// См. docs/sale-flow-bugs.md, пункт 10.
+export type SaleState = {
+  start: PosSale | null; // POS-продажа (товары) — активная корзина
+  posCarts: PosCartTab[]; // вкладки корзин смены (из POST /start/)
+  activeSaleId: string | null;
+  // Домены ниже (object-продажи стройвертикали, документы склада) намеренно
+  // остаются `any`/`any[]`, а не `unknown` — иначе в местах, где эти поля
+  // смешиваются с типизированными POS-полями в одном выражении (например,
+  // тернарник filterField в useSellPage.ts: history vs historyObjects), унии
+  // с `unknown[]` схлопывают весь результат в unknown и ломают легаси-экран
+  // /crm/sell, который сам по себе не в периметре этой типизации.
+  startObject: any; // Object-продажа (строительные) — другой домен
+  loading: boolean;
   // отдельный флаг именно для startSale (чтобы не плодить параллельные /start/ запросы)
+  startSaleLoading: boolean;
+  cart: any; // ответ add-item/PATCH строки — либо одна позиция, либо вся продажа
+  // handleThunkError/ensureError отдают то строку, то {message}, то сырой
+  // error.response.data (любой формы) — реальный рантайм-тип действительно
+  // гетерогенный, сужать до {message?} было бы неверно.
+  error: any;
+  barcode: any;
+  barcodeError: { message?: string } | null;
+  foundProduct: any; // иногда массив, иногда {results}—разные вызывающие компоненты трактуют по-разному, не форсируем форму
+  checkout: PosSale | null;
+  history: PosSale[];
+  historyCount: number;
+  historyTotalAmount: number | null;
+  historyNext: string | null;
+  historyPrevious: string | null;
+  historyDetail: PosSale | null;
+  pdf: any;
+  objects: any[]; // список object-items — другой домен
+  cartObject: any;
+  lastDeal: any; // Deal — другой домен (entities/client)
+  historyObjects: any[];
+  historyObjectsCount: number;
+  historyObjectsTotalAmount: number | null;
+  historyObjectsNext: string | null;
+  historyObjectsPrevious: string | null;
+  historyObjectDetail: any;
+  // Состояние для документов (warehouse) — другой домен
+  documents: any[]; // .findIndex((doc) => doc.id === ...) по всему файлу — не вводим отдельный тип складского документа здесь
+  documentsCount: number;
+  documentsNext: string | null;
+  documentsPrevious: string | null;
+  documentsLoading: boolean;
+};
+
+const initialState: SaleState = {
+  start: null,
+  posCarts: [],
+  activeSaleId: null,
+  startObject: null,
+  loading: false,
   startSaleLoading: false,
-  cart: null as any,
-  error: null as any,
-  barcode: null as any,
-  barcodeError: null as any,
-  foundProduct: [] as any[],
-  checkout: null as any,
-  history: [] as any[],
+  cart: null,
+  error: null,
+  barcode: null,
+  barcodeError: null,
+  foundProduct: [],
+  checkout: null,
+  history: [],
   historyCount: 0,
-  historyTotalAmount: null as any,
-  historyNext: null as any,
-  historyPrevious: null as any,
-  historyDetail: null as any,
-  pdf: null as any,
-  objects: [] as any[], // список object-items
-  cartObject: null as any,
-  lastDeal: null as any,
-  historyObjects: [] as any[],
+  historyTotalAmount: null,
+  historyNext: null,
+  historyPrevious: null,
+  historyDetail: null,
+  pdf: null,
+  objects: [],
+  cartObject: null,
+  lastDeal: null,
+  historyObjects: [],
   historyObjectsCount: 0,
-  historyObjectsTotalAmount: null as any,
-  historyObjectsNext: null as any,
-  historyObjectsPrevious: null as any,
-  historyObjectDetail: null as any,
-  // Состояние для документов
-  documents: [] as any[],
+  historyObjectsTotalAmount: null,
+  historyObjectsNext: null,
+  historyObjectsPrevious: null,
+  historyObjectDetail: null,
+  documents: [],
   documentsCount: 0,
-  documentsNext: null as any,
-  documentsPrevious: null as any,
+  documentsNext: null,
+  documentsPrevious: null,
   documentsLoading: false,
 };
 
@@ -318,7 +370,10 @@ const saleSlice = createSlice({
             payload.id)
         ) {
           const saleId =
-            payload.id ?? payload.sale_id ?? payload.cart?.id ?? state.activeSaleId;
+            payload.id ??
+            payload.sale_id ??
+            payload.cart?.id ??
+            state.activeSaleId;
           const nextSale = saleId ? { ...payload, id: saleId } : payload;
           state.start = nextSale;
           if (saleId) {
@@ -328,7 +383,9 @@ const saleSlice = createSlice({
         }
       })
       .addCase(sendBarCode.rejected, (state, { payload }) => {
-        state.barcodeError = payload;
+        // rejectValue не сконфигурирован в thunkAPI — RTK типизирует payload
+        // .rejected как unknown независимо от Returned-типа thunk'а.
+        state.barcodeError = payload as { message?: string } | null;
         state.loading = false;
       })
 
@@ -348,7 +405,9 @@ const saleSlice = createSlice({
         state.loading = true;
       })
       .addCase(historySellProduct.fulfilled, (state, { payload }) => {
-        state.history = payload?.results || (Array.isArray(payload) ? payload : [] as any[]);
+        state.history =
+          payload?.results ||
+          (Array.isArray(payload) ? payload : ([] as any[]));
         state.historyCount = payload?.count || payload?.length || 0;
         state.historyTotalAmount = parsePosSalesListTotalAmount(payload);
         state.historyNext = payload?.next || null;
@@ -365,7 +424,9 @@ const saleSlice = createSlice({
         state.loading = true;
       })
       .addCase(historySellObjects.fulfilled, (state, { payload }) => {
-        state.historyObjects = payload?.results || (Array.isArray(payload) ? payload : [] as any[]);
+        state.historyObjects =
+          payload?.results ||
+          (Array.isArray(payload) ? payload : ([] as any[]));
         state.historyObjectsCount = payload?.count || payload?.length || 0;
         state.historyObjectsTotalAmount = parsePosSalesListTotalAmount(payload);
         state.historyObjectsNext = payload?.next || null;
@@ -428,7 +489,9 @@ const saleSlice = createSlice({
       })
       .addCase(fetchWarehouseDocuments.fulfilled, (state, { payload }) => {
         // Обрабатываем стандартный формат DRF пагинации
-        state.documents = payload?.results || (Array.isArray(payload) ? payload : [] as any[]);
+        state.documents =
+          payload?.results ||
+          (Array.isArray(payload) ? payload : ([] as any[]));
         state.documentsCount = payload?.count || payload?.length || 0;
         state.documentsNext = payload?.next || null;
         state.documentsPrevious = payload?.previous || null;
@@ -476,13 +539,17 @@ const saleSlice = createSlice({
         }
       })
       .addCase(cashApproveWarehouseDocument.fulfilled, (state, { payload }) => {
-        const index = state.documents.findIndex((doc) => doc.id === payload?.id);
+        const index = state.documents.findIndex(
+          (doc) => doc.id === payload?.id,
+        );
         if (index !== -1 && payload) {
           state.documents[index] = payload;
         }
       })
       .addCase(cashRejectWarehouseDocument.fulfilled, (state, { payload }) => {
-        const index = state.documents.findIndex((doc) => doc.id === payload?.id);
+        const index = state.documents.findIndex(
+          (doc) => doc.id === payload?.id,
+        );
         if (index !== -1 && payload) {
           state.documents[index] = payload;
         }
@@ -548,5 +615,12 @@ const saleSlice = createSlice({
 });
 
 export const { resetPosSale } = saleSlice.actions;
-export const useSale = () => useSelector((state: any) => state.sale);
+// Локальный срез глобального стейта вместо RootState из app/store — `entities`
+// не может импортировать из `app` (см. src/ARCHITECTURE.md, слои сверху вниз),
+// а RootState там как раз собирается из всех слайсов, включая этот же.
+// Раньше было `(state: any) => state.sale` — теперь `currentSale.total`,
+// `currentSale.items` и т.п. проверяются компилятором во всех потребителях.
+// См. docs/sale-flow-bugs.md, пункт 10.
+export const useSale = () =>
+  useSelector((state: { sale: SaleState }) => state.sale);
 export default saleSlice.reducer;

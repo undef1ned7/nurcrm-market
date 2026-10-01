@@ -100,6 +100,50 @@ export function maxInstallmentsForUnit(unit: DebtScheduleUnit) {
   return unit === "month" ? MAX_MONTH_INSTALLMENTS : MAX_DAY_INSTALLMENTS;
 }
 
+/**
+ * Шаги слайдера срока на кассе. Шкала ступенчатая, а не 1…max: иначе
+ * засечки 1/2/3 (и 7/10) слипаются на телефоне. Засечки — подмножество шагов.
+ */
+export const MONTH_TERM_SLIDER_STEPS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 24,
+] as const;
+export const MONTH_TERM_SLIDER_TICKS = [1, 2, 3, 6, 12, 24] as const;
+export const DAY_COUNT_SLIDER_STEPS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 30, 45, 60, 90,
+] as const;
+export const DAY_COUNT_SLIDER_TICKS = [1, 7, 10, 14, 30, 90] as const;
+
+/**
+ * Срок рассрочки в месяцах → число платежей. Первый платёж — в первый месяц
+ * срока, дальше каждые `intervalMonths`, пока платёж укладывается в срок:
+ * 3 мес. раз в 2 мес. → платежи в 1-й и 3-й месяц → 2 платежа.
+ * Бэку уходит именно число платежей (`debt_months` = число платежей).
+ */
+export function paymentsForMonthTerm(termMonths: number, intervalMonths: number) {
+  const term = Math.floor(Number(termMonths) || 0);
+  if (term < 1) return 0;
+  return Math.ceil(term / normalizeMonthInterval(intervalMonths));
+}
+
+/**
+ * Число платежей графика по значению поля «срок/количество»: в месячном
+ * режиме поле — срок в месяцах, в дневном — сразу число платежей.
+ */
+export function scheduleInstallmentsCount(
+  unit: DebtScheduleUnit,
+  value: number | "",
+  interval: number | "",
+) {
+  const n = typeof value === "number" ? value : 0;
+  if (unit === "month") {
+    return paymentsForMonthTerm(
+      n,
+      typeof interval === "number" ? interval : DEFAULT_MONTH_INTERVAL,
+    );
+  }
+  return n;
+}
+
 export function moneyToCents(value: number) {
   return Math.round((Number(value) || 0) * 100);
 }

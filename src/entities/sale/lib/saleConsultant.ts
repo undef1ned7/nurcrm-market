@@ -27,7 +27,9 @@ export function listFromPaged(data: unknown): unknown[] {
   return Array.isArray(data) ? data : [];
 }
 
-export function employeeDisplayName(employee: Record<string, unknown> | null | undefined): string {
+export function employeeDisplayName(
+  employee: Record<string, unknown> | null | undefined,
+): string {
   if (!employee || typeof employee !== "object") return "";
   const full = [employee.last_name, employee.first_name]
     .filter(Boolean)
@@ -44,7 +46,9 @@ export function employeeDisplayName(employee: Record<string, unknown> | null | u
   );
 }
 
-export function isActiveEmployee(employee: Record<string, unknown> | null | undefined): boolean {
+export function isActiveEmployee(
+  employee: Record<string, unknown> | null | undefined,
+): boolean {
   if (!employee) return false;
   if (employee.is_active === false || employee.is_active === 0) return false;
   if (employee.active === false) return false;
@@ -68,7 +72,9 @@ export function normalizeConsultant(raw: unknown): SaleConsultant | null {
   };
 }
 
-export function parseCommissionPercent(raw: string | number | null | undefined): number | null {
+export function parseCommissionPercent(
+  raw: string | number | null | undefined,
+): number | null {
   if (raw == null) return null;
   const n = Number(String(raw).replace(",", ".").trim());
   return Number.isFinite(n) ? n : null;
@@ -78,12 +84,17 @@ export function isValidCommissionPercent(value: number | null): boolean {
   return value != null && value >= 0 && value <= 100;
 }
 
-export function previewCommissionAmount(total: number, percent: number): number {
+export function previewCommissionAmount(
+  total: number,
+  percent: number,
+): number {
   if (!Number.isFinite(total) || !Number.isFinite(percent)) return 0;
   return Math.round(((total * percent) / 100) * 100) / 100;
 }
 
-export function validateConsultantDraft(draft: ConsultantDraft | null | undefined): string | null {
+export function validateConsultantDraft(
+  draft: ConsultantDraft | null | undefined,
+): string | null {
   if (!draft?.specify) return null;
   if (!draft.consultantId) return "Выберите консультанта";
   if (!draft.commissionEnabled) return null;
@@ -96,7 +107,9 @@ export function validateConsultantDraft(draft: ConsultantDraft | null | undefine
   return null;
 }
 
-export function buildCheckoutConsultantPayload(draft: ConsultantDraft | null | undefined): {
+export function buildCheckoutConsultantPayload(
+  draft: ConsultantDraft | null | undefined,
+): {
   consultant_id?: string;
   consultant_commission_enabled?: boolean;
   consultant_commission_percent?: string;
@@ -123,29 +136,41 @@ export function pickDefaultSalesPercent(
     if (!item || typeof item !== "object") return false;
     const profile = item as Record<string, unknown>;
     if (!PERCENT_SCHEMES.has(String(profile.pay_scheme || ""))) return false;
-    const percent = parseCommissionPercent(profile.sales_percent as string | number);
+    const percent = parseCommissionPercent(
+      profile.sales_percent as string | number,
+    );
     return percent != null && percent >= 0 && percent <= 100;
   }) as Record<string, unknown>[];
   if (!usable.length) return "";
 
-  const branch = branchId != null && String(branchId).trim() !== "" ? String(branchId) : "";
+  const branch =
+    branchId != null && String(branchId).trim() !== "" ? String(branchId) : "";
   const byBranch = branch
-    ? usable.find((profile) => String(profile.branch ?? profile.branch_id ?? "") === branch)
+    ? usable.find(
+        (profile) =>
+          String(profile.branch ?? profile.branch_id ?? "") === branch,
+      )
     : null;
   const global = usable.find(
     (profile) => profile.branch == null && profile.branch_id == null,
   );
   const picked = byBranch || global || usable[0];
-  const percent = parseCommissionPercent(picked.sales_percent as string | number);
+  const percent = parseCommissionPercent(
+    picked.sales_percent as string | number,
+  );
   return percent == null ? "" : String(percent);
 }
 
-export function consultantDisplayFromSale(sale: Record<string, unknown> | null | undefined): string {
+export function consultantDisplayFromSale(
+  sale: Record<string, unknown> | null | undefined,
+): string {
   if (!sale) return "—";
   const display = sale.consultant_display || sale.consultant_name;
   if (display) return String(display);
   if (sale.consultant && typeof sale.consultant === "object") {
-    return employeeDisplayName(sale.consultant as Record<string, unknown>) || "—";
+    return (
+      employeeDisplayName(sale.consultant as Record<string, unknown>) || "—"
+    );
   }
   return "—";
 }
@@ -160,8 +185,13 @@ export function consultantCommissionLabel(
     Boolean(sale.consultant_display) ||
     Boolean(sale.consultant_name);
   if (!hasConsultant) return "—";
-  const amount = parseCommissionPercent(sale.consultant_commission_amount as string | number) || 0;
-  const percent = parseCommissionPercent(sale.consultant_commission_percent as string | number);
+  const amount =
+    parseCommissionPercent(
+      sale.consultant_commission_amount as string | number,
+    ) || 0;
+  const percent = parseCommissionPercent(
+    sale.consultant_commission_percent as string | number,
+  );
   if (amount <= 0 && !showZero) return "—";
   const amountText = amount.toLocaleString("ru-RU", {
     minimumFractionDigits: 2,
@@ -171,7 +201,9 @@ export function consultantCommissionLabel(
   return `${percent} % · ${amountText} с`;
 }
 
-export function receiptConsultantName(payload: Record<string, unknown> | null | undefined): string {
+export function receiptConsultantName(
+  payload: Record<string, unknown> | null | undefined,
+): string {
   if (!payload) return "";
   const nested = payload.consultant;
   if (nested && typeof nested === "object") {

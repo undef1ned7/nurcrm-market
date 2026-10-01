@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext } from "react-router";
 import api from "@shared/api";
 import "./Bar.scss";
 

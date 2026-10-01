@@ -1,8 +1,8 @@
-import { FileText, Receipt } from "lucide-react";
+import { FileText, Receipt, Undo2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { pdf } from "@react-pdf/renderer";
 
 import {
@@ -176,7 +176,12 @@ const getLineTotal = (product: any) => {
   return Math.max(0, computed);
 };
 
-const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
+const SellDetail = ({
+  onClose: onCloseProp,
+  id: idProp,
+  onRefund,
+  canReturn,
+}: any) => {
   const { t } = useTranslation();
   const ts = (k: string): string =>
     t(`crm.sell.modals.saleDetail.${k}`) as string;
@@ -444,6 +449,16 @@ const SellDetail = ({ onClose: onCloseProp, id: idProp }: any) => {
                 <FileText size={18} strokeWidth={2.2} aria-hidden />
                 {ts("downloadInvoice")}
               </button>
+              {onRefund && canReturn?.(filterField) && (
+                <button
+                  type="button"
+                  className="sellDetail__actionBtn sellDetail__actionBtn--danger"
+                  onClick={() => onRefund(filterField)}
+                >
+                  <Undo2 size={18} strokeWidth={2.2} aria-hidden />
+                  {t("crm.sell.refundModal.returnBtn")}
+                </button>
+              )}
             </div>
           </>
         )}

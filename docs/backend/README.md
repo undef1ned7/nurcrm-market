@@ -46,6 +46,8 @@
 | [procurement-recommendations-backend.md](./procurement-recommendations-backend.md) | Рекомендуемый заказ поставщика | новый GET |
 | [product-form-layout-backend.md](./product-form-layout-backend.md) | Раскладка формы товара (`hidden[]`) | новый singleton |
 | [client-kpis-backend.md](./client-kpis-backend.md) | KPI карточки клиента: долг / аванс / продажи | новый GET |
+| [ui-preferences-backend.md](./ui-preferences-backend.md) | Персональные UI-настройки (сайдбар, тема, кнопка кассы) вместо только-localStorage | новый singleton (per-user) + GET/PATCH |
+| [branch-transfers-backend.md](./branch-transfers-backend.md) | Перемещение товаров между главным складом и филиалами + накладная ТОРГ-13: `/main/branch-transfers/`, `branch=main` в списке товаров | новая модель + 4 эндпоинта + правка фильтра товаров |
 | [adult-products-backend.md](./adult-products-backend.md) | Товар 18+: `is_adult` | поле на Product |
 | [subscription-account-panel-backend.md](./subscription-account-panel-backend.md) | Панель «Подписка и аккаунт»: `created_at`, `subscription{days_left,status,plan}` | `created_at` + subscription-объект |
 | [warehouse-filters-backend.md](./warehouse-filters-backend.md) | Фильтры склада `/crm/sklad`: подтвердить работу по всем полям | вопросы BE |

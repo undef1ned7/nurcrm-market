@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, lazy, Suspense, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { ChevronDown, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import "./Clients.scss";
 import api from "@shared/api";

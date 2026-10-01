@@ -1,4 +1,5 @@
 import { isBackendCashflowsEnabled } from "./backendCashflows";
+import { getProfileBranchId } from "./branchContext";
 
 /**
  * Роли касс для маршрутизации на бэкенде.
@@ -28,16 +29,10 @@ export type CashRoutingContext = {
 };
 
 export function resolveBranchId(
-  profile?: { active_branch?: unknown; branch?: unknown } | null,
+  profile?: Record<string, any> | null,
   company?: { active_branch?: unknown } | null,
 ): string | undefined {
-  const raw =
-    profile?.active_branch ??
-    profile?.branch ??
-    company?.active_branch ??
-    null;
-  if (raw == null || raw === "") return undefined;
-  return String(raw);
+  return getProfileBranchId(profile, company);
 }
 
 /** Фронт не должен подставлять cashbox_id — выбор на бэке. */
@@ -75,7 +70,7 @@ export function hasExplicitCashbox(
 
 /** POS: филиал → pos_branch, иначе основная касса компании. */
 export function resolvePosCashboxRole(
-  profile?: { active_branch?: unknown; branch?: unknown } | null,
+  profile?: Record<string, any> | null,
   company?: { active_branch?: unknown } | null,
 ): CashboxRole {
   return resolveBranchId(profile, company)
@@ -85,7 +80,7 @@ export function resolvePosCashboxRole(
 
 /** Маршрутизация для продаж / оплаты долга / открытия смены. */
 export function buildPosRoutingFromUser(
-  profile?: { active_branch?: unknown; branch?: unknown } | null,
+  profile?: Record<string, any> | null,
   company?: { active_branch?: unknown } | null,
   shiftId?: string | number | null,
 ): Record<string, string> {

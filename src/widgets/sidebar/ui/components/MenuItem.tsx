@@ -3,7 +3,7 @@ import {
   useLocation,
   useNavigate,
   useSearchParams,
-} from "react-router-dom";
+} from "react-router";
 import { useTranslation } from "react-i18next";
 import { translateMenuLabel } from "@shared/lib/i18n/menuLabelKeys";
 
@@ -31,7 +31,7 @@ const MenuItem = ({
   iconsOnly = false,
 }) => {
   const { t } = useTranslation();
-  const { label, to, icon, children } = item;
+  const { label, to, icon, children, badge } = item;
   const displayLabel = translateMenuLabel(label, t);
   const location = useLocation();
   const navigate = useNavigate();
@@ -112,6 +112,11 @@ const MenuItem = ({
       >
         {IconComponent}
         <span className="sidebar__menu-label">{displayLabel}</span>
+        {badge ? (
+          <span className="sidebar__menu-badge" aria-hidden="true">
+            {badge}
+          </span>
+        ) : null}
       </NavLink>
       {!iconsOnly && children && (
         <div
