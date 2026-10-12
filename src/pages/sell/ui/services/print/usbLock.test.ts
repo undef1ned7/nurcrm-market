@@ -60,3 +60,4 @@ describe("usb tab lock", () => {
     expect(() => acquireUsbLock()).not.toThrow();
   });
 });
+ 

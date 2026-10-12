@@ -38,3 +38,4 @@ export function extractShiftRealtimeEvent(payload: unknown): ShiftRealtimeEvent 
       pickStr(data.cash_sales_total) ?? pickStr(data.cashSalesTotal),
   };
 }
+ 

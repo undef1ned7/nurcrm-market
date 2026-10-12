@@ -47,3 +47,4 @@ const ServicePricingSection = ({ newItemData, marketData, handleChange, handleMa
 };
 
 export default ServicePricingSection;
+ 

@@ -52,3 +52,4 @@ describe("getPaymentAmounts — долг с предоплатой", () => {
     });
   });
 });
+ 

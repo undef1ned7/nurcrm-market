@@ -26,3 +26,4 @@ describe("mapCatalogProduct", () => {
     expect(p).toMatchObject({ isService: false, price: 100, cost: 0, qty: 48 });
   });
 });
+ 

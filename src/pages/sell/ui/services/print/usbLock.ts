@@ -163,3 +163,4 @@ export function resetUsbLockForTests(nextTabId = "test-tab-a"): void {
     // ignore
   }
 }
+ 

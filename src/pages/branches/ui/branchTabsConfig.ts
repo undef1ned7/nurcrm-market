@@ -199,3 +199,4 @@ export const applySectorTabsRules = (sectorTabs, sector, tariff) => {
 
   return filteredTabs;
 };
+ 

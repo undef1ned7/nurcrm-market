@@ -17,3 +17,4 @@ describe("resolveReceiptStyle", () => {
     expect(resolveReceiptStyle(null, "")).toBeUndefined();
   });
 });
+ 

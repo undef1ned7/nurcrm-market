@@ -164,3 +164,4 @@ const BulkEditModal = ({ selectedCount, onClose, onApply, saving }: any) => {
 };
 
 export default BulkEditModal;
+ 
