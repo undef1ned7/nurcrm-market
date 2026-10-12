@@ -1,0 +1,207 @@
+.debts-page {
+  min-width: 0;
+
+  &__toolbar {
+    width: 100%;
+  }
+
+  &__search {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  &__date {
+    min-width: 150px;
+  }
+
+  &__alert {
+    border-radius: var(--nur-radius, 12px);
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 500;
+
+    &--danger {
+      background: var(--nur-danger-soft);
+      border: 1px solid var(--nur-danger-border, #fecdd3);
+      color: var(--nur-danger);
+    }
+
+    &--warning {
+      background: var(--nur-warning-soft);
+      border: 1px solid var(--nur-warning-border, #fde68a);
+      color: var(--nur-warning-ink);
+    }
+  }
+
+  &__notifications {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__muted-cell {
+    padding: 16px;
+    color: var(--nur-muted);
+  }
+
+  &__row-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+
+  &__pagination-info {
+    font-size: 14px;
+    color: var(--nur-muted);
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+
+  &__pagination-info {
+    font-size: 14px;
+    color: var(--nur-muted);
+  }
+
+  &__row--overdue {
+    background: var(--nur-danger-soft);
+  }
+
+  &__row--due-today {
+    background: var(--nur-warning-soft);
+  }
+
+  &__row--due-tomorrow {
+    background: var(--nur-primary-soft);
+  }
+
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--nur-overlay, rgba(15, 23, 42, 0.4));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+
+  &__modal {
+    background: var(--nur-surface);
+    padding: 20px;
+    border-radius: var(--nur-radius-lg, 16px);
+    width: 420px;
+    max-width: 92%;
+    border: 1px solid var(--nur-border);
+    box-shadow: var(--nur-shadow-md, var(--nur-shadow-sm));
+  }
+
+  &__modal-title {
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--nur-text);
+  }
+
+  &__modal-input {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  &__modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  &__seg {
+    display: flex;
+    gap: 8px;
+    margin: 6px 0 12px;
+  }
+
+  &__seg-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: var(--nur-radius, 12px);
+    border: 1px solid var(--nur-border);
+    background: var(--nur-surface);
+    color: var(--nur-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+    &--active {
+      background: var(--nur-primary-soft);
+      border-color: var(--nur-primary);
+      color: var(--nur-primary);
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__toolbar {
+      .nur-input {
+        min-width: 0;
+        flex: 1 1 100%;
+      }
+    }
+
+    &__table,
+    &__table thead,
+    &__table tbody,
+    &__table th,
+    &__table td,
+    &__table tr {
+      display: block;
+      width: 100%;
+    }
+
+    &__table thead {
+      display: none;
+    }
+
+    &__table tr {
+      margin-bottom: 12px;
+      border: 1px solid var(--nur-border);
+      border-radius: var(--nur-radius);
+      padding: 10px;
+      background: var(--nur-surface);
+    }
+
+    &__table td {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: none;
+    }
+
+    &__table td::before {
+      content: attr(data-label);
+      font-weight: 700;
+      color: var(--nur-muted);
+    }
+
+    &__row-actions {
+      justify-content: flex-end;
+    }
+  }
+}

@@ -1,0 +1,375 @@
+/* PayrollDaily.scss */
+@use "../../../styles/barbershop.scss" as *;
+
+.barberpayrolldaily {
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px 0;
+
+  &__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  &__titleWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__title {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin: 0;
+    color: var(--text);
+  }
+
+  &__subtitle {
+    font-size: 13px;
+    font-weight: 400;
+    color: #9ca3af;
+  }
+
+  &__filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__date {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--nur-surface-2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: all 0.15s ease;
+
+    &:focus-within {
+      background: var(--nur-surface);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
+    }
+  }
+
+  &__dateIcon {
+    font-size: 14px;
+    color: #9ca3af;
+  }
+
+  &__dateInput {
+    background: transparent;
+    color: var(--text);
+    border: 0;
+    outline: none;
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  &__btn {
+    height: 42px;
+    border-radius: 12px;
+    border: none;
+    background: var(--nur-surface-3);
+    color: var(--nur-muted);
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 450;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--nur-surface-3);
+      color: var(--text);
+    }
+
+    &--primary {
+      background: var(--primary);
+      color: var(--nur-primary-ink);
+
+      &:hover {
+        background: var(--primary-dark);
+      }
+    }
+
+    &--secondary:hover {
+      background: var(--nur-surface-3);
+    }
+
+    &--icon {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+  }
+
+  &__btnText {
+    font-weight: 450;
+  }
+
+  &__alert {
+    background: linear-gradient(135deg, var(--nur-danger-soft) 0%, #fecaca 100%);
+    color: #dc2626;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  /* table */
+  &__tableWrap {
+    background: var(--nur-surface);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    max-height: 70vh;
+    overflow: auto;
+
+    &--modal {
+      max-height: 60vh;
+    }
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      vertical-align: middle;
+      text-align: left;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--nur-surface);
+      z-index: 1;
+      font-weight: 450;
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    tbody td {
+      font-weight: 400;
+      color: var(--text);
+    }
+
+    tbody tr {
+      transition: background 0.12s ease;
+    }
+
+    tbody tr:hover td {
+      background: var(--nur-surface-2);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tfoot th {
+      background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .is-money {
+      text-align: right;
+      white-space: nowrap;
+      font-weight: 500;
+      color: #16a34a;
+    }
+  }
+
+  &__muted {
+    color: #9ca3af;
+  }
+
+  &__empty {
+    color: #9ca3af;
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 14px;
+  }
+
+  &__ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 320px;
+  }
+
+  &__actions {
+    text-align: right;
+  }
+
+  &__link {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: #2563eb;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 6px 10px;
+    font: inherit;
+    font-weight: 400;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.08);
+      text-decoration: underline;
+    }
+  }
+
+  /* modal */
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 50;
+  }
+
+  &__modal {
+    width: min(980px, 100%);
+    background: var(--nur-surface);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  }
+
+  &__modalHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  &__modalTitle {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 500;
+  }
+
+  &__iconBtn {
+    background: var(--nur-surface-3);
+    border: 0;
+    color: var(--nur-muted);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--nur-surface-3);
+      color: var(--text);
+    }
+  }
+
+  &__modalBody {
+    padding: 16px 22px;
+    overflow-y: auto;
+  }
+
+  &__modalFoot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 22px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  /* Фильтры используют SearchableCombobox из common */
+  &__filter {
+    min-width: 200px;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 768px) {
+    gap: 14px;
+
+    &__head {
+      gap: 12px;
+    }
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__filters {
+      gap: 8px;
+    }
+
+    &__date {
+      padding: 8px 12px;
+    }
+
+    &__btn {
+      height: 40px;
+      padding: 0 14px;
+      font-size: 13px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
+
+    &__head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__filters {
+      width: 100%;
+    }
+
+    &__date {
+      flex: 1;
+    }
+
+    &__table {
+      th,
+      td {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+    }
+
+    &__modal {
+      border-radius: 0;
+      max-height: 100vh;
+      height: 100%;
+    }
+
+    &__modalHead,
+    &__modalBody,
+    &__modalFoot {
+      padding: 14px 16px;
+    }
+  }
+}

@@ -1,0 +1,236 @@
+.receipt-preview-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.receipt-preview-modal {
+  background: var(--nur-surface);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid var(--nur-border);
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--nur-text);
+    margin: 0;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nur-muted);
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--nur-text);
+    }
+  }
+
+  &__content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  &__receipt {
+    background: var(--nur-surface);
+    border: 2px solid var(--nur-border);
+    border-radius: 8px;
+    padding: 24px;
+    font-family: "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--nur-text);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  &__receipt-header {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  &__company {
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  &__doc-no {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  &__divider {
+    height: 1px;
+    background: var(--nur-border-strong);
+    margin: 12px 0;
+    border: none;
+  }
+
+  &__receipt-info {
+    margin-bottom: 16px;
+  }
+
+  &__info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  &__receipt-items {
+    margin-bottom: 16px;
+  }
+
+  &__item {
+    margin-bottom: 12px;
+  }
+
+  &__item-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  &__item-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--nur-muted);
+
+    &--head {
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--nur-text);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed var(--nur-border-strong);
+    }
+  }
+
+  &__item-total {
+    font-weight: 600;
+    color: var(--nur-text);
+  }
+
+  &__receipt-totals {
+    margin-bottom: 16px;
+  }
+
+  &__total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 14px;
+
+    &--bold {
+      font-weight: 700;
+      font-size: 16px;
+      margin-top: 8px;
+    }
+  }
+
+  &__receipt-payment {
+    margin-bottom: 16px;
+  }
+
+  &__payment-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  &__receipt-footer {
+    text-align: center;
+  }
+
+  &__thank-you {
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  &__loading,
+  &__error {
+    padding: 48px 24px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--nur-muted);
+  }
+
+  &__error {
+    color: var(--nur-danger);
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+    padding: 24px;
+    border-top: 1px solid var(--nur-border);
+    justify-content: flex-end;
+  }
+
+  &__print-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--nur-text);
+    color: var(--nur-surface);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover:not(:disabled) {
+      background: var(--nur-text);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__close-btn {
+    padding: 12px 24px;
+    background: var(--nur-bg);
+    color: var(--nur-text);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--nur-border);
+    }
+  }
+}
+

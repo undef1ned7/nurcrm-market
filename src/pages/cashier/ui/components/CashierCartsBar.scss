@@ -1,0 +1,215 @@
+.cashier-carts-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+  min-height: 40px;
+
+  &__empty {
+    font-size: 12px;
+    color: var(--nur-muted);
+    padding: 8px 4px;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    display: inline;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--nur-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  &__tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__tab-wrap {
+    display: inline-flex;
+    align-items: stretch;
+    flex-shrink: 0;
+  }
+
+  &__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 160px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-sm);
+    background: var(--nur-surface);
+    color: var(--nur-text-2);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color var(--nur-duration), background var(--nur-duration);
+
+    &:hover:not(:disabled) {
+      border-color: var(--nur-primary);
+      background: var(--nur-primary-soft);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    &--active {
+      border-color: var(--nur-primary);
+      background: var(--nur-primary);
+      color: var(--nur-primary-ink);
+    }
+
+    &--main .cashier-carts-bar__tab-label {
+      font-weight: 700;
+    }
+  }
+
+  &__tab-wrap--deletable &__tab {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  &__delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    padding: 0;
+    border: 1px solid var(--nur-border);
+    border-left: 0;
+    border-radius: 0 8px 8px 0;
+    background: var(--nur-surface);
+    color: var(--nur-muted);
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background 0.15s,
+      color 0.15s;
+
+    &:hover:not(:disabled) {
+      border-color: #fecaca;
+      background: var(--nur-danger-soft);
+      color: var(--nur-danger);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+  }
+
+  &__tab-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__tab-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--nur-text);
+    color: var(--nur-surface);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  &__new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px dashed var(--nur-border-strong);
+    border-radius: var(--nur-radius-sm);
+    background: var(--nur-surface);
+    color: var(--nur-text-2);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--nur-primary);
+      background: var(--nur-primary-soft);
+      color: var(--nur-primary-ink);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+  }
+
+  /* Над поиском: все вкладки в одну строку с прокруткой */
+  &--toolbar {
+    width: 100%;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-sizing: border-box;
+
+    .cashier-carts-bar__label {
+      display: flex;
+      align-items: center;
+      padding-right: 2px;
+    }
+
+    .cashier-carts-bar__tabs {
+      flex: 1;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .cashier-carts-bar__tab {
+      max-width: none;
+    }
+
+    .cashier-carts-bar__delete-btn {
+      width: 32px;
+      min-height: 36px;
+    }
+
+    .cashier-carts-bar__tab-label {
+      max-width: 140px;
+    }
+
+    .cashier-carts-bar__new-btn {
+      align-self: center;
+    }
+  }
+}
+
+.cashier-page__carts-bar-wrap {
+  flex-shrink: 0;
+  width: 100%;
+}

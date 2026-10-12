@@ -1,0 +1,87 @@
+.history {
+  min-height: 100%;
+
+  &__filters {
+    width: 100%;
+  }
+
+  &__filter {
+    min-width: 140px;
+    margin-top: 0;
+
+    .nur-label {
+      margin-bottom: 6px;
+    }
+  }
+
+  &__error {
+    color: var(--nur-danger);
+    background: var(--nur-danger-soft);
+    border: 1px solid rgba(239, 68, 68, 0.28);
+    padding: 8px 12px;
+    border-radius: var(--nur-radius-sm);
+    font-size: var(--nur-font-body);
+  }
+
+  &__more {
+    display: flex;
+    justify-content: center;
+  }
+
+  .ellipsis {
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    display: flex;
+    gap: var(--nur-space-4);
+    flex-wrap: wrap;
+    padding: var(--nur-space-3) var(--nur-space-4);
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-sm);
+    background: var(--nur-surface-2);
+    margin-bottom: var(--nur-space-4);
+
+    > div {
+      font-size: var(--nur-font-body);
+      color: var(--nur-text);
+    }
+  }
+
+  &__modalTable {
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-sm);
+  }
+
+  &__skeletonRow {
+    display: grid;
+    gap: 10px;
+  }
+
+  &__skeleton {
+    height: 72px;
+    border-radius: var(--nur-radius);
+  }
+
+  tfoot td {
+    background: var(--nur-surface-2);
+    font-weight: 700;
+    padding: 12px 16px;
+    border-top: 1px solid var(--nur-border);
+  }
+}
+
+@media (max-width: 768px) {
+  .history {
+    &__filter {
+      flex: 1 1 140px;
+    }
+
+    &__filters .nur-btn {
+      width: 100%;
+    }
+  }
+}

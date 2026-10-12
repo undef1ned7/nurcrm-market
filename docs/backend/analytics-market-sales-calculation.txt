@@ -1,0 +1,530 @@
+АНАЛИТИКА МАРКЕТА, ВКЛАДКА "ПРОДАЖИ": КАК СЧИТАЕТСЯ
+
+Эндпоинт: GET /main/analytics/market/?tab=sales
+Код: apps/main/analytics_market.py, AnalyticsView._sales
+
+
+1. ПАРАМЕТРЫ
+
+period_start, period_end  - YYYY-MM-DDTHH:MM:SS или YYYY-MM-DD, местное время Asia/Bishkek
+cashbox, shift, cashier, consultant, payment_method, min_total, max_total
+branch, include_global=1
+
+
+2. ПЕРИОД
+ 
+start = period_start (включительно)
+end   = period_end + 1 секунда
+        (если period_end задан только датой, то 00:00 следующего дня)
+Условие по дате: >= start AND < end (конец исключительно).
+Если период не задан, берётся текущий месяц.
+
+
+3. НАБОР ПРОДАЖ S
+
+Из Sale берутся записи, у которых:
+  1) company = компания пользователя
+  2) если задан филиал: branch = X
+     (с include_global: branch = X OR branch IS NULL)
+  3) status IN ('paid', 'partially_returned')
+  4) paid_at >= start AND paid_at < end
+     (если поля paid_at нет, то created_at)
+  5) применены фильтры запроса:
+       cashbox_id, shift_id, consultant_id, payment_method
+       cashier -> user_id
+       total >= min_total, total <= max_total
+
+Sale.total - сумма чека после скидок и после частичных возвратов.
+При частичном возврате бэк уменьшает total.
+
+
+4. КАРТОЧКИ (по набору S)
+
+revenue        = SUM(Sale.total)
+transactions   = COUNT(Sale.id)
+avg_check      = revenue / transactions            (0, если транзакций нет)
+clients        = COUNT(DISTINCT client_id), без NULL
+cogs           = SUM(SaleItem.quantity * unit_cost) по строкам чеков из S
+gross_profit   = revenue - cogs
+margin_percent = gross_profit / revenue * 100      (null, если revenue <= 0)
+cogs_warning   = ставится, если revenue > 0 и cogs = 0
+
+unit_cost берётся по порядку:
+  COALESCE(purchase_price_snapshot, product.purchase_price, 0)
+  если поля нет: unit_cost / cost_price / purchase_price / buy_price
+  затем product.purchase_price
+
+catalog_products_count = число товаров компании
+total_stock_quantity   = SUM(Product.quantity)
+
+
+5. ВОЗВРАТЫ
+
+SaleReturn:
+  company = компания
+  created_at >= start AND created_at < end
+  при заданном branch: sale.branch = branch
+                       (с include_global ещё и NULL)
+
+returns_count = COUNT(SaleReturn.id)
+returns_total = SUM(SaleReturn.returned_amount)
+
+Фильтры cashbox, shift, cashier, consultant, payment_method,
+min_total, max_total к возвратам НЕ применяются.
+
+
+6. ИТОГОВЫЕ ПОЛЯ ОТВЕТА
+
+revenue                = SUM(Sale.total) по S
+gross_revenue          = revenue
+revenue_before_returns = revenue
+returns_total          = SUM(returned_amount)
+returns_count          = COUNT(SaleReturn)
+net_revenue            = revenue - returns_total
+
+
+7. ГРАФИКИ И ТАБЛИЦЫ
+
+sales_dynamics:
+  группировка S по TruncDate(paid_at), значение SUM(total)
+
+payment_methods:
+  группировка S по payment_method, значения count и SUM(total)
+  для mixed добавлены cash и card:
+    сумма SalePayment.amount, метод cash идёт в cash,
+    остальные методы, кроме mixed, идут в card
+
+top_products:
+  строки SaleItem чеков из S, группировка по product_id и name_snapshot
+  sold    = SUM(quantity)
+  revenue = SUM(quantity * unit_price - line_discount)
+  топ-5 по выручке
+  скидка на весь чек (discount_total) не вычитается
+
+documents (четыре строки):
+  "Продажа"          - transactions, revenue
+  "Закупка"          - 0, 0
+  "Возврат продажи"  - returns_count, returns_total
+  "Возврат закупки"  - 0, 0
+
+products_stock:
+  все товары компании с остатками, не зависит от периода и кассы
+
+
+8. КЭШ
+
+Ответ кэшируется на CACHE_TIMEOUT_ANALYTICS секунд (по умолчанию 300).
+Ключ: компания, филиал, вкладка, md5 всех query-параметров.
+При новой продаже или возврате кэш не сбрасывается.
+
+
+9. ПРИМЕР: КОМПАНИЯ INOX, ОКТЯБРЬ 2026, КАССА 2c13d535-2d68-4d90-a731-b610d1e72938
+
+Чеки (время местное):
+
+  N  total сейчас  возврат  исходная сумма  оплата
+  1        400       2200        2600        cash
+  2     165000          0      165000        mbank
+  3      15000          0       15000        долг, paid_at пустой
+  4      27000      13500       40500        mixed
+
+Расчёт кодом:
+  S = чеки 1, 2, 4 (чек 3 не попал: у него пустой paid_at)
+  revenue      = 400 + 165000 + 27000 = 192400
+  transactions = 3
+  avg_check    = 192400 / 3 = 64133.33
+  returns_total = 2200 + 13500 = 15700
+  returns_count = 2
+  net_revenue   = 192400 - 15700 = 176700
+
+
+10. ПРОВЕРОЧНЫЕ SQL (только чтение)
+
+Имена таблиц нужно сверить по Model._meta.db_table.
+
+-- набор S: ожидается 3 / 192400.00
+SELECT count(*), sum(total) FROM main_sale
+WHERE company_id = 'b6491622-01fc-423c-9663-6e2834064bcf'
+  AND status IN ('paid','partially_returned')
+  AND paid_at >= '2026-10-01 00:00+06' AND paid_at < '2026-11-01 00:00+06'
+  AND cashbox_id = '2c13d535-2d68-4d90-a731-b610d1e72938';
+
+-- возвраты: ожидается 2 / 15700.00
+SELECT count(*), sum(returned_amount) FROM main_salereturn
+WHERE company_id = 'b6491622-01fc-423c-9663-6e2834064bcf'
+  AND created_at >= '2026-10-01 00:00+06' AND created_at < '2026-11-01 00:00+06';
+
+
+==============================================================================
+ОСТАЛЬНЫЕ ВКЛАДКИ
+==============================================================================
+
+Имена вкладок в API: sales, stock, cashboxes, shifts, products, suppliers,
+procurement, purchases, users, finance, salary, abc, reconcile, cashflow, pnl.
+Во фронте: warehouse -> stock, cashiers -> cashboxes, остальные 1:1.
+Эндпоинты /analytics/market/reconcile/, /cashflow/, /pnl/ вызывают те же
+методы, что и tab=reconcile, tab=cashflow, tab=pnl.
+
+Общие обозначения:
+  dt        = paid_at (если поля нет, то created_at)
+  S         = набор продаж из раздела 3 (с теми же фильтрами cashbox/shift/...)
+  SaleItem  = строки чеков
+  line_rev  = SaleItem.quantity * unit_price - line_discount
+  unit_cost = как в разделе 4 (себестоимость единицы)
+  CashFlow  = кассовые движения, берутся только status = approved
+  _apply_sale_filters = фильтры cashbox/shift/cashier/consultant/
+                        payment_method/min_total/max_total из раздела 1
+
+Какие статусы чеков и какие фильтры использует каждая вкладка:
+
+  вкладка       статусы чеков               _apply_sale_filters
+  sales         paid, partially_returned    да
+  cashboxes     paid, partially_returned    да
+  shifts        paid, partially_returned    нет (свои: cashbox, cashier)
+  products      paid, partially_returned    нет
+  abc           paid, partially_returned    да
+  reconcile     paid, partially_returned    да
+  cashflow      paid, partially_returned    да
+  pnl           paid, partially_returned    да
+  stock         только paid                 да (только для движения)
+  suppliers     только paid                 да
+  procurement   только paid                 да
+  users         только paid                 нет
+  salary        только paid                 нет
+  finance       чеки не используются (только CashFlow)
+
+
+------------------------------------------------------------------------------
+STOCK (склад)
+------------------------------------------------------------------------------
+Параметры: product, category, kind, low_only=1, branch, include_global.
+
+Товары P = Product компании (+ филиал), затем фильтры product / kind / category.
+
+total_products          = COUNT(P)
+categories              = COUNT(DISTINCT category_id) по P, без NULL
+total_stock_quantity    = SUM(quantity) по P без услуг (kind != service)
+inventory_value         = SUM(quantity * purchase_price) по P
+                          (если нет purchase_price, то price)
+min_stock               = поле min_quantity / min_stock / reorder_level /
+                          minimum_quantity, иначе 5
+low_stock_count         = COUNT(P где quantity <= min_stock)
+zero_stock_count        = COUNT(P без услуг где quantity <= 0 или NULL)
+                          (то же в zero_stock_products_count и out_of_stock_count)
+low_stock (таблица)     = 10 товаров с наименьшим остатком среди low_stock;
+                          status = critical, если qty <= max(1, min/2), иначе low
+category_distribution   = группировка P по category: COUNT(id), доля = count / сумма
+                          по топ-10 категориям * 100
+products_stock          = все товары P с остатками
+movement_units          = чеки со статусом ТОЛЬКО paid в периоде (+ фильтры
+                          продаж), группировка SaleItem по TruncDate(dt):
+                          SUM(quantity) - сколько единиц продано в день
+turnover_days           = inventory_value / (SUM(total) чеков paid в периоде / дней)
+                          дней = max(1, (end.date - start.date)), округление 0.1;
+                          null, если inventory_value = 0 или выручка = 0
+Остатки - на текущий момент, от периода не зависят.
+
+
+------------------------------------------------------------------------------
+CASHBOXES (кассы)
+------------------------------------------------------------------------------
+Набор S - как в разделе 3 (paid + partially_returned, dt, все фильтры).
+
+revenue         = SUM(total) по S
+transactions    = COUNT(id)
+avg_check       = revenue / transactions
+cogs, gross_profit, margin_percent, cogs_warning - как в разделе 4
+cash_in_box     = SUM(total) чеков S с payment_method = cash
+                  + наличная часть чеков mixed (SUM SalePayment.amount, method = cash)
+cash_share_percent = cash_in_box / revenue * 100  (0, если revenue = 0)
+
+payment_detail  = по payment_method: transactions = COUNT, sum = SUM(total),
+                  share = sum / SUM(всех) * 100; для mixed ещё cash и card
+payment_methods = то же в виде {name, percent}
+sales_by_hours  = группировка S по ExtractHour(dt): revenue = SUM(total),
+                  transactions = COUNT (час в таймзоне проекта)
+transactions_by_weekday = группировка S по ExtractWeekDay(dt): COUNT
+                  (формат Django: 1 = воскресенье ... 7 = суббота)
+peak_hours      = 6 часов с наибольшей выручкой из sales_by_hours,
+                  avg_check = revenue / transactions
+
+
+------------------------------------------------------------------------------
+SHIFTS (смены)
+------------------------------------------------------------------------------
+Параметры: cashbox, cashier, status (open|closed), branch.
+Смены C = CashShift компании (+ филиал, cashbox, cashier, status).
+
+active_shifts      = COUNT(C со статусом open)
+shifts_today       = COUNT(C где opened_at в пределах сегодняшних суток)
+period_shifts      = C где opened_at >= start AND opened_at < end
+avg_duration_hours = среднее (closed_at - opened_at) в часах по закрытым сменам
+                     из period_shifts, округление 0.1
+Продажи Ssh        = чеки paid + partially_returned, dt в периоде, фильтры
+                     cashbox и cashier (по user_id); других фильтров нет
+revenue_total      = SUM(total) по Ssh
+avg_revenue_per_shift = revenue_total / COUNT(period_shifts)  (минимум 1)
+cogs_total, gross_profit_total, margin_percent_total - как в разделе 4 по Ssh
+avg_profit_per_shift  = gross_profit_total / COUNT(period_shifts)  (минимум 1)
+sales_by_shift_bucket = по часу ОТКРЫТИЯ смены: 6-12 утро, 12-18 день,
+                     остальное вечер; в каждой корзине SUM(total) и COUNT чеков
+active_shifts (таблица) = до 50 открытых смен: кассир, касса, opened_at,
+                     sales = SUM(total) чеков смены
+best_cashiers      = топ-10 по SUM(total) чеков Ssh, группировка по
+                     shift.cashier: shifts = COUNT(DISTINCT shift),
+                     avg_check = sales / COUNT(чеков)
+
+
+------------------------------------------------------------------------------
+PRODUCTS (товары)
+------------------------------------------------------------------------------
+Параметры: limit (по умолчанию 20; all, 0 или -1 = без лимита), supplier или
+suppliers (id через запятую), branch.
+
+Продажи Sp = чеки paid + partially_returned, dt в периоде, филиал.
+Фильтры cashbox/shift/cashier НЕ применяются.
+Строки: SaleItem чеков Sp (при фильтре по поставщику: product.client in список).
+
+top_by_revenue  = группировка по product: revenue = SUM(line_rev),
+                  qty_sold = SUM(quantity), transactions = COUNT(DISTINCT sale)
+top_by_quantity = то же, сортировка по qty_sold
+categories      = группировка по product.category: revenue, qty_sold,
+                  products_count = COUNT(DISTINCT product), transactions
+brands          = то же по product.brand
+sales_without_catalog_product = строки, где product = NULL (товар удалён),
+                  группировка по name_snapshot и barcode_snapshot;
+                  sales_lines_missing_product_count = COUNT таких строк
+stock_value     = SUM(quantity * purchase_price) по товарам компании
+low_stock_count = COUNT(товаров с quantity <= 5)
+                  low_stock_products: status critical, если quantity <= 1, иначе low
+expiring_products: срок годности <= сегодня + 14 дней;
+                  days_left < 0 = expired; 0..3 = critical; 4..14 = warning
+rejected_products_count = COUNT(товаров со статусом rejected)
+catalog_products_count  = число товаров компании (+ фильтр поставщика)
+
+
+------------------------------------------------------------------------------
+SUPPLIERS (поставщики)
+------------------------------------------------------------------------------
+Параметры: limit, purchase_date_from / purchase_date_to (или procurement_date_*).
+
+Товары поставщиков = Product с client типа "поставщик" (+ филиал; если заданы
+purchase_date_*, то Product.date в этих границах).
+Для каждого поставщика:
+  products_count = COUNT(товаров)
+  stock_qty      = SUM(quantity)
+  stock_value    = SUM(quantity * purchase_price)
+Продажи: чеки ТОЛЬКО paid, dt в периоде, филиал, _apply_sale_filters;
+  period_qty_sold    = SUM(SaleItem.quantity) товаров этого поставщика
+  period_revenue     = SUM(line_rev)
+  period_transactions = COUNT(DISTINCT sale)
+rank_by_qty   = место по period_qty_sold (при равенстве по stock_qty)
+rating        = 5 - 4 * (место - 1) / (число_поставщиков - 1); при одном поставщике 5.0
+                (условный рейтинг по рангу, отзывы не используются)
+rank_by_stock = место по stock_qty
+Карточки: suppliers_count, catalog_products_count, total_stock_value =
+  SUM(stock_value), total_period_qty_sold = SUM(period_qty_sold),
+  total_period_revenue = SUM(period_revenue)
+
+
+------------------------------------------------------------------------------
+PROCUREMENT (продажи и отгрузка агентам)
+------------------------------------------------------------------------------
+Параметры: limit (по умолчанию 50).
+Продажи: чеки ТОЛЬКО paid, dt в периоде, филиал, _apply_sale_filters,
+  по товарам каталога: qty_sold = SUM(quantity), revenue = SUM(line_rev).
+Отгрузка: ManufactureSubreal компании в периоде по created_at:
+  qty_transferred_to_agents = SUM(qty_transferred).
+current_stock = Product.quantity; stock_at_purchase_prices = quantity * purchase_price.
+Карточки: products_with_sales_or_transfers, total_qty_sold_period,
+  total_qty_transferred_to_agents_period.
+Сортировка combined: qty_sold + qty_transferred по убыванию.
+Оприходования от поставщика сюда не попадают (см. вкладку purchases).
+
+
+------------------------------------------------------------------------------
+PURCHASES (закупки)
+------------------------------------------------------------------------------
+Параметры: purchase_date_from / purchase_date_to (или date_from / date_to),
+иначе берётся общий период.
+Границы: df = purchase_date_from (или start), dt = purchase_date_to (или end).
+Особенность: в этой вкладке условие журнала - включительное: created_at >= df AND
+created_at <= dt, а в запасном варианте по Product.date - date >= df AND date < dt.
+
+Вариант 1 (если в периоде есть записи SupplierReceiptItem):
+  строки = SupplierReceiptItem по receipt.created_at в [df, dt], компания, филиал
+  purchased_sku_count = COUNT(DISTINCT product)
+  purchased_units     = SUM(qty)
+  purchased_value     = SUM(qty * COALESCE(purchase_price, 0))
+  by_supplier         = то же с группировкой по receipt.supplier
+Вариант 2 (если журнал пуст):
+  товары каталога с Product.date в [df, dt):
+  purchased_sku_count = COUNT(товаров), purchased_units = SUM(quantity),
+  purchased_value = SUM(quantity * purchase_price), by_supplier по Product.client.
+
+
+------------------------------------------------------------------------------
+USERS (сотрудники)
+------------------------------------------------------------------------------
+Продажи: чеки ТОЛЬКО paid, dt в периоде, филиал; фильтры cashbox/shift/cashier
+не применяются.
+users_performance (по Sale.user): revenue = SUM(total), transactions = COUNT,
+  avg_check = revenue / transactions, units_sold = SUM(SaleItem.quantity),
+  products_sold_count = число различных проданных товаров. Сортировка по revenue.
+Смены (CashShift, opened_at в периоде, филиал или без филиала):
+  total = COUNT, closed = COUNT(status = closed), open = total - closed
+shift_discrepancies: закрытые смены с заполненным closing_cash, где
+  |cash_diff| > 0.01; diff = cash_diff; type = shortage (diff < 0) или overage.
+  expected_cash и closing_cash берутся из смены.
+discrepancies_count = число таких смен (null при заданном limit).
+
+
+------------------------------------------------------------------------------
+FINANCE (финансы)
+------------------------------------------------------------------------------
+Движения F = CashFlow компании, status = approved, created_at >= start AND
+created_at < end, филиал или без филиала.
+Исключение дублей: если в F есть запись source_kind = warehouse_purchase с
+source_id = X, то "сырая" запись (source_kind IS NULL) с
+source_cashbox_flow_id = X исключается.
+
+income_total  = SUM(amount) по F где type = income
+expense_total = SUM(amount) по F где type = expense
+net_flow      = income_total - expense_total
+income_count, expense_count = COUNT по типам
+income_breakdown / expense_breakdown = группировка по CashFlow.name:
+  total = SUM(amount), count = COUNT; сортировка по total убыванию
+income_items / expense_items = список движений (id, name, amount, касса,
+  смена, created_at, кто создал, описание), новые сверху
+Кассовые фильтры продаж здесь не применяются; параметр cashbox не используется.
+
+
+------------------------------------------------------------------------------
+SALARY (зарплата продавцов)
+------------------------------------------------------------------------------
+days = max(1, (end - start).days)
+Чеки Ssal = ТОЛЬКО paid, dt в периоде; филиал: если branch не задан, то
+  только чеки без филиала (branch IS NULL).
+Сотрудники = те, у кого есть профиль оплаты, + кассиры (Sale.user) +
+  консультанты (Sale.consultant) + мастера (SaleItem.performer) за период.
+Профиль (MarketSaleEmployeePayProfile): pay_scheme, monthly_base_salary,
+  sales_percent; профиль филиала приоритетнее общего.
+
+Для сотрудника U:
+  cashier_sales_period      = SUM(total) чеков Ssal где user = U
+  consultant_sales_period   = SUM(total) чеков где consultant = U
+  consultant_commission_period = SUM(consultant_commission_amount) этих чеков
+  employee_sales_period     = SUM(total) чеков кассира U, в которых нет
+                              консультанта или комиссия консультанта выключена
+                              или равна 0
+  performer_commission_period = SUM(SaleItem.performer_commission_amount)
+                              строк, где performer = U
+  base_prorated   = monthly_base_salary * days / 30   (округление 0.01)
+  pct             = sales_percent / 100
+  cashier_bonus   = employee_sales_period * pct  при схеме percent или
+                    salary_plus_percent, иначе 0
+  percent_bonus   = cashier_bonus + consultant_commission_period
+                    + performer_commission_period
+  total:
+     схема salary (оклад):           base_prorated + consultant_commission_period
+                                     + performer_commission_period
+     схема percent (процент):        percent_bonus
+     схема salary_plus_percent:      base_prorated + percent_bonus
+Итоги: total_payroll = SUM(total), total_base_prorated, total_percent_bonus,
+  total_employee_sales = SUM(employee_sales_period),
+  avg_payroll_per_employee = total_payroll / число сотрудников,
+  blended_commission_rate_pct = total_percent_bonus / total_employee_sales * 100.
+staff_sales_by_day = SUM(total) и COUNT чеков сотрудников по дням.
+
+
+------------------------------------------------------------------------------
+ABC
+------------------------------------------------------------------------------
+Параметры: by = product | category | brand; metric = revenue | profit | qty.
+Чеки: paid + partially_returned, dt в периоде, _apply_sale_filters.
+Строки SaleItem чеков (для category и brand только строки с товаром).
+Для каждой группы:
+  revenue = SUM(line_rev)
+  qty     = SUM(quantity)
+  profit  = revenue - SUM(quantity * unit_cost)
+Сортировка по выбранной метрике по убыванию.
+  total = SUM(метрика) по группам, где метрика > 0
+  share = метрика / total * 100  (0, если метрика <= 0)
+  cum_share = накопленная сумма share (не более 100)
+  класс: метрика <= 0 -> C; cum_share <= A порог -> A; <= B порог -> B; иначе C
+  (пороги отдаются в поле thresholds; по умолчанию 80 и 95)
+totals = суммы revenue, qty, profit по всем группам.
+
+
+------------------------------------------------------------------------------
+RECONCILE (сверка)
+------------------------------------------------------------------------------
+Чеки: paid + partially_returned, dt в периоде, филиал, _apply_sale_filters.
+Семь проверок, у каждой ok и diff:
+  1. Продажи = аналитика продаж. Всегда ok (заглушка), diff = 0.
+  2. SUM(Sale.total) по чекам == SUM(SalePayment.amount) этих чеков,
+     допуск 0.01. При расхождении возвращает до 10 номеров чеков.
+  3. Возвраты: SUM(SaleReturn.returned_amount) в периоде (по created_at)
+     == сумма позиций returned_items (amount или total; если у позиций нет сумм,
+     то returned_amount), допуск 0.01.
+  4. Остаток = начальный + движения. Всегда ok (заглушка), diff = 0.
+  5. SUM(line_rev) по строкам с товаром == сумма тех же строк, сгруппированных
+     по товару (проверка самосогласованности), допуск 0.01.
+  6. Доход CashFlow (approved) в периоде: нет дублей по
+     (source_kind, source_id, amount) при source_id не NULL.
+  7. Расход CashFlow так же, после исключения дублей warehouse_purchase.
+all_ok = все проверки ok.
+
+
+------------------------------------------------------------------------------
+CASHFLOW (движение денег)
+------------------------------------------------------------------------------
+Чеки: paid + partially_returned, dt в периоде, филиал, _apply_sale_filters.
+Платежи P = SalePayment этих чеков.
+Приток (inflow):
+  sales_cash       = SUM(P.amount) где method = cash
+  sales_card       = SUM(P.amount) где method не cash и не debt
+  debt_repayments  = SUM(CashFlow.amount) income approved за период,
+                     source_kind = debt_payment
+  other_income     = SUM(CashFlow.amount) income approved за период,
+                     source_kind не sale и не debt_payment
+  total            = sales_cash + sales_card + debt_repayments + other_income
+Отток (outflow), CashFlow expense approved за период (после исключения дублей
+warehouse_purchase):
+  suppliers = source_kind = warehouse_purchase ИЛИ name содержит "закупка" или
+              "поставщик"
+  salaries  = name содержит "зарплат" или "аванс" ИЛИ категория содержит "зарплат"
+  rent      = name или категория содержит "аренд"
+  taxes     = name или категория содержит "налог"
+  returns   = SUM(SaleReturn.returned_amount) по created_at в периоде
+              (при заданном branch только возвраты этого филиала)
+  total_exp = SUM(amount) всех расходов
+  other_expenses = max(0, total_exp - suppliers - salaries - rent - taxes)
+  total     = suppliers + salaries + rent + taxes + other_expenses + returns
+net = inflow.total - outflow.total
+Поиск по названию - по подстроке без учёта регистра; одна запись может попасть
+в несколько категорий.
+
+
+------------------------------------------------------------------------------
+PNL (прибыль и убытки)
+------------------------------------------------------------------------------
+Чеки: paid + partially_returned, dt в периоде, филиал, _apply_sale_filters.
+revenue       = SUM(Sale.total)
+cogs          = SUM(SaleItem.quantity * COALESCE(purchase_price_snapshot,
+                product.purchase_price, 0))
+gross_profit  = revenue - cogs
+margin_percent = gross_profit / revenue * 100  (2 знака; 0, если revenue <= 0)
+Расходы OPEX = CashFlow expense approved за период, без дублей warehouse_purchase
+  и БЕЗ закупок (source_kind = warehouse_purchase, name содержит "закупка" или
+  "поставщик"):
+  salaries  = name содержит "зарплат" или "аванс" / категория "зарплат"
+  rent      = "аренд"
+  taxes     = "налог"
+  utilities = "коммун", "свет", "интернет"
+  other     = остальные расходы OPEX
+  total     = salaries + rent + taxes + utilities + other
+operating_profit = gross_profit - opex.total
+net_profit       = operating_profit
+Возвраты в P&L отдельной строкой не вычитаются: revenue считается по
+Sale.total, уже уменьшенному на частичные возвраты.

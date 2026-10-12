@@ -1,0 +1,23 @@
+// Стили для ProductTable компонента
+
+.warehouse-drag-handle {
+  border: none;
+  background: transparent;
+  padding: 2px;
+  margin-right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nur-muted);
+  cursor: grab;
+  border-radius: 8px;
+}
+
+.warehouse-drag-handle:hover {
+  color: var(--nur-text);
+  background: var(--nur-primary-soft);
+}
+
+.warehouse-drag-handle:active {
+  cursor: grabbing;
+}

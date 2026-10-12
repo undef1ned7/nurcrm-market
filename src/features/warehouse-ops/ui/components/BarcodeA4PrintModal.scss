@@ -1,0 +1,535 @@
+.barcode-a4-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 16px;
+  overflow: auto;
+}
+
+.barcode-a4-modal {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 1100px;
+  margin: auto;
+  align-items: flex-start;
+
+  &__panel {
+    flex: 0 0 300px;
+    background: var(--nur-surface);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+
+  &__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--nur-text);
+  }
+
+  &__close {
+    border: none;
+    background: var(--nur-surface-3);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: #334155;
+
+    &:hover {
+      background: var(--nur-border);
+    }
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nur-text-2);
+
+    input[type="text"],
+    input[type="number"] {
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--nur-border-strong);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--nur-text);
+
+      &:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+    }
+  }
+
+  &__row {
+    display: flex;
+    gap: 10px;
+
+    .barcode-a4-modal__field {
+      flex: 1;
+    }
+  }
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 4px 0 12px;
+  }
+
+  &__summary {
+    font-size: 12px;
+    color: var(--nur-muted);
+    margin-bottom: 14px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  &__btn {
+    flex: 1;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+
+    &--ghost {
+      background: var(--nur-surface-3);
+      color: #334155;
+    }
+    &--primary {
+      background: #2563eb;
+      color: #fff;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__previewWrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* Список копий по позициям (панель, не печатается) */
+.barcode-a4-copies {
+  border: 1px solid var(--nur-border);
+  border-radius: 8px;
+  background: var(--nur-surface-3);
+  padding: 6px;
+
+  &__head {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+  }
+
+  &__reset {
+    border: 1px solid var(--nur-border-strong);
+    background: var(--nur-surface);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--nur-surface-3);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__list {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: 6px;
+    padding: 4px 6px;
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__input {
+    flex: 0 0 56px;
+    width: 56px;
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--nur-border-strong);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  &__empty {
+    font-size: 12px;
+    color: var(--nur-muted);
+    padding: 6px;
+  }
+}
+
+/* Область печати: листы идут друг за другом */
+.barcode-a4-print-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Обёртка одного листа (лист + подпись «Лист X из Y» на экране) */
+.barcode-a4-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  &__caption {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nur-border);
+  }
+}
+
+/* Лист A4 */
+.barcode-a4-sheet {
+  /* печатная высота листа (297 − поля 2×10mm) минус 1mm запаса:
+     без запаса округление в устройстве даёт лишнюю пустую страницу */
+  --a4-page-h: 276mm;
+  --a4-header-h: 0mm;
+  width: 210mm;
+  height: 297mm;
+  box-sizing: border-box;
+  background: var(--nur-surface);
+  padding: 10mm;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform-origin: top center;
+  overflow: hidden;
+
+  &--landscape {
+    --a4-page-h: 189mm; /* печатная высота альбомного листа (210 − поля − запас) */
+    width: 297mm;
+    height: 210mm;
+  }
+
+  /* заголовок съедает часть печатной высоты — учитываем в высоте строк */
+  &--with-header {
+    --a4-header-h: 16mm;
+  }
+
+  /* Высота заголовка фиксирована (10mm + 6mm отступ = --a4-header-h),
+     иначе сетка не совпадёт с высотой листа и последняя строка уедет. */
+  &__header {
+    box-sizing: border-box;
+    height: 10mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--nur-text);
+    margin-bottom: 6mm;
+    padding-bottom: 2mm;
+    border-bottom: 1px solid var(--nur-border-strong);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--a4-cols, 3), 1fr);
+    /* Высота этикетки = высота печатной области / кол-во строк:
+       меньше строк — крупнее этикетки (напр. 2 строки на весь лист). */
+    grid-auto-rows: calc(
+      (
+          var(--a4-page-h, 277mm) - var(--a4-header-h, 0mm) - 6mm *
+            (var(--a4-rows, 8) - 1)
+        ) / var(--a4-rows, 8)
+    );
+    gap: 6mm;
+  }
+
+  &__empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--nur-muted);
+  }
+}
+
+.barcode-a4__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px;
+  border: 1px dashed var(--nur-border-strong);
+  border-radius: 6px;
+  text-align: center;
+  overflow: hidden;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.barcode-a4__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nur-text);
+  line-height: 1.2;
+}
+
+/* Область штрих-кода занимает свободное место в этикетке,
+   штрих-код масштабируется РАВНОМЕРНО (contain) и не выходит за поле. */
+.barcode-a4__bc {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.barcode-a4__canvas {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* равномерное масштабирование без искажений */
+}
+
+.barcode-a4__price {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--nur-text);
+}
+
+.barcode-a4__plu {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nur-text);
+}
+
+.barcode-a4__desc {
+  font-size: 10px;
+  color: var(--nur-text-2);
+  line-height: 1.2;
+}
+
+/* Скидка: старая цена зачёркнута, новая цена + бейдж */
+.barcode-a4__price-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 6px;
+}
+
+.barcode-a4__old {
+  color: var(--nur-muted);
+}
+
+.barcode-a4__badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+/* Строка настройки поля (панель, не печатается) */
+.barcode-a4-fs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--nur-border);
+  border-radius: 8px;
+  background: var(--nur-surface-3);
+
+  &__head {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+  }
+
+  &__ctrls {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__size {
+    width: 46px;
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--nur-border-strong);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  &__btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--nur-border-strong);
+    border-radius: 6px;
+    background: var(--nur-surface);
+    cursor: pointer;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1;
+
+    &:hover {
+      background: var(--nur-surface-3);
+    }
+    &.is-on {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #fff;
+    }
+  }
+}
+
+/* Уменьшенный превью листов на экране (чтобы влезали), при печати — реальный размер.
+   zoom (а не transform) — чтобы уменьшалась и занимаемая листом высота
+   и между листами не оставалось пустот. */
+@media screen and (max-width: 1200px) {
+  .barcode-a4-page {
+    zoom: 0.8;
+  }
+}
+
+/* ==== Печать: только листы A4 ====
+   Важно: печатная область остаётся в обычном потоке (без position: absolute
+   и без visibility-хака) — иначе Chrome не разбивает её на страницы и печатает
+   только первый лист. Всё лишнее скрываем через display: none. Модалка
+   рендерится порталом в body, поэтому достаточно спрятать соседей по body. */
+@media print {
+  html,
+  body {
+    /* глобальные min-height/overflow-x мешают многостраничной печати */
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  body > *:not(.barcode-a4-overlay) {
+    display: none !important;
+  }
+  .barcode-a4-no-print {
+    display: none !important;
+  }
+  .barcode-a4-overlay {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    background: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .barcode-a4-modal {
+    display: block;
+    max-width: none;
+    width: auto;
+    margin: 0;
+    gap: 0;
+  }
+  .barcode-a4-modal__previewWrap {
+    display: block;
+    width: auto;
+  }
+  .barcode-a4-print-area {
+    display: block;
+    gap: 0;
+  }
+  /* Каждый лист — отдельная страница печати */
+  .barcode-a4-page {
+    display: block;
+    gap: 0;
+    zoom: 1;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .barcode-a4-page + .barcode-a4-page {
+    break-before: page;
+    page-break-before: always;
+  }
+  .barcode-a4-sheet {
+    box-shadow: none;
+    transform: none;
+    /* поля даёт @page, а высоту листа — сетка (ровно --a4-page-h).
+       Фиксированную height не ставим: лишний миллиметр → пустая страница. */
+    width: auto;
+    height: auto;
+    /* но не выше печатной области: иначе лишний контент уедет на пустую страницу */
+    max-height: var(--a4-page-h, 276mm);
+    padding: 0;
+    overflow: hidden;
+  }
+  /* размер/ориентация @page задаётся динамически из компонента */
+  @page {
+    margin: 10mm;
+  }
+}

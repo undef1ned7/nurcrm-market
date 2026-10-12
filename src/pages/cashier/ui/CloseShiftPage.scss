@@ -1,0 +1,744 @@
+.close-shift-page {
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  height: var(--app-viewport-height, 100dvh);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 0;
+  background: var(--nur-bg);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: calc(20px + var(--app-safe-top, 0px))
+      calc(24px + var(--app-safe-right, 0px)) 20px
+      calc(24px + var(--app-safe-left, 0px));
+    background: var(--nur-surface);
+    border-bottom: 1px solid var(--nur-border);
+  }
+
+  &__back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover:not(:disabled) {
+      background: var(--nur-bg);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--nur-text);
+    margin: 0;
+  }
+
+  &__content {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px calc(24px + var(--app-safe-right, 0px))
+      calc(40px + var(--app-safe-bottom, 0px))
+      calc(24px + var(--app-safe-left, 0px));
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--nur-surface);
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--nur-danger-soft);
+
+    &--success {
+      background: var(--nur-success-soft);
+      color: var(--nur-success);
+    }
+  }
+
+  &__payments {
+    width: 100%;
+    padding: 16px 20px;
+    background: var(--nur-surface-2);
+    border-radius: 8px;
+  }
+
+  &__card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--nur-text);
+    margin: 0;
+    text-align: center;
+  }
+
+  &__info-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    background: var(--nur-surface-2);
+    border-radius: 8px;
+  }
+
+  &__info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__info-label {
+    font-size: 14px;
+    color: var(--nur-muted);
+  }
+
+  &__info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--nur-text);
+  }
+
+  &__input-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nur-text-2);
+  }
+
+  &__input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--nur-border);
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--nur-text);
+    transition: border-color 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: var(--nur-danger);
+    }
+
+    &:disabled {
+      background: var(--nur-bg);
+      cursor: not-allowed;
+    }
+
+    &::placeholder {
+      color: var(--nur-placeholder);
+      opacity: 1;
+    }
+  }
+
+  &__diff-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    border-radius: 8px;
+    background: var(--nur-surface-2);
+  }
+
+  &__diff-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nur-muted);
+  }
+
+  &__diff-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 32px;
+    font-weight: 700;
+    padding: 16px 24px;
+    border-radius: 8px;
+    width: 100%;
+    justify-content: center;
+
+    &--zero {
+      color: var(--nur-success);
+      background: var(--nur-success-soft);
+    }
+
+    &--positive {
+      color: var(--nur-success);
+      background: var(--nur-success-soft);
+    }
+
+    &--negative {
+      color: var(--nur-danger);
+      background: var(--nur-danger-soft);
+    }
+  }
+
+  &__submit-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--nur-danger);
+    color: var(--nur-surface);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover:not(:disabled) {
+      background: var(--nur-danger);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--done {
+      background: var(--nur-primary);
+      color: var(--nur-primary-ink);
+
+      &:hover:not(:disabled) {
+        background: var(--nur-primary-dark, var(--nur-primary));
+      }
+    }
+  }
+
+  &__info-item {
+    &--warning {
+      .close-shift-page__info-label,
+      .close-shift-page__info-value {
+        color: var(--nur-warning, #d97706);
+      }
+    }
+  }
+
+  &__hint {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--nur-text-muted, #64748b);
+
+    &--warning {
+      background: rgba(217, 119, 6, 0.1);
+      border: 1px solid rgba(217, 119, 6, 0.25);
+      color: var(--nur-warning, #b45309);
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    height: var(--app-viewport-height, 100dvh);
+    font-size: 18px;
+    color: var(--nur-danger);
+  }
+}
+
+// Адаптивные стили для устройств с маленькой высотой экрана
+@media (max-height: 850px) {
+  .close-shift-page {
+    &__header {
+      padding: 12px 20px;
+      flex-shrink: 0;
+    }
+
+    &__content {
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    &__title {
+      font-size: 18px;
+    }
+
+    &__content {
+      padding: 16px 24px;
+      align-items: flex-start;
+      // justify-content: flex-start;
+      overflow-y: auto;
+    }
+
+    &__card {
+      padding: 20px;
+      gap: 16px;
+    }
+
+    &__icon {
+      width: 56px;
+      height: 56px;
+
+      svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    &__card-title {
+      font-size: 18px;
+    }
+
+    &__info-section {
+      padding: 12px;
+      gap: 10px;
+    }
+
+    &__info-label {
+      font-size: 12px;
+    }
+
+    &__info-value {
+      font-size: 14px;
+    }
+
+    &__input-wrapper {
+      gap: 6px;
+    }
+
+    &__label {
+      font-size: 12px;
+    }
+
+    &__input {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    &__diff-section {
+      padding: 12px;
+      gap: 8px;
+    }
+
+    &__diff-label {
+      font-size: 12px;
+    }
+
+    &__diff-value {
+      font-size: 20px;
+      padding: 10px 16px;
+      gap: 6px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    &__submit-btn {
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+  }
+}
+
+// Адаптивные стили
+@media (max-width: 768px) {
+  .close-shift-page {
+    &__header {
+      padding: 16px 20px;
+    }
+
+    &__title {
+      font-size: 20px;
+    }
+
+    &__content {
+      padding: 24px 16px;
+      align-items: flex-start;
+      justify-content: flex-start;
+      overflow-y: auto;
+    }
+
+    &__card {
+      max-width: 100%;
+      padding: 24px 20px;
+      gap: 20px;
+      border-radius: 12px;
+    }
+
+    &__icon {
+      width: 64px;
+      height: 64px;
+
+      svg {
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    &__card-title {
+      font-size: 20px;
+    }
+
+    &__info-section {
+      padding: 16px;
+      gap: 12px;
+    }
+
+    &__info-label {
+      font-size: 13px;
+    }
+
+    &__info-value {
+      font-size: 15px;
+    }
+
+    &__input-wrapper {
+      gap: 6px;
+    }
+
+    &__label {
+      font-size: 13px;
+    }
+
+    &__input {
+      padding: 10px 14px;
+      font-size: 16px;
+    }
+
+    &__diff-section {
+      padding: 16px;
+      gap: 10px;
+    }
+
+    &__diff-label {
+      font-size: 13px;
+    }
+
+    &__diff-value {
+      font-size: 24px;
+      padding: 12px 20px;
+      gap: 6px;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    &__submit-btn {
+      padding: 12px 20px;
+      font-size: 15px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .close-shift-page {
+    &__header {
+      padding: 12px 16px;
+    }
+
+    &__title {
+      font-size: 18px;
+    }
+
+    &__back-btn {
+      width: 36px;
+      height: 36px;
+    }
+
+    &__content {
+      padding: 16px 12px;
+    }
+
+    &__card {
+      padding: 20px 16px;
+      gap: 16px;
+      border-radius: 10px;
+    }
+
+    &__icon {
+      width: 56px;
+      height: 56px;
+
+      svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    &__card-title {
+      font-size: 18px;
+    }
+
+    &__info-section {
+      padding: 12px;
+      gap: 10px;
+    }
+
+    &__info-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    &__info-label {
+      font-size: 12px;
+    }
+
+    &__info-value {
+      font-size: 14px;
+    }
+
+    &__label {
+      font-size: 12px;
+    }
+
+    &__input {
+      padding: 10px 12px;
+      font-size: 16px;
+    }
+
+    &__diff-section {
+      padding: 12px;
+    }
+
+    &__diff-label {
+      font-size: 12px;
+    }
+
+    &__diff-value {
+      font-size: 20px;
+      padding: 10px 16px;
+      flex-direction: column;
+      gap: 4px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    &__submit-btn {
+      padding: 12px 16px;
+      font-size: 14px;
+    }
+  }
+}
+
+// Комбинированные медиа-запросы для маленьких экранов (ширина и высота)
+@media (max-width: 768px) and (max-height: 850px) {
+  .close-shift-page {
+    &__header {
+      padding: 10px 16px;
+    }
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__content {
+      padding: 12px 16px;
+    }
+
+    &__card {
+      padding: 16px;
+      gap: 12px;
+    }
+
+    &__icon {
+      width: 48px;
+      height: 48px;
+
+      svg {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    &__card-title {
+      font-size: 16px;
+    }
+
+    &__info-section {
+      padding: 10px;
+      gap: 8px;
+    }
+
+    &__diff-section {
+      padding: 10px;
+    }
+
+    &__diff-value {
+      font-size: 18px;
+      padding: 8px 12px;
+    }
+  }
+}
+
+// Для очень маленькой высоты (ландшафтный режим на мобильных)
+@media (max-height: 500px) {
+  .close-shift-page {
+    &__header {
+      padding: 8px 16px;
+    }
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__content {
+      padding: 8px 16px;
+    }
+
+    &__card {
+      padding: 12px;
+      gap: 10px;
+    }
+
+    &__icon {
+      width: 40px;
+      height: 40px;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &__card-title {
+      font-size: 16px;
+    }
+
+    &__info-section {
+      padding: 8px;
+      gap: 6px;
+    }
+
+    &__info-label {
+      font-size: 11px;
+    }
+
+    &__info-value {
+      font-size: 12px;
+    }
+
+    &__input {
+      padding: 6px 10px;
+      font-size: 16px;
+    }
+
+    &__diff-section {
+      padding: 8px;
+    }
+
+    &__diff-value {
+      font-size: 16px;
+      padding: 6px 10px;
+    }
+
+    &__submit-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+  }
+}
+
+@media (max-width: 480px) and (max-height: 850px) {
+  .close-shift-page {
+    &__header {
+      padding: 8px 12px;
+    }
+
+    &__title {
+      font-size: 14px;
+    }
+
+    &__content {
+      padding: 8px 12px;
+    }
+
+    &__card {
+      padding: 12px;
+      gap: 10px;
+    }
+
+    &__icon {
+      width: 40px;
+      height: 40px;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &__card-title {
+      font-size: 14px;
+    }
+
+    &__info-section {
+      padding: 8px;
+      gap: 6px;
+    }
+
+    &__info-label,
+    &__info-value {
+      font-size: 11px;
+    }
+
+    &__input {
+      padding: 6px 10px;
+      font-size: 16px;
+    }
+
+    &__diff-value {
+      font-size: 16px;
+      padding: 6px 10px;
+    }
+
+    &__submit-btn {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+  }
+}

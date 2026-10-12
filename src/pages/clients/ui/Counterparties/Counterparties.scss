@@ -1,0 +1,199 @@
+// Контрагенты — стили страницы (chrome от PageShell / nur-tabs)
+.counterparties-page {
+  --counterparties-border: var(--nur-border);
+  --counterparties-surface: var(--nur-surface);
+  --counterparties-radius: var(--nur-radius, 12px);
+  --counterparties-text: var(--nur-text);
+  --counterparties-muted: var(--nur-muted);
+}
+
+/* Панель с вкладками и фильтром по агенту — FilterBar (.nur-page__toolbar) */
+.counterparties-toolbar {
+  width: 100%;
+}
+
+.counterparties-type-tabs.nur-tabs {
+  width: fit-content;
+  max-width: 100%;
+
+  .nur-tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* Фильтр по агенту */
+.counterparties-agent-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4px 0;
+  margin-left: auto;
+
+  &__icon {
+    color: var(--counterparties-muted);
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--counterparties-muted);
+    white-space: nowrap;
+  }
+
+  &__select {
+    min-width: 160px;
+  }
+}
+
+.counterparties-period-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4px 0;
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--counterparties-muted);
+    white-space: nowrap;
+  }
+
+  &__input {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--counterparties-text);
+    background: var(--counterparties-surface);
+    border: 1px solid var(--counterparties-border);
+    border-radius: 8px;
+
+    &:focus {
+      outline: none;
+      border-color: var(--nur-primary);
+    }
+  }
+
+  &__dash {
+    color: var(--counterparties-muted);
+    font-weight: 500;
+  }
+
+  &__btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--counterparties-text);
+    background: var(--counterparties-surface);
+    border: 1px solid var(--counterparties-border);
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) {
+      border-color: var(--nur-primary);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--reset {
+      color: var(--counterparties-muted);
+    }
+  }
+
+  &--active &__input {
+    border-color: var(--nur-primary);
+  }
+}
+
+.counterparties-table-wrap,
+.counterparties-cards-wrap {
+  margin-bottom: 0.5rem;
+}
+
+.counterparties-cards-wrap {
+  padding: var(--nur-space-4);
+}
+
+.counterparty-bank-accounts {
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  &__hint {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--nur-muted);
+    line-height: 1.4;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 140px auto;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 10px;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__field {
+    min-width: 0;
+  }
+
+  &__add-btn,
+  &__remove-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--nur-border);
+    background: var(--nur-surface);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  &__add-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--nur-text);
+
+    &:hover:not(:disabled) {
+      background: var(--nur-surface-2);
+    }
+  }
+
+  &__remove-btn {
+    width: 40px;
+    height: 40px;
+    color: var(--nur-danger);
+
+    &:hover:not(:disabled) {
+      background: var(--nur-danger-soft);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .counterparties-agent-filter {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .counterparties-type-tabs.nur-tabs {
+    width: 100%;
+  }
+}

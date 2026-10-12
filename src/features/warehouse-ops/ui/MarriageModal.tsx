@@ -1,0 +1,296 @@
+import { useCallback, useMemo, useState } from "react";
+import { updateProductAsync } from "@entities/product";
+import { X } from "lucide-react";
+import { postCashflowIfNeeded } from "@entities/cash";
+import { useUser } from "@entities/user";
+import {
+  buildExpenseVariableRouting,
+  buildPosRoutingFromUser,
+} from "@shared/lib/tools/cashboxResolution";
+import { useLocation } from "react-router";
+import { useAlert, useConfirm } from "@shared/hooks/useDialog";
+import ReactPortal from "@shared/ui/Portal/ReactPortal";
+import "./MarriageModal.scss";
+import { validateResErrors } from "@shared/lib/tools/validateResErrors";
+import { useAppDispatch } from "@app/store";
+
+const toNum = (v) => {
+  const n = Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
+const DECIMAL_QTY_PATTERN = /^\d*([.,]\d*)?$/;
+const INTEGER_QTY_PATTERN = /^\d*$/;
+
+const MarriageModal = ({ onClose, onChanged, item }: any) => {
+  const alert = useAlert()
+  const confirm = useConfirm()
+  const [defectiveQty, setDefectiveQty] = useState(""); // количество для операции
+  const [error, setError] = useState("");
+  const dispatch = useAppDispatch();
+  const { company, profile } = useUser();
+  const { pathname } = useLocation();
+  const isProductionWarehouse = pathname === "/crm/production/warehouse";
+  const isWeightProduct = Boolean(item?.is_weight);
+  const unitLabel = item?.unit || "шт";
+
+  const handleQtyChange = (value) => {
+    const nextValue = String(value ?? "");
+    const pattern = isWeightProduct ? DECIMAL_QTY_PATTERN : INTEGER_QTY_PATTERN;
+    if (nextValue && !pattern.test(nextValue)) return;
+    setDefectiveQty(nextValue);
+  };
+
+  // себестоимость за 1 шт (или price для производства)
+  const unitCost = useMemo(
+    () =>
+      toNum(
+        pathname === "/crm/production/warehouse"
+          ? item?.price
+          : item?.purchase_price
+      ),
+    [item, pathname]
+  );
+
+  const stockQty = useMemo(() => toNum(item?.quantity), [item]);
+  const q = useMemo(() => toNum(defectiveQty), [defectiveQty]);
+  const expense = useMemo(() => +(q * unitCost).toFixed(2), [q, unitCost]);
+
+  const validateWriteoff = useCallback(() => {
+    if (!item?.id) return "Нет выбранного товара";
+    if (!q) return "Введите количество";
+    if (q <= 0) return "Количество должно быть больше 0";
+    if (!isWeightProduct && !Number.isInteger(q)) {
+      return "Количество должно быть целым числом";
+    }
+    if (q > stockQty)
+      return `Нельзя списать больше, чем в наличии (${stockQty} ${unitLabel})`;
+    if (unitCost < 0) return "Себестоимость указана неверно";
+    return "";
+  }, [item, q, stockQty, unitCost, isWeightProduct, unitLabel]);
+
+  const validateReturn = useCallback(() => {
+    if (!item?.id) return "Нет выбранного товара";
+    if (!q) return "Введите количество для возврата";
+    if (q <= 0) return "Количество должно быть больше 0";
+    if (!isWeightProduct && !Number.isInteger(q)) {
+      return "Количество должно быть целым числом";
+    }
+    if (q > stockQty)
+      return `Нельзя вернуть больше, чем в наличии (${stockQty} ${unitLabel})`;
+    if (unitCost < 0) return "Себестоимость указана неверно";
+    return "";
+  }, [item, q, stockQty, unitCost, isWeightProduct, unitLabel]);
+
+  const onFormSubmit = async (e) => {
+    e.preventDefault();
+    const err = validateWriteoff();
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError("");
+    try {
+      // списание брака — уменьшаем остаток
+      await dispatch(
+        updateProductAsync({
+          productId: item.id,
+          updatedData: {
+            quantity: stockQty - q,
+            ...(!isProductionWarehouse && expense > 0
+              ? {
+                  payment_mode: "cash",
+                  ...buildExpenseVariableRouting(),
+                }
+              : {}),
+          },
+        })
+      ).unwrap();
+
+      // Legacy fallback; при VITE_BE_CASHFLOWS=true cashflow создаёт бэк.
+      if (!isProductionWarehouse && expense > 0) {
+        await postCashflowIfNeeded(
+          dispatch,
+          {
+            type: "expense",
+            name: `Списание брака: ${item?.name}`,
+            amount: expense,
+            source_cashbox_flow_id: item.id,
+            source_business_operation_id: "Списание брака",
+            status:
+              company?.subscription_plan?.name === "Старт"
+                ? "approved"
+                : "pending",
+          },
+          { warnOnFailure: true, failureContext: "writeoff" },
+        );
+      }
+
+      alert('Товар списан!', () => {
+        onChanged?.();
+        onClose?.();
+      })
+    } catch (e: any) {
+      const errorMessage = validateResErrors(e, "Не удалось сохранить. Попробуйте ещё раз.");
+      alert(errorMessage, true)
+    }
+  };
+
+  const onReturn = async () => {
+    const err = validateReturn();
+    if (err) {
+      alert(err, true)
+      return;
+    }
+
+    setError("");
+    const confirmMsg = `Подтвердите возврат товара:
+Наименование: ${item?.name}
+Количество к возврату: ${q} ${unitLabel}
+Сумма прихода: ${(q * unitCost).toFixed(2)}`;
+    confirm(confirmMsg, async (result) => {
+      if (result) {
+        try {
+          // уменьшаем остаток на q
+          const incomeAmount = +(q * unitCost).toFixed(2);
+          await dispatch(
+            updateProductAsync({
+              productId: item.id,
+              updatedData: {
+                quantity: stockQty - q,
+                ...(incomeAmount > 0
+                  ? {
+                      payment_mode: "cash",
+                      ...buildPosRoutingFromUser(profile, company),
+                    }
+                  : {}),
+              },
+            })
+          ).unwrap();
+
+          // Legacy fallback; product_return → POS-касса на бэке.
+          await postCashflowIfNeeded(
+            dispatch,
+            {
+              type: "income",
+              name: `Возврат товара: ${item?.name}`,
+              amount: incomeAmount,
+              source_cashbox_flow_id: item.id,
+              source_business_operation_id: "Возврат товара",
+              status:
+                company?.subscription_plan?.name === "Старт"
+                  ? "approved"
+                  : "pending",
+            },
+            { warnOnFailure: true, failureContext: "return" },
+          );
+          alert('Возврат выполнен!', () => {
+            onChanged?.();
+            onClose?.();
+          })
+        } catch (e: any) {
+          const errorMessage = validateResErrors(e, "Не удалось выполнить возврат. Попробуйте ещё раз.");
+          alert(errorMessage, true)
+        }
+      }
+    })
+  };
+
+  return (
+    <ReactPortal wrapperId="marriage-modal">
+      <div className="add-modal marriage-modal">
+        <div className="add-modal__overlay" onClick={onClose} />
+        <div
+          className="add-modal__content"
+          style={{ height: "auto" }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="marriage-modal-title"
+        >
+        <div className="add-modal__header">
+          <h3 id="marriage-modal-title">Списание брака / Возврат</h3>
+          <button
+            type="button"
+            className="add-modal__close"
+            onClick={onClose}
+            aria-label="Закрыть"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <form className="marriage-modal__form" onSubmit={onFormSubmit}>
+          <div className="marriage-modal__card">
+            <div className="marriage-modal__title">{item?.name}</div>
+            <div className="marriage-modal__meta">
+              <div>
+                В наличии: <b>{stockQty}</b> {unitLabel}
+              </div>
+              <div>
+                Себестоимость: <b>{unitCost}</b>
+              </div>
+            </div>
+          </div>
+
+          <div className="marriage-modal__summary">
+            <span>Сумма операции</span>
+            <b>{isFinite(expense) ? expense : 0}</b>
+          </div>
+
+          <div className="marriage-modal__field">
+            <label className="marriage-modal__label" htmlFor="defectiveQty">
+              Количество
+            </label>
+            <input
+              id="defectiveQty"
+              type="text"
+              name="defectiveQty"
+              placeholder="Введите количество"
+              className="marriage-modal__input"
+              value={defectiveQty}
+              onChange={(e) => handleQtyChange(e.target.value)}
+              onWheel={(e) => (e.target as any)?.blur?.()}
+              inputMode={isWeightProduct ? "decimal" : "numeric"}
+            />
+            <div className="marriage-modal__hint">
+              {isProductionWarehouse
+                ? "Списание уменьшает только остаток товара на складе. Возврат уменьшает остаток и делает приход в кассу."
+                : "Списание уменьшает остаток и фиксирует расход по себестоимости. Возврат уменьшает остаток и делает приход в кассу."}
+            </div>
+          </div>
+
+          {/* касса автоматически выбирается - скрыто от пользователя */}
+
+          {error && (
+            <div className="marriage-modal__error" role="alert">
+              {error}
+            </div>
+          )}
+
+          <div className="marriage-modal__actions">
+            <button
+              className="marriage-modal__btn marriage-modal__btn--primary"
+              type="submit"
+              disabled={!!validateWriteoff()}
+            >
+              Списать брак
+            </button>
+
+            <button
+              type="button"
+              className="marriage-modal__btn marriage-modal__btn--danger"
+              onClick={onReturn}
+              disabled={!!validateReturn()}
+              title="Возврат на указанное количество: приход по себестоимости"
+            >
+              Возврат товара
+            </button>
+          </div>
+        </form>
+        </div>
+      </div>
+    </ReactPortal>
+  );
+};
+
+export default MarriageModal;

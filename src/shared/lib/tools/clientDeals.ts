@@ -1,0 +1,376 @@
+/** Общие хелперы Deals API (/main/clients/{id}/deals/) */
+
+export const listFrom = (res: any) => res?.data?.results || res?.data || [];
+
+export const toDecimalString = (v: any) => {
+  const s = String(v ?? "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/,/g, ".");
+  if (s === "" || s === "-") return "0.00";
+  const n = Number(s);
+  return Number.isFinite(n) ? n.toFixed(2) : "0.00";
+};
+
+export const kindLabel = (v: any) =>
+  ({
+    sale: "Продажа",
+    debt: "Долг",
+    prepayment: "Предоплата",
+    amount: "Сумма",
+  }[v] || v || "—");
+
+export const ruStatusToKind = (s: any) => {
+  if (!s) return "sale";
+  const t = String(s).toLowerCase();
+  if (t.startsWith("долг")) return "debt";
+  if (t.startsWith("аванс") || t.startsWith("предоплат")) return "prepayment";
+  if (t.startsWith("сумм")) return "amount";
+  return "sale";
+};
+
+export const kindToRu = (k: any) =>
+  ({
+    sale: "Продажа",
+    debt: "Долг",
+    prepayment: "Предоплата",
+    amount: "Сумма",
+  }[k] || "Продажа");
+
+export const typeLabel = (t: any) => {
+  const v = String(t || "").toLowerCase();
+  if (v === "client") return "Клиент";
+  if (v === "suppliers") return "Поставщик";
+  if (v === "implementers") return "Реализатор";
+  return "—";
+};
+
+export const todayISO = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+export const getInstallmentRemaining = (installment: any) => {
+  if (installment?.paid_on) return 0;
+  const amount = Number(installment?.amount || 0);
+  const paid = Number(installment?.paid_amount || 0);
+  const legacy = Number(installment?.remaining_for_period);
+  if (Number.isFinite(legacy) && legacy >= 0 && !installment?.paid_amount) {
+    return legacy;
+  }
+  return Math.max(0, amount - paid);
+};
+
+const daysBetweenISO = (fromISO: string, toISO: string) => {
+  const a = Date.parse(`${fromISO}T00:00:00Z`);
+  const b = Date.parse(`${toISO}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+  return Math.round((b - a) / 86400000);
+};
+
+/**
+ * Статус взноса. Просрочка считается независимо от частичной оплаты:
+ * если по сроку уже должны были заплатить всё, а закрыто не полностью —
+ * остаток просрочен (`isOverdue`), даже когда основной статус «partial».
+ */
+export const getInstallmentStatus = (installment: any) => {
+  const paidAmount = Number(installment?.paid_amount || 0);
+  const amount = Number(installment?.amount || 0);
+  const due = installment?.due_date
+    ? String(installment.due_date).slice(0, 10)
+    : "";
+  const today = todayISO();
+  const isPaid = Boolean(installment?.paid_on);
+  const isOverdue = !isPaid && Boolean(due) && due < today;
+  const daysOverdue = isOverdue ? daysBetweenISO(due, today) : 0;
+
+  if (isPaid) {
+    return { key: "paid", label: "Полностью оплачен", isOverdue: false, daysOverdue: 0 };
+  }
+  if (paidAmount > 0 && paidAmount < amount) {
+    return { key: "partial", label: "Частично оплачен", isOverdue, daysOverdue };
+  }
+  if (isOverdue) {
+    return { key: "overdue", label: "Просрочен", isOverdue, daysOverdue };
+  }
+  return { key: "unpaid", label: "Не оплачен", isOverdue: false, daysOverdue: 0 };
+};
+
+/**
+ * «Обещанная» покупателем дата оплаты остатка (`promised_date`, не меняет график).
+ * `broken` — обещание уже прошло, а взнос не закрыт.
+ */
+export const getInstallmentPromise = (installment: any) => {
+  const raw = installment?.promised_date;
+  if (!raw || installment?.paid_on) return null;
+  const date = String(raw).slice(0, 10);
+  return { date, broken: date < todayISO() };
+};
+
+export const dealHasPayments = (deal: any) => {
+  if (Array.isArray(deal?.payments) && deal.payments.length > 0) return true;
+  if (!Array.isArray(deal?.installments)) return false;
+  return deal.installments.some(
+    (item: any) => item.paid_on || Number(item.paid_amount || 0) > 0,
+  );
+};
+
+/**
+ * Долг может быть создан из чека POS (payment_method=debt) или вручную.
+ * Бэк ещё не устоялся на одном имени поля для этой связи, поэтому пробуем
+ * известные варианты. Если ничего не найдено — долг создан вручную,
+ * привязанного чека нет (это нормальный случай, не ошибка).
+ * См. docs/backend/kassa/debt-source-receipt-backend.md.
+ */
+export const resolveDealSaleId = (deal: any): string | number | null => {
+  if (!deal || typeof deal !== "object") return null;
+  const candidates = [
+    deal.sale_id,
+    deal.pos_sale_id,
+    deal.source_sale_id,
+    deal.receipt_id,
+    deal.sale,
+    deal.receipt,
+    deal.source_sale,
+  ];
+  for (const candidate of candidates) {
+    if (candidate == null) continue;
+    if (typeof candidate === "object") {
+      const id = (candidate as any).id ?? (candidate as any).uuid ?? null;
+      if (id != null && String(id).trim()) return id;
+      continue;
+    }
+    const asString = String(candidate).trim();
+    if (asString) return candidate;
+  }
+  return null;
+};
+
+export const resolveDebtFromDeals = (deals: any) => {
+  const list = Array.isArray(deals) ? deals : [];
+  return list.reduce((sum, deal) => {
+    if (String(deal?.kind || "").toLowerCase() !== "debt") return sum;
+    const remaining = Number(deal?.remaining_debt);
+    if (Number.isFinite(remaining)) return sum + Math.max(remaining, 0);
+    const amount = Number(deal?.amount || 0);
+    const prepayment = Number(deal?.prepayment || 0);
+    return sum + Math.max(amount - prepayment, 0);
+  }, 0);
+};
+
+/**
+ * Остаток долга, если сервер его не прислал: по неоплаченным взносам графика,
+ * а без графика — вся сумма долга минус предоплата. Раньше подставлялся 0,
+ * и неоплаченный долг выглядел «оплаченным на 100%».
+ */
+function fallbackRemainingDebt(d: any): number {
+  const installments = Array.isArray(d?.installments) ? d.installments : [];
+  if (installments.length > 0) {
+    return installments.reduce((sum: number, inst: any) => {
+      if (inst?.paid_on) return sum;
+      const left = Number(inst?.amount ?? 0) - Number(inst?.paid_amount ?? 0);
+      return sum + (Number.isFinite(left) ? Math.max(left, 0) : 0);
+    }, 0);
+  }
+  const total = Number(d?.debt_amount ?? d?.amount ?? 0);
+  const prepayment = Number(d?.prepayment ?? 0);
+  const rest = total - (Number.isFinite(prepayment) ? prepayment : 0);
+  return Number.isFinite(rest) ? Math.max(rest, 0) : 0;
+}
+
+export function normalizeDealFromApi(resOrObj: any) {
+  // Пустое тело ответа (null/"") не должно ронять разбор
+  const raw = resOrObj?.data ?? resOrObj;
+  const d = raw && typeof raw === "object" ? raw : {};
+  const hasRemaining = d.remaining_debt !== null && d.remaining_debt !== undefined && d.remaining_debt !== "";
+  return {
+    id: d.id,
+    title: d.title || "",
+    kind: d.kind || "sale",
+    amount: Number(d.amount ?? 0),
+    prepayment: Number(d.prepayment ?? 0),
+    remaining_debt:
+      hasRemaining || d.kind !== "debt"
+        ? Number(d.remaining_debt ?? 0)
+        : fallbackRemainingDebt(d),
+    debt_amount: Number(d.debt_amount ?? d.amount ?? 0),
+    debt_days: d.debt_days ?? null,
+    debt_months: d.debt_months ?? null,
+    daily_payment: Number(d.daily_payment ?? 0),
+    monthly_payment: Number(d.monthly_payment ?? d.daily_payment ?? 0),
+    first_due_date: d.first_due_date ?? null,
+    installments: Array.isArray(d.installments) ? d.installments : [],
+    payments: Array.isArray(d.payments) ? d.payments : [],
+    note: d.note || "",
+    client: d.client || null,
+    client_full_name: d.client_full_name || "",
+    created_at: d.created_at || null,
+    updated_at: d.updated_at || null,
+    sale_id: resolveDealSaleId(d),
+  };
+}
+
+export function buildDealPayload({
+  title,
+  statusRu,
+  amount,
+  debt_days,
+  first_due_date,
+  prepayment,
+  note,
+  clientId,
+  forCreate = false,
+  paymentsExist = false,
+}) {
+  const kind = ruStatusToKind(statusRu);
+
+  if (paymentsExist) {
+    return {
+      title: String(title || "").trim(),
+      note: String(note || "").trim(),
+    };
+  }
+
+  const payload: any = {
+    title: String(title || "").trim(),
+    kind,
+    amount: toDecimalString(amount),
+    note: String(note || "").trim(),
+  };
+
+  if (forCreate && clientId) {
+    payload.client = clientId;
+  }
+
+  if (kind === "debt") {
+    const days = parseInt(debt_days, 10);
+    if (Number.isFinite(days) && days > 0) {
+      payload.debt_days = days;
+    }
+    if (first_due_date && toYYYYMMDD(first_due_date)) {
+      payload.first_due_date = toYYYYMMDD(first_due_date);
+    }
+    if (prepayment !== undefined && prepayment !== null && prepayment !== "") {
+      payload.prepayment = toDecimalString(prepayment);
+    }
+    if (forCreate) {
+      payload.auto_schedule = true;
+    }
+  }
+
+  if (kind === "prepayment" && prepayment !== undefined && prepayment !== "") {
+    payload.prepayment = toDecimalString(prepayment || amount);
+  }
+
+  return payload;
+}
+
+/** Нормализация входа для createDeals / createDeal */
+export function normalizeDealCreateInput({ clientId, ...data }) {
+  const kind = data.kind || ruStatusToKind(data.statusRu);
+  const statusRu =
+    data.statusRu ||
+    (kind === "debt"
+      ? "Долг"
+      : kind === "prepayment"
+        ? "Предоплата"
+        : "Продажа");
+
+  let debt_days = data.debt_days;
+  if (
+    (debt_days === undefined || debt_days === null || debt_days === "") &&
+    data.debtMonths !== undefined &&
+    data.debtMonths !== null &&
+    data.debtMonths !== ""
+  ) {
+    debt_days = Math.round(Number(data.debtMonths) * 30);
+  }
+  if (
+    (debt_days === undefined || debt_days === null || debt_days === "") &&
+    data.debt_months !== undefined &&
+    data.debt_months !== null &&
+    data.debt_months !== ""
+  ) {
+    debt_days = Math.round(Number(data.debt_months) * 30);
+  }
+
+  return buildDealPayload({
+    title: data.title,
+    statusRu: data.statusRu || statusRu,
+    amount: data.amount,
+    debt_days,
+    first_due_date: data.first_due_date,
+    prepayment: data.prepayment,
+    note: data.note ?? "",
+    clientId,
+    forCreate: true,
+  });
+}
+
+export function msgFromError(e: any, fallback: any) {
+  const data = e?.response?.data;
+  if (!data) return fallback;
+  if (typeof data === "string") return data;
+  if (typeof data === "object") {
+    try {
+      const k = Object.keys(data)[0];
+      const v = Array.isArray(data[k]) ? data[k][0] : data[k];
+      return String(v || fallback);
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
+export const toIsoDate10 = (v: any) => {
+  if (!v) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m2 = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m2}-${day}`;
+};
+
+export function toYYYYMMDD(input: any) {
+  if (input == null) return "";
+
+  if (typeof input === "string") {
+    const s = input.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  }
+
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+export function formatDateDDMMYYYY(input: any) {
+  if (!input) return "—";
+  if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const [y, m, d] = input.split("-");
+    return `${d}.${m}.${y}`;
+  }
+  const dt = new Date(input);
+  if (Number.isNaN(dt.getTime())) return String(input);
+  const dd = String(dt.getDate()).padStart(2, "0");
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const yyyy = dt.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+export function toNumber(v: any) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : NaN;
+}

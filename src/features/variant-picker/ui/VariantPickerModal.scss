@@ -1,0 +1,99 @@
+.variant-picker {
+  width: min(560px, calc(100vw - 32px));
+
+  &__label {
+    margin: 4px 0 8px;
+    font-size: var(--nur-font-meta);
+    font-weight: 600;
+    color: var(--nur-text-2);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  &__size,
+  &__color {
+    display: grid;
+    gap: 2px;
+    justify-items: center;
+    padding: 8px 6px;
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-sm);
+    background: var(--nur-surface);
+    color: var(--nur-text);
+    cursor: pointer;
+    font: inherit;
+
+    &.is-active {
+      border-color: var(--nur-primary);
+      background: var(--nur-primary-soft);
+      box-shadow: 0 0 0 2px var(--nur-primary-ring);
+    }
+
+    &.is-empty {
+      color: var(--nur-muted);
+      background: var(--nur-surface-3);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  &__sizeName {
+    font-weight: 700;
+  }
+
+  &__stock {
+    font-size: var(--nur-font-caption);
+    color: var(--nur-muted);
+  }
+
+  &__footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__price {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 18px;
+  }
+
+  &__oldPrice {
+    color: var(--nur-muted);
+    font-size: 14px;
+  }
+
+  &__qty {
+    display: grid;
+    gap: 4px;
+    font-size: var(--nur-font-meta);
+    color: var(--nur-text-2);
+
+    input {
+      width: 100px;
+    }
+  }
+
+  &__error {
+    margin: 12px 0 0;
+    color: var(--nur-danger);
+    font-size: var(--nur-font-meta);
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+}

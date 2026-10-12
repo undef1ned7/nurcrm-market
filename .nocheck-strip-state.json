@@ -1,0 +1,78 @@
+{
+  "remaining_count": 18,
+  "remaining": [
+    {
+      "loc": 4,
+      "path": "src/pages/auth/index.ts"
+    },
+    {
+      "loc": 79,
+      "path": "src/pages/employees/ui/Barber/Masters/RecordaRates/PayrollDaily/components/PayrollDailyHeader.tsx"
+    },
+    {
+      "loc": 89,
+      "path": "src/pages/employees/ui/Barber/Masters/RecordaRates/components/RecordaRatesHeader.tsx"
+    },
+    {
+      "loc": 220,
+      "path": "src/pages/clients/ui/Counterparties/components/CounterpartyDetailModal.tsx"
+    },
+    {
+      "loc": 226,
+      "path": "src/pages/sell/ui/components/ClientModal.tsx"
+    },
+    {
+      "loc": 239,
+      "path": "src/pages/employees/ui/Barber/Masters/MastersHistory/components/MastersHistoryHeader.tsx"
+    },
+    {
+      "loc": 306,
+      "path": "src/pages/cashier/ui/components/CustomerModal.tsx"
+    },
+    {
+      "loc": 330,
+      "path": "src/pages/settings/ui/Settings/CafeReceiptPrinterSettings.tsx"
+    },
+    {
+      "loc": 404,
+      "path": "src/pages/cashier/ui/hooks/cashier/useCashierBarcode.ts"
+    },
+    {
+      "loc": 422,
+      "path": "src/pages/settings/ui/Settings/CafeKitchenPrintersSettings.tsx"
+    },
+    {
+      "loc": 447,
+      "path": "src/pages/sell/ui/SellDetail.tsx"
+    },
+    {
+      "loc": 589,
+      "path": "src/pages/documents/ui/hooks/useCreateSaleDocument.tsx"
+    },
+    {
+      "loc": 633,
+      "path": "src/pages/documents/ui/hooks/useCreateSaleDocumentForMarket.tsx"
+    },
+    {
+      "loc": 674,
+      "path": "src/pages/catalog/ui/Catalog.tsx"
+    },
+    {
+      "loc": 742,
+      "path": "src/pages/employees/ui/Barber/Masters/RecordaRates/RecordaRates.tsx"
+    },
+    {
+      "loc": 761,
+      "path": "src/pages/bar/ui/Bar.tsx"
+    },
+    {
+      "loc": 936,
+      "path": "src/pages/employees/ui/Barber/Masters/hooks/useMastersPage.ts"
+    },
+    {
+      "loc": 979,
+      "path": "src/pages/employees/ui/Barber/Masters/MarketEmployEmployeeDetail.tsx"
+    }
+  ],
+  "note": "pages nocheck strip pass complete; tsc green"
+}

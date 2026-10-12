@@ -1,0 +1,28 @@
+.rentals {
+  &__row--overdue td {
+    background: var(--nur-danger-soft);
+    color: var(--nur-danger-ink);
+  }
+
+  &__overdue {
+    margin-top: 2px;
+    font-size: var(--nur-font-caption);
+    font-weight: 700;
+    color: var(--nur-danger);
+  }
+
+  &__tile--danger .nur-stat__value,
+  &__tile--danger {
+    color: var(--nur-danger);
+  }
+
+  &__more {
+    padding: 12px;
+    text-align: center;
+  }
+
+  &__muted {
+    font-size: var(--nur-font-meta);
+    color: var(--nur-muted);
+  }
+}

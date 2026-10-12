@@ -1,0 +1,545 @@
+.receipts-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.receipts-modal {
+  background: var(--nur-surface);
+  border-radius: 16px;
+  width: 95%;
+  max-width: 1400px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  &__container {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  // Левая панель с фильтрами
+  &__filters {
+    width: 350px;
+    padding: 24px;
+    border-right: 1px solid var(--nur-border);
+    background: var(--nur-surface-2);
+    overflow-y: auto;
+  }
+
+  &__filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  &__filters-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--nur-text);
+    margin: 0;
+  }
+
+  &__reset-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--nur-border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nur-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--nur-bg);
+      border-color: var(--nur-border-strong);
+      color: var(--nur-text);
+    }
+  }
+
+  &__filter-group {
+    margin-bottom: 24px;
+  }
+
+  &__filter-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nur-text-2);
+    margin-bottom: 8px;
+  }
+
+  &__date-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: var(--nur-text);
+  }
+
+  &__date-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  &__date-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    z-index: -1;
+    overflow: hidden;
+  }
+
+  &__date-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--nur-primary, #f7d74f);
+    border: 1px solid #00000033;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--nur-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--nur-primary-dark, #d4b800);
+    }
+  }
+
+  &__filter-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--nur-border);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: var(--nur-surface);
+
+    &:focus {
+      border-color: var(--nur-primary, #f7d74f);
+    }
+
+    &::placeholder {
+      color: var(--nur-placeholder);
+      opacity: 1;
+    }
+  }
+
+  &__search-wrapper {
+    position: relative;
+  }
+
+  &__dropdown-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--nur-muted);
+    cursor: pointer;
+    pointer-events: none;
+  }
+
+  &__dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  &__dropdown-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    color: var(--nur-text);
+
+    &:hover {
+      background: var(--nur-surface-2);
+    }
+  }
+
+  // Правая панель со списком чеков
+  &__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--nur-border);
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--nur-text);
+  }
+
+  &__close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nur-muted);
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--nur-text);
+    }
+  }
+
+  &__list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  &__loading,
+  &__empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--nur-muted);
+    font-size: 14px;
+  }
+
+  &__receipt {
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: box-shadow 0.2s;
+
+    &:hover {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  &__receipt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  &__receipt-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--nur-text);
+    margin: 0;
+  }
+
+  &__receipt-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--nur-surface-2);
+    border: 1px solid var(--nur-border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--nur-text-2);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--nur-bg);
+      border-color: var(--nur-border-strong);
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__receipt-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  &__receipt-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--nur-muted);
+
+    svg {
+      color: var(--nur-muted);
+    }
+  }
+
+  &__receipt-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &--paid {
+      background: var(--nur-success-soft);
+      color: var(--nur-success);
+    }
+
+    &--debt {
+      background: var(--nur-danger-soft);
+      color: var(--nur-danger);
+    }
+
+    &--pending {
+      background: #fed7aa;
+      color: #9a3412;
+    }
+  }
+
+  &__status-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    background: currentColor;
+    color: var(--nur-surface);
+  }
+
+  &__receipt-amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--nur-text);
+    margin-left: auto;
+  }
+
+  &__expand-icon {
+    color: var(--nur-muted);
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      color: var(--nur-muted);
+    }
+  }
+
+  &__footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--nur-border);
+    display: flex;
+    justify-content: center;
+  }
+
+  &__close-btn {
+    padding: 12px 24px;
+    background: var(--nur-primary, #f7d74f);
+    border: 1px solid #00000033;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--nur-text);
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--nur-primary-dark, #d4b800);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .receipts-modal-overlay {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+  }
+
+  .receipts-modal {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .receipts-modal__container {
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .receipts-modal__filters {
+    width: 100%;
+    flex-shrink: 0;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--nur-border);
+    overflow: visible;
+  }
+
+  .receipts-modal__filters-header {
+    margin-bottom: 16px;
+  }
+
+  .receipts-modal__filter-group {
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .receipts-modal__content {
+    flex: 1;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .receipts-modal__header {
+    padding: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--nur-surface);
+  }
+
+  .receipts-modal__title {
+    font-size: 18px;
+  }
+
+  .receipts-modal__list {
+    overflow: visible;
+    padding: 16px;
+  }
+
+  .receipts-modal__receipt {
+    padding: 16px;
+  }
+
+  .receipts-modal__receipt-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .receipts-modal__receipt-actions {
+    width: 100%;
+
+    .receipts-modal__action-btn {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
+  .receipts-modal__receipt-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .receipts-modal__receipt-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .receipts-modal__receipt-amount {
+    margin-left: 0;
+  }
+
+  .receipts-modal__footer {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--nur-surface);
+  }
+
+  .receipts-modal__close-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .receipts-modal__filters {
+    padding: 14px;
+  }
+
+  .receipts-modal__filters-title {
+    font-size: 16px;
+  }
+
+  .receipts-modal__reset-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .receipts-modal__date-btn {
+    font-size: 13px;
+    padding: 11px 14px;
+  }
+
+  .receipts-modal__header,
+  .receipts-modal__list {
+    padding: 14px;
+  }
+
+  .receipts-modal__receipt-title {
+    font-size: 16px;
+  }
+}

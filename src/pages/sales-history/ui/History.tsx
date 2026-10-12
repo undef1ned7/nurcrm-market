@@ -1,0 +1,517 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import api from "@shared/api";
+import {
+  formatSaleItemName,
+  consultantCommissionLabel,
+  consultantDisplayFromSale,
+  fetchSaleConsultants,
+  type SaleConsultant,
+} from "@entities/sale";
+import { useDebouncedValue } from "@shared/hooks/useDebounce";
+import {
+  PageShell,
+  PageHeader,
+  PagePanel,
+  FilterBar,
+  StatusChip,
+  EmptyState,
+  LoadingState,
+} from "@shared/ui/page-shell";
+import "./History.scss";
+
+const fmtMoney = (v: any) =>
+  (Number(v) || 0).toLocaleString(undefined, { minimumFractionDigits: 0 }) +
+  " с";
+
+const asArray = (data: any) =>
+  Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
+
+const pickDate = (row: any) => row.paid_at || row.created_at || null;
+
+const statusTone = (status) => {
+  if (status === "paid") return "success";
+  if (status === "canceled") return "danger";
+  if (status === "new") return "warning";
+  return "default";
+};
+
+const statusLabel = (status, t) => {
+  if (status === "paid") return t("crm.salesHistory.statusPaid");
+  if (status === "canceled") return t("crm.salesHistory.statusCanceled");
+  if (status === "new") return t("crm.salesHistory.statusNew");
+  return status || "—";
+};
+
+export default function MarketHistory() {
+  const { t } = useTranslation();
+  const [rows, setRows] = useState<any[]>([]);
+  const [count, setCount] = useState(0);
+  const [nextUrl, setNextUrl] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  // фильтры
+  const [status, setStatus] = useState(""); // "" = все
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [consultant, setConsultant] = useState("");
+  const [consultants, setConsultants] = useState<SaleConsultant[]>([]);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const barcode = useDebouncedValue(barcodeInput, 400, undefined);
+
+  // модалка деталей
+  const [openId, setOpenId] = useState<any>(null);
+
+  const load = useCallback(
+    async (url = null) => {
+      try {
+        setErr("");
+        setLoading(true);
+
+        let resp;
+        if (url) {
+          resp = await api.get(url);
+        } else {
+          const q = new URLSearchParams();
+          if (status) q.set("status", status);
+          if (start) q.set("start", start);
+          if (end) q.set("end", end);
+          if (consultant) q.set("consultant", consultant);
+          if (barcode.trim()) q.set("barcode", barcode.trim());
+          resp = await api.get(
+            `/main/pos/sales/${q.toString() ? `?${q.toString()}` : ""}`
+          );
+        }
+
+        const data = resp.data || {};
+        const list = asArray(data);
+
+        const mapped = list.map((r: any) => ({
+          id: r.id,
+          status: r.status || "new",
+          subtotal: Number(r.subtotal) || 0,
+          discount: Number(r.discount_total) || 0,
+          tax: Number(r.tax_total) || 0,
+          total: Number(r.total) || 0,
+          createdAt: pickDate(r),
+          user: r.user_display || "—",
+          consultant: consultantDisplayFromSale(r),
+          commission: consultantCommissionLabel(r),
+          matchedItemName: r.matched_item_name || "",
+        }));
+
+        if (url) {
+          setRows((prev: any) => [...prev, ...mapped]);
+        } else {
+          setRows(mapped);
+        }
+        setCount(Number(data.count || mapped.length));
+        setNextUrl(data.next || null);
+      } catch (e: any) {
+        console.error(e);
+        setErr(t("crm.salesHistory.loadError"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [status, start, end, consultant, barcode, t]
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSaleConsultants()
+      .then((list) => {
+        if (!cancelled) setConsultants(list);
+      })
+      .catch(() => {
+        if (!cancelled) setConsultants([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onOpen = (id) => setOpenId(id);
+  const onClose = () => setOpenId(null);
+
+  const totalSum = useMemo(
+    () => rows.reduce((s, r) => s + (Number(r.total) || 0), 0),
+    [rows]
+  );
+
+  const isBarcodeSearch = Boolean(barcode.trim());
+  const tableColSpan = isBarcodeSearch ? 8 : 7;
+
+  return (
+    <PageShell className="history">
+      <PageHeader
+        title={t("crm.salesHistory.pageTitle")}
+        subtitle={t("crm.salesHistory.subtitle")}
+      />
+
+      <FilterBar className="history__filters">
+        <label className="nur-field history__filter">
+          <span className="nur-label">{t("crm.salesHistory.status")}</span>
+          <select
+            className="nur-select"
+            value={status}
+            onChange={(e: any) => setStatus(e.target.value)}
+          >
+            <option value="">{t("crm.salesHistory.all")}</option>
+            <option value="new">{t("crm.salesHistory.statusNew")}</option>
+            <option value="paid">{t("crm.salesHistory.statusPaid")}</option>
+            <option value="canceled">{t("crm.salesHistory.statusCanceled")}</option>
+          </select>
+        </label>
+
+        <label className="nur-field history__filter">
+          <span className="nur-label">{t("crm.salesHistory.from")}</span>
+          <input
+            type="date"
+            className="nur-input"
+            value={start}
+            max={end || undefined}
+            onChange={(e: any) => setStart(e.target.value)}
+          />
+        </label>
+
+        <label className="nur-field history__filter">
+          <span className="nur-label">{t("crm.salesHistory.to")}</span>
+          <input
+            type="date"
+            className="nur-input"
+            value={end}
+            min={start || undefined}
+            onChange={(e: any) => setEnd(e.target.value)}
+          />
+        </label>
+
+        <label className="nur-field history__filter">
+          <span className="nur-label">{t("crm.salesHistory.consultant")}</span>
+          <select
+            className="nur-select"
+            value={consultant}
+            onChange={(e: any) => setConsultant(e.target.value)}
+          >
+            <option value="">{t("crm.salesHistory.all")}</option>
+            {consultants.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.full_name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="nur-field history__filter">
+          <span className="nur-label">{t("crm.salesHistory.barcode")}</span>
+          <input
+            type="text"
+            className="nur-input"
+            value={barcodeInput}
+            onChange={(e: any) => setBarcodeInput(e.target.value)}
+            placeholder={t("crm.salesHistory.barcodeSearchPlaceholder")}
+          />
+        </label>
+
+        <button
+          type="button"
+          className="nur-btn nur-btn--secondary"
+          onClick={() => load()}
+          disabled={loading}
+        >
+          {t("common.refresh")}
+        </button>
+      </FilterBar>
+
+      {err && <div className="history__error">{err}</div>}
+
+      <PagePanel flush>
+        <div className="nur-table-wrap">
+          <table className="nur-table">
+            <thead>
+              <tr>
+                <th>{t("crm.salesHistory.date")}</th>
+                <th>{t("crm.salesHistory.cashier")}</th>
+                <th>{t("crm.salesHistory.consultant")}</th>
+                <th>{t("crm.salesHistory.commission")}</th>
+                <th>{t("crm.salesHistory.status")}</th>
+                {isBarcodeSearch && <th>{t("crm.salesHistory.matchedItem")}</th>}
+                <th>{t("crm.salesHistory.total")}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && rows.length === 0 ? (
+                <tr>
+                  <td colSpan={tableColSpan}>
+                    <LoadingState rows={4} />
+                  </td>
+                </tr>
+              ) : rows.length ? (
+                rows.map((r: any) => (
+                  <tr key={r.id}>
+                    <td className="ellipsis" title={r.createdAt || "—"}>
+                      {r.createdAt
+                        ? new Date(r.createdAt).toLocaleString()
+                        : "—"}
+                    </td>
+                    <td>{r.user}</td>
+                    <td>{r.consultant}</td>
+                    <td>{r.commission}</td>
+                    <td>
+                      <StatusChip tone={statusTone(r.status)}>
+                        {statusLabel(r.status, t)}
+                      </StatusChip>
+                    </td>
+                    {isBarcodeSearch && (
+                      <td className="ellipsis" title={r.matchedItemName || "—"}>
+                        {r.matchedItemName || "—"}
+                      </td>
+                    )}
+                    <td>{fmtMoney(r.total)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="nur-btn nur-btn--primary nur-btn--sm"
+                        onClick={() => onOpen(r.id)}
+                      >
+                        {t("crm.salesHistory.open")}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={tableColSpan}>
+                    <EmptyState
+                      title={
+                        isBarcodeSearch
+                          ? t("crm.salesHistory.emptyBarcodeTitle")
+                          : t("crm.salesHistory.emptyTitle")
+                      }
+                      text={
+                        isBarcodeSearch
+                          ? t("crm.salesHistory.emptyBarcodeText")
+                          : t("crm.salesHistory.emptyText")
+                      }
+                    />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={isBarcodeSearch ? 6 : 5}>
+                  <strong>{t("crm.salesHistory.totalReceipts")}</strong> {count}
+                </td>
+                <td colSpan={2}>
+                  <strong>{t("crm.salesHistory.pageSum")}</strong> {fmtMoney(totalSum)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </PagePanel>
+
+      {nextUrl && (
+        <div className="history__more">
+          <button
+            type="button"
+            className="nur-btn nur-btn--secondary"
+            onClick={() => load(nextUrl)}
+            disabled={loading}
+          >
+            {t("crm.salesHistory.loadMore")}
+          </button>
+        </div>
+      )}
+
+      {openId && <SaleModal id={openId} onClose={onClose} />}
+    </PageShell>
+  );
+}
+
+/* ================== Modal with details ================== */
+function SaleModal({ id, onClose }: any) {
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [sale, setSale] = useState<any>(null);
+
+  const fmtMoneyLocal = (v: any) =>
+    (Number(v) || 0).toLocaleString(undefined, { minimumFractionDigits: 0 }) +
+    " с";
+
+  const load = async () => {
+    try {
+      setErr("");
+      setLoading(true);
+      const { data } = await api.get(`/main/pos/sales/${id}/`);
+      const items = Array.isArray(data.items)
+        ? data.items.map((it: any, i: any) => {
+            const unit = Number(it.unit_price) || 0;
+            const qty = Number(it.quantity) || 0;
+            const line = Number(it.line_total ?? unit * qty) || 0;
+            return {
+              id: it.id || String(i),
+              name: formatSaleItemName(it),
+              barcode: it.barcode_snapshot || it.barcode || "",
+              qty,
+              unit_price: unit,
+              line_total: line,
+            };
+          })
+        : [];
+      setSale({
+        id: data.id,
+        createdAt: data.created_at || null,
+        user: data.user_display || "—",
+        consultant: consultantDisplayFromSale(data),
+        commission: consultantCommissionLabel(data, { showZero: true }),
+        total: Number(data.total) || 0,
+        items,
+      });
+    } catch (e: any) {
+      console.error(e);
+      setErr(t("crm.salesHistory.detailLoadError"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+     
+  }, [id]);
+
+  return (
+    <div className="nur-modal-overlay" onClick={onClose}>
+      <div
+        className="nur-modal nur-modal--xl"
+        onClick={(e: any) => e.stopPropagation()}
+      >
+        <div className="nur-modal__header">
+          <h2 className="nur-modal__title">
+            {t("crm.salesHistory.saleTitle", { id: (id || "").slice(0, 8) })}
+          </h2>
+          <button
+            type="button"
+            className="nur-modal__close"
+            onClick={onClose}
+            aria-label={t("common.close")}
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="nur-modal__body">
+          {loading ? (
+            <div className="history__skeletonRow">
+              <div className="nur-skeleton history__skeleton" />
+              <div className="nur-skeleton history__skeleton" />
+              <div className="nur-skeleton history__skeleton" />
+            </div>
+          ) : err ? (
+            <div className="history__error">{err}</div>
+          ) : sale ? (
+            <>
+              <div className="history__meta">
+                <div>
+                  <strong>{t("crm.salesHistory.created")}</strong>{" "}
+                  {sale.createdAt
+                    ? new Date(sale.createdAt).toLocaleString()
+                    : "—"}
+                </div>
+                <div>
+                  <strong>{t("crm.salesHistory.cashier")}:</strong> {sale.user}
+                </div>
+                <div>
+                  <strong>{t("crm.salesHistory.consultant")}:</strong> {sale.consultant}
+                </div>
+                <div>
+                  <strong>{t("crm.salesHistory.commissionLabel")}</strong> {sale.commission}
+                </div>
+                <div>
+                  <strong>{t("crm.salesHistory.total")}:</strong> {fmtMoneyLocal(sale.total)}
+                </div>
+              </div>
+
+              <div className="nur-table-wrap history__modalTable">
+                <table className="nur-table nur-table--dense">
+                  <thead>
+                    <tr>
+                      <th>{t("crm.salesHistory.product")}</th>
+                      <th>{t("crm.salesHistory.barcode")}</th>
+                      <th>{t("crm.salesHistory.qty")}</th>
+                      <th>{t("crm.salesHistory.price")}</th>
+                      <th>{t("crm.salesHistory.amount")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sale.items.length ? (
+                      sale.items.map((it: any) => (
+                        <tr key={it.id}>
+                          <td className="ellipsis" title={it.name}>
+                            {it.name}
+                          </td>
+                          <td className="ellipsis" title={it.barcode || "—"}>
+                            {it.barcode || "—"}
+                          </td>
+                          <td>{it.qty}</td>
+                          <td>{fmtMoneyLocal(it.unit_price)}</td>
+                          <td>{fmtMoneyLocal(it.line_total)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5}>
+                          <EmptyState
+                            title={t("crm.salesHistory.noItemsTitle")}
+                            text={t("crm.salesHistory.noItemsText")}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3}></td>
+                      <td>
+                        <strong>{t("crm.salesHistory.total")}</strong>
+                      </td>
+                      <td>{fmtMoneyLocal(sale.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        {sale && !loading && !err && (
+          <div className="nur-modal__footer">
+            <button
+              type="button"
+              className="nur-btn nur-btn--secondary"
+              onClick={load}
+            >
+              {t("common.refresh")}
+            </button>
+            <button
+              type="button"
+              className="nur-btn nur-btn--primary"
+              onClick={onClose}
+            >
+              {t("common.close")}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

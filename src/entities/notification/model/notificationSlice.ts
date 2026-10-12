@@ -1,0 +1,185 @@
+import { createSlice } from '@reduxjs/toolkit';
+import {
+  fetchNotificationsAsync,
+  markAllNotificationsReadAsync,
+  fetchNotificationDetailAsync,
+  markNotificationReadAsync,
+  deleteNotificationAsync,
+} from "./notificationCreators";
+import { consultingNotificationLeadId } from "@shared/lib/consultingLeadSources";
+
+const initialState: any = {
+  list: [] as any[],
+  count: 0,          // всего уведомлений (для пагинации)
+  unreadCount: 0,    // непрочитанных (счётчик в колокольчике, real-time)
+  hasMore: false,    // есть ли ещё страницы (lazy load)
+  loading: false,
+  loadingMore: false,
+  error: null,
+  detail: null,
+  markingAllRead: false,
+};
+
+const isUnread = (n: any) => !(n?.is_read ?? n?.read ?? false);
+const idOf = (n: any) => n?.id ?? n?.uuid ?? n?.pk;
+
+function markListForLead(state: any, leadId: any) {
+  const id = String(leadId || '');
+  if (!id) return;
+  let dec = 0;
+  state.list.forEach((n: any) => {
+    if (!isUnread(n)) return;
+    if (String(consultingNotificationLeadId(n) || '') !== id) return;
+    n.is_read = true;
+    n.read = true;
+    dec += 1;
+  });
+  if (dec) state.unreadCount = Math.max(0, state.unreadCount - dec);
+}
+
+const notificationSlice = createSlice({
+  name: 'notification',
+  initialState,
+  reducers: {
+    /** Новое уведомление из WebSocket — добавляем в начало, без дублей. */
+    notificationReceived: (state, action: any) => {
+      const n = action.payload;
+      if (!n) return;
+      const id = idOf(n);
+      if (id != null && state.list.some((x: any) => idOf(x) === id)) {
+        return; // защита от дублей (WS может прислать повтор)
+      }
+      state.list.unshift(n);
+      state.count += 1;
+      if (isUnread(n)) state.unreadCount += 1;
+    },
+    /** Локально отметить одно прочитанным (оптимистично). */
+    notificationMarkedReadLocal: (state, action: any) => {
+      const id = action.payload;
+      const item = state.list.find((x: any) => idOf(x) === id);
+      if (item && isUnread(item)) {
+        item.is_read = true;
+        item.read = true;
+        state.unreadCount = Math.max(0, state.unreadCount - 1);
+      }
+    },
+    /** Локально отметить все прочитанными. */
+    allMarkedReadLocal: (state) => {
+      state.list = state.list.map((n: any) => ({ ...n, is_read: true, read: true }));
+      state.unreadCount = 0;
+    },
+    /** Явная установка счётчика непрочитанных (из WS-события счётчика). */
+    unreadCountSet: (state, action: any) => {
+      state.unreadCount = Math.max(0, Number(action.payload) || 0);
+    },
+    /** Открыли чат лида — все связанные уведомления прочитаны. */
+    markLeadNotificationsReadLocal: (state, action: any) => {
+      markListForLead(state, action.payload);
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchNotificationsAsync.pending, (state, action) => {
+        if (action.meta.arg?.countOnly) return;
+        if (action.meta.arg?.append) state.loadingMore = true;
+        else state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchNotificationsAsync.fulfilled, (state, action) => {
+        const { data, append, countOnly } = action.payload || {};
+        state.loading = false;
+        state.loadingMore = false;
+
+        // Пересинхронизация только счётчика (после реконнекта WS) — список не трогаем.
+        if (countOnly) {
+          if (typeof data?.unread_count === 'number') {
+            state.unreadCount = Math.max(0, data.unread_count);
+          }
+          if (typeof data?.count === 'number') state.count = data.count;
+          return;
+        }
+
+        const results = data?.results ?? (Array.isArray(data) ? data : []);
+        const count =
+          typeof data?.count === 'number' ? data.count : results.length;
+
+        if (append) {
+          const existing = new Set(state.list.map(idOf));
+          state.list = state.list.concat(
+            results.filter((n: any) => !existing.has(idOf(n))),
+          );
+        } else {
+          state.list = results;
+        }
+        state.count = count;
+        state.hasMore = state.list.length < count;
+        state.unreadCount =
+          typeof data?.unread_count === 'number'
+            ? data.unread_count
+            : state.list.filter(isUnread).length;
+      })
+      .addCase(fetchNotificationsAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.loadingMore = false;
+        if (action.meta.arg?.countOnly) return;
+        state.error = action.payload;
+      })
+
+      // mark ALL read (оптимистично)
+      .addCase(markAllNotificationsReadAsync.pending, (state) => {
+        state.markingAllRead = true;
+        state.list = state.list.map((n: any) => ({ ...n, is_read: true, read: true }));
+        state.unreadCount = 0;
+      })
+      .addCase(markAllNotificationsReadAsync.fulfilled, (state) => {
+        state.markingAllRead = false;
+      })
+      .addCase(markAllNotificationsReadAsync.rejected, (state) => {
+        state.markingAllRead = false;
+      })
+
+      // mark ONE read (оптимистично в pending; откат в rejected)
+      .addCase(markNotificationReadAsync.pending, (state, action) => {
+        const id = action.meta.arg;
+        const item = state.list.find((x: any) => idOf(x) === id);
+        if (item && isUnread(item)) {
+          item.is_read = true;
+          item.read = true;
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+      })
+      .addCase(markNotificationReadAsync.rejected, (state, action: any) => {
+        const id = action.payload?.id;
+        const item = state.list.find((x: any) => idOf(x) === id);
+        if (item) {
+          item.is_read = false;
+          item.read = false;
+          state.unreadCount += 1;
+        }
+      })
+
+      .addCase(fetchNotificationDetailAsync.fulfilled, (state, action) => {
+        state.detail = action.payload;
+      })
+
+      .addCase(deleteNotificationAsync.fulfilled, (state, action) => {
+        const id = action.payload;
+        const item = state.list.find((x: any) => idOf(x) === id);
+        if (item && isUnread(item)) {
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+        state.list = state.list.filter((x: any) => idOf(x) !== id);
+        state.count = Math.max(0, state.count - 1);
+      });
+  },
+});
+
+export const {
+  notificationReceived,
+  notificationMarkedReadLocal,
+  allMarkedReadLocal,
+  unreadCountSet,
+  markLeadNotificationsReadLocal,
+} = notificationSlice.actions;
+
+export default notificationSlice.reducer;

@@ -1,0 +1,124 @@
+/* Общий селект с поиском (cmn-searchselect) */
+.cmn-searchselect {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto; /* во flex-строках (например, рядом с кнопкой «Создать») */
+  min-width: 0;
+
+  &__input {
+    width: 100%;
+    padding: 10px 30px 10px 12px;
+    border: 1px solid var(--nur-border);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--nur-surface);
+    color: var(--nur-text);
+    outline: none;
+    transition: border-color 0.12s ease;
+
+    &::placeholder {
+      color: var(--nur-placeholder);
+      opacity: 1;
+    }
+
+    &:focus {
+      border-color: var(--nur-primary);
+    }
+
+    &:disabled {
+      background: var(--nur-surface-3);
+      color: var(--nur-muted);
+      cursor: not-allowed;
+    }
+  }
+
+  &__arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--nur-muted);
+    font-size: 12px;
+  }
+
+  &__menu {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-border);
+    border-radius: 10px;
+    box-shadow: var(--nur-shadow);
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  &__item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--nur-text);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--nur-surface-3);
+    }
+
+    &--active {
+      background: var(--nur-primary-soft);
+      font-weight: 600;
+    }
+  }
+
+  &__empty,
+  &__more {
+    padding: 10px;
+    font-size: 13px;
+    color: var(--nur-muted);
+    text-align: center;
+  }
+
+  &__loadmore {
+    display: block;
+    width: 100%;
+    margin-top: 2px;
+    padding: 9px 10px;
+    border: none;
+    border-top: 1px solid var(--nur-border);
+    border-radius: 0 0 8px 8px;
+    background: var(--nur-surface-3);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nur-text);
+    text-align: center;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--nur-primary-soft);
+    }
+
+    &:disabled {
+      color: var(--nur-muted);
+      cursor: default;
+    }
+  }
+
+  @media (max-width: 640px) {
+    &__menu {
+      max-height: 45vh;
+    }
+
+    &__item {
+      padding: 12px 10px; /* крупнее цель нажатия на мобильных */
+    }
+  }
+}

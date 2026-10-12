@@ -1,0 +1,111 @@
+.create-sale-cart-modal__items {
+  margin-bottom: 24px;
+}
+
+.create-sale-cart-modal__items-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--nur-border);
+  border-radius: 8px;
+  background: var(--nur-surface-3);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--nur-text);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: var(--nur-surface-3);
+    border-color: #d1d5db;
+  }
+}
+
+.create-sale-cart-modal__items-title {
+  margin: 0;
+}
+
+.create-sale-cart-modal__items-count {
+  font-weight: 500;
+  color: var(--nur-muted);
+}
+
+.create-sale-cart-modal__items-chevron {
+  flex-shrink: 0;
+  color: var(--nur-muted);
+}
+
+.create-sale-cart-modal__items-table-wrap,
+.create-sale-cart-modal__items-loading,
+.create-sale-cart-modal__items-empty {
+  margin-top: 10px;
+}
+
+.create-sale-cart-modal__items-loading,
+.create-sale-cart-modal__items-empty {
+  padding: 12px;
+  background: var(--nur-surface-3);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--nur-muted);
+}
+
+.create-sale-cart-modal__items-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--nur-border);
+  border-radius: 8px;
+}
+
+.create-sale-cart-modal__items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--nur-border);
+  }
+
+  th {
+    background: var(--nur-surface-3);
+    font-weight: 600;
+    color: #374151;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: var(--nur-surface-3);
+  }
+}
+
+.create-sale-cart-modal__wholesale {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.create-sale-cart-modal__wholesale-btn {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: var(--nur-surface-3);
+  color: var(--nur-muted);
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+
+  &--active {
+    background: #f7d617;
+    border-color: #e5c100;
+    color: var(--nur-text);
+    font-weight: 600;
+  }
+}

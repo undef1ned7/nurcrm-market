@@ -1,0 +1,250 @@
+// Калькуляция: единый визуальный язык. Все цвета — из токенов, тёмная тема работает сама.
+.calc {
+  --calc-good: #1f8a4c;
+  --calc-bad: #c0392b;
+  --calc-warn: #b7791f;
+  --calc-card: var(--nur-surface);
+
+  &__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+    @media (max-width: 960px) { grid-template-columns: minmax(0, 1fr); }
+  }
+  &__aside { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 16px; @media (max-width: 960px) { position: static; } }
+  &__form { display: flex; flex-direction: column; gap: 14px; }
+  &__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; @media (max-width: 560px) { grid-template-columns: minmax(0, 1fr); } }
+  &__row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; @media (max-width: 720px) { grid-template-columns: minmax(0, 1fr); } }
+  &__tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  &__tiles3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; @media (max-width: 560px) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  &__cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; @media (max-width: 1000px) { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (max-width: 520px) { grid-template-columns: minmax(0, 1fr); } }
+
+  &__bad { color: var(--calc-bad); font-weight: 600; }
+  &__warn { color: var(--calc-warn); font-weight: 600; }
+  &__flags { display: flex; flex-wrap: wrap; gap: 4px; }
+  &__formula { font-family: var(--nur-font-mono); font-size: var(--nur-font-meta); color: var(--nur-text-2); background: var(--nur-surface-3); padding: 8px 12px; border-radius: 8px; margin: 0; }
+  &__plain {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--nur-primary-soft);
+    border: 1px solid var(--nur-primary-ring);
+    line-height: 1.5;
+    font-size: var(--nur-font-body);
+  }
+  &__plain--bad { background: rgba(192, 57, 43, 0.08); border-color: rgba(192, 57, 43, 0.3); }
+
+  // ── Выбор вкладки ────────────────────────────────────────
+  &__tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    @media (max-width: 1100px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @media (max-width: 640px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  &__tab {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--nur-border);
+    background: var(--calc-card);
+    color: var(--nur-text);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    &:hover { border-color: var(--nur-primary-dark); transform: translateY(-1px); }
+    &:focus-visible { outline: 2px solid var(--nur-primary-dark); outline-offset: 2px; }
+    &.is-active {
+      border-color: var(--nur-primary-dark);
+      background: var(--nur-primary-soft);
+      box-shadow: 0 0 0 2px var(--nur-primary-ring);
+    }
+  }
+  &__tab-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 10px;
+    background: var(--nur-primary); color: var(--nur-primary-ink);
+  }
+  &__tab-title { font-weight: 700; font-size: var(--nur-font-body); }
+  &__tab-text { font-size: var(--nur-font-caption); color: var(--nur-muted); line-height: 1.35; @media (max-width: 640px) { display: none; } }
+
+  // ── Поиск товара ─────────────────────────────────────────
+  &__search { position: relative; }
+  &__dropdown {
+    position: absolute; z-index: 20; left: 0; right: 0; top: 100%;
+    margin: 4px 0 0; padding: 4px; list-style: none;
+    background: var(--nur-surface); border: 1px solid var(--nur-border-strong);
+    border-radius: 12px; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+    max-height: 260px; overflow: auto;
+  }
+  &__option {
+    display: flex; justify-content: space-between; gap: 12px;
+    width: 100%; text-align: left; border: 0; background: transparent; color: inherit; font: inherit;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    &:hover, &:focus-visible, &.is-active { background: var(--nur-surface-3); outline: none; }
+  }
+
+  // ── Партия ───────────────────────────────────────────────
+  &__lines { display: flex; flex-direction: column; gap: 10px; }
+  &__line {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)) auto;
+    gap: 10px;
+    align-items: start;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--nur-surface-2);
+    border: 1px solid var(--nur-border);
+    @media (max-width: 720px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+}
+
+// ── Поле с единицей ─────────────────────────────────────────
+// Глобальное `.nur-field + .nur-field { margin-top }` сдвигало соседние поля в ряду вниз
+.calc-field,
+.calc .nur-field + .nur-field { margin-top: 0; }
+.calc-field { gap: 4px; }
+.calc-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  .nur-input { width: 100%; padding-right: 52px; font-variant-numeric: tabular-nums; }
+  &__suffix {
+    position: absolute; right: 12px;
+    color: var(--nur-muted); font-size: var(--nur-font-meta); font-weight: 600; pointer-events: none;
+  }
+}
+.calc-hint { color: var(--nur-muted); font-size: var(--nur-font-caption); line-height: 1.35; }
+
+// ── Шаги ────────────────────────────────────────────────────
+.calc-step {
+  background: var(--nur-surface);
+  border: 1px solid var(--nur-border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 14px;
+  &__head { display: flex; gap: 12px; align-items: flex-start; }
+  &__num {
+    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--nur-primary); color: var(--nur-primary-ink); font-weight: 800; font-size: 14px;
+  }
+  &__title { margin: 0; font-size: var(--nur-font-title-sm); font-weight: 700; line-height: 1.2; }
+  &__note { margin: 2px 0 0; color: var(--nur-muted); font-size: var(--nur-font-meta); }
+  &__body { display: flex; flex-direction: column; gap: 12px; }
+}
+
+// ── Выбор способа ───────────────────────────────────────────
+.calc-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; @media (max-width: 720px) { grid-template-columns: minmax(0, 1fr); } }
+.calc-choice {
+  display: flex; flex-direction: column; gap: 4px; text-align: left;
+  padding: 12px; border-radius: 12px; font: inherit; cursor: pointer;
+  border: 1px solid var(--nur-border); background: var(--nur-surface-2); color: var(--nur-text);
+  strong { font-size: var(--nur-font-body); }
+  span { font-size: var(--nur-font-caption); color: var(--nur-muted); line-height: 1.35; }
+  &:hover { border-color: var(--nur-primary-dark); }
+  &.is-active { border-color: var(--nur-primary-dark); background: var(--nur-primary-soft); box-shadow: 0 0 0 2px var(--nur-primary-ring); }
+}
+
+// ── Герой-результат ─────────────────────────────────────────
+.calc-hero {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 20px 22px; border-radius: 18px;
+  background: linear-gradient(135deg, var(--nur-primary) 0%, var(--nur-primary-hover) 100%);
+  color: var(--nur-primary-ink);
+  &__label { font-size: var(--nur-font-meta); font-weight: 600; opacity: 0.8; }
+  &__value { font-size: 36px; line-height: 1.1; font-weight: 800; font-variant-numeric: tabular-nums; }
+  &__sub { font-size: var(--nur-font-meta); opacity: 0.85; }
+  &--bad { background: linear-gradient(135deg, #f3b5ae 0%, #ec8e84 100%); color: #3a0d08; }
+  &--good { background: linear-gradient(135deg, #b8ecc9 0%, #86d9a3 100%); color: #0b3a1d; }
+}
+
+// ── Плитки ──────────────────────────────────────────────────
+.calc-tile {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--nur-surface); border: 1px solid var(--nur-border);
+  &__label { font-size: var(--nur-font-caption); color: var(--nur-muted); font-weight: 600; }
+  &__value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  &__hint { font-size: var(--nur-font-caption); color: var(--nur-muted); }
+  &--good .calc-tile__value { color: var(--calc-good); }
+  &--bad { border-color: rgba(192, 57, 43, 0.4); .calc-tile__value { color: var(--calc-bad); } }
+  &--warn .calc-tile__value { color: var(--calc-warn); }
+}
+
+// ── Полоса «из чего состоит цена» ───────────────────────────
+.calc-parts {
+  display: flex; flex-direction: column; gap: 10px;
+  &__bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--nur-surface-3); }
+  &__seg { display: block; height: 100%; transition: width 0.25s ease; }
+  &__legend {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: var(--nur-font-meta);
+    li { display: inline-flex; align-items: center; gap: 6px; }
+    strong { font-variant-numeric: tabular-nums; }
+  }
+  &__dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+  .is-cost { background: #94a3b8; }
+  .is-tax { background: #f59e0b; }
+  .is-profit { background: #10b981; }
+  .is-loss { background: #ef4444; }
+}
+
+// ── Прогресс ────────────────────────────────────────────────
+.calc-progress {
+  display: flex; flex-direction: column; gap: 6px;
+  &__head { display: flex; justify-content: space-between; font-size: var(--nur-font-meta); }
+  &__track { height: 10px; border-radius: 999px; background: var(--nur-surface-3); overflow: hidden; }
+  &__fill { height: 100%; border-radius: 999px; background: var(--nur-primary-dark); transition: width 0.3s ease; &.is-done { background: #10b981; } }
+}
+
+// ── Метки «внимание» в таблице проверки цен ─────────────────
+.calc-pill {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+  font-size: var(--nur-font-caption); font-weight: 600; white-space: nowrap;
+  background: var(--nur-surface-3); color: var(--nur-text-2);
+  &--bad { background: rgba(192, 57, 43, 0.12); color: var(--calc-bad); }
+  &--warn { background: rgba(247, 215, 79, 0.25); color: #6b4e00; }
+}
+html.dark .calc-pill--warn { color: #f3e3a0; }
+.calc-row--bad td { background: rgba(192, 57, 43, 0.05); }
+
+// ── Фильтры-«чипы» ──────────────────────────────────────────
+.calc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.calc-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px; font: inherit; font-size: var(--nur-font-meta); font-weight: 600; cursor: pointer;
+  border: 1px solid var(--nur-border); background: var(--nur-surface); color: var(--nur-text-2);
+  em { font-style: normal; font-weight: 700; padding: 0 6px; border-radius: 999px; background: var(--nur-surface-3); color: var(--nur-text); }
+  &:hover { border-color: var(--nur-primary-dark); }
+  &.is-active { background: var(--nur-primary); border-color: var(--nur-primary-dark); color: var(--nur-primary-ink); em { background: rgba(255, 255, 255, 0.55); } }
+}
+
+/* Ошибка ввода у поля */
+.calc-input.is-invalid .nur-input {
+  border-color: var(--nur-danger, #dc2626);
+}
+.calc-error {
+  color: var(--nur-danger, #dc2626);
+  font-size: var(--nur-font-caption);
+  line-height: 1.35;
+}
+
+
+/* «Проверка цен»: показано N из M, пока таблица догоняет ввод — приглушаем */
+.calc__more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.calc-stale {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}

@@ -1,0 +1,159 @@
+.company {
+  background: var(--nur-bg);
+  padding: 24px;
+  border-radius: 8px;
+  font-family: inherit;
+  color: #1c2526;
+
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #1c2526;
+  }
+
+  &__container {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  &__avatar {
+    width: 100px;
+    height: 100px;
+    background: #cfd2d6;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 24px;
+    flex: 1;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+
+    &--textarea textarea {
+      height: 80px;
+      resize: none;
+    }
+
+    &--full {
+      grid-column: span 2;
+    }
+  }
+
+  &__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--nur-text);
+    margin-bottom: 6px;
+  }
+
+  &__input {
+    padding: 10px 12px;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1c2526;
+    background: var(--nur-surface, #fff);
+    transition: border-color 0.3s;
+
+    &::placeholder {
+      color: var(--nur-placeholder);
+      opacity: 1;
+    }
+
+    &:focus {
+      border-color: var(--nur-primary, #f7d74f);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--nur-primary-ring, rgba(247, 215, 79, 0.35));
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    padding: 16px;
+
+    &__container {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__field--full {
+      grid-column: span 1;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    padding: 12px;
+
+    &__title {
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    &__avatar {
+      width: 80px;
+      height: 80px;
+    }
+
+    &__grid {
+      gap: 16px;
+    }
+
+    &__label {
+      font-size: 13px;
+    }
+
+    &__input {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    &__field--textarea textarea {
+      height: 70px;
+    }
+  }
+
+  @media screen and (max-width: 320px) {
+    padding: 10px;
+
+    &__title {
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    &__avatar {
+      width: 60px;
+      height: 60px;
+    }
+
+    &__grid {
+      gap: 12px;
+    }
+
+    &__label {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    &__input {
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    &__field--textarea textarea {
+      height: 60px;
+    }
+  }
+}

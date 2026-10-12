@@ -1,0 +1,119 @@
+/* Формы разделов вида магазина: прокат, запись клиентов, заказ-наряды */
+.sphere-modal {
+  width: min(620px, calc(100vw - 32px));
+}
+
+.sphere-form {
+  display: grid;
+  gap: 12px;
+
+  &__field {
+    display: grid;
+    gap: 4px;
+    font-size: var(--nur-font-meta);
+    color: var(--nur-text-2);
+
+    textarea {
+      resize: vertical;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    legend {
+      margin-bottom: 6px;
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--nur-text);
+    }
+  }
+
+  &__chosen {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--nur-text);
+  }
+
+  &__results {
+    margin: -6px 0 0;
+    padding: 0;
+    list-style: none;
+    max-height: 200px;
+    overflow: auto;
+    border: 1px solid var(--nur-border);
+    border-radius: var(--nur-radius-sm);
+
+    button {
+      width: 100%;
+      padding: 8px 10px;
+      border: 0;
+      border-bottom: 1px solid var(--nur-border);
+      background: var(--nur-surface);
+      color: var(--nur-text);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--nur-primary-soft);
+      }
+    }
+  }
+
+  &__items {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 80px auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--nur-text);
+    }
+  }
+
+  &__hint {
+    margin: -4px 0 0;
+    font-size: var(--nur-font-meta);
+    color: var(--nur-muted);
+  }
+
+  &__warn,
+  &__error {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: var(--nur-radius-sm);
+    background: var(--nur-danger-soft);
+    color: var(--nur-danger-ink);
+    font-weight: 600;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}

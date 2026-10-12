@@ -1,0 +1,280 @@
+.pending-page {
+  min-width: 0;
+
+  &__toolbar {
+    width: 100%;
+  }
+
+  &__view-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--nur-space-2);
+    margin-left: auto;
+  }
+
+  &__content {
+    min-width: 0;
+  }
+}
+
+.pending-search {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+
+  &__icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--nur-muted);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &__input {
+    width: 100%;
+    padding-left: 40px;
+  }
+}
+
+.pending-bulk-actions {
+  animation: pending-slide-down 0.25s ease-out;
+
+  &__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--nur-space-4);
+    padding: var(--nur-space-4) var(--nur-space-5);
+    background: var(--nur-surface);
+    border: 1px solid var(--nur-primary);
+    border-radius: var(--nur-radius-lg);
+    box-shadow: var(--nur-shadow-sm);
+    flex-wrap: wrap;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    gap: var(--nur-space-2);
+    padding: 6px 12px;
+    background: var(--nur-primary);
+    color: var(--nur-primary-ink);
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  &__buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--nur-space-2);
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+}
+
+@keyframes pending-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pending-table {
+  min-width: 1000px;
+
+  &__name {
+    font-weight: 600;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  &__row--busy {
+    opacity: 0.7;
+  }
+}
+
+.pending-cards-wrap {
+  padding: var(--nur-space-4);
+}
+
+.pending-cards-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nur-space-3);
+  margin-bottom: var(--nur-space-4);
+  padding: var(--nur-space-3);
+  background: var(--nur-bg);
+  border: 1px solid var(--nur-border);
+  border-radius: var(--nur-radius);
+
+  &__select-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--nur-text);
+    cursor: pointer;
+  }
+}
+
+.pending-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--nur-space-4);
+}
+
+.pending-card {
+  background: var(--nur-surface);
+  border: 1px solid var(--nur-border);
+  border-radius: var(--nur-radius-lg);
+  padding: var(--nur-space-4);
+  box-shadow: var(--nur-shadow-sm);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    box-shadow: var(--nur-shadow);
+    transform: translateY(-1px);
+  }
+
+  &--busy {
+    opacity: 0.7;
+  }
+
+  &__top {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--nur-space-3);
+  }
+
+  &__body {
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__num {
+    font-size: 12px;
+    color: var(--nur-muted);
+  }
+
+  &__name {
+    margin-top: 2px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nur-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-size: 12px;
+    color: var(--nur-text-2);
+  }
+
+  &__stats {
+    margin-top: var(--nur-space-4);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--nur-space-2);
+  }
+
+  &__stat {
+    padding: var(--nur-space-2);
+    background: var(--nur-bg);
+    border-radius: var(--nur-radius-sm);
+    font-size: 12px;
+
+    span {
+      display: block;
+      color: var(--nur-muted);
+    }
+
+    strong {
+      display: block;
+      margin-top: 2px;
+      color: var(--nur-text);
+      font-weight: 600;
+    }
+  }
+
+  &__actions {
+    margin-top: var(--nur-space-3);
+    display: flex;
+    gap: var(--nur-space-2);
+
+    .nur-btn {
+      flex: 1;
+    }
+  }
+}
+
+.pending-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--nur-space-3);
+
+  &__meta {
+    font-size: 13px;
+    color: var(--nur-muted);
+  }
+}
+
+.pending-action-spinner {
+  animation: pending-spin 0.8s linear infinite;
+}
+
+@keyframes pending-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .pending-page__view-toggle {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .pending-table {
+    min-width: 720px;
+  }
+}
+
+/* Заявка на редактирование/отмену движения кассы: подпись «было → станет» */
+.pending-table__request-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+.pending-table__request-kind {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 600;
+}
+.pending-table__request-reason {
+  font-style: italic;
+}

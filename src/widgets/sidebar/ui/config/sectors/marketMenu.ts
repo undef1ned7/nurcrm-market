@@ -1,0 +1,127 @@
+import { menuIcons } from "../menuIcons";
+
+export const marketMenu = [
+  {
+    label: "Сводка",
+    to: "/crm/market/summary",
+    icon: menuIcons.dashboard,
+    // Видна всем, кто вошёл (без отдельного права)
+    implemented: true,
+    group: "Продажи",
+  },
+  {
+    label: "Калькуляция",
+    to: "/crm/market/calculator",
+    icon: menuIcons.calculator,
+    permission: "can_view_analytics",
+    implemented: true,
+    group: "Склад",
+  },
+  {
+    label: "ABC-анализ",
+    to: "/crm/market/abc",
+    icon: menuIcons.chartPie,
+    permission: "can_view_analytics",
+    // С тарифа «Стандарт» (на «Старт» скрыт в useMenuItems)
+    implemented: true,
+    group: "Финансы",
+  },
+  {
+    label: "База знаний",
+    to: "/crm/market/knowledge-base",
+    icon: menuIcons.helpBook,
+    implemented: true,
+    group: "Помощь",
+  },
+  {
+    label: "Журнал ошибок",
+    to: "/crm/market/error-log",
+    icon: menuIcons.alertTriangle,
+    implemented: true,
+    group: "Помощь",
+  },
+  {
+    label: "История",
+    to: "/crm/market/history",
+    icon: menuIcons.clipboard,
+    permission: "can_view_orders",
+    implemented: true,
+    group: "Продажи",
+  },
+  {
+    label: "Аналитика",
+    to: "/crm/market/analytics",
+    icon: menuIcons.chartBar,
+    permission: "can_view_analytics",
+    implemented: true,
+    group: "Финансы",
+  },
+  {
+    label: "Запросы",
+    to: "/crm/pending",
+    icon: menuIcons.clipboardCheck,
+    permission: "can_view_cashbox",
+    implemented: true,
+    group: "Финансы",
+    // Показывается только когда включён тогл «Запросы на подтверждение».
+    // @see docs/backend/kassa/cashflow-requests-toggle-backend.md
+    requiresCashflowRequests: true,
+  },
+  {
+    label: "Смены",
+    to: "/crm/shifts",
+    icon: menuIcons.calendar,
+    permission: "can_view_shifts",
+    implemented: true,
+    group: "Продажи",
+  },
+  {
+    label: "Закупки",
+    to: "/crm/market/procurement",
+    icon: menuIcons.receiptText,
+    permission: "can_view_market_procurement",
+    implemented: true,
+    group: "Склад",
+  },
+  {
+    label: "Поставщики",
+    to: "/crm/market/suppliers",
+    icon: menuIcons.filePerson,
+    permission: "can_view_market_supplier",
+    implemented: true,
+    group: "Люди",
+  },
+  // Разделы по виду магазина (company.market_sphere) — см. useMenuItems
+  {
+    label: "Прокат",
+    to: "/crm/market/rentals",
+    icon: menuIcons.exchangeAlt,
+    implemented: true,
+    group: "Продажи",
+    spheres: ["clothing", "services"],
+  },
+  {
+    label: "Запись клиентов",
+    to: "/crm/market/appointments",
+    icon: menuIcons.calendar,
+    implemented: true,
+    group: "Продажи",
+    spheres: ["services"],
+  },
+  {
+    label: "Заказ-наряды",
+    to: "/crm/market/work-orders",
+    icon: menuIcons.clipboardCheck,
+    implemented: true,
+    group: "Продажи",
+    spheres: ["services"],
+  },
+  {
+    label: "Документы",
+    to: "/crm/market/documents",
+    icon: menuIcons.documentScanner,
+    permission: "can_view_document",
+    implemented: true,
+    group: "Склад",
+  },
+];

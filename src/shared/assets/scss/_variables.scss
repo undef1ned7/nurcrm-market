@@ -1,0 +1,37 @@
+// Legacy SCSS variables — aliased to CSS design tokens where possible.
+// Prefer var(--nur-*) in new styles; these keep old SCSS compiling.
+
+$color-primary: #f7d74f;
+$color-primary-dark: #d4b800;
+$color-primary-darker: #cdb02e;
+$color-primary-light: #fef3c7;
+$color-primary-ink: #1a1505;
+
+$building-primary: #f7d74f;
+$building-primary-dark: #cdb02e;
+$building-primary-light: #fef3c7;
+
+$nur-bg: #f6f7f9;
+$nur-surface: #ffffff;
+$nur-border: #e9ecf1;
+$nur-text: #0f172a;
+$nur-text-2: #475569;
+$nur-muted: #64748b; // AA on white
+$nur-danger: #ef4444;
+$nur-success: #10b981;
+$nur-radius: 12px;
+$nur-radius-sm: 8px;
+$nur-radius-lg: 16px;
+
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 20px;
+$space-6: 24px;
+$space-7: 32px;
+$space-8: 48px;
+
+// Semantic aliases for gradual migration in SCSS
+$primary: $color-primary;
+$primary-dark: $color-primary-dark;

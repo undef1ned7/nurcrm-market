@@ -1,0 +1,192 @@
+.social-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1200;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  background: var(--nur-scrim, rgba(15, 23, 42, 0.55));
+  backdrop-filter: blur(7px) saturate(140%);
+  -webkit-backdrop-filter: blur(7px) saturate(140%);
+}
+
+.social-modal-content {
+  background: var(--nur-surface);
+  padding: var(--nur-space-6);
+  border-radius: var(--nur-radius-xl);
+  box-shadow: var(--nur-shadow-lg);
+  border: 1px solid var(--nur-border);
+  width: min(480px, calc(100vw - 32px));
+  max-width: 100%;
+  max-height: min(90dvh, 900px);
+  margin: auto;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
+  animation: socialModalIn 0.25s ease-out;
+  color: var(--nur-text);
+}
+
+@keyframes socialModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.social-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--nur-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--nur-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background 0.15s ease;
+  font-family: inherit;
+
+  &:hover {
+    color: var(--nur-text);
+    background: var(--nur-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--nur-primary);
+    outline-offset: 2px;
+  }
+}
+
+.social-modal-header {
+  text-align: center;
+  margin-bottom: var(--nur-space-5);
+  padding-bottom: var(--nur-space-4);
+  border-bottom: 1px solid var(--nur-border);
+
+  .social-modal-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto var(--nur-space-3);
+    border-radius: var(--nur-radius);
+    background: var(--nur-primary-soft);
+    color: var(--nur-primary-darker);
+    font-size: 1.75rem;
+
+    svg {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--nur-text);
+    font-size: var(--nur-font-title-sm);
+    font-weight: var(--nur-font-weight-title);
+    line-height: var(--nur-line-title);
+  }
+}
+
+.social-modal-body {
+  margin-bottom: var(--nur-space-5);
+
+  .social-modal-description {
+    color: var(--nur-text-2);
+    font-size: var(--nur-font-body);
+    line-height: var(--nur-line-body);
+    margin: 0;
+    text-align: center;
+  }
+}
+
+.social-modal-hint {
+  margin-top: var(--nur-space-4);
+  padding: 12px 14px;
+  border-radius: var(--nur-radius);
+  background: var(--nur-warning-soft);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #92400e;
+  font-size: var(--nur-font-meta);
+  font-weight: 600;
+  text-align: center;
+}
+
+.social-modal-status {
+  margin-top: var(--nur-space-4);
+  padding: 12px 14px;
+  border-radius: var(--nur-radius);
+  text-align: center;
+  font-weight: 600;
+  font-size: var(--nur-font-meta);
+
+  &--success {
+    background: var(--nur-success-soft);
+    color: #065f46;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+  }
+
+  &--error {
+    background: var(--nur-danger-soft);
+    color: #991b1b;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+}
+
+.social-modal-actions {
+  display: flex;
+  gap: var(--nur-space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.social-modal-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(26, 21, 5, 0.2);
+  border-top-color: var(--nur-primary-ink);
+  border-radius: 50%;
+  animation: socialModalSpin 0.8s linear infinite;
+}
+
+@keyframes socialModalSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .social-modal-content {
+    padding: var(--nur-space-5);
+  }
+
+  .social-modal-actions {
+    flex-direction: column;
+
+    .nur-btn {
+      width: 100%;
+    }
+  }
+}
